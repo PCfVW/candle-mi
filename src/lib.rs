@@ -59,11 +59,16 @@
 #![allow(clippy::must_use_candidate)]
 
 pub mod backend;
+pub mod cache;
 pub mod error;
 pub mod hooks;
+pub mod interp;
+pub mod tokenizer;
+pub mod util;
 
 // --- Public re-exports ---------------------------------------------------
 
 pub use backend::{GenerationResult, MIBackend, MIModel};
+pub use cache::{ActivationCache, FullActivationCache, KVCache};
 pub use error::{MIError, Result};
 pub use hooks::{HookCache, HookPoint, HookSpec, Intervention};
