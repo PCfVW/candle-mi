@@ -53,12 +53,12 @@ impl ActivationCache {
     }
 
     /// Number of cached layers.
-    pub fn n_layers(&self) -> usize {
+    pub const fn n_layers(&self) -> usize {
         self.activations.len()
     }
 
     /// Whether the cache is empty.
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.activations.is_empty()
     }
 
@@ -153,7 +153,7 @@ impl FullActivationCache {
     }
 
     /// Number of cached layers.
-    pub fn n_layers(&self) -> usize {
+    pub const fn n_layers(&self) -> usize {
         self.activations.len()
     }
 
@@ -171,7 +171,7 @@ impl FullActivationCache {
     }
 
     /// Whether the cache is empty.
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.activations.is_empty()
     }
 }

@@ -267,7 +267,7 @@ impl HookSpec {
 
     /// Number of registered interventions.
     #[must_use]
-    pub fn num_interventions(&self) -> usize {
+    pub const fn num_interventions(&self) -> usize {
         self.interventions.len()
     }
 

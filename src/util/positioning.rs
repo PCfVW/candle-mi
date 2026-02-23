@@ -136,12 +136,12 @@ impl EncodingWithOffsets {
     }
 
     /// Number of tokens.
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.tokens.len()
     }
 
     /// Whether the encoding is empty.
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.tokens.is_empty()
     }
 }

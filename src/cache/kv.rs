@@ -72,7 +72,7 @@ impl KVCache {
     }
 
     /// Number of layers in the cache.
-    pub fn n_layers(&self) -> usize {
+    pub const fn n_layers(&self) -> usize {
         self.keys.len()
     }
 

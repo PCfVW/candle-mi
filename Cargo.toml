@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/PCfVW/candle-mi"
 keywords = ["interpretability", "transformers", "mechanistic", "candle", "rust"]
 categories = ["science", "machine-learning"]
-rust-version = "1.85"
+rust-version = "1.87"
 
 [dependencies]
 # Candle ML framework (pinned to 0.9.x per design/candle-version.md)

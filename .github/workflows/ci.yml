@@ -16,8 +16,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: "MSRV (1.85)"
-            toolchain: "1.85"
+          - name: "MSRV (1.87)"
+            toolchain: "1.87"
           - name: "Stable"
             toolchain: "stable"
     steps:
