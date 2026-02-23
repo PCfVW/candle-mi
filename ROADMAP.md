@@ -662,18 +662,18 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 
 **Goal:** Core trait, hook system, infrastructure — no model backends yet.
 
-- [ ] Create repository, Cargo.toml, CI, ROADMAP.md (this document), CHANGELOG.md (empty "Unreleased" section), LICENSE-MIT, LICENSE-APACHE, `design/` directory (design proposals from §8) — **commit: `init: scaffold repo with CI, roadmap, design docs, and dual license`** — **PUSH**
-- [ ] Port `backend.rs` (MIBackend trait) from plip-rs `model.rs` — redesign with hook-based API — **commit**
-- [ ] Implement `HookSpec` and `HookCache` types — **commit**
-- [ ] Port `intervention.rs` (knockout, steering, ablation spec types and trait method signatures — attention-specific implementations are model-agnostic and land here; RWKV-specific state intervention *implementations* land in Phase 2) — **commit**
-- [ ] Port `cache/` modules (activation, KV, attention) — **commit**
-- [ ] Port `util/` modules (masks, positioning) — **commit** — **PUSH** (mid-phase checkpoint)
-- [ ] Port `interp/logit_lens.rs` — **commit**
-- [ ] Port `interp/steering.rs` (calibration, dose-response) — **commit**
-- [ ] Port `tokenizer/` (MITokenizer enum + RWKV tokenizer) — **commit**
-- [ ] Write comprehensive tests for all ported modules — **commit**
+- [x] Create repository, Cargo.toml, CI, ROADMAP.md (this document), CHANGELOG.md (empty "Unreleased" section), LICENSE-MIT, LICENSE-APACHE, `design/` directory (design proposals from §8) — **commit: `init: scaffold repo with CI, roadmap, design docs, and dual license`** — **PUSH**
+- [x] Port `backend.rs` (MIBackend trait) from plip-rs `model.rs` — redesign with hook-based API — **commit**
+- [x] Implement `HookSpec` and `HookCache` types — **commit**
+- [x] Port `intervention.rs` (knockout, steering, ablation spec types and trait method signatures — attention-specific implementations are model-agnostic and land here; RWKV-specific state intervention *implementations* land in Phase 2) — **commit**
+- [x] Port `cache/` modules (activation, KV, attention) — **commit**
+- [x] Port `util/` modules (masks, positioning) — **commit** — **PUSH** (mid-phase checkpoint)
+- [x] Port `interp/logit_lens.rs` — **commit**
+- [x] Port `interp/steering.rs` (calibration, dose-response) — **commit**
+- [x] Port `tokenizer/` (MITokenizer enum + RWKV tokenizer) — **commit**
+- [x] Write comprehensive tests for all ported modules — **commit**
 
-**Deliverable:** Compiling crate with full MI infrastructure, no backends. — **PUSH + tag `v0.0.1-phase0`**
+**Deliverable:** Compiling crate with full MI infrastructure, no backends. — **PUSH + tag `v0.0.1-phase0`** ✅ Published to [crates.io](https://crates.io/crates/candle-mi) on 2026-02-23.
 
 ### Phase 1: Generic Transformer
 
