@@ -68,7 +68,36 @@ pub mod util;
 
 // --- Public re-exports ---------------------------------------------------
 
+// Backend
 pub use backend::{GenerationResult, MIBackend, MIModel};
+
+// Cache
 pub use cache::{ActivationCache, FullActivationCache, KVCache};
+
+// Error
 pub use error::{MIError, Result};
+
+// Hooks
 pub use hooks::{HookCache, HookPoint, HookSpec, Intervention};
+
+// Interpretability — intervention specs and results
+pub use interp::intervention::{
+    AblationResult, AttentionEdge, HeadSpec, InterventionType, KnockoutSpec, LayerSpec,
+    StateAblationResult, StateKnockoutSpec, StateSteeringResult, StateSteeringSpec, SteeringResult,
+    SteeringSpec,
+};
+
+// Interpretability — logit lens
+pub use interp::logit_lens::{LogitLensAnalysis, LogitLensResult, TokenPrediction};
+
+// Interpretability — steering calibration
+pub use interp::steering::{DoseResponseCurve, DoseResponsePoint, SteeringCalibration};
+
+// Utility — masks
+pub use util::masks::{create_causal_mask, create_generation_mask};
+
+// Utility — positioning
+pub use util::positioning::{EncodingWithOffsets, PositionConversion, TokenWithOffset};
+
+// Tokenizer
+pub use tokenizer::MITokenizer;
