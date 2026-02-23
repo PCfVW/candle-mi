@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Build + Clippy + Fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Build (no default features — CPU only on CI)
+        run: cargo build --no-default-features --features transformer
+
+      - name: Clippy (pedantic)
+        run: cargo clippy --no-default-features --features transformer -- -W clippy::pedantic
+
+      - name: Tests
+        run: cargo test --no-default-features --features transformer
