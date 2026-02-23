@@ -41,3 +41,12 @@ jobs:
 
       - name: Tests
         run: cargo test --no-default-features --features transformer
+
+      # Check 5 (Rule 15): Bare no-default-features build
+      - name: Build (no default features)
+        run: cargo build --no-default-features
+
+      # Check 6 (Rule 15): All software features build
+      # Note: cuda/metal features require hardware; test all software features instead
+      - name: Build (all software features)
+        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,clt,sae,probing"

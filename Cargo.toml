@@ -56,6 +56,51 @@ clt = []
 sae = []
 probing = ["linfa", "linfa-logistic", "ndarray"]
 
+[lints.rust]
+unsafe_code               = "forbid"   # Rule 5
+elided_lifetimes_in_paths = "deny"     # Rule 1
+missing_docs              = "warn"     # Rule 12 prerequisite
+
+[lints.clippy]
+# Rule 3: No panics or indexing in library code
+unwrap_used               = "deny"
+expect_used               = "deny"
+panic                     = "deny"
+indexing_slicing           = "deny"
+
+# Rule 7: Exhaustive matching
+wildcard_enum_match_arm             = "deny"
+match_wildcard_for_single_variants  = "deny"
+
+# Rule 11: #[non_exhaustive] policy (forces a decision on every public enum)
+exhaustive_enums          = "warn"
+
+# Rule 2: Explicit conversions (warn only — numeric casts need annotation, not prohibition)
+as_conversions            = "warn"
+cast_possible_truncation  = "warn"
+cast_precision_loss       = "warn"
+cast_sign_loss            = "warn"
+
+# Rule 9: Prefer iterators (warn only — recurrent algorithms need explicit exemption)
+explicit_iter_loop        = "warn"
+manual_filter_map         = "warn"
+manual_find_map           = "warn"
+needless_range_loop       = "warn"
+
+# Documentation
+missing_docs_in_private_items = "warn"
+missing_errors_doc        = "warn"
+missing_panics_doc        = "warn"
+
+# General pedantic + nursery quality baseline
+pedantic  = { level = "warn", priority = -1 }
+nursery   = { level = "warn", priority = -1 }
+
+# Suppressed lints that are too noisy for this domain
+module_name_repetitions   = "allow"
+too_many_lines            = "allow"
+must_use_candidate        = "allow"
+
 [profile.release]
 lto = true
 codegen-units = 1

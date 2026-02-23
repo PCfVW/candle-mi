@@ -3,6 +3,10 @@
 //! Error types for candle-mi.
 
 /// Errors that can occur during MI operations.
+///
+/// This enum is `#[non_exhaustive]`: new variants will be added in future
+/// releases as new backends and capabilities are added.
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum MIError {
     /// Model loading or forward pass error (wraps candle).

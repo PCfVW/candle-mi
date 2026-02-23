@@ -40,6 +40,7 @@ use crate::error::{MIError, Result};
 ///
 /// Unknown strings parse as [`HookPoint::Custom`], providing an escape
 /// hatch for backend-specific hook points.
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum HookPoint {
     // -- Embedding --
@@ -175,6 +176,7 @@ fn parse_hook_string(s: &str) -> HookPoint {
 /// Interventions modify activations in-place as they flow through the model.
 /// They are specified as part of a [`HookSpec`] and applied by the backend
 /// at the corresponding [`HookPoint`].
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum Intervention {
     /// Replace the tensor entirely with a provided value.
@@ -216,7 +218,9 @@ pub enum Intervention {
 /// ```
 #[derive(Debug, Clone, Default)]
 pub struct HookSpec {
+    /// Hook points to capture during the forward pass.
     captures: HashSet<HookPoint>,
+    /// Interventions to apply, stored as (`hook_point`, intervention) pairs.
     interventions: Vec<(HookPoint, Intervention)>,
 }
 
@@ -318,7 +322,7 @@ impl HookCache {
 
     /// The output tensor from the forward pass.
     #[must_use]
-    pub fn output(&self) -> &Tensor {
+    pub const fn output(&self) -> &Tensor {
         &self.output
     }
 
@@ -362,6 +366,7 @@ impl HookCache {
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
 

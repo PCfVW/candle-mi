@@ -103,7 +103,10 @@ pub trait MIBackend: Send + Sync {
 /// methods.  Full model loading (`from_pretrained`) will be available
 /// once concrete backends are implemented (Phase 1+).
 pub struct MIModel {
+    /// The underlying model backend.
+    // TRAIT_OBJECT: heterogeneous model backends require dynamic dispatch
     backend: Box<dyn MIBackend>,
+    /// The device this model lives on.
     device: Device,
 }
 
@@ -116,7 +119,7 @@ impl MIModel {
 
     /// The device this model lives on.
     #[must_use]
-    pub fn device(&self) -> &Device {
+    pub const fn device(&self) -> &Device {
         &self.device
     }
 
@@ -163,6 +166,7 @@ impl MIModel {
     }
 
     /// Access the underlying backend (e.g., for backend-specific methods).
+    // TRAIT_OBJECT: caller needs dynamic dispatch for backend-specific methods
     #[must_use]
     pub fn backend(&self) -> &dyn MIBackend {
         &*self.backend
@@ -200,7 +204,7 @@ fn argmax(logits: &Tensor) -> Result<u32> {
         .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
         .ok_or_else(|| MIError::Model(candle_core::Error::Msg("empty logits".into())))?;
 
-    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
     Ok(max_idx as u32)
 }
 
@@ -227,13 +231,13 @@ fn sample_with_temperature(logits: &Tensor, temperature: f32) -> Result<u32> {
     for (idx, &p) in probs.iter().enumerate() {
         cumsum += p;
         if r < cumsum {
-            #[allow(clippy::cast_possible_truncation)]
+            #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
             return Ok(idx as u32);
         }
     }
 
     // Fallback to last token (floating-point rounding edge case).
-    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
     Ok((probs.len() - 1) as u32)
 }
 
