@@ -17,6 +17,32 @@
 //!   `transformer`).
 //! - **Generic RWKV** — covers RWKV-6 and RWKV-7 linear RNN models
 //!   (feature: `rwkv`).
+//!
+//! ## Quick start
+//!
+//! ```ignore
+//! use candle_mi::{HookPoint, HookSpec, MIModel};
+//!
+//! // Load a model (requires a concrete backend — Phase 1+).
+//! let model = MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
+//!
+//! // Capture attention patterns at layer 5.
+//! let mut hooks = HookSpec::new();
+//! hooks.capture(HookPoint::AttnPattern(5));
+//!
+//! let result = model.forward(&tokens, &hooks)?;
+//! let attn = result.require(&HookPoint::AttnPattern(5))?;
+//! ```
 
 #![deny(warnings)]
 #![warn(missing_docs)]
+
+pub mod backend;
+pub mod error;
+pub mod hooks;
+
+// --- Public re-exports ---------------------------------------------------
+
+pub use backend::{GenerationResult, MIBackend, MIModel};
+pub use error::{MIError, Result};
+pub use hooks::{HookCache, HookPoint, HookSpec, Intervention};
