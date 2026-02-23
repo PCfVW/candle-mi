@@ -7,7 +7,7 @@ description = "Mechanistic interpretability for language models in Rust, built o
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/PCfVW/candle-mi"
 keywords = ["interpretability", "transformers", "mechanistic", "candle", "rust"]
-categories = ["science", "machine-learning"]
+categories = ["science"]
 rust-version = "1.87"
 
 [dependencies]
