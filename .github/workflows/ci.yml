@@ -11,13 +11,21 @@ env:
 
 jobs:
   check:
-    name: Build + Clippy + Fmt
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: "MSRV (1.85)"
+            toolchain: "1.85"
+          - name: "Stable"
+            toolchain: "stable"
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ matrix.toolchain }}
           components: clippy, rustfmt
 
       - uses: Swatinem/rust-cache@v2

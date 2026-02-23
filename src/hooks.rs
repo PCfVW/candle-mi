@@ -1,0 +1,440 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+//! Hook system for activation capture and intervention.
+//!
+//! Provides [`HookPoint`] (named locations in a forward pass),
+//! [`HookSpec`] (what to capture and where to intervene), and
+//! [`HookCache`] (captured tensors from a forward pass).
+//!
+//! See `design/hook-system.md` for the design rationale.
+
+use std::collections::{HashMap, HashSet};
+use std::fmt;
+use std::str::FromStr;
+
+use candle_core::Tensor;
+
+use crate::error::{MIError, Result};
+
+// ---------------------------------------------------------------------------
+// HookPoint
+// ---------------------------------------------------------------------------
+
+/// Named location in a forward pass where activations can be captured
+/// or interventions applied.
+///
+/// Mirrors the `TransformerLens` hook point naming convention via
+/// [`Display`] and [`FromStr`].
+///
+/// # String conversion
+///
+/// ```
+/// use candle_mi::HookPoint;
+///
+/// let hook = HookPoint::AttnPattern(5);
+/// assert_eq!(hook.to_string(), "blocks.5.attn.hook_pattern");
+///
+/// let parsed: HookPoint = "blocks.5.attn.hook_pattern".parse().unwrap();
+/// assert_eq!(parsed, hook);
+/// ```
+///
+/// Unknown strings parse as [`HookPoint::Custom`], providing an escape
+/// hatch for backend-specific hook points.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum HookPoint {
+    // -- Embedding --
+    /// After token embedding (`hook_embed`).
+    Embed,
+
+    // -- Per-layer: transformer --
+    /// Residual stream before layer `i` (`blocks.{i}.hook_resid_pre`).
+    ResidPre(usize),
+    /// Query vectors in layer `i` (`blocks.{i}.attn.hook_q`).
+    AttnQ(usize),
+    /// Key vectors in layer `i` (`blocks.{i}.attn.hook_k`).
+    AttnK(usize),
+    /// Value vectors in layer `i` (`blocks.{i}.attn.hook_v`).
+    AttnV(usize),
+    /// Pre-softmax attention scores in layer `i` (`blocks.{i}.attn.hook_scores`).
+    AttnScores(usize),
+    /// Post-softmax attention pattern in layer `i` (`blocks.{i}.attn.hook_pattern`).
+    AttnPattern(usize),
+    /// Attention output in layer `i` (`blocks.{i}.hook_attn_out`).
+    AttnOut(usize),
+    /// Residual stream between attention and MLP in layer `i`
+    /// (`blocks.{i}.hook_resid_mid`).
+    ResidMid(usize),
+    /// MLP pre-activation in layer `i` (`blocks.{i}.mlp.hook_pre`).
+    MlpPre(usize),
+    /// MLP post-activation in layer `i` (`blocks.{i}.mlp.hook_post`).
+    MlpPost(usize),
+    /// MLP output in layer `i` (`blocks.{i}.hook_mlp_out`).
+    MlpOut(usize),
+    /// Residual stream after full layer `i` (`blocks.{i}.hook_resid_post`).
+    ResidPost(usize),
+
+    // -- Final --
+    /// After final layer norm (`hook_final_norm`).
+    FinalNorm,
+
+    // -- RWKV-specific --
+    /// RWKV recurrent state at layer `i` (`blocks.{i}.rwkv.hook_state`).
+    RwkvState(usize),
+    /// RWKV decay vector at layer `i` (`blocks.{i}.rwkv.hook_decay`).
+    RwkvDecay(usize),
+
+    // -- Escape hatch --
+    /// Backend-specific hook point not covered by the standard enum.
+    Custom(String),
+}
+
+impl fmt::Display for HookPoint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Embed => write!(f, "hook_embed"),
+            Self::ResidPre(i) => write!(f, "blocks.{i}.hook_resid_pre"),
+            Self::AttnQ(i) => write!(f, "blocks.{i}.attn.hook_q"),
+            Self::AttnK(i) => write!(f, "blocks.{i}.attn.hook_k"),
+            Self::AttnV(i) => write!(f, "blocks.{i}.attn.hook_v"),
+            Self::AttnScores(i) => write!(f, "blocks.{i}.attn.hook_scores"),
+            Self::AttnPattern(i) => write!(f, "blocks.{i}.attn.hook_pattern"),
+            Self::AttnOut(i) => write!(f, "blocks.{i}.hook_attn_out"),
+            Self::ResidMid(i) => write!(f, "blocks.{i}.hook_resid_mid"),
+            Self::MlpPre(i) => write!(f, "blocks.{i}.mlp.hook_pre"),
+            Self::MlpPost(i) => write!(f, "blocks.{i}.mlp.hook_post"),
+            Self::MlpOut(i) => write!(f, "blocks.{i}.hook_mlp_out"),
+            Self::ResidPost(i) => write!(f, "blocks.{i}.hook_resid_post"),
+            Self::FinalNorm => write!(f, "hook_final_norm"),
+            Self::RwkvState(i) => write!(f, "blocks.{i}.rwkv.hook_state"),
+            Self::RwkvDecay(i) => write!(f, "blocks.{i}.rwkv.hook_decay"),
+            Self::Custom(s) => write!(f, "{s}"),
+        }
+    }
+}
+
+/// Parse a `TransformerLens`-style string into a [`HookPoint`].
+///
+/// Unknown strings produce [`HookPoint::Custom`] rather than an error.
+impl FromStr for HookPoint {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(parse_hook_string(s))
+    }
+}
+
+/// Allow `hooks.capture("blocks.5.attn.hook_pattern")` via `Into<HookPoint>`.
+impl From<&str> for HookPoint {
+    fn from(s: &str) -> Self {
+        parse_hook_string(s)
+    }
+}
+
+/// Parse a hook string, falling back to [`HookPoint::Custom`] for unknown patterns.
+fn parse_hook_string(s: &str) -> HookPoint {
+    match s {
+        "hook_embed" => return HookPoint::Embed,
+        "hook_final_norm" => return HookPoint::FinalNorm,
+        _ => {}
+    }
+
+    // Try "blocks.{layer}.{suffix}" pattern.
+    if let Some(rest) = s.strip_prefix("blocks.") {
+        if let Some((layer_str, suffix)) = rest.split_once('.') {
+            if let Ok(layer) = layer_str.parse::<usize>() {
+                return match suffix {
+                    "hook_resid_pre" => HookPoint::ResidPre(layer),
+                    "attn.hook_q" => HookPoint::AttnQ(layer),
+                    "attn.hook_k" => HookPoint::AttnK(layer),
+                    "attn.hook_v" => HookPoint::AttnV(layer),
+                    "attn.hook_scores" => HookPoint::AttnScores(layer),
+                    "attn.hook_pattern" => HookPoint::AttnPattern(layer),
+                    "hook_attn_out" => HookPoint::AttnOut(layer),
+                    "hook_resid_mid" => HookPoint::ResidMid(layer),
+                    "mlp.hook_pre" => HookPoint::MlpPre(layer),
+                    "mlp.hook_post" => HookPoint::MlpPost(layer),
+                    "hook_mlp_out" => HookPoint::MlpOut(layer),
+                    "hook_resid_post" => HookPoint::ResidPost(layer),
+                    "rwkv.hook_state" => HookPoint::RwkvState(layer),
+                    "rwkv.hook_decay" => HookPoint::RwkvDecay(layer),
+                    _ => HookPoint::Custom(s.to_string()),
+                };
+            }
+        }
+    }
+
+    HookPoint::Custom(s.to_string())
+}
+
+// ---------------------------------------------------------------------------
+// Intervention
+// ---------------------------------------------------------------------------
+
+/// An intervention to apply at a hook point during the forward pass.
+///
+/// Interventions modify activations in-place as they flow through the model.
+/// They are specified as part of a [`HookSpec`] and applied by the backend
+/// at the corresponding [`HookPoint`].
+#[derive(Debug, Clone)]
+pub enum Intervention {
+    /// Replace the tensor entirely with a provided value.
+    Replace(Tensor),
+
+    /// Add a vector to the activation (e.g., residual stream steering).
+    Add(Tensor),
+
+    /// Apply a pre-softmax knockout mask.
+    ///
+    /// The mask tensor contains `0.0` for positions to keep and
+    /// `-inf` for positions to knock out. Added to attention scores.
+    Knockout(Tensor),
+
+    /// Scale attention weights by a constant factor.
+    Scale(f64),
+
+    /// Zero the tensor at this hook point.
+    Zero,
+}
+
+// ---------------------------------------------------------------------------
+// HookSpec
+// ---------------------------------------------------------------------------
+
+/// Declares which activations to capture and which interventions to apply.
+///
+/// Passed to [`MIBackend::forward`](crate::MIBackend::forward). When empty,
+/// the forward pass has zero overhead (no clones, no extra allocations).
+///
+/// # Example
+///
+/// ```
+/// use candle_mi::{HookPoint, HookSpec};
+///
+/// let mut hooks = HookSpec::new();
+/// hooks.capture(HookPoint::AttnPattern(5))
+///      .capture("blocks.5.hook_resid_post");
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct HookSpec {
+    captures: HashSet<HookPoint>,
+    interventions: Vec<(HookPoint, Intervention)>,
+}
+
+impl HookSpec {
+    /// Create an empty hook specification (no captures, no interventions).
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Request capture of the activation at the given hook point.
+    pub fn capture<H: Into<HookPoint>>(&mut self, hook: H) -> &mut Self {
+        self.captures.insert(hook.into());
+        self
+    }
+
+    /// Register an intervention at the given hook point.
+    pub fn intervene<H: Into<HookPoint>>(
+        &mut self,
+        hook: H,
+        intervention: Intervention,
+    ) -> &mut Self {
+        self.interventions.push((hook.into(), intervention));
+        self
+    }
+
+    /// Check whether a specific hook point should be captured.
+    #[must_use]
+    pub fn is_captured(&self, hook: &HookPoint) -> bool {
+        self.captures.contains(hook)
+    }
+
+    /// Check whether this spec has no captures and no interventions.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.captures.is_empty() && self.interventions.is_empty()
+    }
+
+    /// Number of requested captures.
+    #[must_use]
+    pub fn num_captures(&self) -> usize {
+        self.captures.len()
+    }
+
+    /// Number of registered interventions.
+    #[must_use]
+    pub fn num_interventions(&self) -> usize {
+        self.interventions.len()
+    }
+
+    /// Iterate over interventions registered at a specific hook point.
+    pub fn interventions_at(&self, hook: &HookPoint) -> impl Iterator<Item = &Intervention> {
+        self.interventions
+            .iter()
+            .filter(move |(h, _)| h == hook)
+            .map(|(_, intervention)| intervention)
+    }
+
+    /// Check whether any intervention targets the given hook point.
+    #[must_use]
+    pub fn has_intervention_at(&self, hook: &HookPoint) -> bool {
+        self.interventions.iter().any(|(h, _)| h == hook)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// HookCache
+// ---------------------------------------------------------------------------
+
+/// Tensors captured during a forward pass, plus the output logits.
+///
+/// Returned by [`MIBackend::forward`](crate::MIBackend::forward). Use
+/// [`get`](Self::get) to retrieve activations at specific hook points.
+///
+/// # Example
+///
+/// ```ignore
+/// let result = model.forward(&tokens, &hooks)?;
+/// let logits = result.output();
+/// let attn = result.get(&HookPoint::AttnPattern(5)).unwrap();
+/// ```
+#[derive(Debug)]
+pub struct HookCache {
+    /// Output tensor from the forward pass (typically logits).
+    output: Tensor,
+    /// Captured activations keyed by hook point.
+    captures: HashMap<HookPoint, Tensor>,
+}
+
+impl HookCache {
+    /// Create a new cache with the given output tensor and no captures.
+    #[must_use]
+    pub fn new(output: Tensor) -> Self {
+        Self {
+            output,
+            captures: HashMap::new(),
+        }
+    }
+
+    /// The output tensor from the forward pass.
+    #[must_use]
+    pub fn output(&self) -> &Tensor {
+        &self.output
+    }
+
+    /// Consume the cache and return the output tensor.
+    #[must_use]
+    pub fn into_output(self) -> Tensor {
+        self.output
+    }
+
+    /// Retrieve a captured tensor by hook point.
+    #[must_use]
+    pub fn get(&self, hook: &HookPoint) -> Option<&Tensor> {
+        self.captures.get(hook)
+    }
+
+    /// Retrieve a captured tensor, returning an error if not found.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Hook`] if the hook point was not captured.
+    pub fn require(&self, hook: &HookPoint) -> Result<&Tensor> {
+        self.captures
+            .get(hook)
+            .ok_or_else(|| MIError::Hook(format!("hook point `{hook}` was not captured")))
+    }
+
+    /// Store a captured activation. Called by backend implementations.
+    pub fn store(&mut self, hook: HookPoint, tensor: Tensor) {
+        self.captures.insert(hook, tensor);
+    }
+
+    /// Number of captured tensors (excludes the output).
+    #[must_use]
+    pub fn num_captures(&self) -> usize {
+        self.captures.len()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hook_point_display_roundtrip() {
+        let cases: Vec<(HookPoint, &str)> = vec![
+            (HookPoint::Embed, "hook_embed"),
+            (HookPoint::FinalNorm, "hook_final_norm"),
+            (HookPoint::ResidPre(0), "blocks.0.hook_resid_pre"),
+            (HookPoint::AttnQ(3), "blocks.3.attn.hook_q"),
+            (HookPoint::AttnK(3), "blocks.3.attn.hook_k"),
+            (HookPoint::AttnV(3), "blocks.3.attn.hook_v"),
+            (HookPoint::AttnScores(7), "blocks.7.attn.hook_scores"),
+            (HookPoint::AttnPattern(5), "blocks.5.attn.hook_pattern"),
+            (HookPoint::AttnOut(2), "blocks.2.hook_attn_out"),
+            (HookPoint::ResidMid(11), "blocks.11.hook_resid_mid"),
+            (HookPoint::MlpPre(1), "blocks.1.mlp.hook_pre"),
+            (HookPoint::MlpPost(1), "blocks.1.mlp.hook_post"),
+            (HookPoint::MlpOut(4), "blocks.4.hook_mlp_out"),
+            (HookPoint::ResidPost(9), "blocks.9.hook_resid_post"),
+            (HookPoint::RwkvState(6), "blocks.6.rwkv.hook_state"),
+            (HookPoint::RwkvDecay(6), "blocks.6.rwkv.hook_decay"),
+        ];
+
+        for (hook, expected_str) in cases {
+            // Display
+            assert_eq!(
+                hook.to_string(),
+                expected_str,
+                "Display failed for {hook:?}"
+            );
+            // FromStr roundtrip
+            let parsed: HookPoint = expected_str.parse().unwrap();
+            assert_eq!(parsed, hook, "FromStr failed for {expected_str:?}");
+            // From<&str>
+            let from_str: HookPoint = HookPoint::from(expected_str);
+            assert_eq!(from_str, hook, "From<&str> failed for {expected_str:?}");
+        }
+    }
+
+    #[test]
+    fn unknown_string_becomes_custom() {
+        let hook: HookPoint = "some.unknown.hook".parse().unwrap();
+        assert_eq!(hook, HookPoint::Custom("some.unknown.hook".to_string()));
+    }
+
+    #[test]
+    fn hook_spec_capture_and_query() {
+        let mut spec = HookSpec::new();
+        assert!(spec.is_empty());
+
+        spec.capture(HookPoint::AttnPattern(5));
+        spec.capture("blocks.3.hook_resid_post");
+
+        assert!(!spec.is_empty());
+        assert_eq!(spec.num_captures(), 2);
+        assert!(spec.is_captured(&HookPoint::AttnPattern(5)));
+        assert!(spec.is_captured(&HookPoint::ResidPost(3)));
+        assert!(!spec.is_captured(&HookPoint::Embed));
+    }
+
+    #[test]
+    fn hook_spec_intervention_query() {
+        let mut spec = HookSpec::new();
+        spec.intervene(HookPoint::AttnScores(5), Intervention::Zero);
+        spec.intervene(HookPoint::AttnScores(5), Intervention::Scale(2.0));
+        spec.intervene(HookPoint::ResidPost(10), Intervention::Zero);
+
+        assert_eq!(spec.num_interventions(), 3);
+        assert!(spec.has_intervention_at(&HookPoint::AttnScores(5)));
+        assert!(!spec.has_intervention_at(&HookPoint::Embed));
+
+        let at_5: Vec<_> = spec.interventions_at(&HookPoint::AttnScores(5)).collect();
+        assert_eq!(at_5.len(), 2);
+    }
+}
