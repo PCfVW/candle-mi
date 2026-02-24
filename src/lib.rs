@@ -72,7 +72,7 @@ pub mod util;
 pub use backend::{GenerationResult, MIBackend, MIModel};
 
 // Cache
-pub use cache::{ActivationCache, FullActivationCache, KVCache};
+pub use cache::{ActivationCache, AttentionCache, FullActivationCache, KVCache};
 
 // Error
 pub use error::{MIError, Result};

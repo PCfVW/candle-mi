@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `AttentionCache` for storing and querying per-layer post-softmax attention
+  patterns (`attention_from_position`, `attention_to_position`,
+  `top_attended_positions`), completing the Phase 0 cache module trio
+
 ## [0.0.1] - 2026-02-23
 
 ### Added
