@@ -18,7 +18,7 @@ use crate::hooks::{HookCache, HookSpec};
 ///
 /// Implementing this trait is the only requirement for adding a new model
 /// to candle-mi.  The single [`forward`](Self::forward) method replaces
-/// plip-rs's proliferation of `forward_with_*` variants: the caller
+/// plip-rs's (frozen predecessor project, v1.4.0) proliferation of `forward_with_*` variants: the caller
 /// specifies captures and interventions via [`HookSpec`], and the backend
 /// returns a [`HookCache`] containing the output plus any requested
 /// activations.

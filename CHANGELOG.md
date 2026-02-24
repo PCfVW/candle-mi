@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   patterns (`attention_from_position`, `attention_to_position`,
   `top_attended_positions`), completing the Phase 0 cache module trio
 
+### Changed
+
+- Clarified that plip-rs is a frozen predecessor project (v1.4.0) in
+  `MIBackend` trait documentation
+
 ## [0.0.1] - 2026-02-23
 
 ### Added
