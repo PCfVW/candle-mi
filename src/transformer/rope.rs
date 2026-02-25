@@ -4,6 +4,9 @@
 //!
 //! Pre-computes `cos` and `sin` tensors at model load time and applies
 //! them to query and key tensors during the forward pass.
+//!
+//! Uses `candle_nn::rotary_emb::rope()` for the actual rotation, matching
+//! the reference implementation in plip-rs.
 
 use candle_core::{DType, Device, Tensor};
 
@@ -52,28 +55,26 @@ impl RopeCache {
             })
             .collect();
 
-        let inv_freq_tensor = Tensor::from_vec(inv_freq, (1, half_dim), device)?;
+        let inv_freq_tensor =
+            Tensor::from_vec(inv_freq, (1, half_dim), device)?.to_dtype(dtype)?;
 
         // Position indices: [0, 1, 2, ..., max_position - 1]
-        let positions: Vec<f32> = (0..max_position)
-            .map(|p| {
-                #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
-                let pf = p as f32;
-                pf
-            })
-            .collect();
-        let pos_tensor = Tensor::from_vec(positions, (max_position, 1), device)?;
+        let pos_tensor = Tensor::arange(0u32, max_position as u32, device)?
+            .to_dtype(dtype)?
+            .reshape((max_position, 1))?;
 
         // Outer product: [max_position, half_dim]
         let freqs = pos_tensor.matmul(&inv_freq_tensor)?;
 
-        let cos = freqs.cos()?.to_dtype(dtype)?;
-        let sin = freqs.sin()?.to_dtype(dtype)?;
+        let cos = freqs.cos()?;
+        let sin = freqs.sin()?;
 
         Ok(Self { cos, sin })
     }
 
     /// Apply rotary embeddings to a query or key tensor.
+    ///
+    /// Uses `candle_nn::rotary_emb::rope()` for the rotation.
     ///
     /// # Shapes
     /// - `x`: `[batch, n_heads, seq_len, head_dim]`
@@ -87,28 +88,13 @@ impl RopeCache {
     ///
     /// Returns [`MIError::Model`] on tensor operation or shape errors.
     pub fn apply(&self, x: &Tensor, start_pos: usize) -> Result<Tensor> {
-        let (_, _, seq_len, head_dim) = x.dims4()?;
-        let half_dim = head_dim / 2;
+        let (_, _, seq_len, _) = x.dims4()?;
 
-        // Slice cos/sin for the relevant positions
+        // Slice cos/sin for the relevant positions: [seq_len, half_dim]
         let cos = self.cos.narrow(0, start_pos, seq_len)?;
         let sin = self.sin.narrow(0, start_pos, seq_len)?;
 
-        // Reshape for broadcasting: [1, 1, seq_len, half_dim]
-        let cos = cos.unsqueeze(0)?.unsqueeze(0)?;
-        let sin = sin.unsqueeze(0)?.unsqueeze(0)?;
-
-        // Split x into first half and second half along head_dim
-        let x1 = x.narrow(candle_core::D::Minus1, 0, half_dim)?;
-        let x2 = x.narrow(candle_core::D::Minus1, half_dim, half_dim)?;
-
-        // RoPE rotation: [x1*cos - x2*sin, x1*sin + x2*cos]
-        let rotated_x1 = (x1.broadcast_mul(&cos)? - x2.broadcast_mul(&sin)?)?;
-        let rotated_x2 = (x1.broadcast_mul(&sin)? + x2.broadcast_mul(&cos)?)?;
-
-        Ok(Tensor::cat(
-            &[&rotated_x1, &rotated_x2],
-            candle_core::D::Minus1,
-        )?)
+        // candle_nn::rotary_emb::rope() expects contiguous input
+        Ok(candle_nn::rotary_emb::rope(&x.contiguous()?, &cos, &sin)?)
     }
 }
