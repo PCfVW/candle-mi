@@ -169,12 +169,13 @@ impl AttentionEdge {
 ///
 /// # Example
 ///
-/// ```ignore
-/// use candle_mi::interp::intervention::KnockoutSpec;
+/// ```
+/// use candle_mi::KnockoutSpec;
 ///
 /// let spec = KnockoutSpec::new()
 ///     .layer(10)
 ///     .from_to_positions(5, &[0, 1, 2, 3]);
+/// assert_eq!(spec.edges.len(), 4);
 /// ```
 #[derive(Debug, Clone)]
 #[must_use]
@@ -315,12 +316,13 @@ pub enum InterventionType {
 ///
 /// # Example
 ///
-/// ```ignore
-/// use candle_mi::interp::intervention::SteeringSpec;
+/// ```
+/// use candle_mi::SteeringSpec;
 ///
 /// let spec = SteeringSpec::scale(3.0)
 ///     .layer(16)
 ///     .from_to_positions(5, &[0, 1, 2]);
+/// assert_eq!(spec.edges.len(), 3);
 /// ```
 #[derive(Debug, Clone)]
 #[must_use]

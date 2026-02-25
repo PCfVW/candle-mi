@@ -19,12 +19,16 @@ use crate::error::{MIError, Result};
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
+/// use candle_mi::AttentionCache;
+/// use candle_core::{Device, Tensor};
+///
 /// let mut cache = AttentionCache::with_capacity(32);
-/// cache.push(layer_0_attn); // shape [batch, heads, seq, seq]
+/// // shape [batch=1, heads=8, seq=10, seq=10]
+/// cache.push(Tensor::zeros((1, 8, 10, 10), candle_core::DType::F32, &Device::Cpu).unwrap());
 ///
 /// // Query what position 5 attends to in layer 0
-/// let attn_row = cache.attention_from_position(0, 5)?;
+/// let attn_row = cache.attention_from_position(0, 5).unwrap();
 /// ```
 #[derive(Debug)]
 pub struct AttentionCache {

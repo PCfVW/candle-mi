@@ -18,12 +18,16 @@ use crate::error::{MIError, Result};
 ///
 /// # Example
 ///
-/// ```ignore
-/// use candle_mi::tokenizer::MITokenizer;
+/// ```no_run
+/// use candle_mi::MITokenizer;
 ///
+/// # fn main() -> candle_mi::Result<()> {
 /// let tok = MITokenizer::from_hf_path("tokenizer.json")?;
 /// let ids = tok.encode("fn main()")?;
 /// let text = tok.decode(&ids)?;
+/// assert!(!ids.is_empty());
+/// # Ok(())
+/// # }
 /// ```
 #[non_exhaustive]
 pub enum MITokenizer {

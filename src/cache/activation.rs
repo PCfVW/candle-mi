@@ -13,10 +13,13 @@ use crate::error::{MIError, Result};
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
+/// use candle_mi::ActivationCache;
+/// use candle_core::{Device, Tensor};
+///
 /// let mut cache = ActivationCache::with_capacity(32);
-/// cache.push(layer_0_activation);
-/// cache.push(layer_1_activation);
+/// cache.push(Tensor::zeros(128, candle_core::DType::F32, &Device::Cpu).unwrap());
+/// cache.push(Tensor::zeros(128, candle_core::DType::F32, &Device::Cpu).unwrap());
 /// assert_eq!(cache.n_layers(), 2);
 /// ```
 #[derive(Debug)]
@@ -94,12 +97,16 @@ impl ActivationCache {
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
+/// use candle_mi::FullActivationCache;
+/// use candle_core::{Device, Tensor};
+///
 /// let mut cache = FullActivationCache::with_capacity(32);
-/// cache.push(layer_0_all_positions); // shape [seq_len, d_model]
+/// // shape [seq_len=10, d_model=128]
+/// cache.push(Tensor::zeros((10, 128), candle_core::DType::F32, &Device::Cpu).unwrap());
 ///
 /// // Get a single position's activation for CLT encoding
-/// let act = cache.get_position(0, 5)?; // shape [d_model]
+/// let act = cache.get_position(0, 5).unwrap(); // shape [d_model]
 /// ```
 #[derive(Debug)]
 pub struct FullActivationCache {

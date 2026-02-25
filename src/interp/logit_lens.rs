@@ -32,12 +32,20 @@ pub struct TokenPrediction {
 ///
 /// # Example
 ///
-/// ```ignore
-/// use candle_mi::interp::logit_lens::LogitLensAnalysis;
+/// ```
+/// use candle_mi::{LogitLensAnalysis, LogitLensResult, TokenPrediction};
 ///
-/// let mut analysis = LogitLensAnalysis::new("fn main()".into(), 32);
-/// // ... push layer results ...
+/// let mut analysis = LogitLensAnalysis::new("fn main()".into(), 2);
+/// analysis.push(LogitLensResult {
+///     layer: 0,
+///     predictions: vec![TokenPrediction { token_id: 42, token: "main".into(), probability: 0.8 }],
+/// });
+/// analysis.push(LogitLensResult {
+///     layer: 1,
+///     predictions: vec![TokenPrediction { token_id: 42, token: "main".into(), probability: 0.95 }],
+/// });
 /// let tops = analysis.top_predictions();
+/// assert_eq!(tops.len(), 2);
 /// ```
 #[derive(Debug)]
 pub struct LogitLensAnalysis {
@@ -136,10 +144,14 @@ impl LogitLensAnalysis {
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
+/// use candle_mi::interp::logit_lens::decode_predictions_with;
+///
 /// let preds = decode_predictions_with(&[(42, 0.7), (99, 0.2)], |id| {
-///     tokenizer.decode(&[id], false).unwrap_or_else(|_| format!("<{id}>"))
+///     format!("token_{id}")
 /// });
+/// assert_eq!(preds.len(), 2);
+/// assert_eq!(preds[0].token, "token_42");
 /// ```
 pub fn decode_predictions_with(
     predictions: &[(u32, f32)],
