@@ -1,5 +1,8 @@
 # candle-mi Coding Conventions (Grit + Grit-MI Extensions)
 
+This document describes the [Amphigraphic coding](https://github.com/PCfVW/Amphigraphic-Strict) conventions used in candle-mi. It is a superset of
+the [Grit — Strict Rust for AI-Assisted Development](https://github.com/PCfVW/Amphigraphic-Strict/tree/master/Grit).
+
 ## Annotation Patterns
 
 Every annotation below is mandatory when the corresponding situation applies.
