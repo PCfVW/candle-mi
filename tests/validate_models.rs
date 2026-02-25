@@ -550,3 +550,124 @@ fn phi3_mini_forward_gpu() {
     print_top_k("Phi-3 Mini", "CUDA", prompt, &top5);
     assert_in_top_k(&top5, "Paris", prompt, "Phi-3 Mini CUDA");
 }
+
+// ===========================================================================
+// Mistral 7B v0.1
+// ===========================================================================
+
+/// Helper: ensure Mistral 7B v0.1 weights are in the local HF cache.
+///
+/// Uses the `hf-hub` Rust crate to download if necessary (fast, parallel).
+/// Returns the snapshot path, or None if download fails.
+fn ensure_mistral_7b_cached() -> Option<std::path::PathBuf> {
+    if let Some(snap) = find_snapshot("mistralai/Mistral-7B-v0.1") {
+        // Check if weight files actually exist (not just metadata)
+        let has_weights = snap.join("model.safetensors").exists()
+            || snap.join("model.safetensors.index.json").exists()
+                && safetensors_paths(&snap).iter().all(|p| p.exists());
+        if has_weights {
+            return Some(snap);
+        }
+    }
+
+    // Trigger download via hf-hub Rust crate
+    eprintln!("Downloading mistralai/Mistral-7B-v0.1 via hf-hub...");
+    let api = hf_hub::api::sync::Api::new().ok()?;
+    let repo = api.model("mistralai/Mistral-7B-v0.1".to_string());
+
+    // Download index first
+    let index_path = repo.get("model.safetensors.index.json").ok()?;
+    let index_str = std::fs::read_to_string(&index_path).ok()?;
+    let index: serde_json::Value = serde_json::from_str(&index_str).ok()?;
+    let weight_map = index["weight_map"].as_object()?;
+
+    let mut shard_names: Vec<String> = weight_map
+        .values()
+        .map(|v| v.as_str().unwrap().to_string())
+        .collect();
+    shard_names.sort();
+    shard_names.dedup();
+
+    for name in &shard_names {
+        eprintln!("  Downloading {name}...");
+        if repo.get(name).is_err() {
+            eprintln!("  FAILED to download {name}");
+            return None;
+        }
+    }
+
+    // Also ensure tokenizer
+    let _ = repo.get("tokenizer.json");
+    let _ = repo.get("config.json");
+
+    find_snapshot("mistralai/Mistral-7B-v0.1")
+}
+
+#[test]
+fn mistral_7b_config_parse() {
+    let snapshot = match find_snapshot("mistralai/Mistral-7B-v0.1") {
+        Some(s) => s,
+        None => {
+            eprintln!("SKIP: mistralai/Mistral-7B-v0.1 not in cache");
+            return;
+        }
+    };
+
+    let config_str = std::fs::read_to_string(snapshot.join("config.json")).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&config_str).unwrap();
+    let config = TransformerConfig::from_hf_config(&json).unwrap();
+
+    assert_eq!(config.hidden_size, 4096);
+    assert_eq!(config.num_layers, 32);
+    assert_eq!(config.num_attention_heads, 32);
+    assert_eq!(config.num_kv_heads, 8);
+    assert_eq!(config.head_dim, 128);
+    assert_eq!(config.intermediate_size, 14336);
+    assert_eq!(config.vocab_size, 32000);
+    assert!(!config.tie_word_embeddings);
+    assert_eq!(config.sliding_window, Some(4096));
+    assert!(!config.alternating_sliding_window); // All layers, not alternating
+}
+
+#[test]
+fn mistral_7b_forward_cpu() {
+    if ensure_mistral_7b_cached().is_none() {
+        eprintln!("SKIP: mistralai/Mistral-7B-v0.1 not available");
+        return;
+    }
+
+    let device = Device::Cpu;
+    let (model, tokenizer, _config) = load_model_on("mistralai/Mistral-7B-v0.1", &device);
+
+    assert_eq!(model.num_layers(), 32);
+    assert_eq!(model.hidden_size(), 4096);
+    assert_eq!(model.vocab_size(), 32000);
+    assert_eq!(model.num_heads(), 32);
+
+    let prompt = "The capital of France is";
+    let top5 = top_k_last_token(&model, &tokenizer, &device, prompt, 5);
+    print_top_k("Mistral 7B", "CPU", prompt, &top5);
+    assert_in_top_k(&top5, "Paris", prompt, "Mistral 7B CPU");
+}
+
+#[test]
+fn mistral_7b_forward_gpu() {
+    let device = match cuda_device() {
+        Some(d) => d,
+        None => {
+            eprintln!("SKIP: no CUDA device available");
+            return;
+        }
+    };
+    if ensure_mistral_7b_cached().is_none() {
+        eprintln!("SKIP: mistralai/Mistral-7B-v0.1 not available");
+        return;
+    }
+
+    let (model, tokenizer, _config) = load_model_on("mistralai/Mistral-7B-v0.1", &device);
+
+    let prompt = "The capital of France is";
+    let top5 = top_k_last_token(&model, &tokenizer, &device, prompt, 5);
+    print_top_k("Mistral 7B", "CUDA", prompt, &top5);
+    assert_in_top_k(&top5, "Paris", prompt, "Mistral 7B CUDA");
+}
