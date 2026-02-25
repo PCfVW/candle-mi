@@ -18,6 +18,8 @@ use crate::error::Result;
 // ---------------------------------------------------------------------------
 
 /// A normalization layer, selected at load time by [`NormType`].
+// EXHAUSTIVE: internal dispatch enum; crate owns all three norm variants and matches exhaustively
+#[allow(clippy::exhaustive_enums)]
 pub enum Norm {
     /// Standard RMS normalization.
     Rms(candle_nn::RmsNorm),

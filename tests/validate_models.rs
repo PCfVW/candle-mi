@@ -61,9 +61,7 @@ fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
 
 /// Get a CUDA device if available, or None.
 fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0)
-        .ok()
-        .filter(|d| d.is_cuda())
+    Device::cuda_if_available(0).ok().filter(|d| d.is_cuda())
 }
 
 /// Collect safetensors paths for a model snapshot (single or sharded).
@@ -75,21 +73,23 @@ fn safetensors_paths(snapshot: &std::path::Path) -> Vec<std::path::PathBuf> {
 
     // Sharded: parse model.safetensors.index.json
     let index_path = snapshot.join("model.safetensors.index.json");
-    let index_str = std::fs::read_to_string(&index_path)
-        .unwrap_or_else(|_| panic!("no model.safetensors or index.json in {}", snapshot.display()));
+    let index_str = std::fs::read_to_string(&index_path).unwrap_or_else(|_| {
+        panic!(
+            "no model.safetensors or index.json in {}",
+            snapshot.display()
+        )
+    });
     let index: serde_json::Value = serde_json::from_str(&index_str).unwrap();
     let weight_map = index["weight_map"].as_object().unwrap();
 
-    let mut shard_names: Vec<String> = weight_map.values()
+    let mut shard_names: Vec<String> = weight_map
+        .values()
         .map(|v| v.as_str().unwrap().to_string())
         .collect();
     shard_names.sort();
     shard_names.dedup();
 
-    shard_names
-        .iter()
-        .map(|name| snapshot.join(name))
-        .collect()
+    shard_names.iter().map(|name| snapshot.join(name)).collect()
 }
 
 /// Load a model from the local HF cache on the specified device.
@@ -119,9 +119,8 @@ fn load_model_on(
 
     // Load weights — use mmap (handles both single and multi-file)
     // SAFETY: safetensors files are not modified during test execution.
-    let vb = unsafe {
-        candle_nn::VarBuilder::from_mmaped_safetensors(&paths, dtype, device).unwrap()
-    };
+    let vb =
+        unsafe { candle_nn::VarBuilder::from_mmaped_safetensors(&paths, dtype, device).unwrap() };
 
     // Build model
     let model = GenericTransformer::load(config.clone(), device, dtype, vb).unwrap();
@@ -456,8 +455,7 @@ fn qwen2_5_coder_3b_forward_cpu() {
     }
 
     let device = Device::Cpu;
-    let (model, tokenizer, _config) =
-        load_model_on("Qwen/Qwen2.5-Coder-3B-Instruct", &device);
+    let (model, tokenizer, _config) = load_model_on("Qwen/Qwen2.5-Coder-3B-Instruct", &device);
 
     let prompt = "The capital of France is";
     let top5 = top_k_last_token(&model, &tokenizer, &device, prompt, 5);
@@ -479,8 +477,7 @@ fn qwen2_5_coder_3b_forward_gpu() {
         return;
     }
 
-    let (model, tokenizer, _config) =
-        load_model_on("Qwen/Qwen2.5-Coder-3B-Instruct", &device);
+    let (model, tokenizer, _config) = load_model_on("Qwen/Qwen2.5-Coder-3B-Instruct", &device);
 
     let prompt = "The capital of France is";
     let top5 = top_k_last_token(&model, &tokenizer, &device, prompt, 5);
@@ -519,8 +516,7 @@ fn phi3_mini_forward_cpu() {
     }
 
     let device = Device::Cpu;
-    let (model, tokenizer, _config) =
-        load_model_on("microsoft/Phi-3-mini-4k-instruct", &device);
+    let (model, tokenizer, _config) = load_model_on("microsoft/Phi-3-mini-4k-instruct", &device);
 
     let prompt = "The capital of France is";
     let top5 = top_k_last_token(&model, &tokenizer, &device, prompt, 5);
@@ -542,8 +538,7 @@ fn phi3_mini_forward_gpu() {
         return;
     }
 
-    let (model, tokenizer, _config) =
-        load_model_on("microsoft/Phi-3-mini-4k-instruct", &device);
+    let (model, tokenizer, _config) = load_model_on("microsoft/Phi-3-mini-4k-instruct", &device);
 
     let prompt = "The capital of France is";
     let top5 = top_k_last_token(&model, &tokenizer, &device, prompt, 5);

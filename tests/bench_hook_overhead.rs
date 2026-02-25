@@ -90,9 +90,8 @@ fn load_model_on(
         shard_names.iter().map(|name| snapshot.join(name)).collect()
     };
 
-    let vb = unsafe {
-        candle_nn::VarBuilder::from_mmaped_safetensors(&paths, dtype, device).unwrap()
-    };
+    let vb =
+        unsafe { candle_nn::VarBuilder::from_mmaped_safetensors(&paths, dtype, device).unwrap() };
 
     let model = GenericTransformer::load(config.clone(), device, dtype, vb).unwrap();
     let tokenizer = MITokenizer::from_hf_path(snapshot.join("tokenizer.json")).unwrap();
@@ -157,11 +156,7 @@ fn bench_hook_overhead_cpu() {
         num_layers,
         full_hooks.num_captures()
     );
-    println!(
-        "  Prompt: \"{}\" ({} tokens)",
-        PROMPT,
-        token_ids.len()
-    );
+    println!("  Prompt: \"{}\" ({} tokens)", PROMPT, token_ids.len());
     println!("  Warmup: {WARMUP_RUNS} runs, Bench: {BENCH_RUNS} runs\n");
 
     // --- Warmup ---
@@ -195,7 +190,10 @@ fn bench_hook_overhead_cpu() {
         0.0
     };
 
-    println!("  No hooks:     {:>8.2?} avg ({BENCH_RUNS} runs)", no_hooks_avg);
+    println!(
+        "  No hooks:     {:>8.2?} avg ({BENCH_RUNS} runs)",
+        no_hooks_avg
+    );
     println!(
         "  Full capture: {:>8.2?} avg ({BENCH_RUNS} runs, {} captures)",
         full_capture_avg,
@@ -206,10 +204,7 @@ fn bench_hook_overhead_cpu() {
 
 #[test]
 fn bench_hook_overhead_gpu() {
-    let device = match Device::cuda_if_available(0)
-        .ok()
-        .filter(|d| d.is_cuda())
-    {
+    let device = match Device::cuda_if_available(0).ok().filter(|d| d.is_cuda()) {
         Some(d) => d,
         None => {
             eprintln!("SKIP: no CUDA device available");
@@ -239,11 +234,7 @@ fn bench_hook_overhead_gpu() {
         num_layers,
         full_hooks.num_captures()
     );
-    println!(
-        "  Prompt: \"{}\" ({} tokens)",
-        PROMPT,
-        token_ids.len()
-    );
+    println!("  Prompt: \"{}\" ({} tokens)", PROMPT, token_ids.len());
     println!("  Warmup: {WARMUP_RUNS} runs, Bench: {BENCH_RUNS} runs\n");
 
     // --- Warmup ---
@@ -276,7 +267,10 @@ fn bench_hook_overhead_gpu() {
         0.0
     };
 
-    println!("  No hooks:     {:>8.2?} avg ({BENCH_RUNS} runs)", no_hooks_avg);
+    println!(
+        "  No hooks:     {:>8.2?} avg ({BENCH_RUNS} runs)",
+        no_hooks_avg
+    );
     println!(
         "  Full capture: {:>8.2?} avg ({BENCH_RUNS} runs, {} captures)",
         full_capture_avg,

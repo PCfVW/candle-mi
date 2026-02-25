@@ -64,7 +64,7 @@ pub enum Activation {
     Silu,
     /// Gaussian Error Linear Unit — exact (erf) variant.
     Gelu,
-    /// Gaussian Error Linear Unit — PyTorch tanh approximation.
+    /// Gaussian Error Linear Unit — `PyTorch` tanh approximation.
     ///
     /// Used by Gemma 2, `StarCoder2`, and other models that specify
     /// `hidden_act: "gelu_pytorch_tanh"` in their `HuggingFace` config.

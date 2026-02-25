@@ -51,6 +51,10 @@ pub trait MIBackend: Send + Sync {
     /// (logits or hidden states, depending on the backend) and any
     /// activations requested via [`HookSpec::capture`].
     ///
+    /// # Shapes
+    /// - `input_ids`: `[batch, seq]` -- token IDs
+    /// - returns: [`HookCache`] containing `logits` at `[batch, seq, vocab_size]`
+    ///
     /// # Errors
     ///
     /// Returns [`MIError::Model`] on tensor operation failures and
@@ -62,7 +66,9 @@ pub trait MIBackend: Send + Sync {
 
     /// Project a hidden-state tensor to vocabulary logits.
     ///
-    /// `hidden` has shape `[batch, hidden_size]`; returns `[batch, vocab_size]`.
+    /// # Shapes
+    /// - `hidden`: `[batch, hidden_size]` -- hidden states
+    /// - returns: `[batch, vocab_size]`
     ///
     /// # Errors
     ///
@@ -80,8 +86,10 @@ pub trait MIBackend: Send + Sync {
 
     /// Return the raw embedding vector for a single token.
     ///
-    /// Shape: `[hidden_size]`.  For models with tied embeddings this is
-    /// also the unembedding direction.
+    /// For models with tied embeddings this is also the unembedding direction.
+    ///
+    /// # Shapes
+    /// - returns: `[hidden_size]`
     ///
     /// # Errors
     ///
@@ -179,6 +187,7 @@ impl MIModel {
     }
 
     /// Wrap an existing backend.
+    // TRAIT_OBJECT: heterogeneous model backends require dynamic dispatch
     #[must_use]
     pub fn new(backend: Box<dyn MIBackend>, device: Device) -> Self {
         Self { backend, device }
@@ -216,6 +225,10 @@ impl MIModel {
 
     /// Run a forward pass with the given hook specification.
     ///
+    /// # Shapes
+    /// - `input_ids`: `[batch, seq]` -- token IDs
+    /// - returns: [`HookCache`] containing `logits` at `[batch, seq, vocab_size]`
+    ///
     /// # Errors
     ///
     /// Propagates errors from the underlying backend.
@@ -224,6 +237,10 @@ impl MIModel {
     }
 
     /// Project hidden states to vocabulary logits.
+    ///
+    /// # Shapes
+    /// - `hidden`: `[batch, hidden_size]` -- hidden states
+    /// - returns: `[batch, vocab_size]`
     ///
     /// # Errors
     ///
@@ -247,6 +264,9 @@ impl MIModel {
 /// Sample a token from logits using the given temperature.
 ///
 /// When `temperature <= 0.0`, performs greedy (argmax) decoding.
+///
+/// # Shapes
+/// - `logits`: `[vocab_size]` -- logit scores for each vocabulary token
 ///
 /// # Errors
 ///

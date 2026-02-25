@@ -55,10 +55,10 @@ impl RopeCache {
             })
             .collect();
 
-        let inv_freq_tensor =
-            Tensor::from_vec(inv_freq, (1, half_dim), device)?.to_dtype(dtype)?;
+        let inv_freq_tensor = Tensor::from_vec(inv_freq, (1, half_dim), device)?.to_dtype(dtype)?;
 
         // Position indices: [0, 1, 2, ..., max_position - 1]
+        #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
         let pos_tensor = Tensor::arange(0u32, max_position as u32, device)?
             .to_dtype(dtype)?
             .reshape((max_position, 1))?;
