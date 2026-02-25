@@ -2,7 +2,8 @@
 
 > *MI for the Rust of us*
 
-**Date:** February 19, 2026
+**Date:** February 19, 2026 (last updated: February 25, 2026)
+**Status:** Phase 0 + Phase 1 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.2.
 **Context:** Building on plip-rs experience (7 model backends incl. Gemma 2, attention knockout, state knockout, effective attention, steering, logit lens, CLT encoding/injection). Two successful replications of Anthropic's "Planning in Poems" Figure 13 validate the approach: Gemma 2 2B with 426K CLTs (melometis branch) and Llama 3.2 1B with 524K CLTs (tragos branch). Target: a publishable, generic Rust MI crate endorsed by HuggingFace.
 
 ---
@@ -41,12 +42,12 @@
   - [6.2 Documentation](#62-documentation)
 - [7. Phased Development Plan](#7-phased-development-plan)
   - [7.0 Git Workflow](#70-git-workflow)
-  - [Phase 0: Foundation (Weeks 1-2)](#phase-0-foundation-weeks-1-2)
-  - [Phase 1: Generic Transformer (Weeks 3-5)](#phase-1-generic-transformer-weeks-3-5)
-  - [Phase 2: RWKV-6 + RWKV-7 (Weeks 6-8)](#phase-2-rwkv-6--rwkv-7-weeks-6-8)
-  - [Phase 3: CLT Support (Weeks 9-10)](#phase-3-clt-support-weeks-9-10)
-  - [Phase 3b: SAE Support (Weeks 11-12)](#phase-3b-sae-support-weeks-11-12)
-  - [Phase 4: Polish + Publish (Weeks 13-14)](#phase-4-polish--publish-weeks-13-14)
+  - [Phase 0: Foundation](#phase-0-foundation) ✅
+  - [Phase 1: Generic Transformer](#phase-1-generic-transformer) ✅
+  - [Phase 2: RWKV-6 + RWKV-7](#phase-2-rwkv-6--rwkv-7)
+  - [Phase 3: CLT Support](#phase-3-clt-support)
+  - [Phase 3b: SAE Support](#phase-3b-sae-support)
+  - [Phase 4: Polish + Publish](#phase-4-polish--publish)
   - [Phase 5+: Extensions (Future)](#phase-5-extensions-future)
 - [8. Key Design Decisions](#8-key-design-decisions)
 - [9. Relationship to Existing Projects](#9-relationship-to-existing-projects)
@@ -189,20 +190,20 @@ Not all hooks need to be captured on every forward pass. A `HookSpec` enum selec
 
 ### 2.3 What We Change from plip-rs
 
-1. **Trait redesign.** `PlipBackend` becomes `MIBackend` with hook-aware forward methods:
-   - `forward(&self, tokens, hooks: &HookSpec) -> HookCache` — single unified forward that captures requested hooks
-   - `forward_with_intervention(&self, tokens, hooks, intervention: &Intervention) -> HookCache`
-   - `generate(&self, tokens, max_tokens, hooks, intervention) -> GenerationResult`
-   - Remove separate `forward_with_cache`, `forward_with_attention`, `forward_with_kv_cache` — unify into one hook-driven method
+1. **Trait redesign.** `PlipBackend` becomes `MIBackend` with a single hook-aware forward method:
+   - `forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache>` — captures and intervenes via `HookSpec`; replaces plip-rs's `forward_with_cache`, `forward_with_attention`, `forward_with_kv_cache`
+   - `project_to_vocab(&self, hidden: &Tensor) -> Result<Tensor>` — logit projection (used by logit lens)
+   - Metadata: `num_layers()`, `hidden_size()`, `vocab_size()`, `num_heads()`
+   - Optional: `chat_template()`, `embedding_vector()`
 
 2. **Hook-based architecture.** Instead of plip-rs's separate methods for each extraction type, use a single `HookSpec` that declares what to capture:
    ```rust
-   let hooks = HookSpec::new()
-       .capture("blocks.5.attn.hook_pattern")
-       .capture("blocks.5.hook_resid_post")
-       .intervene("blocks.5.attn.hook_scores", Intervention::Knockout(mask));
-   let result = model.forward(tokens, &hooks);
-   let attn = result.get("blocks.5.attn.hook_pattern")?;
+   let mut hooks = HookSpec::new();
+   hooks.capture(HookPoint::AttnPattern(5));
+   hooks.capture(HookPoint::ResidPost(5));
+   hooks.intervene(HookPoint::AttnScores(5), Intervention::Knockout(mask));
+   let cache = model.forward(&tokens, &hooks)?;
+   let attn = cache.require(&HookPoint::AttnPattern(5))?;
    ```
 
 3. **Config-driven model loading.** Replace `ModelArchitecture::from_model_id()` string matching with `config.json` parsing that reads `model_type` and `architectures` fields (like HuggingFace does).
@@ -213,17 +214,20 @@ Not all hooks need to be captured on every forward pass. A `HookSpec` enum selec
 
 ### 3.1 Configuration Axes
 
-Analysis of plip-rs's 6 transformer backends (StarCoder2, Qwen2, Gemma, Gemma 2, LLaMA, Phi-3) reveals 7 configuration axes:
+Analysis of plip-rs's 6 transformer backends (StarCoder2, Qwen2, Gemma, Gemma 2, LLaMA, Phi-3) reveals ~12 configuration axes:
 
 | Axis | Variants | Models |
 |------|----------|--------|
-| **Normalization** | `RMSNorm` / `LayerNorm` / `GemmaRmsNorm` (+1 to weight) | All use RMSNorm except StarCoder2 (LayerNorm pre-v2); Gemma has custom variant |
-| **Activation** | `SiLU` / `GELU` | LLaMA/Qwen/Phi=SiLU; StarCoder2=GELU; Gemma=GELU (inside gated MLP, sometimes called GeGLU) |
+| **Normalization** | `RmsNorm` / `LayerNorm` / `GemmaRmsNorm` (+1 to weight) | Most use RmsNorm; Gemma has custom variant |
+| **Activation** | `Silu` / `Gelu` / `GeluApprox` (PyTorch tanh approx) | LLaMA/Qwen/Phi=Silu; StarCoder2/Gemma 2=GeluApprox; Gemma=Gelu |
 | **QKV layout** | Separate Q,K,V projections / Fused single QKV | All separate except Phi-3 (fused) |
 | **MLP layout** | Gated (gate+up→down) / Fused gated / Plain (fc→proj) | LLaMA/Qwen/Gemma=gated separate; Phi-3=gated fused; StarCoder2=plain |
-| **QKV bias** | Yes / No | Only Qwen2 has bias on Q,K,V |
+| **QKV bias** | Yes / No | Qwen2 on Q,K,V; StarCoder2 on all projections |
+| **Bias granularity** | `o_proj_bias`, `mlp_bias` (separate from QKV) | StarCoder2 has bias everywhere; Qwen2 only on Q,K,V |
 | **Embedding** | Standard / Scaled (`* sqrt(hidden)`) | Only Gemma scales |
-| **LM head** | Tied to embeddings / Separate / Conditional | Qwen2=conditional; LLaMA/Phi=separate; Gemma/StarCoder2=tied |
+| **LM head** | Tied to embeddings / Separate | Controlled by `tie_word_embeddings` |
+| **Gemma 2 extensions** | Attention logit soft-capping, final logit soft-capping, 4-norm per layer, custom attention scalar, alternating sliding window | Gemma 2 only |
+| **Sliding window** | Global / Fixed window / Alternating (per-layer) | Mistral=fixed; Gemma 2=alternating |
 
 ### 3.2 Config Struct
 
@@ -238,24 +242,31 @@ pub struct TransformerConfig {
     pub intermediate_size: usize,
     pub vocab_size: usize,
 
-    // Architecture knobs
+    // Architecture axes
     pub norm_type: NormType,           // RmsNorm | LayerNorm | GemmaRmsNorm
     pub norm_eps: f64,
-    pub activation: Activation,        // Silu | Gelu
+    pub activation: Activation,        // Silu | Gelu | GeluApprox
     pub qkv_layout: QkvLayout,        // Separate | Fused
     pub mlp_layout: MlpLayout,        // GatedSeparate | GatedFused | Plain
     pub qkv_bias: bool,
+    pub o_proj_bias: bool,             // StarCoder2
+    pub mlp_bias: bool,                // StarCoder2
     pub embedding_scale: Option<f64>,  // None or Some(sqrt(hidden_size))
-    pub lm_head_type: LmHeadType,     // Tied | Separate | Conditional(bool)
+    pub tie_word_embeddings: bool,
 
     // Positional encoding
     pub rope_theta: f64,
     pub max_position_embeddings: usize,
-    pub rope_scaling: Option<RopeScaling>,  // For models with extended context
 
-    // Optional
-    pub sliding_window: Option<usize>,  // Mistral, Gemma 2
-    pub tie_word_embeddings: bool,
+    // Gemma 2 extensions
+    pub attn_logit_softcapping: Option<f64>,   // Some(50.0) for Gemma 2
+    pub final_logit_softcapping: Option<f64>,  // Some(30.0) for Gemma 2
+    pub query_pre_attn_scalar: Option<f64>,    // Some(256.0) for Gemma 2
+    pub use_post_norms: bool,                  // 4-norm per layer (Gemma 2)
+
+    // Sliding window attention
+    pub sliding_window: Option<usize>,         // Mistral, Gemma 2
+    pub alternating_sliding_window: bool,      // Gemma 2
 }
 ```
 
@@ -263,19 +274,19 @@ pub struct TransformerConfig {
 
 With this config, **one implementation** covers:
 
-| Model Family | Config Notes |
-|--------------|-------------|
-| **LLaMA 1/2/3 / Code-LLaMA** | GQA, SiLU, RMSNorm, separate lm_head |
-| **Qwen 2 / 2.5** | GQA, SiLU, RMSNorm, QKV bias, conditional tied embeddings |
-| **Gemma 1 / CodeGemma** | GQA, GeGLU, GemmaRmsNorm, sqrt embedding scale, tied lm_head |
-| **Gemma 2** | Same + sliding window attention |
-| **Phi-3 / Phi-4** | GQA, SiLU, RMSNorm, fused QKV, fused MLP |
-| **StarCoder2** | GQA, GELU, RMSNorm, plain MLP, tied lm_head |
-| **Mistral / Mixtral** (dense layers) | GQA, SiLU, RMSNorm, sliding window |
-| **DeepSeek** (dense layers) | GQA, SiLU, RMSNorm |
-| **Yi** | GQA, SiLU, RMSNorm (LLaMA-like) |
-| **InternLM 2** | GQA, SiLU, RMSNorm (LLaMA-like) |
-| **Codestral** | GQA, SiLU, RMSNorm, sliding window |
+| Model Family | Config Notes | Validated |
+|--------------|-------------|-----------|
+| **LLaMA 1/2/3 / Code-LLaMA** | GQA, SiLU, RmsNorm, separate lm_head | LLaMA 3.2 1B |
+| **Qwen 2 / 2.5** | GQA, SiLU, RmsNorm, QKV bias, conditional tied embeddings | Qwen2.5-Coder-3B |
+| **Gemma 1 / CodeGemma** | GQA, GELU, GemmaRmsNorm, sqrt embedding scale, tied lm_head | — |
+| **Gemma 2** | + GeluApprox, soft-capping, 4-norm, custom attn scalar, alternating sliding window | Gemma 2 2B |
+| **Phi-3 / Phi-4** | GQA, SiLU, RmsNorm, fused QKV, fused MLP | Phi-3 Mini 4K |
+| **StarCoder2** | GQA, GeluApprox, RmsNorm, plain MLP, bias everywhere, tied lm_head | StarCoder2 3B |
+| **Mistral / Mixtral** (dense layers) | GQA, SiLU, RmsNorm, sliding window | Mistral 7B v0.1 |
+| **DeepSeek** (dense layers) | GQA, SiLU, RmsNorm | — |
+| **Yi** | GQA, SiLU, RmsNorm (LLaMA-like) | — |
+| **InternLM 2** | GQA, SiLU, RmsNorm (LLaMA-like) | — |
+| **Codestral** | GQA, SiLU, RmsNorm, sliding window | — |
 
 ### 3.4 What It Does NOT Cover
 
@@ -295,15 +306,17 @@ The generic transformer reads `model_type` from `config.json` and maps it to a `
 ```rust
 impl TransformerConfig {
     pub fn from_hf_config(config: &serde_json::Value) -> Result<Self> {
-        let model_type = config["model_type"].as_str()?;
+        let model_type = config["model_type"].as_str()
+            .ok_or_else(|| MIError::Config("missing 'model_type'".into()))?;
         match model_type {
             "llama" => Self::parse_llama(config),
             "qwen2" => Self::parse_qwen2(config),
-            "gemma" | "gemma2" => Self::parse_gemma(config),
+            "gemma" => Self::parse_gemma(config),
+            "gemma2" => Self::parse_gemma2(config),
             "phi3" => Self::parse_phi3(config),
             "starcoder2" => Self::parse_starcoder2(config),
             "mistral" => Self::parse_mistral(config),
-            _ => Err(anyhow!("Unsupported model_type: {}", model_type)),
+            other => Err(MIError::Config(format!("unsupported model_type: '{other}'"))),
         }
     }
 }
@@ -313,19 +326,7 @@ Each `parse_*` function reads the relevant fields and sets the config knobs. Add
 
 ### 3.6 Weight Name Mapping
 
-Different model families use different weight naming conventions. A `WeightMap` trait handles this:
-
-```rust
-pub trait WeightMap {
-    fn embed_tokens(&self) -> &str;       // "model.embed_tokens.weight" or "transformer.wte.weight"
-    fn attn_q(&self, layer: usize) -> String;
-    fn attn_k(&self, layer: usize) -> String;
-    fn attn_v(&self, layer: usize) -> String;
-    // ... etc
-}
-```
-
-Standard implementations provided for LLaMA-style (`model.layers.{i}.self_attn.*`), GPT-style (`transformer.h.{i}.*`), StarCoder-style, etc.
+Different model families use different weight naming conventions. All 7 validated families happen to share the same `model.layers.{i}.self_attn.*` / `model.layers.{i}.mlp.*` naming scheme (LLaMA-style), so weight loading is handled directly in `GenericTransformer::load()` using `VarBuilder` path prefixes. If a future model family requires different weight names, a `WeightMap` trait can be introduced at that point.
 
 ---
 
@@ -496,17 +497,17 @@ Where `A_t` (transition), `B_t` (input), and `C_t` (output) vary by architecture
 
 | Capability | Status | Notes |
 |-----------|--------|-------|
-| **Attention extraction** | Ready | Per-layer, per-head attention patterns |
-| **Attention knockout** | Ready | Pre-softmax `-inf` masking; measures KL divergence |
-| **Attention steering** | Ready | Post-softmax scaling/setting + renormalization |
-| **Steering calibration** | Ready | Baseline measurement, dose-response curves |
-| **State knockout** (RWKV) | Validated (requires extraction) | Zero specific head states; measures KL divergence. Algorithm validated in plip-rs `forward_rwkv6.rs`; needs extraction into standalone module (Phase 2) |
-| **State steering** (RWKV) | Validated (requires extraction) | Additive bias to recurrent states. Algorithm validated in plip-rs `forward_rwkv6.rs`; needs extraction into standalone module (Phase 2) |
-| **Effective attention** (RWKV) | Validated (requires extraction) | `[b,h,t,t]` attention-equivalent from WKV recurrence. Algorithm validated in plip-rs `forward_rwkv6.rs`; needs extraction into standalone module (Phase 2) |
-| **Logit lens** | Ready | Per-layer vocab projection of hidden states |
-| **Activation caching** | Ready | Per-layer hidden state storage |
-| **KV cache** | Ready | Autoregressive generation with intervention |
-| **Position mapping** | Ready | Character offset ↔ token index conversion |
+| **Attention extraction** | ✅ Working (transformers) | Per-layer, per-head attention patterns via `HookPoint::AttnPattern` |
+| **Attention knockout** | ✅ Spec types ready | Pre-softmax `-inf` masking via `Intervention::Knockout`; measures KL divergence |
+| **Attention steering** | ✅ Spec types ready | Post-softmax scaling/setting + renormalization via `Intervention::Steer` |
+| **Steering calibration** | ✅ Infrastructure ready | Baseline measurement, dose-response curves |
+| **State knockout** (RWKV) | Validated (Phase 2) | Zero specific head states; measures KL divergence. Algorithm validated in plip-rs `forward_rwkv6.rs`; needs extraction into standalone module |
+| **State steering** (RWKV) | Validated (Phase 2) | Additive bias to recurrent states. Algorithm validated in plip-rs `forward_rwkv6.rs`; needs extraction into standalone module |
+| **Effective attention** (RWKV) | Validated (Phase 2) | `[b,h,t,t]` attention-equivalent from WKV recurrence. Algorithm validated in plip-rs `forward_rwkv6.rs`; needs extraction into standalone module |
+| **Logit lens** | ✅ Infrastructure ready | Per-layer vocab projection via `project_to_vocab` |
+| **Activation caching** | ✅ Working | Per-layer hidden state storage (`ActivationCache`, `FullActivationCache`) |
+| **KV cache** | ✅ Infrastructure ready | Autoregressive generation with intervention (`KVCache`) |
+| **Position mapping** | ✅ Working | Character offset ↔ token index conversion (`PositionConversion`) |
 
 ### 5.2 New (required for Melomētis, general-purpose)
 
@@ -542,59 +543,56 @@ candle-mi/
 ├── README.md
 ├── ROADMAP.md
 ├── CHANGELOG.md
-├── BACKENDS.md
-├── HOOKS.md
-├── design/                    — Design proposals (one Markdown file per decision, see §8)
+├── CONVENTIONS.md                — Code conventions (unsafe policy, annotations, etc.)
+├── design/                       — Design proposals (one Markdown file per decision, see §8)
 ├── src/
 │   ├── lib.rs                      — Public API, feature gates, re-exports
 │   │
-│   ├── backend.rs                  — MIBackend trait, MIModel wrapper
-│   ├── hooks.rs                    — HookSpec, HookCache, Intervention enum
-│   ├── config.rs                   — TransformerConfig, RwkvConfig, config parsing
+│   ├── backend.rs                  — MIBackend trait, MIModel wrapper, from_pretrained, sampling
+│   ├── hooks.rs                    — HookPoint, HookSpec, HookCache, Intervention enum
+│   ├── config.rs                   — TransformerConfig, enums, per-family config parsers
+│   ├── error.rs                    — MIError enum (thiserror)
 │   │
-│   ├── transformer/                — Generic transformer implementation
-│   │   ├── mod.rs                  — GenericTransformer struct
-│   │   ├── attention.rs            — Multi-head attention (GQA/MHA/MQA)
-│   │   ├── mlp.rs                  — MLP variants (gated, plain, fused)
-│   │   ├── norm.rs                 — RMSNorm, LayerNorm, GemmaRmsNorm
-│   │   ├── rope.rs                 — Rotary position embeddings
-│   │   └── weight_map.rs           — Per-family weight name mapping
+│   ├── transformer/                — Generic transformer (feature: "transformer") ✅
+│   │   ├── mod.rs                  — GenericTransformer, MIBackend impl, load()
+│   │   ├── attention.rs            — Multi-head attention (GQA/MHA/MQA, separate + fused QKV)
+│   │   ├── mlp.rs                  — MLP variants (gated separate, gated fused, plain)
+│   │   ├── norm.rs                 — RmsNorm, LayerNorm, GemmaRmsNorm
+│   │   └── rope.rs                 — Rotary position embeddings (pre-computed cos/sin)
 │   │
-│   ├── rwkv/                       — Generic RWKV implementation
+│   ├── rwkv/                       — Generic RWKV (feature: "rwkv") — Phase 2
 │   │   ├── mod.rs                  — GenericRwkv struct, version dispatch
-│   │   ├── wkv_v4.rs              — RWKV-4 WKV kernel
-│   │   ├── wkv_v5.rs              — RWKV-5 WKV kernel
 │   │   ├── wkv_v6.rs              — RWKV-6 WKV kernel (from plip-rs)
 │   │   ├── wkv_v7.rs              — RWKV-7 WKV kernel
-│   │   ├── channel_mix.rs         — Receptance-gated (v4-v6) + plain MLP (v7)
-│   │   ├── token_shift.rs         — Static lerp + data-dependent lerp
-│   │   └── weight_map.rs          — Per-version weight name mapping
+│   │   ├── channel_mix.rs         — Receptance-gated (v6) + plain MLP (v7)
+│   │   └── token_shift.rs         — Static lerp + data-dependent lerp
 │   │
-│   ├── interp/                     — Interpretability tools
+│   ├── interp/                     — Interpretability tools ✅ (core)
 │   │   ├── mod.rs
-│   │   ├── intervention.rs         — Knockout, steering, ablation (from plip-rs)
-│   │   ├── steering.rs             — Calibration, dose-response (from plip-rs)
-│   │   ├── logit_lens.rs           — Logit lens (from plip-rs)
-│   │   ├── patching.rs             — Activation patching (new)
-│   │   ├── clt.rs                  — Cross-layer transcoder (new)
-│   │   ├── sae.rs                  — Sparse autoencoder (new)
-│   │   └── attribution.rs          — Attribution graphs (new)
+│   │   ├── intervention.rs         — Knockout, steering, ablation spec types
+│   │   ├── steering.rs             — Calibration, dose-response
+│   │   ├── logit_lens.rs           — Per-layer vocab projection
+│   │   ├── clt.rs                  — Cross-layer transcoder — Phase 3a
+│   │   ├── sae.rs                  — Sparse autoencoder — Phase 3b
+│   │   └── attribution.rs          — Attribution graphs — Phase 3a
 │   │
-│   ├── cache/                      — Caching infrastructure
+│   ├── cache/                      — Caching infrastructure ✅
 │   │   ├── mod.rs
-│   │   ├── activation.rs           — ActivationCache (from plip-rs)
-│   │   ├── kv.rs                   — KV cache (from plip-rs)
-│   │   └── attention.rs            — AttentionCache (from plip-rs)
+│   │   ├── activation.rs           — ActivationCache, FullActivationCache
+│   │   ├── kv.rs                   — KVCache
+│   │   └── attention.rs            — AttentionCache
 │   │
-│   ├── tokenizer/                  — Tokenizer abstraction
-│   │   ├── mod.rs                  — MITokenizer enum
-│   │   └── rwkv.rs                 — RWKV World tokenizer (from plip-rs)
+│   ├── tokenizer/                  — Tokenizer abstraction ✅
+│   │   ├── mod.rs                  — MITokenizer (HuggingFace tokenizers wrapper)
+│   │   └── rwkv.rs                 — RWKV World tokenizer (feature: "rwkv-tokenizer")
 │   │
-│   └── util/                       — Shared utilities
-│       ├── masks.rs                — Causal/generation masks (from plip-rs)
-│       └── positioning.rs          — Character ↔ token mapping (from plip-rs)
+│   └── util/                       — Shared utilities ✅
+│       ├── mod.rs
+│       ├── masks.rs                — Causal/generation masks with caching
+│       └── positioning.rs          — Character ↔ token mapping
 │
-├── examples/
+├── examples/                       — Quick start + capability examples — Phase 4
+│   ├── quick_start_transformer.rs  — Load model, forward pass, print top tokens
 │   ├── logit_lens.rs               — Run logit lens on any supported model
 │   ├── attention_patterns.rs       — Extract and print attention patterns
 │   ├── knockout.rs                 — Attention knockout experiment
@@ -602,10 +600,8 @@ candle-mi/
 │   └── clt_scan.rs                 — CLT feature scan
 │
 └── tests/
-    ├── generic_transformer.rs      — Config parsing + forward pass tests
-    ├── rwkv.rs                     — RWKV version-specific tests
-    ├── intervention.rs             — Knockout/steering tests
-    └── hooks.rs                    — Hook capture tests
+    ├── validate_models.rs          — Per-family validation against Python HF reference ✅
+    └── bench_hook_overhead.rs      — Hook overhead benchmark ✅
 ```
 
 ### 6.1 Feature Gates
@@ -616,7 +612,8 @@ default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]
 metal = ["candle-core/metal", "candle-nn/metal"]
 transformer = []           # Generic transformer backend
-rwkv = []                  # RWKV v4-v7 backends
+mmap = []                  # Memory-mapped weight loading (unsafe, for 7B+ models)
+rwkv = []                  # RWKV v6-v7 backends
 rwkv-tokenizer = []        # RWKV World tokenizer
 clt = []                   # Cross-layer transcoder support
 sae = []                   # Sparse autoencoder support
@@ -631,8 +628,8 @@ probing = ["linfa", "linfa-logistic", "ndarray"]  # Linear probing
 | **Rustdoc** (`cargo doc`) | Inline | Crate-level overview in `lib.rs`; module-level docs for every public module; doc-tests on all public functions and key types |
 | **BACKENDS.md** | Markdown | Step-by-step guide to adding a new model architecture: config parser, weight map, validation protocol |
 | **HOOKS.md** | Markdown | Hook point reference table (mirroring §2.1), intervention API walkthrough, worked examples (capture attention, run knockout, steer residual stream) |
-| **CHANGELOG.md** | Markdown | [Keep a Changelog](https://keepachangelog.com/) format from v0.1.0 onwards |
-| **Examples** | Rust (`examples/`) | One per major capability: `logit_lens.rs`, `attention_patterns.rs`, `knockout.rs`, `steering.rs`, `clt_scan.rs` — each self-contained with inline comments |
+| **CHANGELOG.md** | Markdown | [Keep a Changelog](https://keepachangelog.com/) format from v0.0.1 onwards |
+| **Examples** | Rust (`examples/`) | Quick-start per backend (`quick_start_transformer.rs`, `quick_start_rwkv.rs`, etc.) + one per major capability (`logit_lens.rs`, `knockout.rs`, `steering.rs`, `clt_scan.rs`) — each self-contained with inline comments |
 
 **Rustdoc policy:** Every `pub` item must have a doc comment. Types include a one-line summary + "# Examples" section with a runnable doc-test. `#![warn(missing_docs)]` enforced at crate level.
 
@@ -656,7 +653,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 
 **Branch strategy:** Work directly on `main` during solo development. Use short-lived feature branches only when a change spans multiple sessions and may leave `main` broken in between; merge back when green.
 
-**Tag convention:** Tag at each phase completion: `v0.0.1-phase0`, `v0.0.2-phase1`, etc. Tag `v0.1.0` at publication (Phase 4).
+**Tag convention:** Tag at each phase completion: `v0.0.1-phase0`, `v0.0.2-phase1`, etc. Tag `v0.1.0` at publication (Phase 4). Tags matching `v*` trigger `publish.yml`, which runs full CI then `cargo publish` automatically. **Always wait for `ci.yml` green before tagging** — bump `Cargo.toml` version + commit `Cargo.lock` first.
 
 ### Phase 0: Foundation
 
@@ -687,7 +684,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
   - [x] Multi-head attention (GQA/MHA/MQA via `num_kv_heads`) — **commit**
   - [x] QKV projection (separate and fused) — **commit**
   - [x] MLP (gated, fused gated, plain) — **commit**
-  - [x] Normalization (RMSNorm, LayerNorm, GemmaRmsNorm) — **commit**
+  - [x] Normalization (RmsNorm, LayerNorm, GemmaRmsNorm) — **commit**
   - [x] LM head (tied, separate, conditional) — **commit**
 - [x] Forward pass compiles end-to-end — **PUSH**
 - [x] Integrate hook points at all TransformerLens-equivalent locations — **commit**
@@ -759,22 +756,20 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [ ] Write example programs (logit lens, knockout, steering, CLT scan) — **commit per example**
 - [ ] Audit public API surface (`pub` vs `pub(crate)`) — **commit**
 - [ ] Populate CHANGELOG.md with all notable changes from Phases 0–3b — **commit** — **PUSH** (release candidate)
-- [ ] **Release workflow** (publish v0.1.0 to crates.io):
+- [ ] **Release workflow** (publish v0.1.0 to crates.io — automated via `publish.yml`):
   1. Ensure `main` is clean: `git status` shows no uncommitted changes
-  2. Verify CI is green on the latest push (build + clippy + fmt + tests — all four checks from §7.0)
-  3. Bump version in `Cargo.toml` to `0.1.0` — **commit: `release: v0.1.0`** — **PUSH**
-  4. Wait for CI to pass on the version-bump commit
-  5. `cargo publish --dry-run` — verify packaging (no missing files, correct metadata, no warnings)
-  6. `git tag v0.1.0` — tag the exact commit that CI validated
-  7. `git push origin v0.1.0` — push the tag
-  8. `cargo publish` — publish to crates.io from the tagged commit
-  9. Verify the published crate: `cargo install candle-mi --version 0.1.0` in a fresh directory
+  2. Bump version in `Cargo.toml` to `0.1.0` + update `Cargo.lock` — **commit: `release: v0.1.0`** — **PUSH**
+  3. Wait for `ci.yml` to pass on the version-bump commit (build + clippy + fmt + tests)
+  4. `git tag v0.1.0` — tag the exact commit that CI validated
+  5. `git push origin v0.1.0` — push the tag (triggers `publish.yml`)
+  6. `publish.yml` runs full CI checks then `cargo publish` automatically
+  7. Verify the published crate: `cargo install candle-mi --version 0.1.0` in a fresh directory
 - [ ] Submit PR to candle repo adding candle-mi to "Useful External Resources" (per Eric Buehler's invitation)
 - [ ] Announce (Rust ML community, MI community)
 
 ### Phase 5+: Extensions (Future)
 
-- [ ] RWKV-4, RWKV-5 backends (if community demand)
+- [ ] RWKV-4/5 backends (if community demand)
 - [ ] Mamba / Mamba-2 backend
 - [ ] GLA, RetNet backends (via generic linear RNN trait)
 - [ ] Activation patching
