@@ -62,8 +62,13 @@ impl fmt::Display for NormType {
 pub enum Activation {
     /// Sigmoid Linear Unit (used in `SwiGLU` gating).
     Silu,
-    /// Gaussian Error Linear Unit (used in `GeGLU` gating or plain MLP).
+    /// Gaussian Error Linear Unit — exact (erf) variant.
     Gelu,
+    /// Gaussian Error Linear Unit — PyTorch tanh approximation.
+    ///
+    /// Used by Gemma 2, `StarCoder2`, and other models that specify
+    /// `hidden_act: "gelu_pytorch_tanh"` in their `HuggingFace` config.
+    GeluApprox,
 }
 
 impl fmt::Display for Activation {
@@ -71,6 +76,7 @@ impl fmt::Display for Activation {
         match self {
             Self::Silu => write!(f, "SiLU"),
             Self::Gelu => write!(f, "GELU"),
+            Self::GeluApprox => write!(f, "GELU (tanh approx)"),
         }
     }
 }
@@ -358,7 +364,7 @@ impl TransformerConfig {
 
             norm_type: NormType::GemmaRmsNorm,
             norm_eps: get_f64_or(config, "rms_norm_eps", 1e-6),
-            activation: Activation::Gelu,
+            activation: Activation::GeluApprox,
             qkv_layout: QkvLayout::Separate,
             mlp_layout: MlpLayout::GatedSeparate,
             qkv_bias: false,
@@ -408,7 +414,7 @@ impl TransformerConfig {
 
             norm_type: NormType::GemmaRmsNorm,
             norm_eps: get_f64_or(config, "rms_norm_eps", 1e-6),
-            activation: Activation::Gelu,
+            activation: Activation::GeluApprox,
             qkv_layout: QkvLayout::Separate,
             mlp_layout: MlpLayout::GatedSeparate,
             qkv_bias: false,
@@ -492,6 +498,12 @@ impl TransformerConfig {
         let num_attention_heads = get_usize(config, "num_attention_heads")?;
         let use_bias = get_bool_or(config, "use_bias", true);
 
+        // StarCoder2 specifies norm_type in config (usually "layer_norm").
+        let norm_type = match config.get("norm_type").and_then(Value::as_str) {
+            Some("layer_norm") => NormType::LayerNorm,
+            _ => NormType::RmsNorm,
+        };
+
         Ok(Self {
             hidden_size,
             num_layers: get_usize(config, "num_hidden_layers")?,
@@ -501,9 +513,9 @@ impl TransformerConfig {
             intermediate_size: get_usize(config, "intermediate_size")?,
             vocab_size: get_usize(config, "vocab_size")?,
 
-            norm_type: NormType::RmsNorm,
+            norm_type,
             norm_eps: get_f64_or(config, "norm_epsilon", 1e-5),
-            activation: Activation::Gelu,
+            activation: Activation::GeluApprox,
             qkv_layout: QkvLayout::Separate,
             mlp_layout: MlpLayout::Plain,
             qkv_bias: use_bias,
@@ -519,7 +531,7 @@ impl TransformerConfig {
             final_logit_softcapping: None,
             query_pre_attn_scalar: None,
             use_post_norms: false,
-            sliding_window: None,
+            sliding_window: get_optional_usize(config, "sliding_window"),
             alternating_sliding_window: false,
         })
     }
@@ -752,11 +764,13 @@ mod tests {
             "num_key_value_heads": 2,
             "intermediate_size": 12288,
             "vocab_size": 49152,
-            "use_bias": true
+            "use_bias": true,
+            "norm_type": "layer_norm"
         });
         let config = TransformerConfig::from_hf_config(&json).unwrap();
         assert_eq!(config.mlp_layout, MlpLayout::Plain);
-        assert_eq!(config.activation, Activation::Gelu);
+        assert_eq!(config.activation, Activation::GeluApprox);
+        assert_eq!(config.norm_type, NormType::LayerNorm);
         assert!(config.qkv_bias);
         assert!(config.o_proj_bias);
         assert!(config.mlp_bias);

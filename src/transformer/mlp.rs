@@ -156,6 +156,7 @@ fn apply_activation(x: &Tensor, activation: Activation) -> Result<Tensor> {
     match activation {
         Activation::Silu => Ok(candle_nn::ops::silu(x)?),
         Activation::Gelu => Ok(x.gelu_erf()?),
+        Activation::GeluApprox => Ok(x.gelu()?),
     }
 }
 
