@@ -297,10 +297,20 @@ impl HookSpec {
 ///
 /// # Example
 ///
-/// ```ignore
-/// let result = model.forward(&tokens, &hooks)?;
-/// let logits = result.output();
-/// let attn = result.get(&HookPoint::AttnPattern(5)).unwrap();
+/// ```
+/// use candle_mi::{HookCache, HookPoint};
+/// use candle_core::{Device, Tensor};
+///
+/// let logits = Tensor::zeros((1, 10, 32000), candle_core::DType::F32, &Device::Cpu).unwrap();
+/// let mut cache = HookCache::new(logits);
+///
+/// // Store a captured activation
+/// let pattern = Tensor::zeros((1, 8, 10, 10), candle_core::DType::F32, &Device::Cpu).unwrap();
+/// cache.store(HookPoint::AttnPattern(5), pattern);
+///
+/// // Retrieve captured activations
+/// let output = cache.output();
+/// let attn = cache.get(&HookPoint::AttnPattern(5)).unwrap();
 /// ```
 #[derive(Debug)]
 pub struct HookCache {
@@ -352,6 +362,14 @@ impl HookCache {
     /// Store a captured activation. Called by backend implementations.
     pub fn store(&mut self, hook: HookPoint, tensor: Tensor) {
         self.captures.insert(hook, tensor);
+    }
+
+    /// Replace the output tensor (e.g., after computing final logits).
+    ///
+    /// This allows the forward pass to collect captures into a cache
+    /// initialized with a placeholder, then set the real output at the end.
+    pub fn set_output(&mut self, output: Tensor) {
+        self.output = output;
     }
 
     /// Number of captured tensors (excludes the output).

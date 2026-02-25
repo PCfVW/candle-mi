@@ -20,9 +20,10 @@
 //!
 //! ## Quick start
 //!
-//! ```ignore
+//! ```no_run
 //! use candle_mi::{HookPoint, HookSpec, MIModel};
 //!
+//! # fn main() -> candle_mi::Result<()> {
 //! // Load a model (requires a concrete backend — Phase 1+).
 //! let model = MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
 //!
@@ -30,12 +31,18 @@
 //! let mut hooks = HookSpec::new();
 //! hooks.capture(HookPoint::AttnPattern(5));
 //!
+//! let tokens = candle_core::Tensor::zeros(
+//!     (1, 10), candle_core::DType::U32, &candle_core::Device::Cpu,
+//! )?;
 //! let result = model.forward(&tokens, &hooks)?;
 //! let attn = result.require(&HookPoint::AttnPattern(5))?;
+//! # Ok(())
+//! # }
 //! ```
 
 #![deny(warnings)] // All warns → errors in CI
-#![forbid(unsafe_code)] // Rule 5
+#![cfg_attr(not(feature = "mmap"), forbid(unsafe_code))] // Rule 5: safe by default
+#![cfg_attr(feature = "mmap", deny(unsafe_code))] // mmap: deny except one function
 #![deny(elided_lifetimes_in_paths)] // Rule 1
 #![deny(clippy::unwrap_used)] // Rule 3
 #![deny(clippy::expect_used)] // Rule 3
@@ -60,16 +67,26 @@
 
 pub mod backend;
 pub mod cache;
+pub mod config;
 pub mod error;
 pub mod hooks;
 pub mod interp;
 pub mod tokenizer;
+#[cfg(feature = "transformer")]
+pub mod transformer;
 pub mod util;
 
 // --- Public re-exports ---------------------------------------------------
 
 // Backend
 pub use backend::{GenerationResult, MIBackend, MIModel};
+
+// Config
+pub use config::{Activation, MlpLayout, NormType, QkvLayout, TransformerConfig};
+
+// Transformer backend
+#[cfg(feature = "transformer")]
+pub use transformer::GenericTransformer;
 
 // Cache
 pub use cache::{ActivationCache, AttentionCache, FullActivationCache, KVCache};

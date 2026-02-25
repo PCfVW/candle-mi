@@ -111,6 +111,73 @@ pub struct MIModel {
 }
 
 impl MIModel {
+    /// Load a model from a `HuggingFace` model ID or local path.
+    ///
+    /// Checks local `HuggingFace` cache first, then downloads if necessary.
+    /// Automatically selects the appropriate backend based on `model_type`
+    /// in the model's `config.json`.
+    ///
+    /// # `DType` selection
+    ///
+    /// - **CUDA**: `BF16` (matches training dtype; `F16` causes issues on some models)
+    /// - **CPU**: `F32` for full precision
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Config`] if the model type is unsupported, or
+    /// [`MIError::Model`] if weight loading fails.
+    #[cfg(feature = "transformer")]
+    pub fn from_pretrained(model_id: &str) -> Result<Self> {
+        use crate::config::TransformerConfig;
+        use crate::transformer::GenericTransformer;
+
+        // --- Device and dtype ---
+        let device = Self::select_device()?;
+        let dtype = if device.is_cuda() {
+            DType::BF16
+        } else {
+            DType::F32
+        };
+
+        // --- Download / resolve local files ---
+        let api = hf_hub::api::sync::Api::new()
+            .map_err(|e| MIError::Model(candle_core::Error::Msg(format!("HF Hub API: {e}"))))?;
+        let repo = api.model(model_id.to_string());
+
+        let config_path = repo
+            .get("config.json")
+            .map_err(|e| MIError::Config(format!("config.json: {e}")))?;
+        let config_str = std::fs::read_to_string(&config_path)
+            .map_err(|e| MIError::Config(format!("read config.json: {e}")))?;
+        let json: serde_json::Value = serde_json::from_str(&config_str)
+            .map_err(|e| MIError::Config(format!("parse config.json: {e}")))?;
+
+        let config = TransformerConfig::from_hf_config(&json)?;
+
+        // --- Resolve safetensors paths ---
+        let weights_paths = resolve_safetensors_paths(&repo)?;
+
+        // --- Create VarBuilder ---
+        let vb = create_var_builder(&weights_paths, dtype, &device)?;
+
+        // --- Load model ---
+        let transformer = GenericTransformer::load(config, &device, dtype, vb)?;
+
+        Ok(Self::new(Box::new(transformer), device))
+    }
+
+    /// Select the best available device (CUDA GPU 0, or CPU fallback).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`] on device detection failure.
+    fn select_device() -> Result<Device> {
+        match Device::cuda_if_available(0) {
+            Ok(dev) => Ok(dev),
+            Err(e) => Err(MIError::Model(e)),
+        }
+    }
+
     /// Wrap an existing backend.
     #[must_use]
     pub fn new(backend: Box<dyn MIBackend>, device: Device) -> Self {
@@ -260,4 +327,121 @@ pub struct GenerationResult {
     pub generated_tokens: Vec<u32>,
     /// Total token count (prompt + generated).
     pub total_tokens: usize,
+}
+
+// ---------------------------------------------------------------------------
+// Weight loading helpers (used by from_pretrained)
+// ---------------------------------------------------------------------------
+
+/// Index structure for sharded safetensors models.
+#[cfg(feature = "transformer")]
+#[derive(serde::Deserialize)]
+struct SafetensorsIndex {
+    /// Maps weight name → shard filename.
+    weight_map: std::collections::HashMap<String, String>,
+}
+
+/// Resolve safetensors file paths — handles both single-file and sharded models.
+///
+/// Tries `model.safetensors.index.json` first (sharded), falls back to
+/// single `model.safetensors`.
+#[cfg(feature = "transformer")]
+fn resolve_safetensors_paths(repo: &hf_hub::api::sync::ApiRepo) -> Result<Vec<std::path::PathBuf>> {
+    // Try sharded first
+    if let Ok(index_path) = repo.get("model.safetensors.index.json") {
+        let index_str = std::fs::read_to_string(&index_path)
+            .map_err(|e| MIError::Model(candle_core::Error::Msg(format!("read index: {e}"))))?;
+        let index: SafetensorsIndex = serde_json::from_str(&index_str)
+            .map_err(|e| MIError::Config(format!("parse index: {e}")))?;
+
+        // Collect unique shard filenames
+        let mut shard_names: Vec<String> = index.weight_map.values().cloned().collect();
+        shard_names.sort();
+        shard_names.dedup();
+
+        let mut paths = Vec::with_capacity(shard_names.len());
+        for shard_name in &shard_names {
+            let path = repo.get(shard_name).map_err(|e| {
+                MIError::Model(candle_core::Error::Msg(format!(
+                    "download shard {shard_name}: {e}"
+                )))
+            })?;
+            paths.push(path);
+        }
+        return Ok(paths);
+    }
+
+    // Single file
+    let path = repo
+        .get("model.safetensors")
+        .map_err(|e| MIError::Model(candle_core::Error::Msg(format!("model.safetensors: {e}"))))?;
+    Ok(vec![path])
+}
+
+/// Create a `VarBuilder` from safetensors file paths.
+///
+/// Uses buffered (safe) loading by default. With the `mmap` feature,
+/// uses memory-mapped loading for reduced memory overhead on large models.
+#[cfg(feature = "transformer")]
+fn create_var_builder(
+    paths: &[std::path::PathBuf],
+    dtype: DType,
+    device: &Device,
+) -> Result<candle_nn::VarBuilder<'static>> {
+    #[cfg(feature = "mmap")]
+    {
+        mmap_var_builder(paths, dtype, device)
+    }
+    #[cfg(not(feature = "mmap"))]
+    {
+        buffered_var_builder(paths, dtype, device)
+    }
+}
+
+/// Load weights via buffered (safe) reading — reads all data into RAM.
+///
+/// Only supports single-file models. For sharded models (7B+), enable
+/// the `mmap` feature.
+#[cfg(all(feature = "transformer", not(feature = "mmap")))]
+fn buffered_var_builder(
+    paths: &[std::path::PathBuf],
+    dtype: DType,
+    device: &Device,
+) -> Result<candle_nn::VarBuilder<'static>> {
+    if paths.len() > 1 {
+        return Err(MIError::Config(
+            "sharded models require the `mmap` feature: \
+             candle-mi = { features = [\"mmap\"] }"
+                .into(),
+        ));
+    }
+    let path = paths
+        .first()
+        .ok_or_else(|| MIError::Model(candle_core::Error::Msg("no safetensors files".into())))?;
+    let data = std::fs::read(path).map_err(|e| {
+        MIError::Model(candle_core::Error::Msg(format!(
+            "read {}: {e}",
+            path.display()
+        )))
+    })?;
+    let vb = candle_nn::VarBuilder::from_buffered_safetensors(data, dtype, device)?;
+    Ok(vb)
+}
+
+/// Load weights via memory-mapped files — minimal RAM overhead for large models.
+///
+/// # Safety
+///
+/// The safetensors files must not be modified while the model is loaded.
+/// This is the standard invariant for memory-mapped files.
+#[cfg(all(feature = "transformer", feature = "mmap"))]
+#[allow(unsafe_code)]
+fn mmap_var_builder(
+    paths: &[std::path::PathBuf],
+    dtype: DType,
+    device: &Device,
+) -> Result<candle_nn::VarBuilder<'static>> {
+    // SAFETY: safetensors files must not be modified while loaded.
+    let vb = unsafe { candle_nn::VarBuilder::from_mmaped_safetensors(paths, dtype, device)? };
+    Ok(vb)
 }
