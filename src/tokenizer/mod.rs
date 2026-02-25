@@ -70,12 +70,35 @@ impl MITokenizer {
         Ok(Self::Rwkv(tok))
     }
 
-    /// Encode text into token IDs.
+    /// Encode text into token IDs, adding special tokens (e.g. BOS for Gemma).
+    ///
+    /// Special tokens are added according to the tokenizer's configured
+    /// post-processor, matching the `HuggingFace` convention for inference.
     ///
     /// # Errors
     ///
     /// Returns [`MIError::Tokenizer`] if encoding fails.
     pub fn encode(&self, text: &str) -> Result<Vec<u32>> {
+        match self {
+            Self::HuggingFace(tok) => {
+                let encoding = tok
+                    .encode(text, true)
+                    .map_err(|e| MIError::Tokenizer(format!("HF encode failed: {e}")))?;
+                Ok(encoding.get_ids().to_vec())
+            }
+            #[cfg(feature = "rwkv-tokenizer")]
+            Self::Rwkv(tok) => tok.encode(text),
+        }
+    }
+
+    /// Encode text into token IDs **without** adding special tokens.
+    ///
+    /// Useful for MI analyses that need raw tokenization without BOS/EOS.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Tokenizer`] if encoding fails.
+    pub fn encode_raw(&self, text: &str) -> Result<Vec<u32>> {
         match self {
             Self::HuggingFace(tok) => {
                 let encoding = tok
