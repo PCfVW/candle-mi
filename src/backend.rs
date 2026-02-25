@@ -179,6 +179,7 @@ impl MIModel {
     /// # Errors
     ///
     /// Returns [`MIError::Model`] on device detection failure.
+    #[cfg(feature = "transformer")]
     fn select_device() -> Result<Device> {
         match Device::cuda_if_available(0) {
             Ok(dev) => Ok(dev),
