@@ -30,6 +30,25 @@ use serde_json::Value;
 use crate::error::{MIError, Result};
 
 // ---------------------------------------------------------------------------
+// Supported model types
+// ---------------------------------------------------------------------------
+
+/// `model_type` strings accepted by
+/// [`TransformerConfig::from_hf_config`].
+///
+/// Use this for cache discovery, UI filtering, or anywhere you need to know
+/// which `HuggingFace` model families the generic transformer backend handles.
+pub const SUPPORTED_MODEL_TYPES: &[&str] = &[
+    "gemma",
+    "gemma2",
+    "llama",
+    "mistral",
+    "phi3",
+    "qwen2",
+    "starcoder2",
+];
+
+// ---------------------------------------------------------------------------
 // Configuration enums
 // ---------------------------------------------------------------------------
 
@@ -234,6 +253,7 @@ impl TransformerConfig {
             .and_then(Value::as_str)
             .ok_or_else(|| MIError::Config("missing 'model_type' field".into()))?;
 
+        // Keep in sync with SUPPORTED_MODEL_TYPES.
         match model_type {
             "llama" => Self::parse_llama(config),
             "qwen2" => Self::parse_qwen2(config),
