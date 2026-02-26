@@ -307,7 +307,7 @@ impl MIBackend for GenericTransformer {
             cache.store(HookPoint::Embed, hidden.clone());
         }
         for intervention in hooks.interventions_at(&HookPoint::Embed) {
-            hidden = apply_intervention_to(&hidden, intervention)?;
+            hidden = crate::hooks::apply_intervention(&hidden, intervention)?;
         }
 
         let (_, seq_len, _) = hidden.dims3()?;
@@ -448,19 +448,4 @@ fn create_sliding_window_mask(
         }
     }
     Ok(Tensor::from_vec(mask_data, (1, 1, seq_len, seq_len), device)?.to_dtype(dtype)?)
-}
-
-/// Apply a single intervention to a tensor (used at Embed hook point).
-fn apply_intervention_to(
-    tensor: &Tensor,
-    intervention: &crate::hooks::Intervention,
-) -> Result<Tensor> {
-    use crate::hooks::Intervention;
-    match intervention {
-        Intervention::Replace(replacement) => Ok(replacement.clone()),
-        Intervention::Add(delta) => Ok(tensor.broadcast_add(delta)?),
-        Intervention::Knockout(mask) => Ok(tensor.broadcast_add(mask)?),
-        Intervention::Scale(factor) => Ok((tensor * *factor)?),
-        Intervention::Zero => Ok(tensor.zeros_like()?),
-    }
 }

@@ -199,6 +199,32 @@ pub enum Intervention {
 }
 
 // ---------------------------------------------------------------------------
+// Intervention application
+// ---------------------------------------------------------------------------
+
+/// Apply a single [`Intervention`] to a tensor.
+///
+/// Used by backend implementations at each hook point that supports
+/// interventions (e.g., Embed, `AttnScores`, `AttnPattern`).
+///
+/// # Shapes
+/// - `tensor`: any shape — the activation at the hook point.
+/// - returns: same shape as `tensor`.
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`] if the underlying tensor operation fails.
+pub(crate) fn apply_intervention(tensor: &Tensor, intervention: &Intervention) -> Result<Tensor> {
+    match intervention {
+        Intervention::Replace(replacement) => Ok(replacement.clone()),
+        Intervention::Add(delta) => Ok(tensor.broadcast_add(delta)?),
+        Intervention::Knockout(mask) => Ok(tensor.broadcast_add(mask)?),
+        Intervention::Scale(factor) => Ok((tensor * *factor)?),
+        Intervention::Zero => Ok(tensor.zeros_like()?),
+    }
+}
+
+// ---------------------------------------------------------------------------
 // HookSpec
 // ---------------------------------------------------------------------------
 

@@ -6,7 +6,7 @@
 //! them to query and key tensors during the forward pass.
 //!
 //! Uses `candle_nn::rotary_emb::rope()` for the actual rotation, matching
-//! the reference implementation in plip-rs.
+//! the reference implementation in plip-rs (frozen predecessor project, v1.4.0).
 
 use candle_core::{DType, Device, Tensor};
 

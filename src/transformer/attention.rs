@@ -10,7 +10,7 @@ use candle_nn::{Linear, VarBuilder};
 
 use crate::config::{QkvLayout, TransformerConfig};
 use crate::error::Result;
-use crate::hooks::{HookCache, HookPoint, HookSpec, Intervention};
+use crate::hooks::{HookCache, HookPoint, HookSpec};
 
 use super::rope::RopeCache;
 
@@ -234,7 +234,7 @@ impl Attention {
             cache.store(HookPoint::AttnScores(layer_idx), scores.clone());
         }
         for intervention in hooks.interventions_at(&HookPoint::AttnScores(layer_idx)) {
-            scores = apply_intervention(&scores, intervention)?;
+            scores = crate::hooks::apply_intervention(&scores, intervention)?;
         }
 
         // Optional soft-capping (Gemma 2)
@@ -263,7 +263,7 @@ impl Attention {
             cache.store(HookPoint::AttnPattern(layer_idx), pattern.clone());
         }
         for intervention in hooks.interventions_at(&HookPoint::AttnPattern(layer_idx)) {
-            pattern = apply_intervention(&pattern, intervention)?;
+            pattern = crate::hooks::apply_intervention(&pattern, intervention)?;
         }
 
         // --- Attention output ---
@@ -307,15 +307,4 @@ fn repeat_kv(x: Tensor, n_heads: usize, n_kv_heads: usize) -> Result<Tensor> {
         .expand((batch, n_kv_heads, repeats, seq_len, head_dim))?
         .reshape((batch, n_heads, seq_len, head_dim))?;
     Ok(x)
-}
-
-/// Apply a single intervention to a tensor.
-fn apply_intervention(tensor: &Tensor, intervention: &Intervention) -> Result<Tensor> {
-    match intervention {
-        Intervention::Replace(replacement) => Ok(replacement.clone()),
-        Intervention::Add(delta) => Ok(tensor.broadcast_add(delta)?),
-        Intervention::Knockout(mask) => Ok(tensor.broadcast_add(mask)?),
-        Intervention::Scale(factor) => Ok((tensor * *factor)?),
-        Intervention::Zero => Ok(tensor.zeros_like()?),
-    }
 }
