@@ -47,6 +47,7 @@ pub struct KVCache {
 
 impl KVCache {
     /// Create a new empty cache for the given number of layers.
+    #[must_use]
     pub fn new(n_layers: usize) -> Self {
         Self {
             keys: vec![None; n_layers],
@@ -72,6 +73,7 @@ impl KVCache {
     }
 
     /// Number of layers in the cache.
+    #[must_use]
     pub const fn n_layers(&self) -> usize {
         self.keys.len()
     }

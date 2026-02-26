@@ -38,6 +38,7 @@ pub struct AttentionCache {
 
 impl AttentionCache {
     /// Create an empty cache with capacity for `n_layers` layers.
+    #[must_use]
     pub fn with_capacity(n_layers: usize) -> Self {
         Self {
             patterns: Vec::with_capacity(n_layers),
@@ -54,11 +55,13 @@ impl AttentionCache {
     }
 
     /// Number of cached layers.
+    #[must_use]
     pub const fn n_layers(&self) -> usize {
         self.patterns.len()
     }
 
     /// Whether the cache is empty.
+    #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.patterns.is_empty()
     }
@@ -68,6 +71,7 @@ impl AttentionCache {
     /// # Shapes
     ///
     /// - returns: `[batch, heads, seq_q, seq_k]`
+    #[must_use]
     pub fn get_layer(&self, layer: usize) -> Option<&Tensor> {
         self.patterns.get(layer)
     }
@@ -179,6 +183,7 @@ impl AttentionCache {
     }
 
     /// All cached patterns as a slice.
+    #[must_use]
     pub fn patterns(&self) -> &[Tensor] {
         &self.patterns
     }

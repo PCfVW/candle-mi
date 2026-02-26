@@ -156,6 +156,7 @@ pub struct AttentionEdge {
 
 impl AttentionEdge {
     /// Create a new edge.
+    #[must_use]
     pub const fn new(from_pos: usize, to_pos: usize) -> Self {
         Self { from_pos, to_pos }
     }
@@ -255,6 +256,7 @@ impl KnockoutSpec {
     }
 
     /// Check if this layer should have intervention applied.
+    #[must_use]
     pub fn applies_to_layer(&self, layer: usize) -> bool {
         match &self.layers {
             LayerSpec::All => true,
@@ -264,6 +266,7 @@ impl KnockoutSpec {
     }
 
     /// Check if this head should have intervention applied.
+    #[must_use]
     pub fn applies_to_head(&self, head: usize) -> bool {
         match &self.heads {
             HeadSpec::All => true,
@@ -415,6 +418,7 @@ impl SteeringSpec {
     }
 
     /// Check if this layer should have intervention applied.
+    #[must_use]
     pub fn applies_to_layer(&self, layer: usize) -> bool {
         match &self.layers {
             LayerSpec::All => true,
@@ -424,6 +428,7 @@ impl SteeringSpec {
     }
 
     /// Check if this head should have intervention applied.
+    #[must_use]
     pub fn applies_to_head(&self, head: usize) -> bool {
         match &self.heads {
             HeadSpec::All => true,
@@ -464,16 +469,19 @@ impl SteeringSpec {
     }
 
     /// Get the intervention type.
+    #[must_use]
     pub const fn intervention_type(&self) -> InterventionType {
         self.intervention_type
     }
 
     /// Check if this is a knockout intervention.
+    #[must_use]
     pub const fn is_knockout(&self) -> bool {
         matches!(self.intervention_type, InterventionType::Knockout)
     }
 
     /// Check if this is a post-softmax steering intervention.
+    #[must_use]
     pub const fn is_steering(&self) -> bool {
         matches!(
             self.intervention_type,
@@ -486,6 +494,7 @@ impl SteeringSpec {
     /// If all edges have `from_pos < prompt_len`, the steering can be
     /// applied once during prompt processing, cached, and reused for
     /// generation (no steering needed for generated tokens).
+    #[must_use]
     pub fn is_prompt_only(&self, prompt_len: usize) -> bool {
         for edge in &self.edges {
             if edge.from_pos == usize::MAX {
@@ -499,6 +508,7 @@ impl SteeringSpec {
     }
 
     /// Maximum `from_pos` among all edges (excluding sentinels).
+    #[must_use]
     pub fn max_from_pos(&self) -> Option<usize> {
         self.edges
             .iter()
@@ -508,6 +518,7 @@ impl SteeringSpec {
     }
 
     /// Maximum `to_pos` among all edges (excluding sentinels).
+    #[must_use]
     pub fn max_to_pos(&self) -> Option<usize> {
         self.edges
             .iter()
@@ -549,6 +560,7 @@ pub struct AblationResult {
 
 impl AblationResult {
     /// Create a new ablation result.
+    #[must_use]
     pub const fn new(baseline_logits: Tensor, ablated_logits: Tensor, spec: KnockoutSpec) -> Self {
         Self {
             baseline_logits,
@@ -654,6 +666,7 @@ impl SteeringResult {
     }
 
     /// Attention change ratio (`steered_mean / baseline_mean`).
+    #[must_use]
     pub fn attention_ratio(&self) -> Option<f32> {
         match (self.baseline_attention_mean, self.steered_attention_mean) {
             (Some(base), Some(steered)) if base > 1e-10 => Some(steered / base),
@@ -1115,6 +1128,7 @@ impl StateKnockoutSpec {
     }
 
     /// Check if knockout applies to this layer.
+    #[must_use]
     pub fn applies_to_layer(&self, layer: usize) -> bool {
         match &self.layers {
             LayerSpec::All => true,
@@ -1124,6 +1138,7 @@ impl StateKnockoutSpec {
     }
 
     /// Get knockout positions as a `HashSet` for O(1) lookup in the WKV loop.
+    #[must_use]
     pub fn position_set(&self) -> HashSet<usize> {
         self.positions.iter().copied().collect()
     }
@@ -1174,6 +1189,7 @@ pub struct StateAblationResult {
 
 impl StateAblationResult {
     /// Create a new state ablation result.
+    #[must_use]
     pub const fn new(
         baseline_logits: Tensor,
         ablated_logits: Tensor,
@@ -1279,6 +1295,7 @@ impl StateSteeringSpec {
     }
 
     /// Check if steering applies to this layer.
+    #[must_use]
     pub fn applies_to_layer(&self, layer: usize) -> bool {
         match &self.layers {
             LayerSpec::All => true,
@@ -1288,6 +1305,7 @@ impl StateSteeringSpec {
     }
 
     /// Get steering positions as a `HashSet` for O(1) lookup in the WKV loop.
+    #[must_use]
     pub fn position_set(&self) -> HashSet<usize> {
         self.positions.iter().copied().collect()
     }
@@ -1332,6 +1350,7 @@ pub struct StateSteeringResult {
 
 impl StateSteeringResult {
     /// Create a new state steering result.
+    #[must_use]
     pub const fn new(
         baseline_logits: Tensor,
         steered_logits: Tensor,

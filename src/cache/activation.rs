@@ -39,6 +39,7 @@ impl ActivationCache {
     }
 
     /// Create an empty cache with capacity for `n_layers` layers.
+    #[must_use]
     pub fn with_capacity(n_layers: usize) -> Self {
         Self {
             activations: Vec::with_capacity(n_layers),
@@ -51,21 +52,25 @@ impl ActivationCache {
     }
 
     /// Get the activation for a specific layer.
+    #[must_use]
     pub fn get_layer(&self, layer: usize) -> Option<&Tensor> {
         self.activations.get(layer)
     }
 
     /// Number of cached layers.
+    #[must_use]
     pub const fn n_layers(&self) -> usize {
         self.activations.len()
     }
 
     /// Whether the cache is empty.
+    #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.activations.is_empty()
     }
 
     /// All cached activations as a slice.
+    #[must_use]
     pub fn activations(&self) -> &[Tensor] {
         &self.activations
     }
@@ -116,6 +121,7 @@ pub struct FullActivationCache {
 
 impl FullActivationCache {
     /// Create an empty cache with capacity for `n_layers` layers.
+    #[must_use]
     pub fn with_capacity(n_layers: usize) -> Self {
         Self {
             activations: Vec::with_capacity(n_layers),
@@ -133,6 +139,7 @@ impl FullActivationCache {
     ///
     /// Returns shape `[seq_len, d_model]`, or `None` if the layer
     /// is not in the cache.
+    #[must_use]
     pub fn get_layer(&self, layer: usize) -> Option<&Tensor> {
         self.activations.get(layer)
     }
@@ -160,6 +167,7 @@ impl FullActivationCache {
     }
 
     /// Number of cached layers.
+    #[must_use]
     pub const fn n_layers(&self) -> usize {
         self.activations.len()
     }
@@ -178,6 +186,7 @@ impl FullActivationCache {
     }
 
     /// Whether the cache is empty.
+    #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.activations.is_empty()
     }

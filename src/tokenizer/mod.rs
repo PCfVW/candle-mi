@@ -127,6 +127,7 @@ impl MITokenizer {
     }
 
     /// Get vocabulary size.
+    #[must_use]
     pub fn vocab_size(&self) -> usize {
         match self {
             Self::HuggingFace(tok) => tok.get_vocab_size(true),

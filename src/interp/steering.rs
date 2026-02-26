@@ -91,6 +91,7 @@ impl SteeringCalibration {
     }
 
     /// Calculate the scale factor needed to boost target attention to a value.
+    #[must_use]
     pub fn scale_factor_for_target(&self, target: f32) -> f32 {
         if self.target_baseline > 1e-10 {
             target / self.target_baseline
@@ -100,11 +101,13 @@ impl SteeringCalibration {
     }
 
     /// Calculate the scale factor to boost target to source level.
+    #[must_use]
     pub fn scale_factor_to_source(&self) -> f32 {
         self.scale_factor_for_target(self.source_baseline)
     }
 
     /// Get dose levels as absolute attention values (based on target baseline).
+    #[must_use]
     pub fn dose_levels_absolute(&self) -> Vec<(f32, f32)> {
         DOSE_LEVELS
             .iter()
@@ -144,6 +147,7 @@ pub struct DoseResponseCurve {
 
 impl DoseResponseCurve {
     /// Create a new dose-response curve.
+    #[must_use]
     pub const fn new(
         sample_id: String,
         condition: String,
@@ -173,6 +177,7 @@ impl DoseResponseCurve {
     /// Uses linear interpolation between data points. Returns `None`
     /// if the target is outside the measured range.
     #[allow(clippy::indexing_slicing)] // windows(2) guarantees exactly 2 elements
+    #[must_use]
     pub fn scale_for_target(&self, target: f32) -> Option<f32> {
         for window in self.points.windows(2) {
             let (p1, p2) = (&window[0], &window[1]);

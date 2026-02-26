@@ -59,6 +59,7 @@ pub struct LogitLensAnalysis {
 
 impl LogitLensAnalysis {
     /// Create a new analysis with capacity for `n_layers` layers.
+    #[must_use]
     pub fn new(input_text: String, n_layers: usize) -> Self {
         Self {
             input_text,
@@ -76,6 +77,7 @@ impl LogitLensAnalysis {
     ///
     /// Returns `(token_str, probability)` for the highest-probability
     /// token at each analyzed layer.
+    #[must_use]
     pub fn top_predictions(&self) -> Vec<(&str, f32)> {
         self.layer_results
             .iter()
@@ -88,6 +90,7 @@ impl LogitLensAnalysis {
     ///
     /// Searches predictions using `contains()` on the token string.
     /// Returns `None` if the token never appears in the top-k at any layer.
+    #[must_use]
     pub fn first_appearance(&self, token: &str, k: usize) -> Option<usize> {
         for result in &self.layer_results {
             let in_top_k = result

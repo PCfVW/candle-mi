@@ -65,3 +65,14 @@ Rules:
   The absence of a mutation mechanism is the enforcement.
 - `HookSpec::intervene()` takes a typed `Intervention` value. All mutations
   go through this path and are visible at the call site.
+
+## `#[must_use]` Policy (Rule 17)
+
+All public functions and methods that return a value and have no side effects
+must be annotated `#[must_use]`.  This includes constructors (`new`,
+`with_capacity`), accessors (`len`, `is_empty`, `get_*`), and pure queries.
+Without the annotation, a caller can silently discard the return value — which
+for these functions is always a bug, since the call has no other effect.
+
+The `clippy::must_use_candidate` lint enforces this at `warn` level
+(promoted to error by `#![deny(warnings)]`).

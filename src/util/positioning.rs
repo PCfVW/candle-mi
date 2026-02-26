@@ -57,6 +57,7 @@ pub struct EncodingWithOffsets {
 
 impl EncodingWithOffsets {
     /// Create a new encoding with offsets.
+    #[must_use]
     pub const fn new(ids: Vec<u32>, tokens: Vec<String>, offsets: Vec<(usize, usize)>) -> Self {
         Self {
             ids,
@@ -66,6 +67,7 @@ impl EncodingWithOffsets {
     }
 
     /// Get tokens with their character offsets.
+    #[must_use]
     pub fn tokens_with_offsets(&self) -> Vec<TokenWithOffset> {
         self.tokens
             .iter()
@@ -81,6 +83,7 @@ impl EncodingWithOffsets {
     /// Find the token index that contains the given character position.
     ///
     /// Returns `None` if no token spans that position.
+    #[must_use]
     pub fn char_to_token(&self, char_pos: usize) -> Option<usize> {
         self.offsets
             .iter()
@@ -91,6 +94,7 @@ impl EncodingWithOffsets {
     ///
     /// If the exact position isn't contained in any token, returns the
     /// index of the closest token by midpoint distance.
+    #[must_use]
     pub fn char_to_token_fuzzy(&self, char_pos: usize) -> Option<usize> {
         // Try exact match first.
         if let Some(idx) = self.char_to_token(char_pos) {
@@ -109,6 +113,7 @@ impl EncodingWithOffsets {
     }
 
     /// Find the token index that starts at or after the given character position.
+    #[must_use]
     pub fn char_to_token_start(&self, char_pos: usize) -> Option<usize> {
         self.offsets
             .iter()
@@ -116,6 +121,7 @@ impl EncodingWithOffsets {
     }
 
     /// Find all token indices that overlap with the given character range.
+    #[must_use]
     pub fn char_range_to_tokens(&self, start_char: usize, end_char: usize) -> Vec<usize> {
         self.offsets
             .iter()
@@ -131,16 +137,19 @@ impl EncodingWithOffsets {
     }
 
     /// Get the character range for a token index.
+    #[must_use]
     pub fn token_to_char_range(&self, token_idx: usize) -> Option<(usize, usize)> {
         self.offsets.get(token_idx).copied()
     }
 
     /// Number of tokens.
+    #[must_use]
     pub const fn len(&self) -> usize {
         self.tokens.len()
     }
 
     /// Whether the encoding is empty.
+    #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.tokens.is_empty()
     }
@@ -160,6 +169,7 @@ pub struct PositionConversion {
 }
 
 /// Convert multiple character positions to token indices.
+#[must_use]
 pub fn convert_positions(
     encoding: &EncodingWithOffsets,
     char_positions: &[usize],
@@ -190,6 +200,7 @@ pub fn convert_positions(
 ///
 /// Returns the byte offset of the first occurrence of `marker` in `text`,
 /// or `None` if not found.
+#[must_use]
 pub fn find_marker_char_pos(text: &str, marker: &str) -> Option<usize> {
     text.find(marker)
 }
