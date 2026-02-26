@@ -4,7 +4,7 @@
 //!
 //! A single forward pass covers `LLaMA`, `Qwen2`, Gemma 2, `Phi-3`,
 //! `StarCoder2`, Mistral, and more — parameterized by
-//! [`TransformerConfig`](crate::config::TransformerConfig).
+//! [`TransformerConfig`].
 
 pub(crate) mod attention;
 pub(crate) mod mlp;
@@ -146,7 +146,7 @@ impl GenericTransformer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`] if weight loading fails or dimensions
+    /// Returns [`MIError::Model`](crate::error::MIError::Model) if weight loading fails or dimensions
     /// are inconsistent.
     #[allow(clippy::needless_pass_by_value)] // VarBuilder is candle's pass-by-value convention
     pub fn load(

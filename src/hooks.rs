@@ -24,7 +24,7 @@ use crate::error::{MIError, Result};
 /// or interventions applied.
 ///
 /// Mirrors the `TransformerLens` hook point naming convention via
-/// [`Display`] and [`FromStr`].
+/// [`Display`](std::fmt::Display) and [`FromStr`].
 ///
 /// # String conversion
 ///
