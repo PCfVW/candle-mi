@@ -26,6 +26,7 @@
 
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::{GenericTransformer, HookSpec, MIBackend, MITokenizer, TransformerConfig};
+use serial_test::serial;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -271,6 +272,7 @@ fn llama_3_2_1b_forward_cpu() {
 }
 
 #[test]
+#[serial]
 fn llama_3_2_1b_forward_gpu() {
     let device = match cuda_device() {
         Some(d) => d,
@@ -342,6 +344,7 @@ fn gemma_2_2b_forward_cpu() {
 }
 
 #[test]
+#[serial]
 fn gemma_2_2b_forward_gpu() {
     let device = match cuda_device() {
         Some(d) => d,
@@ -404,6 +407,7 @@ fn starcoder2_3b_forward_cpu() {
 }
 
 #[test]
+#[serial]
 fn starcoder2_3b_forward_gpu() {
     let device = match cuda_device() {
         Some(d) => d,
@@ -464,6 +468,7 @@ fn qwen2_5_coder_3b_forward_cpu() {
 }
 
 #[test]
+#[serial]
 fn qwen2_5_coder_3b_forward_gpu() {
     let device = match cuda_device() {
         Some(d) => d,
@@ -525,6 +530,7 @@ fn phi3_mini_forward_cpu() {
 }
 
 #[test]
+#[serial]
 fn phi3_mini_forward_gpu() {
     let device = match cuda_device() {
         Some(d) => d,
@@ -647,6 +653,7 @@ fn mistral_7b_forward_cpu() {
 }
 
 #[test]
+#[serial]
 fn mistral_7b_forward_gpu() {
     let device = match cuda_device() {
         Some(d) => d,

@@ -43,6 +43,7 @@ linfa = { version = "0.7", optional = true }
 linfa-logistic = { version = "0.7", optional = true }
 
 [dev-dependencies]
+serial_test = "3.4.0"
 tempfile = "3.10"
 
 [features]
