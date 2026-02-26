@@ -163,6 +163,79 @@ impl fmt::Display for MlpLayout {
 /// | `Phi-3` / `Phi-4` | + Fused QKV, fused MLP |
 /// | `StarCoder2` | + Plain MLP, GELU, bias everywhere |
 /// | Mistral | + Sliding window attention |
+///
+/// # `config.json` field reference
+///
+/// ## Required fields (all families)
+///
+/// | Field | `config.json` key |
+/// |-------|-------------------|
+/// | — | `model_type` |
+/// | `hidden_size` | `hidden_size` |
+/// | `num_layers` | `num_hidden_layers` |
+/// | `num_attention_heads` | `num_attention_heads` |
+/// | `intermediate_size` | `intermediate_size` |
+/// | `vocab_size` | `vocab_size` |
+///
+/// ## Optional fields (all families)
+///
+/// | Field | `config.json` key | Default |
+/// |-------|-------------------|---------|
+/// | `num_kv_heads` | `num_key_value_heads` | `num_attention_heads` |
+/// | `head_dim` | `head_dim` | `hidden_size / num_attention_heads` |
+/// | `norm_eps` | `rms_norm_eps` ¹ | 1e-5 ² |
+/// | `rope_theta` | `rope_theta` | 10 000 ³ |
+/// | `max_position_embeddings` | `max_position_embeddings` | 4 096 ⁴ |
+/// | `tie_word_embeddings` | `tie_word_embeddings` | `false` ⁵ |
+///
+/// ¹ `StarCoder2` reads `norm_epsilon` instead.\
+/// ² 1e-6 for Qwen2, Gemma, Gemma 2.\
+/// ³ 1 000 000 for Qwen2.\
+/// ⁴ 32 768 for Qwen2/Mistral; 16 384 for `StarCoder2`; 8 192 for
+///   Gemma/Gemma 2; 4 096 for `LLaMA`/`Phi-3`.\
+/// ⁵ `true` for Gemma, Gemma 2, `StarCoder2`.
+///
+/// ## Hardcoded architecture axes
+///
+/// The following fields are **set by the family-specific parser**, not
+/// read from `config.json` (except where noted):
+///
+/// | Field | Description |
+/// |-------|-------------|
+/// | `norm_type` | [`RmsNorm`](NormType::RmsNorm) for most; [`GemmaRmsNorm`](NormType::GemmaRmsNorm) for Gemma/Gemma 2; read from `norm_type` key for `StarCoder2` (default [`RmsNorm`](NormType::RmsNorm), `"layer_norm"` → [`LayerNorm`](NormType::LayerNorm)) |
+/// | `activation` | [`Silu`](Activation::Silu) for `LLaMA`/Qwen2/`Phi-3`/Mistral; [`GeluApprox`](Activation::GeluApprox) for Gemma/Gemma 2/`StarCoder2` |
+/// | `qkv_layout` | [`Fused`](QkvLayout::Fused) for `Phi-3`; [`Separate`](QkvLayout::Separate) for all others |
+/// | `mlp_layout` | [`GatedFused`](MlpLayout::GatedFused) for `Phi-3`; [`Plain`](MlpLayout::Plain) for `StarCoder2`; [`GatedSeparate`](MlpLayout::GatedSeparate) for all others |
+/// | `embedding_scale` | `Some(sqrt(hidden_size))` for Gemma/Gemma 2; `None` for all others |
+/// | `use_post_norms` | `true` for Gemma 2 (4 norms per layer); `false` for all others |
+/// | `alternating_sliding_window` | `true` for Gemma 2; `false` for all others |
+///
+/// ## Per-family `config.json` extensions
+///
+/// **Qwen2** — reads `attention_bias` (default `true`) → `qkv_bias`.
+///
+/// **Gemma / Gemma 2** — hardcodes `embedding_scale` to `sqrt(hidden_size)`,
+/// `tie_word_embeddings` defaults to `true`, and `norm_eps` defaults to 1e-6.
+/// Gemma 2 additionally reads:
+///
+/// | `config.json` key | Field | Default |
+/// |-------------------|-------|---------|
+/// | `attn_logit_softcapping` | `attn_logit_softcapping` | `None` |
+/// | `final_logit_softcapping` | `final_logit_softcapping` | `None` |
+/// | `query_pre_attn_scalar` | `query_pre_attn_scalar` | `Some(256.0)` |
+/// | `sliding_window` | `sliding_window` | `None` |
+///
+/// **`Phi-3`** — no extra `config.json` keys; fused QKV and fused gated MLP
+/// are hardcoded.
+///
+/// **`StarCoder2`** — reads `use_bias` (default `true`) → `qkv_bias`,
+/// `o_proj_bias`, and `mlp_bias`.  Reads `norm_type` (default `RmsNorm`,
+/// `"layer_norm"` → `LayerNorm`).  Uses `norm_epsilon` key (not
+/// `rms_norm_eps`).  Hardcodes [`Plain`](MlpLayout::Plain) MLP and
+/// [`GeluApprox`](Activation::GeluApprox) activation.
+///
+/// **Mistral** — reads `sliding_window` (default `None`).  Otherwise
+/// identical to `LLaMA`; `max_position_embeddings` defaults to 32 768.
 #[derive(Debug, Clone)]
 #[allow(clippy::struct_excessive_bools)] // Config structs legitimately have many boolean axes
 pub struct TransformerConfig {
@@ -242,6 +315,9 @@ impl TransformerConfig {
     /// Parse a [`TransformerConfig`] from a `HuggingFace` `config.json` value.
     ///
     /// Dispatches on the `model_type` field to a family-specific parser.
+    /// See the [`TransformerConfig`] struct-level documentation for the
+    /// full field reference (required/optional keys, defaults, and
+    /// per-family extensions).
     ///
     /// # Errors
     ///
