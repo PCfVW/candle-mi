@@ -286,7 +286,18 @@ With this config, **one implementation** covers:
 | **DeepSeek** (dense layers) | GQA, SiLU, RmsNorm | — |
 | **Yi** | GQA, SiLU, RmsNorm (LLaMA-like) | — |
 | **InternLM 2** | GQA, SiLU, RmsNorm (LLaMA-like) | — |
-| **Codestral** | GQA, SiLU, RmsNorm, sliding window | — |
+
+**VRAM budget (BF16, RTX 5060 Ti 16 GB).** Non-validated families have at least one size that fits on 16 GB:
+
+| Model Family | Smallest Size | BF16 VRAM est. |
+|--------------|---------------|----------------|
+| Gemma 1 / CodeGemma | 2B (~2.5 B actual) | ~6 GB |
+| DeepSeek-Coder (dense) | 1.3B | ~3.6 GB |
+| Yi 1.5 | 6B | ~13 GB |
+| InternLM 2 | 1.8B | ~4.6 GB |
+| Phi-4-mini | 3.8B | ~8.6 GB |
+
+The 7 B variants (DeepSeek-LLM 7B, InternLM 2 7B) are borderline at ~15 GB and require short sequences.
 
 ### 3.4 What It Does NOT Cover
 
@@ -298,6 +309,7 @@ With this config, **one implementation** covers:
 | **Encoder-only** (BERT, etc.) | Bidirectional attention, [MASK] token | Different forward pass structure |
 | **Encoder-decoder** (T5, etc.) | Cross-attention between encoder and decoder | Different forward pass structure |
 | **Very old architectures** (GPT-2, GPT-J) | Absolute position embeddings, post-norm | Could be added as config variants if needed |
+| **Codestral** (Mistral) | Only available at 22 B; exceeds 16 GB MI GPU budgets | Would need ≥48 GB VRAM (A6000, etc.) |
 
 ### 3.5 Config Parsing from HuggingFace `config.json`
 
