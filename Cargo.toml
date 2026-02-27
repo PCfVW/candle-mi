@@ -37,6 +37,10 @@ statrs = "0.17"
 # Logging
 tracing = "0.1"
 
+# Optional: fast model downloads
+hf-fetch-model = { path = "../hf-fetch-model", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
+
 # Optional: probing
 ndarray = { version = "0.15", optional = true }
 linfa = { version = "0.7", optional = true }
@@ -45,6 +49,8 @@ linfa-logistic = { version = "0.7", optional = true }
 [dev-dependencies]
 serial_test = "3.4.0"
 tempfile = "3.10"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tracing-subscriber = "0.3"
 
 [features]
 default = ["cuda", "transformer"]
@@ -56,6 +62,7 @@ rwkv = []
 rwkv-tokenizer = []
 clt = []
 sae = []
+fast-download = ["hf-fetch-model", "tokio"]
 probing = ["linfa", "linfa-logistic", "ndarray"]
 
 [lints.rust]

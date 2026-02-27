@@ -38,6 +38,12 @@ fn main() {
             "  python -c \"from huggingface_hub import snapshot_download; \
              snapshot_download('meta-llama/Llama-3.2-1B')\""
         );
+        println!();
+        println!("Or with Rust (requires fast-download feature):");
+        println!(
+            "  cargo run --example fast_download \
+             --features fast-download -- meta-llama/Llama-3.2-1B"
+        );
         return;
     }
 
