@@ -3,7 +3,7 @@
 //! Fast model download with progress via tracing.
 //!
 //! ```bash
-//! cargo run --example fast_download --features fast-download
+//! cargo run --example fast_download
 //! ```
 //!
 //! **What it does:**

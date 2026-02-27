@@ -558,7 +558,7 @@ fn phi3_mini_forward_gpu() {
 
 /// Helper: ensure Mistral 7B v0.1 weights are in the local HF cache.
 ///
-/// Uses the `hf-hub` Rust crate to download if necessary (fast, parallel).
+/// Uses `hf-fetch-model` to download if necessary (fast, parallel).
 /// Returns the snapshot path, or None if download fails.
 fn ensure_mistral_7b_cached() -> Option<std::path::PathBuf> {
     if let Some(snap) = find_snapshot("mistralai/Mistral-7B-v0.1") {
@@ -571,37 +571,25 @@ fn ensure_mistral_7b_cached() -> Option<std::path::PathBuf> {
         }
     }
 
-    // Trigger download via hf-hub Rust crate
-    eprintln!("Downloading mistralai/Mistral-7B-v0.1 via hf-hub...");
-    let api = hf_hub::api::sync::Api::new().ok()?;
-    let repo = api.model("mistralai/Mistral-7B-v0.1".to_string());
+    // Trigger download via hf-fetch-model
+    eprintln!("Downloading mistralai/Mistral-7B-v0.1 via hf-fetch-model...");
+    let config = hf_fetch_model::FetchConfig::builder()
+        .filter("*.safetensors")
+        .filter("*.safetensors.index.json")
+        .filter("*.json")
+        .build()
+        .ok()?;
 
-    // Download index first
-    let index_path = repo.get("model.safetensors.index.json").ok()?;
-    let index_str = std::fs::read_to_string(&index_path).ok()?;
-    let index: serde_json::Value = serde_json::from_str(&index_str).ok()?;
-    let weight_map = index["weight_map"].as_object()?;
-
-    let mut shard_names: Vec<String> = weight_map
-        .values()
-        .map(|v| v.as_str().unwrap().to_string())
-        .collect();
-    shard_names.sort();
-    shard_names.dedup();
-
-    for name in &shard_names {
-        eprintln!("  Downloading {name}...");
-        if repo.get(name).is_err() {
-            eprintln!("  FAILED to download {name}");
-            return None;
+    match hf_fetch_model::download_with_config_blocking(
+        "mistralai/Mistral-7B-v0.1".to_owned(),
+        &config,
+    ) {
+        Ok(_path) => find_snapshot("mistralai/Mistral-7B-v0.1"),
+        Err(e) => {
+            eprintln!("  FAILED to download: {e}");
+            None
         }
     }
-
-    // Also ensure tokenizer
-    let _ = repo.get("tokenizer.json");
-    let _ = repo.get("config.json");
-
-    find_snapshot("mistralai/Mistral-7B-v0.1")
 }
 
 #[test]

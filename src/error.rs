@@ -36,8 +36,6 @@ pub enum MIError {
     /// Model download error.
     ///
     /// Returned when downloading a model from the `HuggingFace` Hub fails.
-    /// Available with the `fast-download` feature.
-    #[cfg(feature = "fast-download")]
     #[error("download error: {0}")]
     Download(String),
 }

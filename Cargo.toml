@@ -17,7 +17,6 @@ candle-nn = "0.9"
 
 # HuggingFace integration
 tokenizers = "0.21"
-hf-hub = "0.4"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -37,9 +36,9 @@ statrs = "0.17"
 # Logging
 tracing = "0.1"
 
-# Optional: fast model downloads
-hf-fetch-model = { path = "../hf-fetch-model", optional = true }
-tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
+# Model downloads (hf-fetch-model wraps hf-hub v0.5)
+hf-fetch-model = { path = "../hf-fetch-model" }
+tokio = { version = "1", features = ["rt-multi-thread"] }
 
 # Optional: probing
 ndarray = { version = "0.15", optional = true }
@@ -62,7 +61,6 @@ rwkv = []
 rwkv-tokenizer = []
 clt = []
 sae = []
-fast-download = ["hf-fetch-model", "tokio"]
 probing = ["linfa", "linfa-logistic", "ndarray"]
 
 [lints.rust]

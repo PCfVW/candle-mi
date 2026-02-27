@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Integration tests for the `fast-download` feature.
+//! Integration tests for the download module.
 //!
 //! Downloads a small public test repository (`julien-c/dummy-unknown`)
 //! and verifies the returned path is valid.
 //!
 //! Run with:
-//!   `cargo test --test fast_download --features fast-download`
+//!   `cargo test --test fast_download`
 
-#![cfg(feature = "fast-download")]
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,

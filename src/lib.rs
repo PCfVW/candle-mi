@@ -18,17 +18,12 @@
 //! - **Generic RWKV** (planned) — covers RWKV-6 and RWKV-7 linear RNN models
 //!   (feature: `rwkv`).
 //!
-//! ## Fast downloads (optional)
+//! ## Fast downloads
 //!
-//! With the `fast-download` feature, candle-mi can download models from the
-//! `HuggingFace` Hub with maximum throughput:
-//!
-//! ```toml
-//! candle-mi = { version = "0.0.2", features = ["fast-download", "transformer"] }
-//! ```
+//! candle-mi uses [`hf-fetch-model`](https://github.com/PCfVW/hf-fetch-model)
+//! for high-throughput downloads from the `HuggingFace` Hub:
 //!
 //! ```rust,no_run
-//! # #[cfg(feature = "fast-download")]
 //! # async fn example() -> candle_mi::Result<()> {
 //! // Pre-download with parallel chunks and progress via tracing
 //! let path = candle_mi::download_model("meta-llama/Llama-3.2-1B".to_owned()).await?;
@@ -68,7 +63,6 @@
 pub mod backend;
 pub mod cache;
 pub mod config;
-#[cfg(feature = "fast-download")]
 pub mod download;
 pub mod error;
 pub mod hooks;
@@ -123,6 +117,5 @@ pub use util::positioning::{EncodingWithOffsets, PositionConversion, TokenWithOf
 // Tokenizer
 pub use tokenizer::MITokenizer;
 
-// Download (fast-download feature)
-#[cfg(feature = "fast-download")]
+// Download
 pub use download::{download_model, download_model_blocking};

@@ -8,14 +8,6 @@
 //! `HuggingFace` cache directory (`~/.cache/huggingface/hub/`), ensuring
 //! compatibility with [`MIModel::from_pretrained()`](crate::MIModel::from_pretrained).
 //!
-//! # Feature gate
-//!
-//! Requires `features = ["fast-download"]`:
-//!
-//! ```toml
-//! candle-mi = { version = "...", features = ["fast-download"] }
-//! ```
-//!
 //! # Usage pattern
 //!
 //! ```rust,no_run

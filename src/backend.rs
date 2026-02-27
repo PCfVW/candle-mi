@@ -148,14 +148,13 @@ impl MIModel {
         };
 
         // --- Download / resolve local files ---
-        let api = hf_hub::api::sync::Api::new()
-            .map_err(|e| MIError::Model(candle_core::Error::Msg(format!("HF Hub API: {e}"))))?;
-        let repo = api.model(model_id.to_string());
+        let files = hf_fetch_model::download_files_blocking(model_id.to_owned())
+            .map_err(|e| MIError::Download(e.to_string()))?;
 
-        let config_path = repo
+        let config_path = files
             .get("config.json")
-            .map_err(|e| MIError::Config(format!("config.json: {e}")))?;
-        let config_str = std::fs::read_to_string(&config_path)
+            .ok_or_else(|| MIError::Config("config.json not found in downloaded files".into()))?;
+        let config_str = std::fs::read_to_string(config_path)
             .map_err(|e| MIError::Config(format!("read config.json: {e}")))?;
         let json: serde_json::Value = serde_json::from_str(&config_str)
             .map_err(|e| MIError::Config(format!("parse config.json: {e}")))?;
@@ -163,7 +162,7 @@ impl MIModel {
         let config = TransformerConfig::from_hf_config(&json)?;
 
         // --- Resolve safetensors paths ---
-        let weights_paths = resolve_safetensors_paths(&repo)?;
+        let weights_paths = resolve_safetensors_paths(&files)?;
 
         // --- Create VarBuilder ---
         let vb = create_var_builder(&weights_paths, dtype, &device)?;
@@ -362,15 +361,17 @@ struct SafetensorsIndex {
     weight_map: std::collections::HashMap<String, String>,
 }
 
-/// Resolve safetensors file paths — handles both single-file and sharded models.
+/// Resolve safetensors file paths from a downloaded file map.
 ///
 /// Tries `model.safetensors.index.json` first (sharded), falls back to
 /// single `model.safetensors`.
 #[cfg(feature = "transformer")]
-fn resolve_safetensors_paths(repo: &hf_hub::api::sync::ApiRepo) -> Result<Vec<std::path::PathBuf>> {
+fn resolve_safetensors_paths(
+    files: &std::collections::HashMap<String, std::path::PathBuf>,
+) -> Result<Vec<std::path::PathBuf>> {
     // Try sharded first
-    if let Ok(index_path) = repo.get("model.safetensors.index.json") {
-        let index_str = std::fs::read_to_string(&index_path)
+    if let Some(index_path) = files.get("model.safetensors.index.json") {
+        let index_str = std::fs::read_to_string(index_path)
             .map_err(|e| MIError::Model(candle_core::Error::Msg(format!("read index: {e}"))))?;
         let index: SafetensorsIndex = serde_json::from_str(&index_str)
             .map_err(|e| MIError::Config(format!("parse index: {e}")))?;
@@ -382,21 +383,27 @@ fn resolve_safetensors_paths(repo: &hf_hub::api::sync::ApiRepo) -> Result<Vec<st
 
         let mut paths = Vec::with_capacity(shard_names.len());
         for shard_name in &shard_names {
-            let path = repo.get(shard_name).map_err(|e| {
+            let path = files.get(shard_name.as_str()).ok_or_else(|| {
                 MIError::Model(candle_core::Error::Msg(format!(
-                    "download shard {shard_name}: {e}"
+                    "shard {shard_name} not found in downloaded files"
                 )))
             })?;
-            paths.push(path);
+            // BORROW: explicit .clone() — PathBuf from HashMap value
+            paths.push(path.clone());
         }
         return Ok(paths);
     }
 
     // Single file
-    let path = repo
+    let path = files
         .get("model.safetensors")
-        .map_err(|e| MIError::Model(candle_core::Error::Msg(format!("model.safetensors: {e}"))))?;
-    Ok(vec![path])
+        .ok_or_else(|| {
+            MIError::Model(candle_core::Error::Msg(
+                "model.safetensors not found in downloaded files".into(),
+            ))
+        })?;
+    // BORROW: explicit .clone() — PathBuf from HashMap value
+    Ok(vec![path.clone()])
 }
 
 /// Create a `VarBuilder` from safetensors file paths.

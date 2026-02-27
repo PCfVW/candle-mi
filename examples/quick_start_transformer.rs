@@ -39,11 +39,8 @@ fn main() {
              snapshot_download('meta-llama/Llama-3.2-1B')\""
         );
         println!();
-        println!("Or with Rust (requires fast-download feature):");
-        println!(
-            "  cargo run --example fast_download \
-             --features fast-download -- meta-llama/Llama-3.2-1B"
-        );
+        println!("Or with Rust:");
+        println!("  cargo run --example fast_download -- meta-llama/Llama-3.2-1B");
         return;
     }
 
@@ -53,10 +50,10 @@ fn main() {
     );
 
     // 2. Iterate and run each model
-    for (model_id, model_type) in &cached {
+    for (model_id, model_type, snapshot) in &cached {
         println!("--- {model_id} (model_type: {model_type}) ---");
 
-        if let Err(e) = run_model(model_id, prompt) {
+        if let Err(e) = run_model(model_id, snapshot, prompt) {
             println!("  Skipped: {e}\n");
         }
     }
@@ -111,9 +108,9 @@ fn read_model_type(snapshot: &Path) -> Option<String> {
     json.get("model_type")?.as_str().map(String::from)
 }
 
-/// Scan the HF cache and return `(model_id, model_type)` pairs for supported
-/// transformer models.
-fn discover_cached_models() -> Vec<(String, String)> {
+/// Scan the HF cache and return `(model_id, model_type, snapshot_path)` tuples
+/// for supported transformer models.
+fn discover_cached_models() -> Vec<(String, String, PathBuf)> {
     let Some(cache_dir) = hf_cache_dir() else {
         return Vec::new();
     };
@@ -148,7 +145,7 @@ fn discover_cached_models() -> Vec<(String, String)> {
 
         // BORROW: explicit .as_str() — String → &str for slice lookup
         if SUPPORTED_MODEL_TYPES.contains(&model_type.as_str()) {
-            models.push((model_id, model_type));
+            models.push((model_id, model_type, snapshot));
         }
     }
 
@@ -163,7 +160,7 @@ fn discover_cached_models() -> Vec<(String, String)> {
 
 /// Load a model, tokenize a prompt, run a forward pass, and print top-5
 /// predictions.
-fn run_model(model_id: &str, prompt: &str) -> candle_mi::Result<()> {
+fn run_model(model_id: &str, snapshot: &Path, prompt: &str) -> candle_mi::Result<()> {
     // Load model (uses HF cache — no download triggered)
     let model = MIModel::from_pretrained(model_id)?;
     println!(
@@ -173,14 +170,13 @@ fn run_model(model_id: &str, prompt: &str) -> candle_mi::Result<()> {
         model.device()
     );
 
-    // Load tokenizer
-    let api = hf_hub::api::sync::Api::new().map_err(|e| {
-        candle_mi::MIError::Model(candle_core::Error::Msg(format!("HF Hub API: {e}")))
-    })?;
-    let tokenizer_path = api
-        .model(model_id.to_string())
-        .get("tokenizer.json")
-        .map_err(|e| candle_mi::MIError::Tokenizer(format!("tokenizer.json: {e}")))?;
+    // Load tokenizer from local snapshot
+    let tokenizer_path = snapshot.join("tokenizer.json");
+    if !tokenizer_path.exists() {
+        return Err(candle_mi::MIError::Tokenizer(
+            "tokenizer.json not found in snapshot".into(),
+        ));
+    }
     let tokenizer = MITokenizer::from_hf_path(tokenizer_path)?;
 
     // Encode and forward
