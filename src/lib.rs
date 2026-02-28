@@ -15,8 +15,8 @@
 //! - **Generic Transformer** — covers `LLaMA`, `Qwen2`, Gemma 2, `Phi-3`,
 //!   `StarCoder2`, Mistral, and more via configuration axes (feature:
 //!   `transformer`).
-//! - **Generic RWKV** (planned) — covers RWKV-6 and RWKV-7 linear RNN models
-//!   (feature: `rwkv`).
+//! - **Generic RWKV** — covers RWKV-6 (Finch) linear RNN models
+//!   (feature: `rwkv`).  RWKV-7 (Goose) is planned.
 //!
 //! ## Fast downloads
 //!
@@ -87,6 +87,10 @@ pub use config::{
 // Transformer backend
 #[cfg(feature = "transformer")]
 pub use transformer::GenericTransformer;
+
+// RWKV backend
+#[cfg(feature = "rwkv")]
+pub use rwkv::{GenericRwkv, RwkvConfig, RwkvVersion};
 
 // Cache
 pub use cache::{ActivationCache, AttentionCache, FullActivationCache, KVCache};

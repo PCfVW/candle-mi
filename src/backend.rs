@@ -134,11 +134,8 @@ impl MIModel {
     ///
     /// Returns [`MIError::Config`] if the model type is unsupported, or
     /// [`MIError::Model`] if weight loading fails.
-    #[cfg(feature = "transformer")]
+    #[cfg(any(feature = "transformer", feature = "rwkv"))]
     pub fn from_pretrained(model_id: &str) -> Result<Self> {
-        use crate::config::TransformerConfig;
-        use crate::transformer::GenericTransformer;
-
         // --- Device and dtype ---
         let device = Self::select_device()?;
         let dtype = if device.is_cuda() {
@@ -159,18 +156,37 @@ impl MIModel {
         let json: serde_json::Value = serde_json::from_str(&config_str)
             .map_err(|e| MIError::Config(format!("parse config.json: {e}")))?;
 
-        let config = TransformerConfig::from_hf_config(&json)?;
+        // --- Dispatch on model_type ---
+        let model_type = json
+            .get("model_type")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| MIError::Config("missing 'model_type' field".into()))?;
 
-        // --- Resolve safetensors paths ---
         let weights_paths = resolve_safetensors_paths(&files)?;
-
-        // --- Create VarBuilder ---
         let vb = create_var_builder(&weights_paths, dtype, &device)?;
 
-        // --- Load model ---
-        let transformer = GenericTransformer::load(config, &device, dtype, vb)?;
+        match model_type {
+            #[cfg(feature = "transformer")]
+            mt if crate::config::SUPPORTED_MODEL_TYPES.contains(&mt) => {
+                use crate::config::TransformerConfig;
+                use crate::transformer::GenericTransformer;
 
-        Ok(Self::new(Box::new(transformer), device))
+                let config = TransformerConfig::from_hf_config(&json)?;
+                let transformer = GenericTransformer::load(config, &device, dtype, vb)?;
+                Ok(Self::new(Box::new(transformer), device))
+            }
+            #[cfg(feature = "rwkv")]
+            mt if crate::rwkv::SUPPORTED_RWKV_MODEL_TYPES.contains(&mt) => {
+                use crate::rwkv::{GenericRwkv, RwkvConfig};
+
+                let config = RwkvConfig::from_hf_config(&json)?;
+                let rwkv = GenericRwkv::load(config, &device, dtype, vb)?;
+                Ok(Self::new(Box::new(rwkv), device))
+            }
+            other => Err(MIError::Config(format!(
+                "unsupported model_type: '{other}'"
+            ))),
+        }
     }
 
     /// Select the best available device (CUDA GPU 0, or CPU fallback).
@@ -178,7 +194,7 @@ impl MIModel {
     /// # Errors
     ///
     /// Returns [`MIError::Model`] on device detection failure.
-    #[cfg(feature = "transformer")]
+    #[cfg(any(feature = "transformer", feature = "rwkv"))]
     fn select_device() -> Result<Device> {
         match Device::cuda_if_available(0) {
             Ok(dev) => Ok(dev),
@@ -354,7 +370,7 @@ pub struct GenerationResult {
 // ---------------------------------------------------------------------------
 
 /// Index structure for sharded safetensors models.
-#[cfg(feature = "transformer")]
+#[cfg(any(feature = "transformer", feature = "rwkv"))]
 #[derive(serde::Deserialize)]
 struct SafetensorsIndex {
     /// Maps weight name → shard filename.
@@ -365,7 +381,7 @@ struct SafetensorsIndex {
 ///
 /// Tries `model.safetensors.index.json` first (sharded), falls back to
 /// single `model.safetensors`.
-#[cfg(feature = "transformer")]
+#[cfg(any(feature = "transformer", feature = "rwkv"))]
 fn resolve_safetensors_paths(
     files: &std::collections::HashMap<String, std::path::PathBuf>,
 ) -> Result<Vec<std::path::PathBuf>> {
@@ -408,7 +424,7 @@ fn resolve_safetensors_paths(
 ///
 /// Uses buffered (safe) loading by default. With the `mmap` feature,
 /// uses memory-mapped loading for reduced memory overhead on large models.
-#[cfg(feature = "transformer")]
+#[cfg(any(feature = "transformer", feature = "rwkv"))]
 fn create_var_builder(
     paths: &[std::path::PathBuf],
     dtype: DType,
@@ -428,7 +444,7 @@ fn create_var_builder(
 ///
 /// Only supports single-file models. For sharded models (7B+), enable
 /// the `mmap` feature.
-#[cfg(all(feature = "transformer", not(feature = "mmap")))]
+#[cfg(all(any(feature = "transformer", feature = "rwkv"), not(feature = "mmap")))]
 fn buffered_var_builder(
     paths: &[std::path::PathBuf],
     dtype: DType,
@@ -460,7 +476,7 @@ fn buffered_var_builder(
 ///
 /// The safetensors files must not be modified while the model is loaded.
 /// This is the standard invariant for memory-mapped files.
-#[cfg(all(feature = "transformer", feature = "mmap"))]
+#[cfg(all(any(feature = "transformer", feature = "rwkv"), feature = "mmap"))]
 #[allow(unsafe_code)]
 fn mmap_var_builder(
     paths: &[std::path::PathBuf],
