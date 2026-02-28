@@ -208,12 +208,14 @@ impl RwkvTokenizer {
     }
 
     /// Get vocabulary mapping (string to token ID) for special token lookups.
+    #[must_use]
     pub fn get_vocab(&self) -> HashMap<String, u32> {
         self.vocab_map.clone()
     }
 
     /// Get vocabulary size (number of token entries).
-    pub fn vocab_size(&self) -> usize {
+    #[must_use]
+    pub const fn vocab_size(&self) -> usize {
         self.idx2token.len()
     }
 
