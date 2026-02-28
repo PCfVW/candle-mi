@@ -67,6 +67,8 @@ pub mod download;
 pub mod error;
 pub mod hooks;
 pub mod interp;
+#[cfg(feature = "rwkv")]
+pub mod rwkv;
 pub mod tokenizer;
 #[cfg(feature = "transformer")]
 pub mod transformer;

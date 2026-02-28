@@ -395,13 +395,11 @@ fn resolve_safetensors_paths(
     }
 
     // Single file
-    let path = files
-        .get("model.safetensors")
-        .ok_or_else(|| {
-            MIError::Model(candle_core::Error::Msg(
-                "model.safetensors not found in downloaded files".into(),
-            ))
-        })?;
+    let path = files.get("model.safetensors").ok_or_else(|| {
+        MIError::Model(candle_core::Error::Msg(
+            "model.safetensors not found in downloaded files".into(),
+        ))
+    })?;
     // BORROW: explicit .clone() — PathBuf from HashMap value
     Ok(vec![path.clone()])
 }

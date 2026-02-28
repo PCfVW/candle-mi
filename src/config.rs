@@ -681,7 +681,7 @@ impl TransformerConfig {
 // ---------------------------------------------------------------------------
 
 /// Extract a required `usize` field from a JSON object.
-fn get_usize(config: &Value, key: &str) -> Result<usize> {
+pub(crate) fn get_usize(config: &Value, key: &str) -> Result<usize> {
     let val = config
         .get(key)
         .and_then(Value::as_u64)
@@ -691,7 +691,7 @@ fn get_usize(config: &Value, key: &str) -> Result<usize> {
 }
 
 /// Extract an optional `usize` field, returning a default if absent.
-fn get_usize_or(config: &Value, key: &str, default: usize) -> usize {
+pub(crate) fn get_usize_or(config: &Value, key: &str, default: usize) -> usize {
     config
         .get(key)
         .and_then(Value::as_u64)
@@ -700,7 +700,7 @@ fn get_usize_or(config: &Value, key: &str, default: usize) -> usize {
 }
 
 /// Extract an optional `usize` field, returning `None` if absent.
-fn get_optional_usize(config: &Value, key: &str) -> Option<usize> {
+pub(crate) fn get_optional_usize(config: &Value, key: &str) -> Option<usize> {
     config
         .get(key)
         .and_then(Value::as_u64)
@@ -708,22 +708,26 @@ fn get_optional_usize(config: &Value, key: &str) -> Option<usize> {
 }
 
 /// Extract an `f64` field, returning a default if absent.
-fn get_f64_or(config: &Value, key: &str, default: f64) -> f64 {
+pub(crate) fn get_f64_or(config: &Value, key: &str, default: f64) -> f64 {
     config.get(key).and_then(Value::as_f64).unwrap_or(default)
 }
 
 /// Extract an optional `f64` field, returning `None` if absent.
-fn get_optional_f64(config: &Value, key: &str) -> Option<f64> {
+pub(crate) fn get_optional_f64(config: &Value, key: &str) -> Option<f64> {
     config.get(key).and_then(Value::as_f64)
 }
 
 /// Extract a `bool` field, returning a default if absent.
-fn get_bool_or(config: &Value, key: &str, default: bool) -> bool {
+pub(crate) fn get_bool_or(config: &Value, key: &str, default: bool) -> bool {
     config.get(key).and_then(Value::as_bool).unwrap_or(default)
 }
 
 /// Extract `head_dim`, falling back to `hidden_size / num_attention_heads`.
-fn get_head_dim(config: &Value, hidden_size: usize, num_attention_heads: usize) -> Result<usize> {
+pub(crate) fn get_head_dim(
+    config: &Value,
+    hidden_size: usize,
+    num_attention_heads: usize,
+) -> Result<usize> {
     // Explicit head_dim in config takes precedence.
     let explicit = config.get("head_dim").and_then(Value::as_u64).map(|hd| {
         usize::try_from(hd).map_err(|_| MIError::Config("head_dim overflows usize".into()))
