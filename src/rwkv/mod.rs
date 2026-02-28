@@ -112,14 +112,19 @@ impl RwkvBlock {
     ///
     /// # Shapes
     /// - `hidden`: `[batch, seq, hidden_size]`
-    /// - returns: `(hidden, new_attn_x, new_attn_kv, new_ffn_x)`
+    /// - returns: `(hidden, new_attn_x, new_attn_kv, new_ffn_x, decay)`
+    ///   - `hidden`: `[batch, seq, hidden_size]`
+    ///   - `new_attn_x`: `[batch, hidden_size]` (last token hidden after attention)
+    ///   - `new_attn_kv`: `[batch, num_heads, head_dim, head_dim]` (WKV state)
+    ///   - `new_ffn_x`: `[batch, hidden_size]` (last token hidden after FFN)
+    ///   - `decay`: `[batch, seq, num_heads, head_dim]` (per-timestep decay)
     fn forward(
         &self,
         hidden: &Tensor,
         attn_x_state: Option<&Tensor>,
         attn_kv_state: Option<&Tensor>,
         ffn_x_state: Option<&Tensor>,
-    ) -> Result<(Tensor, Tensor, Tensor, Tensor)> {
+    ) -> Result<(Tensor, Tensor, Tensor, Tensor, Tensor)> {
         // Pre-LayerNorm (only first block)
         let hidden = if let Some(ref pre_ln) = self.pre_ln {
             pre_ln.forward(hidden)?
@@ -128,7 +133,7 @@ impl RwkvBlock {
         };
 
         // Time-mix with residual
-        let (attn_out, new_attn_x, new_attn_kv) =
+        let (attn_out, new_attn_x, new_attn_kv, decay) =
             self.time_mix
                 .forward(&self.ln1.forward(&hidden)?, attn_x_state, attn_kv_state)?;
         let hidden = (&hidden + attn_out)?;
@@ -139,7 +144,7 @@ impl RwkvBlock {
             .forward(&self.ln2.forward(&hidden)?, ffn_x_state)?;
         let hidden = (&hidden + ffn_out)?;
 
-        Ok((hidden, new_attn_x, new_attn_kv, new_ffn_x))
+        Ok((hidden, new_attn_x, new_attn_kv, new_ffn_x, decay))
     }
 }
 
@@ -288,17 +293,18 @@ impl TimeMixV6 {
     /// - `hidden`: `[batch, seq, hidden_size]`
     /// - `attn_x_state`: `[batch, hidden_size]` or `None`
     /// - `attn_kv_state`: `[batch, num_heads, head_dim, head_dim]` or `None`
-    /// - returns: `(output, new_attn_x_state, new_attn_kv_state)`
+    /// - returns: `(output, new_attn_x_state, new_attn_kv_state, decay)`
     ///   - `output`: `[batch, seq, hidden_size]`
     ///   - `new_attn_x_state`: `[batch, hidden_size]`
     ///   - `new_attn_kv_state`: `[batch, num_heads, head_dim, head_dim]`
+    ///   - `decay`: `[batch, seq, num_heads, head_dim]` (per-timestep decay)
     #[allow(clippy::many_single_char_names)] // r, k, v are standard names in RWKV papers
     fn forward(
         &self,
         hidden: &Tensor,
         attn_x_state: Option<&Tensor>,
         attn_kv_state: Option<&Tensor>,
-    ) -> Result<(Tensor, Tensor, Tensor)> {
+    ) -> Result<(Tensor, Tensor, Tensor, Tensor)> {
         let (batch, seq_len, channels) = hidden.dims3()?;
         let nh = self.num_heads;
         let hs = self.head_dim;
@@ -440,7 +446,7 @@ impl TimeMixV6 {
         let out = (out * gate_val)?;
         let out = self.output.forward(&out)?;
 
-        Ok((out, new_attn_x_state, new_attn_kv_state))
+        Ok((out, new_attn_x_state, new_attn_kv_state, decay))
     }
 }
 
@@ -612,27 +618,34 @@ impl GenericRwkv {
         _dtype: DType,
         vb: VarBuilder<'_>,
     ) -> Result<Self> {
-        // RWKV-6 weight prefix: "rwkv.*"
+        // RWKV-6 HuggingFace weight layout:
+        //   model.rwkv.embeddings.weight              → token embeddings
+        //   model.rwkv.blocks.{i}.pre_ln.*            → pre-LN (layer 0 only)
+        //   model.rwkv.blocks.{i}.ln1/ln2.*           → layer norms
+        //   model.rwkv.blocks.{i}.attention.*          → time-mix (WKV)
+        //   model.rwkv.blocks.{i}.feed_forward.*       → channel-mix (FFN)
+        //   model.rwkv.ln_out.*                        → final layer norm
+        //   model.head.*                               → LM head (not under rwkv prefix)
         let vb_rwkv = vb.pp("rwkv");
 
-        // --- Embedding ---
+        // --- Embedding: rwkv.embeddings.weight ---
         let embeddings = candle_nn::embedding(
             config.vocab_size,
             config.hidden_size,
             vb_rwkv.pp("embeddings"),
         )?;
 
-        // --- Blocks ---
+        // --- Blocks: rwkv.blocks.{i}.* ---
         let mut blocks = Vec::with_capacity(config.num_layers);
         for i in 0..config.num_layers {
             let block = RwkvBlock::load(&config, vb_rwkv.pp(format!("blocks.{i}")), i)?;
             blocks.push(block);
         }
 
-        // --- Final norm ---
+        // --- Final norm: rwkv.ln_out.* ---
         let ln_out = LayerNorm::load(config.hidden_size, config.norm_eps, vb_rwkv.pp("ln_out"))?;
 
-        // --- LM head ---
+        // --- LM head: head.* (not under rwkv prefix) ---
         let lm_head = if config.tie_word_embeddings {
             let head_weight = embeddings.embeddings().clone();
             Linear::new(head_weight, None)
@@ -703,7 +716,7 @@ impl MIBackend for GenericRwkv {
                 cache.store(HookPoint::ResidPre(layer_idx), hidden.clone());
             }
 
-            let (new_hidden, new_attn_x, new_attn_kv, new_ffn_x) = block.forward(
+            let (new_hidden, new_attn_x, new_attn_kv, new_ffn_x, decay) = block.forward(
                 &hidden,
                 state.attn_x.get(layer_idx).and_then(Option::as_ref),
                 state.attn_kv.get(layer_idx).and_then(Option::as_ref),
@@ -715,6 +728,11 @@ impl MIBackend for GenericRwkv {
             // Hook: RwkvState — capture the WKV state after update
             if hooks.is_captured(&HookPoint::RwkvState(layer_idx)) {
                 cache.store(HookPoint::RwkvState(layer_idx), new_attn_kv.clone());
+            }
+
+            // Hook: RwkvDecay — capture the per-timestep decay tensor
+            if hooks.is_captured(&HookPoint::RwkvDecay(layer_idx)) {
+                cache.store(HookPoint::RwkvDecay(layer_idx), decay);
             }
 
             // Store updated state

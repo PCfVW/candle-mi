@@ -407,9 +407,10 @@ fn rwkv6_hook_capture_state() {
         .unsqueeze(0)
         .unwrap();
 
-    // Capture RwkvState at layer 0 and ResidPre at layer 0
+    // Capture RwkvState, RwkvDecay, and ResidPre at layer 0
     let mut hooks = HookSpec::new();
     hooks.capture(HookPoint::RwkvState(0));
+    hooks.capture(HookPoint::RwkvDecay(0));
     hooks.capture(HookPoint::ResidPre(0));
 
     let result = model.forward(&input, &hooks).unwrap();
@@ -421,6 +422,14 @@ fn rwkv6_hook_capture_state() {
     assert_eq!(state_dims.1, config.num_heads, "num_heads");
     assert_eq!(state_dims.2, config.head_dim, "head_dim");
     assert_eq!(state_dims.3, config.head_dim, "head_dim");
+
+    // RwkvDecay should be [batch, seq_len, num_heads, head_dim]
+    let decay = result.require(&HookPoint::RwkvDecay(0)).unwrap();
+    let decay_dims = decay.dims4().unwrap();
+    assert_eq!(decay_dims.0, 1, "batch");
+    assert_eq!(decay_dims.1, token_ids.len(), "seq_len");
+    assert_eq!(decay_dims.2, config.num_heads, "num_heads");
+    assert_eq!(decay_dims.3, config.head_dim, "head_dim");
 
     // ResidPre should be [batch, seq_len, hidden_size]
     let resid = result.require(&HookPoint::ResidPre(0)).unwrap();

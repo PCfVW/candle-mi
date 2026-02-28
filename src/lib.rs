@@ -90,7 +90,7 @@ pub use transformer::GenericTransformer;
 
 // RWKV backend
 #[cfg(feature = "rwkv")]
-pub use rwkv::{GenericRwkv, RwkvConfig, RwkvVersion};
+pub use rwkv::{GenericRwkv, RwkvConfig, RwkvLoraDims, RwkvVersion};
 
 // Cache
 pub use cache::{ActivationCache, AttentionCache, FullActivationCache, KVCache};
