@@ -32,7 +32,7 @@ use crate::error::{MIError, Result};
 // ---------------------------------------------------------------------------
 
 /// `model_type` strings accepted by [`RwkvConfig::from_hf_config`].
-pub const SUPPORTED_RWKV_MODEL_TYPES: &[&str] = &["rwkv6"];
+pub const SUPPORTED_RWKV_MODEL_TYPES: &[&str] = &["rwkv6", "rwkv7"];
 
 // ---------------------------------------------------------------------------
 // RwkvVersion
@@ -66,16 +66,28 @@ impl fmt::Display for RwkvVersion {
 
 /// Low-rank projection dimensions used in RWKV data-dependent mixing.
 ///
-/// For RWKV-6 these are hardcoded (not in `config.json`).
-/// For RWKV-7 they appear explicitly in the config.
+/// For RWKV-6 these are hardcoded (not in `config.json`):
+/// `time_mix_extra_dim` = 32, `time_decay_extra_dim` = 64.
+///
+/// For RWKV-7 they appear explicitly in `config.json`:
+/// `decay_low_rank_dim`, `a_low_rank_dim`, `v_low_rank_dim`, `gate_low_rank_dim`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RwkvLoraDims {
-    /// Dimension for the 5-component time-mix `LoRA` projection.
-    /// RWKV-6: 32 (hardcoded).
+    // --- V6 fields ---
+    /// Dimension for the 5-component time-mix `LoRA` projection (V6 only; 0 for V7).
     pub time_mix_extra_dim: usize,
-    /// Dimension for the time-decay `LoRA` projection.
-    /// RWKV-6: 64 (hardcoded).
+    /// Dimension for the time-decay `LoRA` projection (V6 only; 0 for V7).
     pub time_decay_extra_dim: usize,
+
+    // --- V7 fields ---
+    /// Low-rank dimension for the decay `LoRA` (V7 only; 0 for V6).
+    pub decay_low_rank_dim: usize,
+    /// Low-rank dimension for the rank-1 state transition `LoRA` (V7 only; 0 for V6).
+    pub a_low_rank_dim: usize,
+    /// Low-rank dimension for the value-residual `LoRA` (V7 only; 0 for V6).
+    pub v_low_rank_dim: usize,
+    /// Low-rank dimension for the output gate `LoRA` (V7 only; 0 for V6).
+    pub gate_low_rank_dim: usize,
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +104,7 @@ pub struct RwkvLoraDims {
 /// | Version | Key config traits |
 /// |---------|------------------|
 /// | RWKV-6 (Finch) | Data-dependent decay (`LoRA`), receptance-gated FFN |
-/// | RWKV-7 (Goose) | Generalized delta rule, plain FFN (planned) |
+/// | RWKV-7 (Goose) | Generalized delta rule, plain FFN |
 ///
 /// # `config.json` field reference (RWKV-6)
 ///
@@ -169,9 +181,7 @@ impl RwkvConfig {
 
         match model_type {
             "rwkv6" => Self::parse_rwkv6(config),
-            "rwkv7" => Err(MIError::Config(
-                "RWKV-7 support is planned but not yet implemented".into(),
-            )),
+            "rwkv7" => Self::parse_rwkv7(config),
             other => Err(MIError::Config(format!(
                 "unsupported RWKV model_type: '{other}'"
             ))),
@@ -240,10 +250,120 @@ impl RwkvConfig {
             lora_dims: RwkvLoraDims {
                 time_mix_extra_dim: 32,
                 time_decay_extra_dim: 64,
+                decay_low_rank_dim: 0,
+                a_low_rank_dim: 0,
+                v_low_rank_dim: 0,
+                gate_low_rank_dim: 0,
             },
             hidden_ratio: None,
             tie_word_embeddings: get_bool_or(config, "tie_word_embeddings", false),
         })
+    }
+
+    /// Parse an RWKV-7 "Goose" config (fla / `HuggingFace` format).
+    ///
+    /// # Notes
+    ///
+    /// RWKV-7 uses `head_dim` directly (not the confusing `num_attention_heads`
+    /// alias from v6).  `LoRA` dimensions are explicit in `config.json`; when
+    /// absent they are computed from `hidden_size` per the fla library defaults.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Config`] if required dimension fields are missing.
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::cast_precision_loss,
+        clippy::as_conversions
+    )]
+    fn parse_rwkv7(config: &Value) -> Result<Self> {
+        let hidden_size = get_usize(config, "hidden_size")?;
+        let head_dim = get_usize_or(config, "head_dim", 64);
+
+        if head_dim == 0 {
+            return Err(MIError::Config("head_dim is 0".into()));
+        }
+        let num_heads = hidden_size / head_dim;
+
+        // intermediate_size: explicit in config, or computed from hidden_ratio
+        let hidden_ratio = config
+            .get("hidden_ratio")
+            .and_then(Value::as_f64)
+            .unwrap_or(4.0);
+
+        let intermediate_size = get_usize_or(
+            config,
+            "intermediate_size",
+            Self::round_to_32((hidden_size as f64 * hidden_ratio) as usize),
+        );
+
+        // LoRA dims: explicit in config or fla defaults.
+        // fla default: max(32, round_to_32(2.5 * sqrt(hidden) * factor))
+        // where factor = head_dim / 64.
+        let factor = head_dim as f64 / 64.0;
+        let sqrt_h = (hidden_size as f64).sqrt();
+
+        let decay_low_rank_dim = get_usize_or(
+            config,
+            "decay_low_rank_dim",
+            Self::fla_lora_default(2.5, sqrt_h, factor),
+        );
+        let a_low_rank_dim = get_usize_or(
+            config,
+            "a_low_rank_dim",
+            Self::fla_lora_default(2.5, sqrt_h, factor),
+        );
+        let v_low_rank_dim = get_usize_or(
+            config,
+            "v_low_rank_dim",
+            Self::fla_lora_default(1.7, sqrt_h, factor),
+        );
+        let gate_low_rank_dim = get_usize_or(
+            config,
+            "gate_low_rank_dim",
+            Self::fla_lora_default(5.0, sqrt_h, 1.0),
+        );
+
+        Ok(Self {
+            version: RwkvVersion::V7,
+            hidden_size,
+            num_layers: get_usize(config, "num_hidden_layers")?,
+            head_dim,
+            num_heads,
+            vocab_size: get_usize(config, "vocab_size")?,
+            norm_eps: get_f64_or(config, "norm_eps", 1e-5),
+            intermediate_size,
+            rescale_every: None,
+            head_size_divisor: None,
+            lora_dims: RwkvLoraDims {
+                time_mix_extra_dim: 0,
+                time_decay_extra_dim: 0,
+                decay_low_rank_dim,
+                a_low_rank_dim,
+                v_low_rank_dim,
+                gate_low_rank_dim,
+            },
+            hidden_ratio: Some(hidden_ratio),
+            tie_word_embeddings: get_bool_or(config, "tie_word_embeddings", false),
+        })
+    }
+
+    /// Round `n` up to the nearest multiple of 32.
+    const fn round_to_32(n: usize) -> usize {
+        n.div_ceil(32) * 32
+    }
+
+    /// Compute fla-style default `LoRA` dimension:
+    /// `max(32, round_to_32(scale * sqrt_h * factor))`.
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::as_conversions
+    )]
+    fn fla_lora_default(scale: f64, sqrt_h: f64, factor: f64) -> usize {
+        let raw = (scale * sqrt_h * factor / 32.0).round() as usize * 32;
+        raw.max(32)
     }
 }
 
@@ -313,17 +433,73 @@ mod tests {
         assert_eq!(config.intermediate_size, 8192);
     }
 
+    /// Sample RWKV-7 config matching RWKV/RWKV7-Goose-World3-1.5B-HF.
+    fn rwkv7_config_json() -> Value {
+        serde_json::json!({
+            "model_type": "rwkv7",
+            "hidden_size": 2048,
+            "num_hidden_layers": 24,
+            "head_dim": 64,
+            "vocab_size": 65536,
+            "norm_eps": 1e-5,
+            "intermediate_size": 8192,
+            "hidden_ratio": 4.0,
+            "decay_low_rank_dim": 96,
+            "a_low_rank_dim": 96,
+            "v_low_rank_dim": 64,
+            "gate_low_rank_dim": 256,
+            "tie_word_embeddings": false
+        })
+    }
+
     #[test]
-    fn rwkv7_not_yet_implemented() {
+    fn parse_rwkv7_basic() {
+        let config = RwkvConfig::from_hf_config(&rwkv7_config_json()).unwrap();
+        assert_eq!(config.version, RwkvVersion::V7);
+        assert_eq!(config.hidden_size, 2048);
+        assert_eq!(config.num_layers, 24);
+        assert_eq!(config.head_dim, 64);
+        assert_eq!(config.num_heads, 32);
+        assert_eq!(config.vocab_size, 65536);
+        assert!((config.norm_eps - 1e-5).abs() < f64::EPSILON);
+        assert_eq!(config.intermediate_size, 8192);
+        assert!(config.rescale_every.is_none());
+        assert!(config.head_size_divisor.is_none());
+        assert_eq!(config.lora_dims.decay_low_rank_dim, 96);
+        assert_eq!(config.lora_dims.a_low_rank_dim, 96);
+        assert_eq!(config.lora_dims.v_low_rank_dim, 64);
+        assert_eq!(config.lora_dims.gate_low_rank_dim, 256);
+        // V6 fields should be zero
+        assert_eq!(config.lora_dims.time_mix_extra_dim, 0);
+        assert_eq!(config.lora_dims.time_decay_extra_dim, 0);
+        assert_eq!(config.hidden_ratio, Some(4.0));
+        assert!(!config.tie_word_embeddings);
+    }
+
+    #[test]
+    fn rwkv7_group_norm_eps() {
+        let config = RwkvConfig::from_hf_config(&rwkv7_config_json()).unwrap();
+        // V7: head_size_divisor is None, so group_norm_eps = norm_eps * head_dim
+        // (from the fla code: eps = head_dim * norm_eps)
+        // Actually with head_size_divisor=None, group_norm_eps() falls back to norm_eps.
+        // The V7 code will use head_dim * norm_eps directly.
+        assert!((config.group_norm_eps() - 1e-5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn rwkv7_default_lora_dims() {
+        // When LoRA dims are absent, fla defaults should be computed
         let json = serde_json::json!({
             "model_type": "rwkv7",
             "hidden_size": 2048,
             "num_hidden_layers": 24,
-            "num_attention_heads": 64,
             "vocab_size": 65536
         });
-        let result = RwkvConfig::from_hf_config(&json);
-        assert!(result.is_err());
+        let config = RwkvConfig::from_hf_config(&json).unwrap();
+        // sqrt(2048) ≈ 45.25, factor = 64/64 = 1.0
+        // decay: round(2.5 * 45.25 * 1.0 / 32) * 32 = round(3.53) * 32 = 4 * 32 = 128
+        assert!(config.lora_dims.decay_low_rank_dim >= 32);
+        assert!(config.lora_dims.gate_low_rank_dim >= 32);
     }
 
     #[test]

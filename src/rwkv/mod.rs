@@ -62,6 +62,22 @@ impl RwkvState {
 // RwkvBlock
 // ---------------------------------------------------------------------------
 
+/// Version-dispatched time-mix block.
+enum TimeMix {
+    /// RWKV-6 Finch time-mix.
+    V6(TimeMixV6),
+    /// RWKV-7 Goose time-mix.
+    V7(TimeMixV7),
+}
+
+/// Version-dispatched channel-mix block.
+enum ChannelMix {
+    /// RWKV-6 Finch channel-mix.
+    V6(ChannelMixV6),
+    /// RWKV-7 Goose channel-mix.
+    V7(ChannelMixV7),
+}
+
 /// A single RWKV block: `LN1 → TimeMix → residual → LN2 → ChannelMix → residual`.
 struct RwkvBlock {
     /// Pre-layer norm (only present on block 0).
@@ -71,20 +87,17 @@ struct RwkvBlock {
     /// Normalization before channel-mix.
     ln2: LayerNorm,
     /// Time-mix (recurrence) sub-block.
-    time_mix: TimeMixV6,
+    time_mix: TimeMix,
     /// Channel-mix (FFN) sub-block.
-    channel_mix: ChannelMixV6,
+    channel_mix: ChannelMix,
 }
 
 impl RwkvBlock {
-    /// Load a single RWKV block from weights.
+    /// Load a single RWKV-6 block from weights.
     ///
-    /// # Errors
-    ///
-    /// Returns [`MIError::Model`](crate::error::MIError::Model) if weight
-    /// loading fails.
-    #[allow(clippy::needless_pass_by_value)] // VarBuilder convention
-    fn load(config: &RwkvConfig, vb: VarBuilder<'_>, layer_id: usize) -> Result<Self> {
+    /// Weight prefix: `rwkv.blocks.{i}`.
+    #[allow(clippy::needless_pass_by_value)]
+    fn load_v6(config: &RwkvConfig, vb: VarBuilder<'_>, layer_id: usize) -> Result<Self> {
         let eps = config.norm_eps;
         let h = config.hidden_size;
 
@@ -96,8 +109,36 @@ impl RwkvBlock {
 
         let ln1 = LayerNorm::load(h, eps, vb.pp("ln1"))?;
         let ln2 = LayerNorm::load(h, eps, vb.pp("ln2"))?;
-        let time_mix = TimeMixV6::load(config, vb.pp("attention"))?;
-        let channel_mix = ChannelMixV6::load(config, vb.pp("feed_forward"))?;
+        let time_mix = TimeMix::V6(TimeMixV6::load(config, vb.pp("attention"))?);
+        let channel_mix = ChannelMix::V6(ChannelMixV6::load(config, vb.pp("feed_forward"))?);
+
+        Ok(Self {
+            pre_ln,
+            ln1,
+            ln2,
+            time_mix,
+            channel_mix,
+        })
+    }
+
+    /// Load a single RWKV-7 block from weights.
+    ///
+    /// Weight prefix: `model.layers.{i}`.
+    #[allow(clippy::needless_pass_by_value)]
+    fn load_v7(config: &RwkvConfig, vb: VarBuilder<'_>, layer_id: usize) -> Result<Self> {
+        let eps = config.norm_eps;
+        let h = config.hidden_size;
+
+        let pre_ln = if layer_id == 0 {
+            Some(LayerNorm::load(h, eps, vb.pp("pre_norm"))?)
+        } else {
+            None
+        };
+
+        let ln1 = LayerNorm::load(h, eps, vb.pp("attn_norm"))?;
+        let ln2 = LayerNorm::load(h, eps, vb.pp("ffn_norm"))?;
+        let time_mix = TimeMix::V7(TimeMixV7::load(config, vb.pp("attn"), layer_id)?);
+        let channel_mix = ChannelMix::V7(ChannelMixV7::load(config, vb.pp("ffn"))?);
 
         Ok(Self {
             pre_ln,
@@ -112,19 +153,23 @@ impl RwkvBlock {
     ///
     /// # Shapes
     /// - `hidden`: `[batch, seq, hidden_size]`
-    /// - returns: `(hidden, new_attn_x, new_attn_kv, new_ffn_x, decay)`
+    /// - `v_first`: `[batch, seq, hidden_size]` or `None` (V7 value residual)
+    /// - returns: `(hidden, new_attn_x, new_attn_kv, new_ffn_x, v_out, decay)`
     ///   - `hidden`: `[batch, seq, hidden_size]`
-    ///   - `new_attn_x`: `[batch, hidden_size]` (last token hidden after attention)
-    ///   - `new_attn_kv`: `[batch, num_heads, head_dim, head_dim]` (WKV state)
-    ///   - `new_ffn_x`: `[batch, hidden_size]` (last token hidden after FFN)
-    ///   - `decay`: `[batch, seq, num_heads, head_dim]` (per-timestep decay)
+    ///   - `new_attn_x`: `[batch, hidden_size]`
+    ///   - `new_attn_kv`: `[batch, num_heads, head_dim, head_dim]`
+    ///   - `new_ffn_x`: `[batch, hidden_size]`
+    ///   - `v_out`: `[batch, seq, hidden_size]` (V7: raw v or mixed v; V6: dummy)
+    ///   - `decay`: `[batch, seq, num_heads, head_dim]`
+    #[allow(clippy::type_complexity)]
     fn forward(
         &self,
         hidden: &Tensor,
         attn_x_state: Option<&Tensor>,
         attn_kv_state: Option<&Tensor>,
         ffn_x_state: Option<&Tensor>,
-    ) -> Result<(Tensor, Tensor, Tensor, Tensor, Tensor)> {
+        v_first: Option<&Tensor>,
+    ) -> Result<(Tensor, Tensor, Tensor, Tensor, Tensor, Tensor)> {
         // Pre-LayerNorm (only first block)
         let hidden = if let Some(ref pre_ln) = self.pre_ln {
             pre_ln.forward(hidden)?
@@ -133,18 +178,31 @@ impl RwkvBlock {
         };
 
         // Time-mix with residual
-        let (attn_out, new_attn_x, new_attn_kv, decay) =
-            self.time_mix
-                .forward(&self.ln1.forward(&hidden)?, attn_x_state, attn_kv_state)?;
+        let (attn_out, new_attn_x, new_attn_kv, v_out, decay) = match &self.time_mix {
+            TimeMix::V6(tm) => {
+                let (out, ax, akv, d) =
+                    tm.forward(&self.ln1.forward(&hidden)?, attn_x_state, attn_kv_state)?;
+                // V6 has no v_first concept; return a zero-sized dummy
+                let dummy_v = Tensor::zeros(1, DType::F32, hidden.device())?;
+                (out, ax, akv, dummy_v, d)
+            }
+            TimeMix::V7(tm) => tm.forward(
+                &self.ln1.forward(&hidden)?,
+                attn_x_state,
+                attn_kv_state,
+                v_first,
+            )?,
+        };
         let hidden = (&hidden + attn_out)?;
 
         // Channel-mix with residual
-        let (ffn_out, new_ffn_x) = self
-            .channel_mix
-            .forward(&self.ln2.forward(&hidden)?, ffn_x_state)?;
+        let (ffn_out, new_ffn_x) = match &self.channel_mix {
+            ChannelMix::V6(cm) => cm.forward(&self.ln2.forward(&hidden)?, ffn_x_state)?,
+            ChannelMix::V7(cm) => cm.forward(&self.ln2.forward(&hidden)?, ffn_x_state)?,
+        };
         let hidden = (&hidden + ffn_out)?;
 
-        Ok((hidden, new_attn_x, new_attn_kv, new_ffn_x, decay))
+        Ok((hidden, new_attn_x, new_attn_kv, new_ffn_x, v_out, decay))
     }
 }
 
@@ -451,6 +509,471 @@ impl TimeMixV6 {
 }
 
 // ---------------------------------------------------------------------------
+// LoraBlock (shared helper for RWKV-7 LoRA projections)
+// ---------------------------------------------------------------------------
+
+/// A low-rank projection pair: `down → activation → up`.
+///
+/// Used throughout RWKV-7 for data-dependent decay, rank-1 gate,
+/// output gate, and value-residual projections.
+struct LoraBlock {
+    /// Down-projection: `[low_rank, input_dim]` (no bias).
+    down: Linear,
+    /// Up-projection: `[output_dim, low_rank]` (may have bias).
+    up: Linear,
+}
+
+impl LoraBlock {
+    /// Load a `LoRA` block from weights.
+    ///
+    /// Expects `vb` scoped to `{name}_lora.lora`:
+    /// - `0.weight` — down (no bias)
+    /// - `2.weight` / `2.bias` — up (bias optional via `has_up_bias`)
+    #[allow(clippy::needless_pass_by_value)]
+    fn load(
+        input_dim: usize,
+        low_rank: usize,
+        output_dim: usize,
+        has_up_bias: bool,
+        vb: VarBuilder<'_>,
+    ) -> Result<Self> {
+        let down = candle_nn::linear_no_bias(input_dim, low_rank, vb.pp("0"))?;
+        let up = if has_up_bias {
+            candle_nn::linear(low_rank, output_dim, vb.pp("2"))?
+        } else {
+            candle_nn::linear_no_bias(low_rank, output_dim, vb.pp("2"))?
+        };
+        Ok(Self { down, up })
+    }
+
+    /// Forward pass with tanh activation between down and up.
+    ///
+    /// `down(x).tanh() → up`
+    fn forward_tanh(&self, x: &Tensor) -> Result<Tensor> {
+        Ok(self.up.forward(&self.down.forward(x)?.tanh()?)?)
+    }
+
+    /// Forward pass without intermediate activation.
+    ///
+    /// `down(x) → up`
+    fn forward_linear(&self, x: &Tensor) -> Result<Tensor> {
+        Ok(self.up.forward(&self.down.forward(x)?)?)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// TimeMixV7 (RWKV-7 time-mix / attention)
+// ---------------------------------------------------------------------------
+
+/// RWKV-7 time-mix block: static lerp token shift + WKV-7 recurrence.
+///
+/// The WKV-7 recurrence uses a generalized delta rule with both diagonal
+/// decay and rank-1 state transition:
+///
+/// ```text
+/// S_t = diag(exp(w_t)) * S_{t-1} + b_t^T @ (a_t @ S_{t-1}) + k_t^T @ v_t
+/// y_t = r_t @ S_t
+/// ```
+struct TimeMixV7 {
+    // --- Static lerp mixing parameters: [1, 1, hidden_size] ---
+    /// Receptance mixing: `[1, 1, hidden_size]`.
+    x_r: Tensor,
+    /// Decay mixing: `[1, 1, hidden_size]`.
+    x_w: Tensor,
+    /// Key mixing: `[1, 1, hidden_size]`.
+    x_k: Tensor,
+    /// Value mixing: `[1, 1, hidden_size]`.
+    x_v: Tensor,
+    /// Rank-1 gate mixing: `[1, 1, hidden_size]`.
+    x_a: Tensor,
+    /// Output gate mixing: `[1, 1, hidden_size]`.
+    x_g: Tensor,
+
+    // --- Key modification parameters ---
+    /// Key normalization scale: `[hidden_size]`.
+    k_k: Tensor,
+    /// Key modification scale: `[hidden_size]`.
+    k_a: Tensor,
+    /// Output correction scale: `[num_heads, head_dim]`.
+    r_k: Tensor,
+
+    // --- Linear projections (no bias) ---
+    /// Receptance projection: `hidden → hidden`.
+    r_proj: Linear,
+    /// Key projection: `hidden → hidden`.
+    k_proj: Linear,
+    /// Value projection: `hidden → hidden`.
+    v_proj: Linear,
+    /// Output projection: `hidden → hidden`.
+    o_proj: Linear,
+
+    // --- LoRA blocks ---
+    /// Decay `LoRA` (tanh activation): `[decay_low_rank_dim, hidden] → [hidden, decay_low_rank_dim]`.
+    w_lora: LoraBlock,
+    /// Rank-1 gate `LoRA` (linear, sigmoid applied externally).
+    a_lora: LoraBlock,
+    /// Output gate `LoRA` (linear, sigmoid applied externally, no up bias).
+    g_lora: LoraBlock,
+    /// Value residual `LoRA` (linear, sigmoid applied externally). `None` for layer 0.
+    v_lora: Option<LoraBlock>,
+
+    // --- GroupNorm parameters ---
+    /// `GroupNorm` weight: `[hidden_size]`.
+    g_norm_weight: Tensor,
+    /// `GroupNorm` bias: `[hidden_size]`.
+    g_norm_bias: Tensor,
+
+    // --- Dimensions ---
+    /// Number of attention heads.
+    num_heads: usize,
+    /// Per-head dimension.
+    head_dim: usize,
+    /// Layer norm epsilon (used for `GroupNorm` eps = `head_dim * norm_eps`).
+    norm_eps: f64,
+    /// Layer index (0-based; layer 0 sets `v_first`).
+    layer_idx: usize,
+}
+
+impl TimeMixV7 {
+    /// Load the RWKV-7 time-mix block from weights.
+    ///
+    /// `vb` should be scoped to `model.layers.{i}.attn`.
+    #[allow(clippy::needless_pass_by_value)]
+    fn load(config: &RwkvConfig, vb: VarBuilder<'_>, layer_idx: usize) -> Result<Self> {
+        let h = config.hidden_size;
+        let nh = config.num_heads;
+        let hd = config.head_dim;
+        let lora = &config.lora_dims;
+
+        // Static lerp parameters
+        let x_r = vb.get((1, 1, h), "x_r")?;
+        let x_w = vb.get((1, 1, h), "x_w")?;
+        let x_k = vb.get((1, 1, h), "x_k")?;
+        let x_v = vb.get((1, 1, h), "x_v")?;
+        let x_a = vb.get((1, 1, h), "x_a")?;
+        let x_g = vb.get((1, 1, h), "x_g")?;
+
+        // Key modification
+        let k_k = vb.get(h, "k_k")?;
+        let k_a = vb.get(h, "k_a")?;
+        let r_k = vb.get((nh, hd), "r_k")?;
+
+        // Linear projections
+        let r_proj = candle_nn::linear_no_bias(h, h, vb.pp("r_proj"))?;
+        let k_proj = candle_nn::linear_no_bias(h, h, vb.pp("k_proj"))?;
+        let v_proj = candle_nn::linear_no_bias(h, h, vb.pp("v_proj"))?;
+        let o_proj = candle_nn::linear_no_bias(h, h, vb.pp("o_proj"))?;
+
+        // LoRA blocks
+        let w_lora = LoraBlock::load(h, lora.decay_low_rank_dim, h, true, vb.pp("w_lora.lora"))?;
+        let a_lora = LoraBlock::load(h, lora.a_low_rank_dim, h, true, vb.pp("a_lora.lora"))?;
+        let g_lora = LoraBlock::load(h, lora.gate_low_rank_dim, h, false, vb.pp("g_lora.lora"))?;
+
+        let v_lora = if layer_idx > 0 {
+            Some(LoraBlock::load(
+                h,
+                lora.v_low_rank_dim,
+                h,
+                true,
+                vb.pp("v_lora.lora"),
+            )?)
+        } else {
+            None
+        };
+
+        // GroupNorm
+        let g_norm_weight = vb.get(h, "g_norm.weight")?;
+        let g_norm_bias = vb.get(h, "g_norm.bias")?;
+
+        Ok(Self {
+            x_r,
+            x_w,
+            x_k,
+            x_v,
+            x_a,
+            x_g,
+            k_k,
+            k_a,
+            r_k,
+            r_proj,
+            k_proj,
+            v_proj,
+            o_proj,
+            w_lora,
+            a_lora,
+            g_lora,
+            v_lora,
+            g_norm_weight,
+            g_norm_bias,
+            num_heads: nh,
+            head_dim: hd,
+            norm_eps: config.norm_eps,
+            layer_idx,
+        })
+    }
+
+    /// Forward pass for the RWKV-7 time-mix block.
+    ///
+    /// # Shapes
+    /// - `hidden`: `[batch, seq, hidden_size]`
+    /// - `attn_x_state`: `[batch, hidden_size]` or `None`
+    /// - `attn_kv_state`: `[batch, num_heads, head_dim, head_dim]` or `None`
+    /// - `v_first`: `[batch, seq, hidden_size]` or `None` (set by layer 0)
+    /// - returns: `(output, new_attn_x, new_attn_kv, v_out, decay)`
+    ///   - `output`: `[batch, seq, hidden_size]`
+    ///   - `new_attn_x`: `[batch, hidden_size]`
+    ///   - `new_attn_kv`: `[batch, num_heads, head_dim, head_dim]`
+    ///   - `v_out`: `[batch, seq, hidden_size]` (raw v from layer 0, or mixed v)
+    ///   - `decay`: `[batch, seq, num_heads, head_dim]`
+    #[allow(
+        clippy::many_single_char_names,
+        clippy::too_many_lines,
+        clippy::similar_names,
+        clippy::cast_precision_loss,
+        clippy::as_conversions
+    )]
+    fn forward(
+        &self,
+        hidden: &Tensor,
+        attn_x_state: Option<&Tensor>,
+        attn_kv_state: Option<&Tensor>,
+        v_first: Option<&Tensor>,
+    ) -> Result<(Tensor, Tensor, Tensor, Tensor, Tensor)> {
+        let (batch, seq_len, _channels) = hidden.dims3()?;
+        let nh = self.num_heads;
+        let hd = self.head_dim;
+        let h = nh * hd;
+        let bt = batch * seq_len;
+
+        // --- Token shift: static lerp ---
+        let shifted = token_shift(hidden, attn_x_state, batch, seq_len, h)?;
+        let new_attn_x = hidden.i((.., seq_len - 1, ..))?;
+        let delta = shifted.broadcast_sub(hidden)?;
+
+        // Static lerp for each component: x + delta * x_param
+        let xr = hidden.broadcast_add(&delta.broadcast_mul(&self.x_r)?)?;
+        let xw = hidden.broadcast_add(&delta.broadcast_mul(&self.x_w)?)?;
+        let xk = hidden.broadcast_add(&delta.broadcast_mul(&self.x_k)?)?;
+        let xv = hidden.broadcast_add(&delta.broadcast_mul(&self.x_v)?)?;
+        let xa = hidden.broadcast_add(&delta.broadcast_mul(&self.x_a)?)?;
+        let xg = hidden.broadcast_add(&delta.broadcast_mul(&self.x_g)?)?;
+
+        // --- Project R, K, V ---
+        let r = self.r_proj.forward(&xr)?; // [batch, seq, h]
+        let k = self.k_proj.forward(&xk)?; // [batch, seq, h]
+        let v = self.v_proj.forward(&xv)?; // [batch, seq, h]
+
+        // --- Decay: w = -0.6065306597126334 * sigmoid(w_lora(xw)) ---
+        let w_lora_out = self.w_lora.forward_tanh(&xw)?; // [batch, seq, h]
+        let w = (candle_nn::ops::sigmoid(&w_lora_out.to_dtype(DType::F32)?)?
+            * (-0.606_530_659_712_633_4_f64))?; // [batch, seq, h]
+
+        // --- Value residual (layers > 0) ---
+        let v_out = if let Some(v_lora) = &self.v_lora {
+            // v = lerp(v, v_first, sigmoid(v_lora(xv)))
+            let v_lora_out = v_lora.forward_linear(&xv)?;
+            let mix = candle_nn::ops::sigmoid(&v_lora_out)?;
+            let v_first_t = v_first.ok_or_else(|| {
+                crate::error::MIError::Config("v_first required for layer > 0".into())
+            })?;
+            // lerp(v, v_first, mix) = v + (v_first - v) * mix
+            (&v + &(&(v_first_t - &v)? * mix)?)?
+        } else {
+            // Layer 0: v_out IS v (will become v_first for subsequent layers)
+            v.clone()
+        };
+
+        // --- Rank-1 gate: a = sigmoid(a_lora(xa)) ---
+        let a = candle_nn::ops::sigmoid(&self.a_lora.forward_linear(&xa)?)?; // [batch, seq, h]
+
+        // --- Output gate: g = sigmoid(g_lora(xg)) ---
+        let g = candle_nn::ops::sigmoid(&self.g_lora.forward_linear(&xg)?)?; // [batch, seq, h]
+
+        // --- Key normalization: kk = l2_norm(k * k_k) ---
+        // k_k is [h], broadcast over [batch, seq, h]
+        let k_scaled = k.broadcast_mul(&self.k_k)?; // [batch, seq, h]
+        let k_scaled_4d = k_scaled.reshape((batch, seq_len, nh, hd))?;
+        let kk = l2_norm(&k_scaled_4d)?; // [batch, seq, nh, hd]
+
+        // --- Key modification: k = k + k * (a - 1) * k_a ---
+        // k_a is [h], a is [batch, seq, h]
+        let a_minus_1 = (a.clone() - 1.0_f64)?;
+        let k_mod = (&k + &(&k * &a_minus_1)?.broadcast_mul(&self.k_a)?)?; // [batch, seq, h]
+
+        // --- Reshape for WKV recurrence ---
+        let r_4d = r.to_dtype(DType::F32)?.reshape((batch, seq_len, nh, hd))?;
+        let k_4d = k_mod
+            .to_dtype(DType::F32)?
+            .reshape((batch, seq_len, nh, hd))?;
+        let v_4d = v_out
+            .to_dtype(DType::F32)?
+            .reshape((batch, seq_len, nh, hd))?;
+        let w_4d = w.reshape((batch, seq_len, nh, hd))?; // already F32
+        let kk_f32 = kk.to_dtype(DType::F32)?;
+        let a_4d = a.to_dtype(DType::F32)?.reshape((batch, seq_len, nh, hd))?;
+
+        // --- WKV-7 Recurrence Loop (F32) ---
+        let mut state = match attn_kv_state {
+            Some(prev) => prev.to_dtype(DType::F32)?,
+            None => Tensor::zeros((batch, nh, hd, hd), DType::F32, hidden.device())?,
+        };
+
+        let mut outputs: Vec<Tensor> = Vec::with_capacity(seq_len);
+
+        for ti in 0..seq_len {
+            let r_t = r_4d.i((.., ti, .., ..))?; // [batch, nh, hd]
+            let k_t = k_4d.i((.., ti, .., ..))?; // [batch, nh, hd]
+            let v_t = v_4d.i((.., ti, .., ..))?; // [batch, nh, hd]
+            let w_t = w_4d.i((.., ti, .., ..))?; // [batch, nh, hd]
+            let kk_t = kk_f32.i((.., ti, .., ..))?; // [batch, nh, hd]
+            let a_t = a_4d.i((.., ti, .., ..))?; // [batch, nh, hd]
+
+            // act_a = -kk_t: [batch, nh, hd]
+            let act_a = kk_t.neg()?;
+            // b = kk_t * a_t: [batch, nh, hd]
+            let b_t = (&kk_t * &a_t)?;
+
+            // State transition:
+            // S_t = diag(exp(w_t)) * S_{t-1} + b_t^T @ (act_a @ S_{t-1}) + k_t^T @ v_t
+            //
+            // Term 1: diag(exp(w_t)) * S_{t-1}
+            let exp_w = w_t.exp()?; // [batch, nh, hd]
+            let exp_w_col = exp_w.unsqueeze(candle_core::D::Minus1)?; // [batch, nh, hd, 1]
+            let term1 = state.broadcast_mul(&exp_w_col)?; // [batch, nh, hd, hd]
+
+            // Term 2: b_t^T @ (act_a @ S_{t-1})
+            // act_a @ S: [batch, nh, 1, hd] @ [batch, nh, hd, hd] = [batch, nh, 1, hd]
+            let act_a_row = act_a.unsqueeze(2)?; // [batch, nh, 1, hd]
+            let a_times_s = act_a_row.matmul(&state)?; // [batch, nh, 1, hd]
+            // b_t^T @ result: [batch, nh, hd, 1] @ [batch, nh, 1, hd] = [batch, nh, hd, hd]
+            let b_col = b_t.unsqueeze(candle_core::D::Minus1)?; // [batch, nh, hd, 1]
+            let term2 = b_col.matmul(&a_times_s)?; // [batch, nh, hd, hd]
+
+            // Term 3: k_t^T @ v_t
+            let k_col = k_t.unsqueeze(candle_core::D::Minus1)?; // [batch, nh, hd, 1]
+            let v_row = v_t.unsqueeze(2)?; // [batch, nh, 1, hd]
+            let term3 = k_col.matmul(&v_row)?; // [batch, nh, hd, hd]
+
+            state = ((&term1 + &term2)? + &term3)?;
+
+            // Output: y_t = r_t @ S_t (uses UPDATED state)
+            let r_row = r_t.unsqueeze(2)?; // [batch, nh, 1, hd]
+            let out_t = r_row.matmul(&state)?; // [batch, nh, 1, hd]
+            let out_t = out_t.squeeze(2)?; // [batch, nh, hd]
+
+            outputs.push(out_t);
+        }
+
+        let out = Tensor::stack(&outputs, 1)?; // [batch, seq_len, nh, hd]
+        let new_attn_kv = state; // [batch, nh, hd, hd]
+        let decay = w_4d; // [batch, seq, nh, hd] — the raw decay values
+
+        // --- GroupNorm per head ---
+        // V7 uses eps = head_dim * norm_eps (per fla code)
+        let gn_eps = (self.head_dim as f64) * self.norm_eps;
+        let out_flat = out.reshape((bt, h))?;
+        let out_gn = norm::group_norm(
+            &out_flat,
+            self.num_heads,
+            &self.g_norm_weight.to_dtype(DType::F32)?,
+            &self.g_norm_bias.to_dtype(DType::F32)?,
+            gn_eps,
+        )?;
+        let out_gn = out_gn.reshape((batch, seq_len, h))?;
+
+        // --- Gate output correction ---
+        // correction = (r * k * r_k).sum(-1, keepdim=True) * v
+        // r_k: [nh, hd] → [1, 1, nh, hd] → [1, 1, h]
+        let r_k_flat = self.r_k.to_dtype(DType::F32)?.reshape((1, 1, h))?;
+        // r, k_mod are [batch, seq, h] in original dtype; need F32
+        let r_f32 = r.to_dtype(DType::F32)?;
+        let k_mod_f32 = k_mod.to_dtype(DType::F32)?;
+
+        // (r * k * r_k): [batch, seq, h]
+        let rkrk = (&r_f32 * &k_mod_f32)?.broadcast_mul(&r_k_flat)?;
+        // .reshape to [batch, seq, nh, hd] → sum over hd → [batch, seq, nh, 1] → * v
+        let rkrk_4d = rkrk.reshape((batch, seq_len, nh, hd))?;
+        let v_f32 = v_out.to_dtype(DType::F32)?;
+        let rkrk_sum_4d = rkrk_4d
+            .sum_keepdim(candle_core::D::Minus1)?
+            .reshape((batch, seq_len, nh, 1))?;
+        let v_4d_corr = v_f32.reshape((batch, seq_len, nh, hd))?;
+        let correction = rkrk_sum_4d
+            .broadcast_mul(&v_4d_corr)?
+            .reshape((batch, seq_len, h))?;
+
+        // out = (gn_out + correction) * g
+        let g_f32 = g.to_dtype(DType::F32)?;
+        let out_corrected = ((&out_gn + &correction)? * &g_f32)?;
+        let out_final = out_corrected.to_dtype(hidden.dtype())?;
+
+        // --- Output projection ---
+        let out_final = self.o_proj.forward(&out_final)?;
+
+        // Return v for v_first threading (layer 0 provides raw v; others pass through)
+        let v_for_first = if self.layer_idx == 0 { v } else { v_out };
+
+        Ok((out_final, new_attn_x, new_attn_kv, v_for_first, decay))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ChannelMixV7 (RWKV-7 channel-mix / FFN)
+// ---------------------------------------------------------------------------
+
+/// RWKV-7 channel-mix block: plain squared-ReLU MLP (no receptance gate).
+///
+/// Structure: `value(sqrelu(key(x + delta * x_k)))`
+struct ChannelMixV7 {
+    /// Token-shift mixing parameter for key path: `[hidden_size]` (1D, not `[1,1,h]`).
+    x_k: Tensor,
+    /// Up projection: `hidden → intermediate` (no bias).
+    key: Linear,
+    /// Down projection: `intermediate → hidden` (no bias).
+    value: Linear,
+}
+
+impl ChannelMixV7 {
+    /// Load the RWKV-7 channel-mix block from weights.
+    ///
+    /// `vb` should be scoped to `model.layers.{i}.ffn`.
+    #[allow(clippy::needless_pass_by_value)]
+    fn load(config: &RwkvConfig, vb: VarBuilder<'_>) -> Result<Self> {
+        let h = config.hidden_size;
+        let intermediate = config.intermediate_size;
+
+        let x_k = vb.get(h, "x_k")?;
+        let key = candle_nn::linear_no_bias(h, intermediate, vb.pp("key"))?;
+        let value = candle_nn::linear_no_bias(intermediate, h, vb.pp("value"))?;
+
+        Ok(Self { x_k, key, value })
+    }
+
+    /// Forward pass for the V7 channel-mix (FFN) block.
+    ///
+    /// # Shapes
+    /// - `hidden`: `[batch, seq, hidden_size]`
+    /// - `ffn_x_state`: `[batch, hidden_size]` or `None`
+    /// - returns: `(output, new_ffn_x_state)`
+    fn forward(&self, hidden: &Tensor, ffn_x_state: Option<&Tensor>) -> Result<(Tensor, Tensor)> {
+        let (batch, seq_len, channels) = hidden.dims3()?;
+
+        let shifted = token_shift(hidden, ffn_x_state, batch, seq_len, channels)?;
+        let new_ffn_x = hidden.i((.., seq_len - 1, ..))?;
+
+        let delta = shifted.broadcast_sub(hidden)?;
+        // x_k is [h] (1D), need to broadcast against [batch, seq, h]
+        let key_input = hidden.broadcast_add(&delta.broadcast_mul(&self.x_k)?)?;
+
+        // sqrelu: relu(x)^2
+        let key_out = self.key.forward(&key_input)?.relu()?.sqr()?;
+        let out = self.value.forward(&key_out)?;
+
+        Ok((out, new_ffn_x))
+    }
+}
+
+// ---------------------------------------------------------------------------
 // ChannelMixV6 (RWKV-6 channel-mix / FFN)
 // ---------------------------------------------------------------------------
 
@@ -537,6 +1060,22 @@ impl ChannelMixV6 {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/// L2-normalize the last dimension of a tensor.
+///
+/// # Shapes
+/// - `x`: `[..., dim]`
+/// - returns: `[..., dim]` (unit-length along last dim)
+fn l2_norm(x: &Tensor) -> Result<Tensor> {
+    let x_f32 = x.to_dtype(DType::F32)?;
+    let sq_sum = x_f32.sqr()?.sum_keepdim(candle_core::D::Minus1)?;
+    let norm = (sq_sum + 1e-12_f64)?.sqrt()?;
+    Ok(x_f32.broadcast_div(&norm)?)
+}
+
+// ---------------------------------------------------------------------------
 // Token shift helper
 // ---------------------------------------------------------------------------
 
@@ -607,6 +1146,17 @@ pub struct GenericRwkv {
 impl GenericRwkv {
     /// Load a generic RWKV model from a [`VarBuilder`].
     ///
+    /// Dispatches to version-specific weight loading based on `config.version`.
+    ///
+    /// # Weight paths
+    ///
+    /// | Component | RWKV-6 | RWKV-7 |
+    /// |-----------|--------|--------|
+    /// | Embeddings | `rwkv.embeddings` | `model.embeddings` |
+    /// | Blocks | `rwkv.blocks.{i}` | `model.layers.{i}` |
+    /// | Final norm | `rwkv.ln_out` | `model.norm` |
+    /// | LM head | `head` | `lm_head` |
+    ///
     /// # Errors
     ///
     /// Returns [`MIError::Model`](crate::error::MIError::Model) if weight
@@ -618,39 +1168,79 @@ impl GenericRwkv {
         _dtype: DType,
         vb: VarBuilder<'_>,
     ) -> Result<Self> {
-        // RWKV-6 HuggingFace weight layout:
-        //   model.rwkv.embeddings.weight              → token embeddings
-        //   model.rwkv.blocks.{i}.pre_ln.*            → pre-LN (layer 0 only)
-        //   model.rwkv.blocks.{i}.ln1/ln2.*           → layer norms
-        //   model.rwkv.blocks.{i}.attention.*          → time-mix (WKV)
-        //   model.rwkv.blocks.{i}.feed_forward.*       → channel-mix (FFN)
-        //   model.rwkv.ln_out.*                        → final layer norm
-        //   model.head.*                               → LM head (not under rwkv prefix)
+        match config.version {
+            RwkvVersion::V6 => Self::load_v6(config, vb),
+            RwkvVersion::V7 => Self::load_v7(config, vb),
+        }
+    }
+
+    /// Load RWKV-6 "Finch" model weights.
+    ///
+    /// Weight prefix: `rwkv.*` for most components, `head.*` for LM head.
+    #[allow(clippy::needless_pass_by_value)] // VarBuilder convention
+    fn load_v6(config: RwkvConfig, vb: VarBuilder<'_>) -> Result<Self> {
         let vb_rwkv = vb.pp("rwkv");
 
-        // --- Embedding: rwkv.embeddings.weight ---
         let embeddings = candle_nn::embedding(
             config.vocab_size,
             config.hidden_size,
             vb_rwkv.pp("embeddings"),
         )?;
 
-        // --- Blocks: rwkv.blocks.{i}.* ---
         let mut blocks = Vec::with_capacity(config.num_layers);
         for i in 0..config.num_layers {
-            let block = RwkvBlock::load(&config, vb_rwkv.pp(format!("blocks.{i}")), i)?;
-            blocks.push(block);
+            blocks.push(RwkvBlock::load_v6(
+                &config,
+                vb_rwkv.pp(format!("blocks.{i}")),
+                i,
+            )?);
         }
 
-        // --- Final norm: rwkv.ln_out.* ---
         let ln_out = LayerNorm::load(config.hidden_size, config.norm_eps, vb_rwkv.pp("ln_out"))?;
 
-        // --- LM head: head.* (not under rwkv prefix) ---
         let lm_head = if config.tie_word_embeddings {
-            let head_weight = embeddings.embeddings().clone();
-            Linear::new(head_weight, None)
+            Linear::new(embeddings.embeddings().clone(), None)
         } else {
             candle_nn::linear_no_bias(config.hidden_size, config.vocab_size, vb.pp("head"))?
+        };
+
+        Ok(Self {
+            embeddings,
+            blocks,
+            ln_out,
+            lm_head,
+            config,
+        })
+    }
+
+    /// Load RWKV-7 "Goose" model weights (fla / `HuggingFace` format).
+    ///
+    /// Weight prefix: `model.*` for most components, `lm_head.*` for LM head.
+    #[allow(clippy::needless_pass_by_value)] // VarBuilder convention
+    fn load_v7(config: RwkvConfig, vb: VarBuilder<'_>) -> Result<Self> {
+        let vb_model = vb.pp("model");
+
+        let embeddings = candle_nn::embedding(
+            config.vocab_size,
+            config.hidden_size,
+            vb_model.pp("embeddings"),
+        )?;
+
+        let mut blocks = Vec::with_capacity(config.num_layers);
+        for i in 0..config.num_layers {
+            blocks.push(RwkvBlock::load_v7(
+                &config,
+                vb_model.pp(format!("layers.{i}")),
+                i,
+            )?);
+        }
+
+        let ln_out = LayerNorm::load(config.hidden_size, config.norm_eps, vb_model.pp("norm"))?;
+
+        let lm_head = if config.tie_word_embeddings {
+            Linear::new(embeddings.embeddings().clone(), None)
+        } else {
+            candle_nn::linear_no_bias(config.hidden_size, config.vocab_size, vb.pp("lm_head"))?
         };
 
         Ok(Self {
@@ -709,6 +1299,7 @@ impl MIBackend for GenericRwkv {
 
         // --- Layer loop ---
         let mut state = RwkvState::new(self.config.num_layers);
+        let mut v_first: Option<Tensor> = None;
 
         for (layer_idx, block) in self.blocks.iter().enumerate() {
             // Hook: ResidPre
@@ -716,12 +1307,18 @@ impl MIBackend for GenericRwkv {
                 cache.store(HookPoint::ResidPre(layer_idx), hidden.clone());
             }
 
-            let (new_hidden, new_attn_x, new_attn_kv, new_ffn_x, decay) = block.forward(
+            let (new_hidden, new_attn_x, new_attn_kv, new_ffn_x, v_out, decay) = block.forward(
                 &hidden,
                 state.attn_x.get(layer_idx).and_then(Option::as_ref),
                 state.attn_kv.get(layer_idx).and_then(Option::as_ref),
                 state.ffn_x.get(layer_idx).and_then(Option::as_ref),
+                v_first.as_ref(),
             )?;
+
+            // Thread v_first for V7 value residual
+            if layer_idx == 0 && self.config.version == RwkvVersion::V7 {
+                v_first = Some(v_out);
+            }
 
             hidden = new_hidden;
 
