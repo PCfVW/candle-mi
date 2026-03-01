@@ -15,6 +15,7 @@ use std::str::FromStr;
 use candle_core::Tensor;
 
 use crate::error::{MIError, Result};
+use crate::interp::intervention::{StateKnockoutSpec, StateSteeringSpec};
 
 // ---------------------------------------------------------------------------
 // HookPoint
@@ -258,6 +259,10 @@ pub struct HookSpec {
     captures: HashSet<HookPoint>,
     /// Interventions to apply, stored as (`hook_point`, intervention) pairs.
     interventions: Vec<(HookPoint, Intervention)>,
+    /// RWKV state knockout specification (skip kv write at specified positions).
+    state_knockout: Option<StateKnockoutSpec>,
+    /// RWKV state steering specification (scale kv write at specified positions).
+    state_steering: Option<StateSteeringSpec>,
 }
 
 impl HookSpec {
@@ -319,6 +324,36 @@ impl HookSpec {
     #[must_use]
     pub fn has_intervention_at(&self, hook: &HookPoint) -> bool {
         self.interventions.iter().any(|(h, _)| h == hook)
+    }
+
+    /// Set an RWKV state knockout specification.
+    ///
+    /// At specified token positions, the WKV recurrence skips the kv write,
+    /// effectively making those tokens invisible to all future positions.
+    pub fn set_state_knockout(&mut self, spec: StateKnockoutSpec) -> &mut Self {
+        self.state_knockout = Some(spec);
+        self
+    }
+
+    /// Set an RWKV state steering specification.
+    ///
+    /// At specified token positions, the WKV recurrence scales the kv write
+    /// by the given factor, amplifying or dampening the token's contribution.
+    pub fn set_state_steering(&mut self, spec: StateSteeringSpec) -> &mut Self {
+        self.state_steering = Some(spec);
+        self
+    }
+
+    /// Get the state knockout specification, if any.
+    #[must_use]
+    pub const fn state_knockout(&self) -> Option<&StateKnockoutSpec> {
+        self.state_knockout.as_ref()
+    }
+
+    /// Get the state steering specification, if any.
+    #[must_use]
+    pub const fn state_steering(&self) -> Option<&StateSteeringSpec> {
+        self.state_steering.as_ref()
     }
 }
 

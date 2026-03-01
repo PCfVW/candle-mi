@@ -155,6 +155,8 @@ impl RwkvBlock {
     /// - `hidden`: `[batch, seq, hidden_size]`
     /// - `v_first`: `[batch, seq, hidden_size]` or `None` (V7 value residual)
     /// - `compute_eff_attn`: whether to compute effective attention matrix
+    /// - `intervention_positions`: token positions for state knockout/steering
+    /// - `kv_scale`: scale factor for kv write at intervention positions
     /// - returns: `(hidden, new_attn_x, new_attn_kv, new_ffn_x, v_out, decay, eff_attn)`
     ///   - `hidden`: `[batch, seq, hidden_size]`
     ///   - `new_attn_x`: `[batch, hidden_size]`
@@ -163,7 +165,7 @@ impl RwkvBlock {
     ///   - `v_out`: `[batch, seq, hidden_size]` (V7: raw v or mixed v; V6: dummy)
     ///   - `decay`: `[batch, seq, num_heads, head_dim]`
     ///   - `eff_attn`: `[batch, heads, seq, seq]` if requested, else `None`
-    #[allow(clippy::type_complexity)]
+    #[allow(clippy::type_complexity, clippy::too_many_arguments)]
     fn forward(
         &self,
         hidden: &Tensor,
@@ -172,6 +174,8 @@ impl RwkvBlock {
         ffn_x_state: Option<&Tensor>,
         v_first: Option<&Tensor>,
         compute_eff_attn: bool,
+        intervention_positions: Option<&std::collections::HashSet<usize>>,
+        kv_scale: f32,
     ) -> Result<(
         Tensor,
         Tensor,
@@ -196,6 +200,8 @@ impl RwkvBlock {
                     attn_x_state,
                     attn_kv_state,
                     compute_eff_attn,
+                    intervention_positions,
+                    kv_scale,
                 )?;
                 // V6 has no v_first concept; return a zero-sized dummy
                 let dummy_v = Tensor::zeros(1, DType::F32, hidden.device())?;
@@ -208,6 +214,8 @@ impl RwkvBlock {
                     attn_kv_state,
                     v_first,
                     compute_eff_attn,
+                    intervention_positions,
+                    kv_scale,
                 )?;
                 (out, ax, akv, v_out, d, eff)
             }
@@ -387,6 +395,9 @@ impl TimeMixV6 {
     /// - `hidden`: `[batch, seq, hidden_size]`
     /// - `attn_x_state`: `[batch, hidden_size]` or `None`
     /// - `attn_kv_state`: `[batch, num_heads, head_dim, head_dim]` or `None`
+    /// - `intervention_positions`: token positions where state update is modified
+    /// - `kv_scale`: scale factor for kv write at intervention positions
+    ///   (`0.0` = knockout, `> 0` = steering, unused when positions is `None`)
     /// - returns: `(output, new_attn_x_state, new_attn_kv_state, decay, eff_attn)`
     ///   - `output`: `[batch, seq, hidden_size]`
     ///   - `new_attn_x_state`: `[batch, hidden_size]`
@@ -400,6 +411,8 @@ impl TimeMixV6 {
         attn_x_state: Option<&Tensor>,
         attn_kv_state: Option<&Tensor>,
         compute_eff_attn: bool,
+        intervention_positions: Option<&std::collections::HashSet<usize>>,
+        kv_scale: f32,
     ) -> Result<(Tensor, Tensor, Tensor, Tensor, Option<Tensor>)> {
         let (batch, seq_len, channels) = hidden.dims3()?;
         let nh = self.num_heads;
@@ -516,8 +529,22 @@ impl TimeMixV6 {
             outputs.push(out_t);
 
             // State update: state = kv + decay * state
+            // Intervention: scale or suppress the kv write at specified positions
             let decay_expanded = decay_t.unsqueeze(candle_core::D::Minus1)?;
-            state = (kv + state.broadcast_mul(&decay_expanded)?)?;
+            let should_intervene =
+                intervention_positions.is_some_and(|positions| positions.contains(&ti));
+            if should_intervene {
+                let decayed = state.broadcast_mul(&decay_expanded)?;
+                if kv_scale == 0.0 {
+                    // Knockout: skip kv write entirely
+                    state = decayed;
+                } else {
+                    // Steering: scale the kv contribution
+                    state = ((kv * f64::from(kv_scale))? + decayed)?;
+                }
+            } else {
+                state = (kv + state.broadcast_mul(&decay_expanded)?)?;
+            }
         }
 
         // Stack outputs: [batch, seq_len, nh, hs]
@@ -899,7 +926,8 @@ impl TimeMixV7 {
         clippy::too_many_lines,
         clippy::similar_names,
         clippy::cast_precision_loss,
-        clippy::as_conversions
+        clippy::as_conversions,
+        clippy::too_many_arguments
     )]
     fn forward(
         &self,
@@ -908,6 +936,8 @@ impl TimeMixV7 {
         attn_kv_state: Option<&Tensor>,
         v_first: Option<&Tensor>,
         compute_eff_attn: bool,
+        intervention_positions: Option<&std::collections::HashSet<usize>>,
+        kv_scale: f32,
     ) -> Result<(Tensor, Tensor, Tensor, Tensor, Tensor, Option<Tensor>)> {
         let (batch, seq_len, _channels) = hidden.dims3()?;
         let nh = self.num_heads;
@@ -1026,7 +1056,21 @@ impl TimeMixV7 {
             let v_row = v_t.unsqueeze(2)?; // [batch, nh, 1, hd]
             let term3 = k_col.matmul(&v_row)?; // [batch, nh, hd, hd]
 
-            state = ((&term1 + &term2)? + &term3)?;
+            // Intervention: scale or suppress the kv write at specified positions
+            let should_intervene =
+                intervention_positions.is_some_and(|positions| positions.contains(&ti));
+            if should_intervene {
+                let state_no_kv = (&term1 + &term2)?;
+                if kv_scale == 0.0 {
+                    // Knockout: skip kv write
+                    state = state_no_kv;
+                } else {
+                    // Steering: scale kv contribution
+                    state = (state_no_kv + (term3 * f64::from(kv_scale))?)?;
+                }
+            } else {
+                state = ((&term1 + &term2)? + &term3)?;
+            }
 
             // Output: y_t = r_t @ S_t (uses UPDATED state)
             let r_row = r_t.unsqueeze(2)?; // [batch, nh, 1, hd]
@@ -1432,6 +1476,36 @@ fn token_shift(
 }
 
 // ---------------------------------------------------------------------------
+// State intervention helper
+// ---------------------------------------------------------------------------
+
+/// Resolve the intervention parameters for a single layer.
+///
+/// Knockout takes priority over steering. Returns `(positions, kv_scale)`
+/// where `None` positions means no intervention for this layer.
+fn resolve_layer_intervention<'a>(
+    hooks: &HookSpec,
+    layer_idx: usize,
+    knockout_positions: Option<&'a std::collections::HashSet<usize>>,
+    steering_positions: Option<&'a std::collections::HashSet<usize>>,
+    steering_scale: f32,
+) -> (Option<&'a std::collections::HashSet<usize>>, f32) {
+    // Knockout takes priority
+    if let Some(ko) = hooks.state_knockout() {
+        if ko.applies_to_layer(layer_idx) {
+            return (knockout_positions, 0.0);
+        }
+    }
+    // Then steering
+    if let Some(st) = hooks.state_steering() {
+        if st.applies_to_layer(layer_idx) {
+            return (steering_positions, steering_scale);
+        }
+    }
+    (None, 1.0)
+}
+
+// ---------------------------------------------------------------------------
 // GenericRwkv
 // ---------------------------------------------------------------------------
 
@@ -1606,6 +1680,16 @@ impl MIBackend for GenericRwkv {
             hidden = crate::hooks::apply_intervention(&hidden, intervention)?;
         }
 
+        // --- Prepare state intervention ---
+        // Pre-compute position sets for O(1) lookup in the WKV loop.
+        let knockout_positions = hooks
+            .state_knockout()
+            .map(crate::interp::intervention::StateKnockoutSpec::position_set);
+        let steering_positions = hooks
+            .state_steering()
+            .map(crate::interp::intervention::StateSteeringSpec::position_set);
+        let steering_scale = hooks.state_steering().map_or(1.0, |s| s.scale);
+
         // --- Layer loop ---
         let mut state = RwkvState::new(self.config.num_layers);
         let mut v_first: Option<Tensor> = None;
@@ -1619,6 +1703,15 @@ impl MIBackend for GenericRwkv {
             // Only compute effective attention if requested for this layer
             let compute_eff_attn = hooks.is_captured(&HookPoint::RwkvEffectiveAttn(layer_idx));
 
+            // Determine intervention for this layer (knockout takes priority)
+            let (layer_int_positions, layer_kv_scale) = resolve_layer_intervention(
+                hooks,
+                layer_idx,
+                knockout_positions.as_ref(),
+                steering_positions.as_ref(),
+                steering_scale,
+            );
+
             let (new_hidden, new_attn_x, new_attn_kv, new_ffn_x, v_out, decay, eff_attn) = block
                 .forward(
                     &hidden,
@@ -1627,6 +1720,8 @@ impl MIBackend for GenericRwkv {
                     state.ffn_x.get(layer_idx).and_then(Option::as_ref),
                     v_first.as_ref(),
                     compute_eff_attn,
+                    layer_int_positions,
+                    layer_kv_scale,
                 )?;
 
             // Thread v_first for V7 value residual
