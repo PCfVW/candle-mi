@@ -553,6 +553,15 @@ impl LoraBlock {
         Ok(self.up.forward(&self.down.forward(x)?.tanh()?)?)
     }
 
+    /// Forward pass with sigmoid activation between down and up.
+    ///
+    /// `down(x).sigmoid() → up`
+    fn forward_sigmoid(&self, x: &Tensor) -> Result<Tensor> {
+        Ok(self
+            .up
+            .forward(&candle_nn::ops::sigmoid(&self.down.forward(x)?)?)?)
+    }
+
     /// Forward pass without intermediate activation.
     ///
     /// `down(x) → up`
@@ -786,8 +795,10 @@ impl TimeMixV7 {
         // --- Rank-1 gate: a = sigmoid(a_lora(xa)) ---
         let a = candle_nn::ops::sigmoid(&self.a_lora.forward_linear(&xa)?)?; // [batch, seq, h]
 
-        // --- Output gate: g = sigmoid(g_lora(xg)) ---
-        let g = candle_nn::ops::sigmoid(&self.g_lora.forward_linear(&xg)?)?; // [batch, seq, h]
+        // --- Output gate: g = g_lora(xg) with sigmoid middle activation ---
+        // NOTE: sigmoid is applied BETWEEN down and up projections (inside the LoRA),
+        // NOT after the full LoRA output. This matches fla's LoRA(activation='sigmoid').
+        let g = self.g_lora.forward_sigmoid(&xg)?; // [batch, seq, h]
 
         // --- Key normalization: kk = l2_norm(k * k_k) ---
         // k_k is [h], broadcast over [batch, seq, h]
