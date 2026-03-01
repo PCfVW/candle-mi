@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **RWKV-6 (Finch) backend** — `RwkvConfig` with V6/V7 version dispatch,
+  `GenericRwkv` struct implementing `MIBackend`, WKV-5/6 recurrence kernel,
+  `TimeMixV6`/`ChannelMixV6` blocks, `RwkvState` and `RwkvDecay` hook
+  points for mechanistic interpretability of recurrent state dynamics
+- **RWKV-7 (Goose) backend** — WKV-7 kernel with generalized delta rule
+  (`S_t = diag(exp(w)) * S + b^T(a @ S) + k^T v`), `TimeMixV7`/`ChannelMixV7`
+  blocks, `LoraBlock` with tanh/sigmoid/identity middle activations, value
+  residual mixing across layers, gate output correction, L2-norm key
+  normalization, and plain squared-ReLU FFN (no receptance gate)
+- `hf-fetch-model` integration for parallel multi-connection model downloads,
+  replacing `hf-hub` v0.4 as the sole download backend; `from_pretrained()`
+  and `resolve_safetensors_paths()` now use `hf-fetch-model` directly
+- `download_model()` (async) and `download_model_blocking()` convenience
+  functions that populate the standard HF cache
+- `SUPPORTED_MODEL_TYPES` const for runtime model-type discovery
+- `quick_start_transformer` and `fast_download` examples
+- Python validation scripts (`scripts/rwkv6_validation.py`,
+  `scripts/rwkv7_validation.py`) for reproducible reference output generation
+- Integration tests for RWKV-6 (against plip-rs reference) and RWKV-7
+  (against fla/flash-linear-attention reference), CPU F32 + GPU BF16
+- RWKV clippy and test steps in CI publish workflow
+- VRAM budget table and `config.json` field reference in rustdoc
+- `MIError::Download` variant for download failures
+
+### Fixed
+
+- RWKV-7 `g_lora` sigmoid placement: sigmoid is the **middle** activation
+  (between down and up projections), not applied after the full LoRA output;
+  `down(x) -> sigmoid -> up` vs the incorrect `down(x) -> up -> sigmoid`
+- Serialized GPU integration tests with `serial_test` to prevent CUDA OOM
+  when running multiple model tests concurrently
+- Pre-existing `cargo doc` link warnings resolved
+
+### Changed
+
+- Dropped `hf-hub` v0.4 dependency; all HuggingFace file resolution now
+  goes through `hf-fetch-model` (parallel chunked downloads by default)
+- `#[must_use]` policy applied across public API (Rule 17)
+- Phase 1 audit remediation (code quality, documentation, consistency)
+
 ## [0.0.2-phase1] - 2026-02-25
 
 ### Added
