@@ -15,8 +15,8 @@
 //! - **Generic Transformer** — covers `LLaMA`, `Qwen2`, Gemma 2, `Phi-3`,
 //!   `StarCoder2`, Mistral, and more via configuration axes (feature:
 //!   `transformer`).
-//! - **Generic RWKV** — covers RWKV-6 (Finch) linear RNN models
-//!   (feature: `rwkv`).  RWKV-7 (Goose) is planned.
+//! - **Generic RWKV** — covers RWKV-6 (Finch) and RWKV-7 (Goose) linear RNN
+//!   models (feature: `rwkv`).
 //!
 //! ## Fast downloads
 //!

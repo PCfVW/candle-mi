@@ -2,7 +2,7 @@
 
 //! RWKV gated-linear RNN backend.
 //!
-//! Covers RWKV-6 (Finch) and will cover RWKV-7 (Goose) linear RNN models.
+//! Covers RWKV-6 (Finch) and RWKV-7 (Goose) linear RNN models.
 //! Architecture differences are captured in [`RwkvConfig`] fields and
 //! version-specific submodules.
 //!
@@ -162,7 +162,7 @@ impl RwkvBlock {
     ///   - `new_attn_x`: `[batch, hidden_size]`
     ///   - `new_attn_kv`: `[batch, num_heads, head_dim, head_dim]`
     ///   - `new_ffn_x`: `[batch, hidden_size]`
-    ///   - `v_out`: `[batch, seq, hidden_size]` (V7: raw v or mixed v; V6: dummy)
+    ///   - `v_out`: `[batch, seq, hidden_size]` (V7: raw v or mixed v; V6: scalar dummy)
     ///   - `decay`: `[batch, seq, num_heads, head_dim]`
     ///   - `eff_attn`: `[batch, heads, seq, seq]` if requested, else `None`
     #[allow(clippy::type_complexity, clippy::too_many_arguments)]
@@ -821,8 +821,6 @@ struct TimeMixV7 {
     head_dim: usize,
     /// Layer norm epsilon (used for `GroupNorm` eps = `head_dim * norm_eps`).
     norm_eps: f64,
-    /// Layer index (0-based; layer 0 sets `v_first`).
-    layer_idx: usize,
 }
 
 impl TimeMixV7 {
@@ -899,7 +897,6 @@ impl TimeMixV7 {
             num_heads: nh,
             head_dim: hd,
             norm_eps: config.norm_eps,
-            layer_idx,
         })
     }
 
@@ -979,8 +976,8 @@ impl TimeMixV7 {
             // lerp(v, v_first, mix) = v + (v_first - v) * mix
             (&v + &(&(v_first_t - &v)? * mix)?)?
         } else {
-            // Layer 0: v_out IS v (will become v_first for subsequent layers)
-            v.clone()
+            // Layer 0: v_out IS v (becomes v_first for subsequent layers)
+            v
         };
 
         // --- Rank-1 gate: a = sigmoid(a_lora(xa)) ---
@@ -1143,17 +1140,8 @@ impl TimeMixV7 {
             None
         };
 
-        // Return v for v_first threading (layer 0 provides raw v; others pass through)
-        let v_for_first = if self.layer_idx == 0 { v } else { v_out };
-
-        Ok((
-            out_final,
-            new_attn_x,
-            new_attn_kv,
-            v_for_first,
-            decay,
-            eff_attn,
-        ))
+        // v_out: layer 0 returns raw v (becomes v_first); others return mixed v
+        Ok((out_final, new_attn_x, new_attn_kv, v_out, decay, eff_attn))
     }
 
     /// Compute the RWKV-7 effective attention matrix from WKV-7 intermediates.

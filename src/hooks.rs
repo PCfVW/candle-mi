@@ -294,10 +294,14 @@ impl HookSpec {
         self.captures.contains(hook)
     }
 
-    /// Check whether this spec has no captures and no interventions.
+    /// Check whether this spec has no captures, no interventions, and no
+    /// state specs (knockout/steering).
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.captures.is_empty() && self.interventions.is_empty()
+        self.captures.is_empty()
+            && self.interventions.is_empty()
+            && self.state_knockout.is_none()
+            && self.state_steering.is_none()
     }
 
     /// Number of requested captures.

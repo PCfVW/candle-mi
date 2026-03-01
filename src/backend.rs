@@ -108,8 +108,8 @@ pub trait MIBackend: Send + Sync {
 /// High-level model wrapper combining a backend with device metadata.
 ///
 /// `MIModel` delegates to the wrapped [`MIBackend`] and adds convenience
-/// methods.  Full model loading (`from_pretrained`) will be available
-/// once concrete backends are implemented (Phase 1+).
+/// methods including [`from_pretrained`](Self::from_pretrained) for
+/// one-line model loading from `HuggingFace`.
 pub struct MIModel {
     /// The underlying model backend.
     // TRAIT_OBJECT: heterogeneous model backends require dynamic dispatch
