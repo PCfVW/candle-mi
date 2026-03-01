@@ -202,14 +202,14 @@ impl RwkvBlock {
                 (out, ax, akv, dummy_v, d, eff)
             }
             TimeMix::V7(tm) => {
-                let (out, ax, akv, v_out, d) = tm.forward(
+                let (out, ax, akv, v_out, d, eff) = tm.forward(
                     &self.ln1.forward(&hidden)?,
                     attn_x_state,
                     attn_kv_state,
                     v_first,
+                    compute_eff_attn,
                 )?;
-                // V7 effective attention is computed separately (commit 2)
-                (out, ax, akv, v_out, d, None)
+                (out, ax, akv, v_out, d, eff)
             }
         };
         let hidden = (&hidden + attn_out)?;
@@ -878,17 +878,22 @@ impl TimeMixV7 {
 
     /// Forward pass for the RWKV-7 time-mix block.
     ///
+    /// When `compute_eff_attn` is true, also computes the effective attention
+    /// matrix by backward-propagating a linear functional through the
+    /// diag+rank-1 state transitions.
+    ///
     /// # Shapes
     /// - `hidden`: `[batch, seq, hidden_size]`
     /// - `attn_x_state`: `[batch, hidden_size]` or `None`
     /// - `attn_kv_state`: `[batch, num_heads, head_dim, head_dim]` or `None`
     /// - `v_first`: `[batch, seq, hidden_size]` or `None` (set by layer 0)
-    /// - returns: `(output, new_attn_x, new_attn_kv, v_out, decay)`
+    /// - returns: `(output, new_attn_x, new_attn_kv, v_out, decay, eff_attn)`
     ///   - `output`: `[batch, seq, hidden_size]`
     ///   - `new_attn_x`: `[batch, hidden_size]`
     ///   - `new_attn_kv`: `[batch, num_heads, head_dim, head_dim]`
     ///   - `v_out`: `[batch, seq, hidden_size]` (raw v from layer 0, or mixed v)
     ///   - `decay`: `[batch, seq, num_heads, head_dim]`
+    ///   - `eff_attn`: `[batch, heads, seq, seq]` if `compute_eff_attn`, else `None`
     #[allow(
         clippy::many_single_char_names,
         clippy::too_many_lines,
@@ -902,7 +907,8 @@ impl TimeMixV7 {
         attn_x_state: Option<&Tensor>,
         attn_kv_state: Option<&Tensor>,
         v_first: Option<&Tensor>,
-    ) -> Result<(Tensor, Tensor, Tensor, Tensor, Tensor)> {
+        compute_eff_attn: bool,
+    ) -> Result<(Tensor, Tensor, Tensor, Tensor, Tensor, Option<Tensor>)> {
         let (batch, seq_len, _channels) = hidden.dims3()?;
         let nh = self.num_heads;
         let hd = self.head_dim;
@@ -1032,7 +1038,7 @@ impl TimeMixV7 {
 
         let out = Tensor::stack(&outputs, 1)?; // [batch, seq_len, nh, hd]
         let new_attn_kv = state; // [batch, nh, hd, hd]
-        let decay = w_4d; // [batch, seq, nh, hd] — the raw decay values
+        let decay = w_4d.clone(); // [batch, seq, nh, hd] — the raw decay values
 
         // --- GroupNorm per head ---
         // V7 uses eps = head_dim * norm_eps (per fla code)
@@ -1076,10 +1082,147 @@ impl TimeMixV7 {
         // --- Output projection ---
         let out_final = self.o_proj.forward(&out_final)?;
 
+        // --- Effective attention (optional) ---
+        let eff_attn = if compute_eff_attn {
+            Some(Self::compute_effective_attention_v7(
+                &r_4d,
+                &k_4d,
+                &w_4d,
+                &kk_f32,
+                &a_4d,
+                batch,
+                seq_len,
+                nh,
+                hidden.device(),
+            )?)
+        } else {
+            None
+        };
+
         // Return v for v_first threading (layer 0 provides raw v; others pass through)
         let v_for_first = if self.layer_idx == 0 { v } else { v_out };
 
-        Ok((out_final, new_attn_x, new_attn_kv, v_for_first, decay))
+        Ok((
+            out_final,
+            new_attn_x,
+            new_attn_kv,
+            v_for_first,
+            decay,
+            eff_attn,
+        ))
+    }
+
+    /// Compute the RWKV-7 effective attention matrix from WKV-7 intermediates.
+    ///
+    /// Uses backward propagation of a linear functional through the
+    /// diag+rank-1 state transition matrices to compute how much each
+    /// source position contributes to each query position's output.
+    ///
+    /// The V7 state transition is:
+    /// ```text
+    /// M_j = diag(exp(w_j)) + b_j ⊗ act_a_j
+    /// S_j = M_j @ S_{j-1} + k_j ⊗ v_j
+    /// y_t = r_t @ S_t
+    /// ```
+    ///
+    /// The backward linear functional satisfies:
+    /// ```text
+    /// l_{t,t} = r_t
+    /// l_{t,j-1} = l_{t,j} ⊙ exp(w_j) + (l_{t,j} · b_j) * act_a_j
+    /// α_raw[t,j] = l_{t,j} · k_j
+    /// ```
+    ///
+    /// # Shapes
+    /// - `r`: `[batch, seq, nh, hd]` — receptance
+    /// - `k`: `[batch, seq, nh, hd]` — modified key
+    /// - `w`: `[batch, seq, nh, hd]` — raw decay (before exp)
+    /// - `kk`: `[batch, seq, nh, hd]` — normalised key (`l2_norm(k * k_k)`)
+    /// - `a`: `[batch, seq, nh, hd]` — rank-1 gate (`sigmoid(a_lora)`)
+    /// - returns: `[batch, nh, seq, seq]` — effective attention matrix
+    #[allow(
+        clippy::too_many_arguments,
+        clippy::too_many_lines,
+        clippy::many_single_char_names,
+        clippy::needless_range_loop
+    )]
+    fn compute_effective_attention_v7(
+        r: &Tensor,
+        k: &Tensor,
+        w: &Tensor,
+        kk: &Tensor,
+        a: &Tensor,
+        batch: usize,
+        seq_len: usize,
+        nh: usize,
+        device: &Device,
+    ) -> Result<Tensor> {
+        // Precompute exp(w) for each timestep: [batch, seq, nh, hd]
+        let exp_w = w.exp()?;
+
+        // Precompute b = kk * a and act_a = -kk for each timestep
+        let b_all = (kk * a)?; // [batch, seq, nh, hd]
+        let act_a_all = kk.neg()?; // [batch, seq, nh, hd]
+
+        // Build effective attention row by row
+        let mut eff_attn_rows: Vec<Tensor> = Vec::with_capacity(seq_len);
+
+        for ti in 0..seq_len {
+            // l = r_t: [batch, nh, hd]
+            let mut l = r.i((.., ti, .., ..))?;
+
+            // Allocate raw attention for this query position
+            let mut alphas: Vec<Tensor> = Vec::with_capacity(ti + 1);
+
+            // α_raw[ti, ti] = l · k_ti (dot product per head)
+            let k_ti = k.i((.., ti, .., ..))?;
+            let diag_alpha = (&l * &k_ti)?
+                .sum(candle_core::D::Minus1)?
+                .unsqueeze(candle_core::D::Minus1)?; // [batch, nh, 1]
+            alphas.push(diag_alpha);
+
+            // Backward propagation: j = ti down to 1
+            // EXPLICIT: backward recurrence is stateful; .map() would hide l updates
+            for j in (1..=ti).rev() {
+                // l = l ⊙ exp(w_j) + (l · b_j) * act_a_j
+                let exp_w_j = exp_w.i((.., j, .., ..))?; // [batch, nh, hd]
+                let b_j = b_all.i((.., j, .., ..))?; // [batch, nh, hd]
+                let act_a_j = act_a_all.i((.., j, .., ..))?; // [batch, nh, hd]
+
+                let l_dot_b = (&l * &b_j)?.sum_keepdim(candle_core::D::Minus1)?; // [batch, nh, 1]
+                l = (l.broadcast_mul(&exp_w_j)? + l_dot_b.broadcast_mul(&act_a_j)?)?;
+
+                // α_raw[ti, j-1] = l · k_{j-1}
+                let k_prev = k.i((.., j - 1, .., ..))?;
+                let alpha = (&l * &k_prev)?
+                    .sum(candle_core::D::Minus1)?
+                    .unsqueeze(candle_core::D::Minus1)?; // [batch, nh, 1]
+                alphas.push(alpha);
+            }
+
+            // alphas is in reverse order: [ti, ti-1, ..., 0]
+            alphas.reverse();
+
+            // Concatenate: [batch, nh, ti+1]
+            let alpha_raw = Tensor::cat(&alphas, candle_core::D::Minus1)?;
+
+            // Pad with zeros for causal mask (positions after ti)
+            let alpha_raw = if ti + 1 < seq_len {
+                let pad = Tensor::zeros((batch, nh, seq_len - ti - 1), DType::F32, device)?;
+                Tensor::cat(&[&alpha_raw, &pad], candle_core::D::Minus1)?
+            } else {
+                alpha_raw
+            };
+
+            // ReLU + L1 normalisation
+            let alpha_relu = alpha_raw.relu()?;
+            let row_sum = (alpha_relu.sum_keepdim(candle_core::D::Minus1)? + 1e-10_f64)?;
+            let alpha_normed = alpha_relu.broadcast_div(&row_sum)?;
+
+            eff_attn_rows.push(alpha_normed);
+        }
+
+        // Stack: [batch, nh, seq_query, seq_source]
+        Tensor::stack(&eff_attn_rows, 2).map_err(Into::into)
     }
 }
 
