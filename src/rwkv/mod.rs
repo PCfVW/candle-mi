@@ -154,13 +154,15 @@ impl RwkvBlock {
     /// # Shapes
     /// - `hidden`: `[batch, seq, hidden_size]`
     /// - `v_first`: `[batch, seq, hidden_size]` or `None` (V7 value residual)
-    /// - returns: `(hidden, new_attn_x, new_attn_kv, new_ffn_x, v_out, decay)`
+    /// - `compute_eff_attn`: whether to compute effective attention matrix
+    /// - returns: `(hidden, new_attn_x, new_attn_kv, new_ffn_x, v_out, decay, eff_attn)`
     ///   - `hidden`: `[batch, seq, hidden_size]`
     ///   - `new_attn_x`: `[batch, hidden_size]`
     ///   - `new_attn_kv`: `[batch, num_heads, head_dim, head_dim]`
     ///   - `new_ffn_x`: `[batch, hidden_size]`
     ///   - `v_out`: `[batch, seq, hidden_size]` (V7: raw v or mixed v; V6: dummy)
     ///   - `decay`: `[batch, seq, num_heads, head_dim]`
+    ///   - `eff_attn`: `[batch, heads, seq, seq]` if requested, else `None`
     #[allow(clippy::type_complexity)]
     fn forward(
         &self,
@@ -169,7 +171,16 @@ impl RwkvBlock {
         attn_kv_state: Option<&Tensor>,
         ffn_x_state: Option<&Tensor>,
         v_first: Option<&Tensor>,
-    ) -> Result<(Tensor, Tensor, Tensor, Tensor, Tensor, Tensor)> {
+        compute_eff_attn: bool,
+    ) -> Result<(
+        Tensor,
+        Tensor,
+        Tensor,
+        Tensor,
+        Tensor,
+        Tensor,
+        Option<Tensor>,
+    )> {
         // Pre-LayerNorm (only first block)
         let hidden = if let Some(ref pre_ln) = self.pre_ln {
             pre_ln.forward(hidden)?
@@ -178,20 +189,28 @@ impl RwkvBlock {
         };
 
         // Time-mix with residual
-        let (attn_out, new_attn_x, new_attn_kv, v_out, decay) = match &self.time_mix {
+        let (attn_out, new_attn_x, new_attn_kv, v_out, decay, eff_attn) = match &self.time_mix {
             TimeMix::V6(tm) => {
-                let (out, ax, akv, d) =
-                    tm.forward(&self.ln1.forward(&hidden)?, attn_x_state, attn_kv_state)?;
+                let (out, ax, akv, d, eff) = tm.forward(
+                    &self.ln1.forward(&hidden)?,
+                    attn_x_state,
+                    attn_kv_state,
+                    compute_eff_attn,
+                )?;
                 // V6 has no v_first concept; return a zero-sized dummy
                 let dummy_v = Tensor::zeros(1, DType::F32, hidden.device())?;
-                (out, ax, akv, dummy_v, d)
+                (out, ax, akv, dummy_v, d, eff)
             }
-            TimeMix::V7(tm) => tm.forward(
-                &self.ln1.forward(&hidden)?,
-                attn_x_state,
-                attn_kv_state,
-                v_first,
-            )?,
+            TimeMix::V7(tm) => {
+                let (out, ax, akv, v_out, d) = tm.forward(
+                    &self.ln1.forward(&hidden)?,
+                    attn_x_state,
+                    attn_kv_state,
+                    v_first,
+                )?;
+                // V7 effective attention is computed separately (commit 2)
+                (out, ax, akv, v_out, d, None)
+            }
         };
         let hidden = (&hidden + attn_out)?;
 
@@ -202,7 +221,15 @@ impl RwkvBlock {
         };
         let hidden = (&hidden + ffn_out)?;
 
-        Ok((hidden, new_attn_x, new_attn_kv, new_ffn_x, v_out, decay))
+        Ok((
+            hidden,
+            new_attn_x,
+            new_attn_kv,
+            new_ffn_x,
+            v_out,
+            decay,
+            eff_attn,
+        ))
     }
 }
 
@@ -347,22 +374,33 @@ impl TimeMixV6 {
 
     /// Forward pass for the RWKV-6 time-mix block.
     ///
+    /// When `compute_eff_attn` is true, also computes the effective attention
+    /// matrix derived from the WKV recurrence:
+    ///
+    /// ```text
+    /// α_raw[t,i,h] = Σ_d r_t[h,d] · k_i[h,d] · Π_{j=i+1}^{t-1} decay_j[h,d]   (past)
+    /// α_raw[t,t,h] = Σ_d r_t[h,d] · k_t[h,d] · time_first[h,d]                (diagonal)
+    /// α[t,i] = relu(α_raw[t,i]) / Σ_j relu(α_raw[t,j])                         (normalised)
+    /// ```
+    ///
     /// # Shapes
     /// - `hidden`: `[batch, seq, hidden_size]`
     /// - `attn_x_state`: `[batch, hidden_size]` or `None`
     /// - `attn_kv_state`: `[batch, num_heads, head_dim, head_dim]` or `None`
-    /// - returns: `(output, new_attn_x_state, new_attn_kv_state, decay)`
+    /// - returns: `(output, new_attn_x_state, new_attn_kv_state, decay, eff_attn)`
     ///   - `output`: `[batch, seq, hidden_size]`
     ///   - `new_attn_x_state`: `[batch, hidden_size]`
     ///   - `new_attn_kv_state`: `[batch, num_heads, head_dim, head_dim]`
     ///   - `decay`: `[batch, seq, num_heads, head_dim]` (per-timestep decay)
-    #[allow(clippy::many_single_char_names)] // r, k, v are standard names in RWKV papers
+    ///   - `eff_attn`: `[batch, heads, seq, seq]` if `compute_eff_attn`, else `None`
+    #[allow(clippy::many_single_char_names, clippy::too_many_lines)]
     fn forward(
         &self,
         hidden: &Tensor,
         attn_x_state: Option<&Tensor>,
         attn_kv_state: Option<&Tensor>,
-    ) -> Result<(Tensor, Tensor, Tensor, Tensor)> {
+        compute_eff_attn: bool,
+    ) -> Result<(Tensor, Tensor, Tensor, Tensor, Option<Tensor>)> {
         let (batch, seq_len, channels) = hidden.dims3()?;
         let nh = self.num_heads;
         let hs = self.head_dim;
@@ -486,6 +524,23 @@ impl TimeMixV6 {
         let out = Tensor::stack(&outputs, 1)?;
         let new_attn_kv_state = state; // [batch, nh, hs, hs]
 
+        // --- Effective attention (optional) ---
+        let eff_attn = if compute_eff_attn {
+            Some(Self::compute_effective_attention_v6(
+                &rec,
+                &key,
+                &decay,
+                &self.time_faaaa.to_dtype(DType::F32)?,
+                batch,
+                seq_len,
+                nh,
+                hs,
+                hidden.device(),
+            )?)
+        } else {
+            None
+        };
+
         // --- GroupNorm per head ---
         let out = out.reshape((bt, nh * hs))?;
         // PROMOTE: GroupNorm weights to F32 for consistency with F32 WKV output
@@ -504,7 +559,107 @@ impl TimeMixV6 {
         let out = (out * gate_val)?;
         let out = self.output.forward(&out)?;
 
-        Ok((out, new_attn_x_state, new_attn_kv_state, decay))
+        Ok((out, new_attn_x_state, new_attn_kv_state, decay, eff_attn))
+    }
+
+    /// Compute the RWKV-6 effective attention matrix from WKV intermediates.
+    ///
+    /// Uses the prefix-sum of log-decay to efficiently compute the cumulative
+    /// decay product between any pair of positions.
+    ///
+    /// # Shapes
+    /// - `r`: `[batch, seq, nh, hs]` — receptance
+    /// - `k`: `[batch, seq, nh, hs]` — key
+    /// - `decay`: `[batch, seq, nh, hs]` — per-timestep decay = `exp(-exp(w))`
+    /// - `time_first`: `[nh, hs]` — current-position bonus
+    /// - returns: `[batch, nh, seq, seq]` — effective attention matrix
+    #[allow(
+        clippy::too_many_arguments,
+        clippy::too_many_lines,
+        clippy::many_single_char_names,
+        clippy::needless_range_loop
+    )]
+    fn compute_effective_attention_v6(
+        r: &Tensor,
+        k: &Tensor,
+        decay: &Tensor,
+        time_first: &Tensor,
+        batch: usize,
+        seq_len: usize,
+        nh: usize,
+        hs: usize,
+        device: &Device,
+    ) -> Result<Tensor> {
+        // log_decay = log(decay) where decay = exp(-exp(w))
+        // Compute as decay.log() (safe since decay > 0)
+        let log_decay = decay.log()?; // [batch, seq, nh, hs]
+
+        // Prefix sums of log_decay: prefix[k] = Σ_{j=0}^{k-1} log_decay[j]
+        // EXPLICIT: prefix-sum is stateful; .map() would hide the accumulation
+        let mut cum_ld: Vec<Tensor> = Vec::with_capacity(seq_len + 1);
+        cum_ld.push(Tensor::zeros((batch, nh, hs), DType::F32, device)?);
+        for ti in 0..seq_len {
+            let ld_ti = log_decay.i((.., ti, .., ..))?; // [batch, nh, hs]
+            let prev = cum_ld.get(ti).ok_or_else(|| {
+                crate::error::MIError::Model(candle_core::Error::Msg(
+                    "prefix sum index out of bounds".into(),
+                ))
+            })?;
+            cum_ld.push((prev + &ld_ti)?);
+        }
+        let prefix = Tensor::stack(&cum_ld, 1)?; // [batch, seq+1, nh, hs]
+
+        // time_first: [nh, hs] — current-position bonus
+        let time_first_2d = time_first.reshape((nh, hs))?;
+
+        // Build effective attention row by row
+        let mut eff_attn_rows: Vec<Tensor> = Vec::with_capacity(seq_len);
+
+        for ti in 0..seq_len {
+            let r_ti = r.i((.., ti, .., ..))?; // [batch, nh, hs]
+            let k_ti = k.i((.., ti, .., ..))?; // [batch, nh, hs]
+
+            // Diagonal: α_raw[ti,ti] = Σ_d r[d] * k[d] * time_first[d]
+            let diag = (&r_ti * &k_ti)?.broadcast_mul(&time_first_2d)?; // [batch, nh, hs]
+            let diag_alpha = diag
+                .sum(candle_core::D::Minus1)?
+                .unsqueeze(candle_core::D::Minus1)?; // [batch, nh, 1]
+
+            let alpha_raw = if ti > 0 {
+                // Past positions: α_raw[ti,si] for si = 0..ti
+                let k_past = k.i((.., ..ti, .., ..))?; // [batch, ti, nh, hs]
+                let pref_ti = prefix.i((.., ti, .., ..))?.unsqueeze(1)?; // [batch, 1, nh, hs]
+                let pref_src = prefix.i((.., 1..=ti, .., ..))?; // [batch, ti, nh, hs]
+                let log_cd = pref_ti.broadcast_sub(&pref_src)?; // [batch, ti, nh, hs]
+                let cd = log_cd.exp()?; // cumulative decay product
+
+                let r_exp = r_ti.unsqueeze(1)?; // [batch, 1, nh, hs]
+                let per_ch = r_exp.broadcast_mul(&k_past)?.broadcast_mul(&cd)?; // [batch, ti, nh, hs]
+                let a_past = per_ch.sum(candle_core::D::Minus1)?.transpose(1, 2)?; // [batch, nh, ti]
+
+                Tensor::cat(&[&a_past, &diag_alpha], candle_core::D::Minus1)? // [batch, nh, ti+1]
+            } else {
+                diag_alpha // [batch, nh, 1]
+            };
+
+            // Pad with zeros for causal mask (positions after ti)
+            let alpha_raw = if ti + 1 < seq_len {
+                let pad = Tensor::zeros((batch, nh, seq_len - ti - 1), DType::F32, device)?;
+                Tensor::cat(&[&alpha_raw, &pad], candle_core::D::Minus1)? // [batch, nh, seq]
+            } else {
+                alpha_raw
+            };
+
+            // ReLU + L1 normalisation
+            let alpha_relu = alpha_raw.relu()?;
+            let row_sum = (alpha_relu.sum_keepdim(candle_core::D::Minus1)? + 1e-10_f64)?;
+            let alpha_normed = alpha_relu.broadcast_div(&row_sum)?; // [batch, nh, seq]
+
+            eff_attn_rows.push(alpha_normed);
+        }
+
+        // Stack: [batch, nh, seq_query, seq_source]
+        Tensor::stack(&eff_attn_rows, 2).map_err(Into::into)
     }
 }
 
@@ -1318,13 +1473,18 @@ impl MIBackend for GenericRwkv {
                 cache.store(HookPoint::ResidPre(layer_idx), hidden.clone());
             }
 
-            let (new_hidden, new_attn_x, new_attn_kv, new_ffn_x, v_out, decay) = block.forward(
-                &hidden,
-                state.attn_x.get(layer_idx).and_then(Option::as_ref),
-                state.attn_kv.get(layer_idx).and_then(Option::as_ref),
-                state.ffn_x.get(layer_idx).and_then(Option::as_ref),
-                v_first.as_ref(),
-            )?;
+            // Only compute effective attention if requested for this layer
+            let compute_eff_attn = hooks.is_captured(&HookPoint::RwkvEffectiveAttn(layer_idx));
+
+            let (new_hidden, new_attn_x, new_attn_kv, new_ffn_x, v_out, decay, eff_attn) = block
+                .forward(
+                    &hidden,
+                    state.attn_x.get(layer_idx).and_then(Option::as_ref),
+                    state.attn_kv.get(layer_idx).and_then(Option::as_ref),
+                    state.ffn_x.get(layer_idx).and_then(Option::as_ref),
+                    v_first.as_ref(),
+                    compute_eff_attn,
+                )?;
 
             // Thread v_first for V7 value residual
             if layer_idx == 0 && self.config.version == RwkvVersion::V7 {
@@ -1341,6 +1501,11 @@ impl MIBackend for GenericRwkv {
             // Hook: RwkvDecay — capture the per-timestep decay tensor
             if hooks.is_captured(&HookPoint::RwkvDecay(layer_idx)) {
                 cache.store(HookPoint::RwkvDecay(layer_idx), decay);
+            }
+
+            // Hook: RwkvEffectiveAttn — capture the effective attention matrix
+            if let Some(ea) = eff_attn {
+                cache.store(HookPoint::RwkvEffectiveAttn(layer_idx), ea);
             }
 
             // Store updated state

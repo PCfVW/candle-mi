@@ -83,6 +83,13 @@ pub enum HookPoint {
     RwkvState(usize),
     /// RWKV decay vector at layer `i` (`blocks.{i}.rwkv.hook_decay`).
     RwkvDecay(usize),
+    /// RWKV effective attention at layer `i` (`blocks.{i}.rwkv.hook_effective_attn`).
+    ///
+    /// Shape: `[batch, heads, seq_query, seq_source]`.
+    /// Derived from the WKV recurrence by computing how much each
+    /// source position contributes to each query position's output.
+    /// Normalised via `ReLU` + L1.
+    RwkvEffectiveAttn(usize),
 
     // -- Escape hatch --
     /// Backend-specific hook point not covered by the standard enum.
@@ -108,6 +115,7 @@ impl fmt::Display for HookPoint {
             Self::FinalNorm => write!(f, "hook_final_norm"),
             Self::RwkvState(i) => write!(f, "blocks.{i}.rwkv.hook_state"),
             Self::RwkvDecay(i) => write!(f, "blocks.{i}.rwkv.hook_decay"),
+            Self::RwkvEffectiveAttn(i) => write!(f, "blocks.{i}.rwkv.hook_effective_attn"),
             Self::Custom(s) => write!(f, "{s}"),
         }
     }
@@ -158,6 +166,7 @@ fn parse_hook_string(s: &str) -> HookPoint {
                     "hook_resid_post" => HookPoint::ResidPost(layer),
                     "rwkv.hook_state" => HookPoint::RwkvState(layer),
                     "rwkv.hook_decay" => HookPoint::RwkvDecay(layer),
+                    "rwkv.hook_effective_attn" => HookPoint::RwkvEffectiveAttn(layer),
                     _ => HookPoint::Custom(s.to_string()),
                 };
             }
@@ -214,6 +223,7 @@ pub enum Intervention {
 /// # Errors
 ///
 /// Returns [`MIError::Model`] if the underlying tensor operation fails.
+#[cfg(any(feature = "transformer", feature = "rwkv"))]
 pub(crate) fn apply_intervention(tensor: &Tensor, intervention: &Intervention) -> Result<Tensor> {
     match intervention {
         Intervention::Replace(replacement) => Ok(replacement.clone()),
@@ -433,6 +443,10 @@ mod tests {
             (HookPoint::ResidPost(9), "blocks.9.hook_resid_post"),
             (HookPoint::RwkvState(6), "blocks.6.rwkv.hook_state"),
             (HookPoint::RwkvDecay(6), "blocks.6.rwkv.hook_decay"),
+            (
+                HookPoint::RwkvEffectiveAttn(6),
+                "blocks.6.rwkv.hook_effective_attn",
+            ),
         ];
 
         for (hook, expected_str) in cases {
