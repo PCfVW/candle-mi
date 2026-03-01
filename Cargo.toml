@@ -37,7 +37,7 @@ statrs = "0.17"
 tracing = "0.1"
 
 # Model downloads (hf-fetch-model wraps hf-hub v0.5)
-hf-fetch-model = { path = "../hf-fetch-model" }
+hf-fetch-model = "0.5"
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
 # Optional: probing
