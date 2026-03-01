@@ -51,6 +51,24 @@ tempfile = "3.10"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"
 
+# Integration tests — each gated behind its feature so `cargo test --features X`
+# only compiles the tests that use feature X.
+[[test]]
+name = "validate_models"
+required-features = ["transformer"]
+
+[[test]]
+name = "bench_hook_overhead"
+required-features = ["transformer"]
+
+[[test]]
+name = "validate_rwkv6"
+required-features = ["rwkv", "rwkv-tokenizer"]
+
+[[test]]
+name = "validate_rwkv7"
+required-features = ["rwkv", "rwkv-tokenizer"]
+
 [features]
 default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]

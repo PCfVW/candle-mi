@@ -42,6 +42,15 @@ jobs:
       - name: Tests
         run: cargo test --no-default-features --features transformer
 
+      - name: Build (RWKV)
+        run: cargo build --no-default-features --features "rwkv,rwkv-tokenizer"
+
+      - name: Clippy (RWKV, pedantic)
+        run: cargo clippy --no-default-features --features "rwkv,rwkv-tokenizer" -- -W clippy::pedantic
+
+      - name: Tests (RWKV)
+        run: cargo test --no-default-features --features "rwkv,rwkv-tokenizer"
+
       # Check 5 (Rule 15): Bare no-default-features build
       - name: Build (no default features)
         run: cargo build --no-default-features
