@@ -26,7 +26,7 @@
 
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::rwkv::{GenericRwkv, RwkvConfig, RwkvVersion};
-use candle_mi::{HookPoint, HookSpec, MIBackend, MITokenizer};
+use candle_mi::{HookPoint, HookSpec, MIBackend, MIModel, MITokenizer};
 use serial_test::serial;
 
 const MODEL_ID: &str = "RWKV/RWKV7-Goose-World3-1.5B-HF";
@@ -437,4 +437,38 @@ fn rwkv7_hook_capture_state() {
     assert_eq!(resid_dims.0, 1, "batch");
     assert_eq!(resid_dims.1, token_ids.len(), "seq_len");
     assert_eq!(resid_dims.2, config.hidden_size, "hidden_size");
+}
+
+// ===========================================================================
+// MIModel::from_pretrained
+// ===========================================================================
+
+#[test]
+fn rwkv7_from_pretrained() {
+    if find_snapshot(MODEL_ID).is_none() {
+        eprintln!("SKIP: {MODEL_ID} not in HF cache");
+        return;
+    }
+
+    let model = MIModel::from_pretrained(MODEL_ID).unwrap();
+
+    // Verify metadata
+    assert_eq!(model.num_layers(), 24);
+    assert_eq!(model.hidden_size(), 2048);
+    assert_eq!(model.vocab_size(), 65536);
+    assert_eq!(model.num_heads(), 32);
+
+    // Quick forward pass
+    let device = model.device();
+    let input = Tensor::new(&[1942u32, 98, 5170], device)
+        .unwrap()
+        .unsqueeze(0)
+        .unwrap();
+    let hooks = HookSpec::new();
+    let result = model.forward(&input, &hooks).unwrap();
+    let logits = result.output();
+    let dims = logits.dims3().unwrap();
+    assert_eq!(dims.0, 1, "batch");
+    assert_eq!(dims.1, 3, "seq_len");
+    assert_eq!(dims.2, 65536, "vocab_size");
 }

@@ -2,8 +2,8 @@
 
 > *MI for the Rust of us*
 
-**Date:** February 19, 2026 (last updated: February 25, 2026)
-**Status:** Phase 0 + Phase 1 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.2.
+**Date:** February 19, 2026 (last updated: March 1, 2026)
+**Status:** Phase 0 + Phase 1 + Phase 2 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.3.
 **Context:** Building on plip-rs experience (7 model backends incl. Gemma 2, attention knockout, state knockout, effective attention, steering, logit lens, CLT encoding/injection). Two successful replications of Anthropic's "Planning in Poems" Figure 13 validate the approach: Gemma 2 2B with 426K CLTs (melometis branch) and Llama 3.2 1B with 524K CLTs (tragos branch). Target: a publishable, generic Rust MI crate endorsed by HuggingFace.
 
 ---
@@ -513,9 +513,9 @@ Where `A_t` (transition), `B_t` (input), and `C_t` (output) vary by architecture
 | **Attention knockout** | ✅ Spec types ready | Pre-softmax `-inf` masking via `Intervention::Knockout`; measures KL divergence |
 | **Attention steering** | ✅ Spec types ready | Post-softmax scaling/setting + renormalization via `Intervention::Steer` |
 | **Steering calibration** | ✅ Infrastructure ready | Baseline measurement, dose-response curves |
-| **State knockout** (RWKV) | Validated (Phase 2) | Zero specific head states; measures KL divergence. Algorithm validated in plip-rs `forward_rwkv6.rs`; needs extraction into standalone module |
-| **State steering** (RWKV) | Validated (Phase 2) | Additive bias to recurrent states. Algorithm validated in plip-rs `forward_rwkv6.rs`; needs extraction into standalone module |
-| **Effective attention** (RWKV) | Validated (Phase 2) | `[b,h,t,t]` attention-equivalent from WKV recurrence. Algorithm validated in plip-rs `forward_rwkv6.rs`; needs extraction into standalone module |
+| **State knockout** (RWKV) | ✅ Working (Phase 2) | Zero specific head states via `HookSpec::set_state_knockout()`; skips kv write (`state = decay * state`). V6 + V7 |
+| **State steering** (RWKV) | ✅ Working (Phase 2) | Scale kv write via `HookSpec::set_state_steering()` (`state = scale * kv + decay * state`). V6 + V7 |
+| **Effective attention** (RWKV) | ✅ Working (Phase 2) | `[b,h,t,t]` attention-equivalent from WKV recurrence via `HookPoint::RwkvEffectiveAttn`. V6 (prefix-sum) + V7 (backward linear functional) |
 | **Logit lens** | ✅ Infrastructure ready | Per-layer vocab projection via `project_to_vocab` |
 | **Activation caching** | ✅ Working | Per-layer hidden state storage (`ActivationCache`, `FullActivationCache`) |
 | **KV cache** | ✅ Infrastructure ready | Autoregressive generation with intervention (`KVCache`) |
@@ -720,20 +720,20 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 
 **Goal:** Port plip-rs RWKV-6 backend, add RWKV-7, validate both.
 
-- [ ] Implement `RwkvConfig` with version dispatch — **commit**
-- [ ] Implement shared RWKV block structure — **commit**
-- [ ] Implement version-specific token shift (static lerp + ddlerp) — **commit**
-- [ ] Implement version-specific channel mix (receptance-gated + plain) — **commit**
-- [ ] Implement RWKV weight name mapping per version — **commit**
-- [ ] Port RWKV-6 WKV kernel from plip-rs `forward_rwkv6.rs` — **commit**
-- [ ] Validate RWKV-6: compare against plip-rs reference outputs — **commit** — **PUSH** (RWKV-6 green)
-- [ ] Implement RWKV-7 WKV kernel (generalized delta rule) — **commit**
-- [ ] Validate RWKV-7: compare against fla Python reference — **commit** — **PUSH** (RWKV-7 green)
-- [ ] Port effective attention computation for RWKV-6 — **commit**
-- [ ] Derive effective attention for RWKV-7 (new: diag+rank-1 complicates the formula) — **commit**
-- [ ] Implement RWKV-specific state knockout + state steering (the `MIBackend` trait methods and spec types were ported in Phase 0; this provides the concrete implementations extracted from plip-rs `forward_rwkv6.rs`) — **commit**
+- [x] Implement `RwkvConfig` with version dispatch — **commit**
+- [x] Implement shared RWKV block structure — **commit**
+- [x] Implement version-specific token shift (static lerp + ddlerp) — **commit**
+- [x] Implement version-specific channel mix (receptance-gated + plain) — **commit**
+- [x] Implement RWKV weight name mapping per version — **commit**
+- [x] Port RWKV-6 WKV kernel from plip-rs `forward_rwkv6.rs` — **commit**
+- [x] Validate RWKV-6: compare against plip-rs reference outputs — **commit** — **PUSH** (RWKV-6 green)
+- [x] Implement RWKV-7 WKV kernel (generalized delta rule) — **commit**
+- [x] Validate RWKV-7: compare against fla Python reference — **commit** — **PUSH** (RWKV-7 green)
+- [x] Port effective attention computation for RWKV-6 — **commit**
+- [x] Derive effective attention for RWKV-7 (new: diag+rank-1 complicates the formula) — **commit**
+- [x] Implement RWKV-specific state knockout + state steering (the `MIBackend` trait methods and spec types were ported in Phase 0; this provides the concrete implementations extracted from plip-rs `forward_rwkv6.rs`) — **commit**
 
-**Deliverable:** `MIModel::from_pretrained("RWKV/RWKV7-Goose-World3-1.5B-HF")` works. — **PUSH + tag `v0.0.3-phase2`**
+**Deliverable:** `MIModel::from_pretrained("RWKV/RWKV7-Goose-World3-1.5B-HF")` works. ✅ — **PUSH + tag `v0.0.3`**
 
 ### Phase 3: CLT Support
 

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.0.3] - 2026-03-01
 
 ### Added
 
@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   types into the WKV loops; knockout skips kv write (`state = decay * state`),
   steering scales it (`state = scale * kv + decay * state`); layer-targeted
   via `LayerSpec`, O(1) position lookup via `HashSet`
+- `MIModel::from_pretrained("RWKV/RWKV7-Goose-World3-1.5B-HF")` integration
+  test validating the full one-line loading path for RWKV-7 models
 - Integration tests for RWKV-6 (against plip-rs reference) and RWKV-7
   (against fla/flash-linear-attention reference), CPU F32 + GPU BF16
 - RWKV clippy and test steps in CI publish workflow
@@ -57,6 +59,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow: added RWKV build/clippy/test steps (matching publish.yml);
   integration tests gated by `required-features` in `Cargo.toml`
 - `hf-fetch-model` dependency changed from local path to crates.io v0.5
+- `HookSpec::is_empty()` now accounts for `state_knockout` and
+  `state_steering` specs (previously only checked captures/interventions)
+- Stale documentation updated: RWKV-7 status changed from "planned" to
+  implemented, `MIModel` doc corrected re: `from_pretrained` availability
+- Removed dead `layer_idx` field from `TimeMixV7` and simplified
+  `v_for_first` return path (no behavioural change)
 
 ### Changed
 
@@ -130,5 +138,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
+[0.0.3]: https://github.com/PCfVW/candle-mi/releases/tag/v0.0.3
 [0.0.2-phase1]: https://github.com/PCfVW/candle-mi/releases/tag/v0.0.2-phase1
 [0.0.1]: https://github.com/PCfVW/candle-mi/releases/tag/v0.0.1
