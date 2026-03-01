@@ -27,6 +27,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `quick_start_transformer` and `fast_download` examples
 - Python validation scripts (`scripts/rwkv6_validation.py`,
   `scripts/rwkv7_validation.py`) for reproducible reference output generation
+- **RWKV effective attention** — `RwkvEffectiveAttn` hook point for both
+  V6 and V7, deriving attention-like matrices from the WKV recurrence:
+  - V6: prefix-sum of log-decay for efficient cumulative decay products,
+    then ReLU + L1 normalisation (`O(seq² × d × heads)`)
+  - V7: backward propagation of a linear functional through diag+rank-1
+    state transitions (`l = l ⊙ exp(w) + (l · b) * act_a`), same asymptotic cost
+- **RWKV state knockout + steering** — `HookSpec::set_state_knockout()` and
+  `set_state_steering()` wiring the existing `StateKnockoutSpec`/`StateSteeringSpec`
+  types into the WKV loops; knockout skips kv write (`state = decay * state`),
+  steering scales it (`state = scale * kv + decay * state`); layer-targeted
+  via `LayerSpec`, O(1) position lookup via `HashSet`
 - Integration tests for RWKV-6 (against plip-rs reference) and RWKV-7
   (against fla/flash-linear-attention reference), CPU F32 + GPU BF16
 - RWKV clippy and test steps in CI publish workflow
@@ -41,6 +52,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Serialized GPU integration tests with `serial_test` to prevent CUDA OOM
   when running multiple model tests concurrently
 - Pre-existing `cargo doc` link warnings resolved
+- CI `no-default-features` build: gated `apply_intervention` with `#[cfg]`
+  to eliminate dead-code error when no backend feature is enabled
+- CI workflow: added RWKV build/clippy/test steps (matching publish.yml);
+  integration tests gated by `required-features` in `Cargo.toml`
+- `hf-fetch-model` dependency changed from local path to crates.io v0.5
 
 ### Changed
 
