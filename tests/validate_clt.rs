@@ -25,7 +25,8 @@
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::clt::CrossLayerTranscoder;
 use candle_mi::{
-    GenericTransformer, HookPoint, HookSpec, MIBackend, MITokenizer, TransformerConfig,
+    CltFeatureId, GenericTransformer, HookPoint, HookSpec, MIBackend, MITokenizer,
+    TransformerConfig,
 };
 use serial_test::serial;
 
@@ -298,7 +299,7 @@ fn clt_injection_shifts_logits() {
 
     // --- Cache decoder vectors for the final layer ---
     let target_layer = 25; // last layer
-    let features_for_injection: Vec<(candle_mi::CltFeatureId, usize)> = top5
+    let features_for_injection: Vec<(CltFeatureId, usize)> = top5
         .features
         .iter()
         .map(|(fid, _)| (*fid, target_layer))
@@ -400,6 +401,396 @@ fn clt_injection_shifts_logits() {
         l2_dist > 1.0,
         "with strength=5.0, L2 distance should be substantial (got {l2_dist})"
     );
+
+    // --- Cleanup ---
+    clt.clear_steering_cache();
+    assert_eq!(clt.steering_cache_len(), 0);
+}
+
+// ===========================================================================
+// Test: CLT position sweep — correlational (feature activations vary by position)
+// ===========================================================================
+
+#[test]
+#[ignore]
+#[serial]
+fn clt_position_sweep_activations() {
+    let device = cuda_device().expect("CUDA required for CLT position sweep");
+    if find_snapshot("google/gemma-2-2b").is_none() {
+        panic!("google/gemma-2-2b not in HF cache");
+    }
+
+    // Load Gemma 2 2B.
+    let (model, tokenizer, _config) = load_gemma2(&device);
+
+    let prompt = "Roses are red, violets are blue";
+    let token_ids = tokenizer.encode(prompt).unwrap();
+    let seq_len = token_ids.len();
+    println!("Prompt: '{prompt}' → {seq_len} tokens: {token_ids:?}");
+    for (i, &tid) in token_ids.iter().enumerate() {
+        let tok_str = tokenizer.decode(&[tid]).unwrap();
+        println!("  pos {i}: '{tok_str}' (id={tid})");
+    }
+
+    let input = Tensor::new(&token_ids[..], &device)
+        .unwrap()
+        .unsqueeze(0)
+        .unwrap();
+
+    // Single forward pass capturing ResidMid at layer 12.
+    let encode_layer: usize = 12;
+    let mut hooks = HookSpec::new();
+    hooks.capture(HookPoint::ResidMid(encode_layer));
+    let result = model.forward(&input, &hooks).unwrap();
+    let resid_mid = result.require(&HookPoint::ResidMid(encode_layer)).unwrap();
+
+    // Open CLT and load encoder once.
+    let mut clt = CrossLayerTranscoder::open("mntss/clt-gemma-2-2b-426k").unwrap();
+    clt.load_encoder(encode_layer, &device).unwrap();
+
+    // Sweep: encode at every position.
+    let k = 10;
+    let mut per_position_top_features: Vec<Vec<(CltFeatureId, f32)>> =
+        Vec::with_capacity(seq_len);
+    let mut per_position_counts: Vec<usize> = Vec::with_capacity(seq_len);
+
+    for pos in 0..seq_len {
+        let residual = resid_mid
+            .i((0, pos))
+            .unwrap()
+            .to_device(&device)
+            .unwrap();
+        let sparse = clt.encode(&residual, encode_layer).unwrap();
+        let total_active = sparse.len();
+        let top = clt.top_k(&residual, encode_layer, k).unwrap();
+
+        per_position_counts.push(total_active);
+        per_position_top_features.push(top.features.clone());
+
+        let tok_str = tokenizer.decode(&[token_ids[pos]]).unwrap();
+        println!(
+            "Pos {pos} '{tok_str}': {total_active} active features, top: {} (act={:.4})",
+            top.features[0].0,
+            top.features[0].1,
+        );
+    }
+
+    // --- Assertions ---
+
+    // Every position should have at least some active features.
+    for (pos, count) in per_position_counts.iter().enumerate() {
+        assert!(
+            *count > 0,
+            "position {pos} should have non-zero active features"
+        );
+    }
+
+    // Top-1 features should vary across positions (position-specificity).
+    let top1_features: Vec<CltFeatureId> = per_position_top_features
+        .iter()
+        .map(|feats| feats[0].0)
+        .collect();
+    let unique_top1: std::collections::HashSet<CltFeatureId> =
+        top1_features.iter().copied().collect();
+    println!(
+        "\nUnique top-1 features across {seq_len} positions: {}/{}",
+        unique_top1.len(),
+        seq_len
+    );
+    assert!(
+        unique_top1.len() >= 2,
+        "CLT features should vary across positions (got {} unique top-1 out of {} positions)",
+        unique_top1.len(),
+        seq_len,
+    );
+
+    // Top-1 activation magnitudes should vary.
+    let top1_activations: Vec<f32> = per_position_top_features
+        .iter()
+        .map(|feats| feats[0].1)
+        .collect();
+    let max_act = top1_activations
+        .iter()
+        .copied()
+        .fold(f32::NEG_INFINITY, f32::max);
+    let min_act = top1_activations
+        .iter()
+        .copied()
+        .fold(f32::INFINITY, f32::min);
+    let act_range = max_act - min_act;
+    println!("Top-1 activation range: [{min_act:.4}, {max_act:.4}], spread={act_range:.4}");
+    assert!(
+        act_range > 0.01,
+        "top-1 activations should vary across positions (range={act_range})"
+    );
+
+    // Jaccard similarity between first and last position top-k should be < 0.8.
+    let first_top_ids: std::collections::HashSet<CltFeatureId> =
+        per_position_top_features[0].iter().map(|(f, _)| *f).collect();
+    let last_top_ids: std::collections::HashSet<CltFeatureId> = per_position_top_features
+        [seq_len - 1]
+        .iter()
+        .map(|(f, _)| *f)
+        .collect();
+    let intersection = first_top_ids.intersection(&last_top_ids).count();
+    let union = first_top_ids.union(&last_top_ids).count();
+    let jaccard = if union > 0 {
+        intersection as f32 / union as f32
+    } else {
+        1.0
+    };
+    println!(
+        "Jaccard(pos 0, pos {}): {jaccard:.3} (intersection={intersection}, union={union})",
+        seq_len - 1
+    );
+    assert!(
+        jaccard < 0.8,
+        "first and last position top-{k} features should differ (Jaccard={jaccard})"
+    );
+
+    // Summary table.
+    println!(
+        "\n=== Position Sweep Summary (layer {encode_layer}) ==="
+    );
+    println!(
+        "{:>3}  {:<15}  {:>8}  {:>12}  {:>12}",
+        "Pos", "Token", "#Active", "Top1 Feature", "Top1 Act"
+    );
+    for pos in 0..seq_len {
+        let tok_str = tokenizer.decode(&[token_ids[pos]]).unwrap();
+        let (fid, act) = &per_position_top_features[pos][0];
+        println!(
+            "{:>3}  {:<15}  {:>8}  {:>12}  {:>12.4}",
+            pos, tok_str, per_position_counts[pos], fid, act
+        );
+    }
+}
+
+// ===========================================================================
+// Test: CLT position sweep — causal (injection effect concentrates at planning site)
+// ===========================================================================
+
+#[test]
+#[ignore]
+#[serial]
+fn clt_position_sweep_causal() {
+    let device = cuda_device().expect("CUDA required for CLT causal sweep");
+    if find_snapshot("google/gemma-2-2b").is_none() {
+        panic!("google/gemma-2-2b not in HF cache");
+    }
+
+    // Load Gemma 2 2B.
+    let (model, tokenizer, _config) = load_gemma2(&device);
+
+    let prompt = "Roses are red, violets are blue";
+    let token_ids = tokenizer.encode(prompt).unwrap();
+    let seq_len = token_ids.len();
+    println!("Prompt: '{prompt}' → {seq_len} tokens");
+    let input = Tensor::new(&token_ids[..], &device)
+        .unwrap()
+        .unsqueeze(0)
+        .unwrap();
+
+    // --- Baseline forward pass + capture ResidMid ---
+    let encode_layer: usize = 12;
+    let mut baseline_hooks = HookSpec::new();
+    baseline_hooks.capture(HookPoint::ResidMid(encode_layer));
+    let baseline_result = model.forward(&input, &baseline_hooks).unwrap();
+    let baseline_logits = baseline_result.output().clone();
+
+    // --- Encode at the planning site (last token) to pick a strong feature ---
+    let planning_position = seq_len - 1;
+    let resid_mid = baseline_result
+        .require(&HookPoint::ResidMid(encode_layer))
+        .unwrap();
+    let residual = resid_mid.i((0, planning_position)).unwrap();
+
+    let mut clt = CrossLayerTranscoder::open("mntss/clt-gemma-2-2b-426k").unwrap();
+    clt.load_encoder(encode_layer, &device).unwrap();
+    let top1 = clt.top_k(&residual, encode_layer, 1).unwrap();
+    assert!(
+        !top1.is_empty(),
+        "should find at least one active feature at layer {encode_layer}"
+    );
+    let (chosen_feature, chosen_act) = top1.features[0];
+    println!("Chosen feature: {chosen_feature} (activation={chosen_act:.4})");
+
+    // --- Cache decoders for ALL downstream layers (melometis Version C) ---
+    clt.cache_steering_vectors_all_downstream(&[chosen_feature], &device)
+        .unwrap();
+    println!(
+        "Cached {} steering vectors (layers {encode_layer}..{})",
+        clt.steering_cache_len(),
+        clt.config().n_layers - 1
+    );
+
+    // Build injection entries: feature at every downstream layer.
+    let n_layers = clt.config().n_layers;
+    let features_for_injection: Vec<(CltFeatureId, usize)> = (encode_layer..n_layers)
+        .map(|target_layer| (chosen_feature, target_layer))
+        .collect();
+
+    // --- Baseline logits at last position (CPU F32) ---
+    let baseline_f32 = baseline_logits
+        .to_device(&Device::Cpu)
+        .unwrap()
+        .to_dtype(DType::F32)
+        .unwrap();
+    let bl_last: Vec<f32> = baseline_f32
+        .i((0, seq_len - 1))
+        .unwrap()
+        .to_vec1()
+        .unwrap();
+
+    // --- Sweep: inject at each position, measure L2 distance ---
+    let strength: f32 = 5.0;
+    let mut l2_distances: Vec<f32> = Vec::with_capacity(seq_len);
+
+    println!(
+        "\n{:>3}  {:<15}  {:>12}",
+        "Pos", "Token", "L2 Distance"
+    );
+    println!("{:->3}  {:->15}  {:->12}", "", "", "");
+
+    for pos in 0..seq_len {
+        let injection_hooks = clt
+            .prepare_hook_injection(
+                &features_for_injection,
+                pos,
+                seq_len,
+                strength,
+                &device,
+            )
+            .unwrap();
+
+        let injected_result = model.forward(&input, &injection_hooks).unwrap();
+        let injected_logits = injected_result.output().clone();
+
+        let injected_f32 = injected_logits
+            .to_device(&Device::Cpu)
+            .unwrap()
+            .to_dtype(DType::F32)
+            .unwrap();
+        let ij_last: Vec<f32> = injected_f32
+            .i((0, seq_len - 1))
+            .unwrap()
+            .to_vec1()
+            .unwrap();
+
+        let l2: f32 = bl_last
+            .iter()
+            .zip(ij_last.iter())
+            .map(|(a, b)| (a - b).powi(2))
+            .sum::<f32>()
+            .sqrt();
+
+        l2_distances.push(l2);
+
+        let tok_str = tokenizer.decode(&[token_ids[pos]]).unwrap();
+        println!("{:>3}  {:<15}  {:>12.4}", pos, tok_str, l2);
+    }
+
+    // --- Assertions ---
+
+    // Every injection should produce measurable effect.
+    for (pos, &l2) in l2_distances.iter().enumerate() {
+        assert!(
+            l2 > 0.001,
+            "injection at position {pos} should produce measurable effect (L2={l2})"
+        );
+    }
+
+    // Find the max-effect position.
+    let (max_pos, max_l2) = l2_distances
+        .iter()
+        .enumerate()
+        .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+        .unwrap();
+    let last_l2 = l2_distances[seq_len - 1];
+    println!("\nMax L2: {max_l2:.4} at position {max_pos}");
+    println!("Last-position L2: {last_l2:.4}");
+
+    // The planning site (last position) should have a strong effect
+    // relative to the maximum across all positions.
+    assert!(
+        last_l2 >= max_l2 * 0.5,
+        "last-position L2 ({last_l2:.4}) should be at least 50% of max L2 ({max_l2:.4})"
+    );
+
+    // The planning site should rank in the top 3.
+    let mut sorted_with_pos: Vec<(usize, f32)> = l2_distances
+        .iter()
+        .enumerate()
+        .map(|(i, &v)| (i, v))
+        .collect();
+    sorted_with_pos.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+    let last_rank = sorted_with_pos
+        .iter()
+        .position(|(pos, _)| *pos == seq_len - 1)
+        .unwrap();
+    println!(
+        "Last position rank: {} out of {} (top-3: {:?})",
+        last_rank + 1,
+        seq_len,
+        &sorted_with_pos[..3.min(seq_len)]
+    );
+    assert!(
+        last_rank < 3,
+        "last position should be in top 3 by L2 distance (rank={}, seq_len={})",
+        last_rank + 1,
+        seq_len,
+    );
+
+    // Effect should be positionally concentrated (last / median > 1.2x).
+    let mut sorted_l2s: Vec<f32> = l2_distances.clone();
+    sorted_l2s.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let median_l2 = sorted_l2s[seq_len / 2];
+    let concentration_ratio = last_l2 / median_l2;
+    println!("Concentration ratio (last/median): {concentration_ratio:.2}x");
+    assert!(
+        concentration_ratio > 1.2,
+        "effect should concentrate at planning site (ratio={concentration_ratio:.2})"
+    );
+
+    // Print top-5 predictions: baseline vs. best injection position.
+    let print_top5 = |label: &str, logits_vec: &[f32]| {
+        let mut indexed: Vec<(usize, f32)> = logits_vec
+            .iter()
+            .enumerate()
+            .map(|(i, &v)| (i, v))
+            .collect();
+        indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        println!("{label} top-5:");
+        for (rank, (idx, logit)) in indexed.iter().take(5).enumerate() {
+            let token = tokenizer.decode(&[*idx as u32]).unwrap();
+            println!("  {}: '{}' (logit={:.4})", rank + 1, token, logit);
+        }
+    };
+    print_top5("Baseline", &bl_last);
+
+    // Re-run at the max-effect position for the comparison printout.
+    let best_hooks = clt
+        .prepare_hook_injection(
+            &features_for_injection,
+            max_pos,
+            seq_len,
+            strength,
+            &device,
+        )
+        .unwrap();
+    let best_result = model.forward(&input, &best_hooks).unwrap();
+    let best_logits = best_result
+        .output()
+        .to_device(&Device::Cpu)
+        .unwrap()
+        .to_dtype(DType::F32)
+        .unwrap();
+    let best_last: Vec<f32> = best_logits
+        .i((0, seq_len - 1))
+        .unwrap()
+        .to_vec1()
+        .unwrap();
+    print_top5(&format!("Injected (pos={max_pos})"), &best_last);
 
     // --- Cleanup ---
     clt.clear_steering_cache();
