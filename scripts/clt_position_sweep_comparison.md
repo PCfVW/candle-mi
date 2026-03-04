@@ -160,3 +160,37 @@ python scripts/clt_position_sweep_validation.py
 cargo test --test validate_clt --features clt,transformer \
     -- --ignored --test-threads=1 position_sweep --nocapture
 ```
+
+---
+
+## Llama 3.2 1B (tragos replication)
+
+The same position-sweep protocol applied to a second model to confirm the
+phenomenon generalises across architectures.
+
+| | Rust (candle-mi) | Python (HuggingFace) |
+|---|---|---|
+| Model | meta-llama/Llama-3.2-1B | meta-llama/Llama-3.2-1B |
+| CLT | mntss/clt-llama-3.2-1b-524k | mntss/clt-llama-3.2-1b-524k |
+| Layers | 16 | 16 |
+| d_model | 2048 | 2048 |
+| Features/layer | 32,768 | 32,768 |
+| Encode layer | 8 | 8 |
+| Prompt | "Roses are red, violets are blue" | (same) |
+| Injection strength | 5.0 | 5.0 |
+
+### Results
+
+*To be populated after running `scripts/clt_position_sweep_validation_llama.py`
+and comparing with the Rust test output.*
+
+### How to reproduce
+
+```bash
+# Python reference
+python scripts/clt_position_sweep_validation_llama.py
+
+# Rust tests (Llama-specific)
+cargo test --test validate_clt --features clt,transformer \
+    -- --ignored --test-threads=1 llama --nocapture
+```

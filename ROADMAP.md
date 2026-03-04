@@ -46,9 +46,9 @@
   - [Phase 1: Generic Transformer](#phase-1-generic-transformer) ✅
   - [Phase 2: RWKV-6 + RWKV-7](#phase-2-rwkv-6--rwkv-7) ✅
   - [Phase 3: CLT Support](#phase-3-clt-support) 🔧
-  - [Phase 3b: SAE Support](#phase-3b-sae-support)
-  - [Phase 4: Polish + Publish](#phase-4-polish--publish)
-  - [Phase 5+: Extensions (Future)](#phase-5-extensions-future)
+  - [Phase 4: SAE Support](#phase-4-sae-support)
+  - [Phase 5: Polish + Publish](#phase-5-polish--publish)
+  - [Phase 6+: Extensions (Future)](#phase-6-extensions-future)
 - [8. Key Design Decisions](#8-key-design-decisions)
 - [9. Relationship to Existing Projects](#9-relationship-to-existing-projects)
   - [9.1 plip-rs (AIware 2026)](#91-plip-rs-aiware-2026)
@@ -672,7 +672,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 
 **Branch strategy:** Work directly on `main` during solo development. Use short-lived feature branches only when a change spans multiple sessions and may leave `main` broken in between; merge back when green.
 
-**Tag convention:** Tag at each phase completion: `v0.0.1-phase0`, `v0.0.2-phase1`, etc. Tag `v0.1.0` at publication (Phase 4). Tags matching `v*` trigger `publish.yml`, which runs full CI then `cargo publish` automatically. **Always wait for `ci.yml` green before tagging** — bump `Cargo.toml` version + commit `Cargo.lock` first.
+**Tag convention:** Tag at each phase completion: `v0.0.1-phase0`, `v0.0.2-phase1`, etc. Tag `v0.1.0` at publication (Phase 5). Tags matching `v*` trigger `publish.yml`, which runs full CI then `cargo publish` automatically. **Always wait for `ci.yml` green before tagging** — bump `Cargo.toml` version + commit `Cargo.lock` first.
 
 ### Phase 0: Foundation
 
@@ -751,12 +751,15 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [x] Port CLT encoding (activations → feature activations, sparse top-k) — `encode()`, `top_k()` — **commit `6e5b231`**
 - [x] Port CLT feature injection (suppress+inject protocol from melometis/tragos) — `cache_steering_vectors_all_downstream()`, `prepare_hook_injection()`, `Intervention::Add` at `ResidPost` — **commit `39013d1`**
 - [x] Validate: load Gemma 2 2B CLT, reproduce melometis position-sweep results — correlational (8/8 top-1 match, <5% relative error) + causal (last-position L2 ranks #1), cross-validated against Python HF reference — **commit `7d7bd96`** — **PUSH** (CLT pipeline green on Gemma 2)
-- [ ] Validate: load Llama 3.2 1B CLT, reproduce tragos position-sweep results — **commit** — **PUSH** (CLT pipeline green on Llama 3.2)
+- [x] Validate: load Llama 3.2 1B CLT (524K, `mntss/clt-llama-3.2-1b-524k`), reproduce tragos position-sweep results — second independent replication confirming the phenomenon generalises across architectures; config (16 layers, 2048 d_model, 32768 features/layer), encoding (5 layers), injection (L2=77.9), correlational sweep (8/11 unique top-1, Jaccard=0.000), causal sweep (last position #1, concentration 24.85x) — **commit** — **PUSH** (CLT pipeline green on Llama 3.2)
 - [ ] Implement attribution graph construction — **commit**
+- [ ] Implement recurrent feedback (anacrousis) — `RecurrentPassSpec` with prefill-only and sustained generation-time modes; re-run commitment layers (L14–15 on Llama 3.2 1B) with optional CLT injection feedback at every autoregressive step — **commit**
+- [ ] Validate: replicate anacrousis results (28 conditions × 15 couplets; sustained mode converts 11/15 vs baseline 10/15) — **commit** — **PUSH** (anacrousis green)
+- [ ] Add `scripts/README.md` documenting validation scripts, reference data files, and regeneration instructions — **commit**
 
-**Deliverable:** Full CLT pipeline working on both Gemma 2 2B and Llama 3.2 1B. — **PUSH + tag `v0.0.4-phase3`**
+**Deliverable:** Full CLT pipeline on Gemma 2 2B and Llama 3.2 1B, plus anacrousis recurrent feedback experiment. — **PUSH + tag `v0.0.4-phase3`**
 
-### Phase 3b: SAE Support
+### Phase 4: SAE Support
 
 **Goal:** Load and use pre-trained sparse autoencoders.
 
@@ -764,9 +767,9 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [ ] Implement SAE encoding and feature injection — **commit**
 - [ ] Validate: load Gemma Scope SAE, encode activations, verify reconstruction — **commit** — **PUSH**
 
-**Deliverable:** SAE pipeline working alongside CLTs. — **PUSH + tag `v0.0.5-phase3b`**
+**Deliverable:** SAE pipeline working alongside CLTs. — **PUSH + tag `v0.0.5-phase4`**
 
-### Phase 4: Polish + Publish
+### Phase 5: Polish + Publish
 
 **Goal:** Documentation, examples, crates.io publication.
 
@@ -775,7 +778,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [ ] Write `HOOKS.md` — hook point reference and intervention walkthrough — **commit**
 - [ ] Write example programs (logit lens, knockout, steering, CLT scan) — **commit per example**
 - [ ] Audit public API surface (`pub` vs `pub(crate)`) — **commit**
-- [ ] Populate CHANGELOG.md with all notable changes from Phases 0–3b — **commit** — **PUSH** (release candidate)
+- [ ] Populate CHANGELOG.md with all notable changes from Phases 0–4 — **commit** — **PUSH** (release candidate)
 - [ ] **Release workflow** (publish v0.1.0 to crates.io — automated via `publish.yml`):
   1. Ensure `main` is clean: `git status` shows no uncommitted changes
   2. Bump version in `Cargo.toml` to `0.1.0` + update `Cargo.lock` — **commit: `release: v0.1.0`** — **PUSH**
@@ -787,7 +790,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [ ] Submit PR to candle repo adding candle-mi to "Useful External Resources" (per Eric Buehler's invitation)
 - [ ] Announce (Rust ML community, MI community)
 
-### Phase 5+: Extensions (Future)
+### Phase 6+: Extensions (Future)
 
 - [ ] RWKV-4/5 backends (if community demand)
 - [ ] Mamba / Mamba-2 backend
