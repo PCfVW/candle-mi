@@ -22,8 +22,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   every token position, verify position-specificity) and causal (inject at
   every position, measure L2 logit distance) tests reproducing Anthropic's
   "Planning in Poems" Figure 13 result in Rust
-- Python validation script (`scripts/clt_position_sweep_validation.py`) and
-  comparison documents (`scripts/clt_position_sweep_comparison.md`,
+- **Tragos position-sweep validation** (Llama 3.2 1B) — second independent
+  replication on `mntss/clt-llama-3.2-1b-524k` (16 layers, 2048 d_model,
+  32768 features/layer); config detection, encoding at 5 layers, injection
+  (L2=77.9), correlational sweep (8/11 unique top-1, Jaccard=0.000), causal
+  sweep (last position #1, concentration 24.85x); confirms the planning-site
+  concentration phenomenon generalises across architectures
+- **CLT attribution graph construction** — `AttributionEdge` and
+  `AttributionGraph` types for circuit analysis; `score_features_by_decoder_projection()`
+  scores all features by decoder-direction dot product or cosine similarity;
+  batch variant `score_features_by_decoder_projection_batch()` loads each
+  decoder file once for all directions; `extract_decoder_vectors()` for bulk
+  decoder extraction (OOM-safe); `build_attribution_graph()` and
+  `build_attribution_graph_batch()` convenience methods; graph pruning via
+  `top_k()` and `threshold()` methods
+- Python validation scripts (`scripts/clt_position_sweep_validation.py`,
+  `scripts/clt_position_sweep_validation_llama.py`) and comparison documents
+  (`scripts/clt_position_sweep_comparison.md`,
   `scripts/rwkv7_validation_comparison.md`) for cross-implementation
   reproducibility
 
@@ -42,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   accordingly; models up to ~7B fit in 16GB VRAM at F32
 - Transformer attention mask dtype now derived from embedding weights instead
   of being hardcoded, ensuring consistency regardless of chosen precision
+- CLT validation tests now document **16 GiB VRAM minimum** — F32 precision
+  plus CUDA memory pool retention pushes peak usage near the limit when
+  running the full Gemma 2 2B + Llama 3.2 1B suite sequentially
 
 ## [0.0.3] - 2026-03-01
 

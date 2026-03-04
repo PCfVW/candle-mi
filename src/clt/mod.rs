@@ -87,6 +87,102 @@ impl SparseActivations {
     }
 }
 
+/// A single edge in a CLT attribution graph.
+///
+/// Represents a feature's decoder projection score onto a target direction
+/// at a specific downstream layer. Positive scores indicate alignment,
+/// negative scores indicate opposition.
+#[derive(Debug, Clone)]
+pub struct AttributionEdge {
+    /// The CLT feature contributing this edge.
+    pub feature: CltFeatureId,
+    /// Decoder projection score (dot product or cosine similarity).
+    pub score: f32,
+}
+
+/// Attribution graph for CLT circuit analysis.
+///
+/// Represents a set of CLT features scored by how strongly their decoder
+/// vectors project along a target direction at a specific layer. Built by
+/// [`CrossLayerTranscoder::build_attribution_graph()`] or
+/// [`CrossLayerTranscoder::build_attribution_graph_batch()`].
+///
+/// Edges are always sorted by score in descending order.
+///
+/// # Pruning
+///
+/// - [`top_k()`](Self::top_k): keep only the k highest-scoring features
+/// - [`threshold()`](Self::threshold): keep features with |score| above a minimum
+#[derive(Debug, Clone)]
+pub struct AttributionGraph {
+    /// Target layer these scores were computed for.
+    target_layer: usize,
+    /// Edges sorted by score descending.
+    edges: Vec<AttributionEdge>,
+}
+
+impl AttributionGraph {
+    /// Target layer this graph was scored against.
+    #[must_use]
+    pub const fn target_layer(&self) -> usize {
+        self.target_layer
+    }
+
+    /// All edges, sorted by score descending.
+    #[must_use]
+    pub fn edges(&self) -> &[AttributionEdge] {
+        &self.edges
+    }
+
+    /// Number of edges in the graph.
+    #[must_use]
+    pub const fn len(&self) -> usize {
+        self.edges.len()
+    }
+
+    /// Whether the graph has no edges.
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.edges.is_empty()
+    }
+
+    /// Return a new graph with only the top-k highest-scoring edges.
+    #[must_use]
+    pub fn top_k(&self, k: usize) -> Self {
+        Self {
+            target_layer: self.target_layer,
+            edges: self.edges.iter().take(k).cloned().collect(),
+        }
+    }
+
+    /// Return a new graph keeping only edges whose absolute score meets
+    /// or exceeds `min_score`.
+    #[must_use]
+    pub fn threshold(&self, min_score: f32) -> Self {
+        Self {
+            target_layer: self.target_layer,
+            edges: self
+                .edges
+                .iter()
+                .filter(|e| e.score.abs() >= min_score)
+                .cloned()
+                .collect(),
+        }
+    }
+
+    /// Extract the feature IDs from all edges in score order.
+    #[must_use]
+    pub fn features(&self) -> Vec<CltFeatureId> {
+        self.edges.iter().map(|e| e.feature).collect()
+    }
+
+    /// Consume the graph and return its edges.
+    #[must_use]
+    pub fn into_edges(self) -> Vec<AttributionEdge> {
+        self.edges
+    }
+}
+
 /// CLT configuration auto-detected from tensor shapes.
 #[derive(Debug, Clone)]
 pub struct CltConfig {
@@ -1007,6 +1103,468 @@ impl CrossLayerTranscoder {
         let result = Tensor::cat(&parts, 1)?;
         Ok(result)
     }
+
+    // --- Attribution / decoder scoring ---
+
+    /// Score all CLT features by how strongly their decoder vector at
+    /// `target_layer` projects along a given direction vector.
+    ///
+    /// For each source layer `0..n_layers` where `source_layer <= target_layer`:
+    /// loads the decoder file to CPU, extracts the target layer slice
+    /// `[n_features, d_model]`, and computes `scores = slice @ direction`.
+    ///
+    /// When `cosine` is true, scores are normalized by both the direction
+    /// vector norm and each decoder row norm (cosine similarity).
+    ///
+    /// # Shapes
+    /// - `direction`: `[d_model]` — target direction vector (e.g., token embedding)
+    /// - returns: top-k `(CltFeatureId, f32)` pairs, sorted by score descending
+    ///
+    /// # Arguments
+    /// * `direction` — `[d_model]` direction vector to project decoders onto
+    /// * `target_layer` — downstream layer to examine decoders at
+    /// * `top_k` — number of top-scoring features to return
+    /// * `cosine` — whether to use cosine similarity instead of dot product
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Config`] if `direction` shape is wrong or `target_layer`
+    /// is out of range.
+    /// Returns [`MIError::Download`] if decoder files cannot be fetched.
+    /// Returns [`MIError::Model`] on tensor operation failure.
+    ///
+    /// # Memory
+    ///
+    /// Processes one decoder file at a time on CPU (up to ~2 GB for layer 0).
+    /// No GPU memory required.
+    pub fn score_features_by_decoder_projection(
+        &mut self,
+        direction: &Tensor,
+        target_layer: usize,
+        top_k: usize,
+        cosine: bool,
+    ) -> Result<Vec<(CltFeatureId, f32)>> {
+        let d_model = self.config.d_model;
+        if direction.dims() != [d_model] {
+            return Err(MIError::Config(format!(
+                "direction must have shape [{d_model}], got {:?}",
+                direction.dims()
+            )));
+        }
+        if target_layer >= self.config.n_layers {
+            return Err(MIError::Config(format!(
+                "target layer {target_layer} out of range (max {})",
+                self.config.n_layers - 1
+            )));
+        }
+
+        // PROMOTE: F32 for numerical stability in dot products
+        let direction_f32 = direction.to_dtype(DType::F32)?.to_device(&Device::Cpu)?;
+
+        // Optionally normalize direction to unit length for cosine similarity.
+        let direction_norm = if cosine {
+            let norm: f32 = direction_f32.sqr()?.sum_all()?.sqrt()?.to_scalar()?;
+            if norm > 1e-10 {
+                direction_f32.broadcast_div(&Tensor::new(norm, &Device::Cpu)?)?
+            } else {
+                direction_f32
+            }
+        } else {
+            direction_f32
+        };
+
+        let mut all_scores: Vec<(CltFeatureId, f32)> = Vec::new();
+
+        for source_layer in 0..self.config.n_layers {
+            if target_layer < source_layer {
+                continue; // This source layer cannot decode to target_layer.
+            }
+            let target_offset = target_layer - source_layer;
+
+            // Load decoder file to CPU.
+            let dec_path = self.ensure_decoder_path(source_layer)?;
+            let data = std::fs::read(&dec_path)?;
+            info!(
+                "score_features_by_decoder_projection: loaded {} MB for layer {}",
+                data.len() / (1024 * 1024),
+                source_layer
+            );
+            let st = SafeTensors::deserialize(&data).map_err(|e| {
+                MIError::Config(format!(
+                    "failed to deserialize decoder layer {source_layer}: {e}"
+                ))
+            })?;
+
+            let dec_name = format!("W_dec_{source_layer}");
+            let w_dec = tensor_from_view(
+                &st.tensor(&dec_name)
+                    .map_err(|e| MIError::Config(format!("tensor '{dec_name}' not found: {e}")))?,
+                &Device::Cpu,
+            )?;
+            // PROMOTE: F32 for numerical stability
+            let w_dec_f32 = w_dec.to_dtype(DType::F32)?;
+
+            // Extract target layer slice: [n_features, d_model]
+            let dec_slice = w_dec_f32.i((.., target_offset, ..))?;
+
+            // raw_scores = dec_slice @ direction_norm → [n_features]
+            let raw_scores = dec_slice
+                .matmul(&direction_norm.unsqueeze(1)?)?
+                .squeeze(1)?;
+
+            let scores_vec: Vec<f32> = if cosine {
+                // Divide by each decoder row's L2 norm → cosine similarity.
+                let dec_norms = dec_slice.sqr()?.sum(1)?.sqrt()?;
+                let cosine_scores = raw_scores.broadcast_div(&dec_norms)?;
+                cosine_scores.to_vec1()?
+            } else {
+                raw_scores.to_vec1()?
+            };
+
+            for (idx, &score) in scores_vec.iter().enumerate() {
+                if score.is_finite() {
+                    all_scores.push((
+                        CltFeatureId {
+                            layer: source_layer,
+                            index: idx,
+                        },
+                        score,
+                    ));
+                }
+            }
+
+            info!(
+                "Scored {} features at source layer {source_layer} (target layer {target_layer})",
+                scores_vec.len()
+            );
+        }
+
+        // Sort by score descending, take top-k.
+        all_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        all_scores.truncate(top_k);
+
+        Ok(all_scores)
+    }
+
+    /// Batch version of [`score_features_by_decoder_projection`](Self::score_features_by_decoder_projection).
+    ///
+    /// Scores multiple direction vectors against all decoder files in a single
+    /// pass. Each decoder file is loaded **once** for all directions, reducing
+    /// I/O from `n_words × n_layers` file reads to just `n_layers`.
+    ///
+    /// # Shapes
+    /// - `directions`: slice of `[d_model]` tensors (one per word/direction)
+    /// - returns: one `Vec<(CltFeatureId, f32)>` per direction (top-k per word)
+    ///
+    /// # Arguments
+    /// * `directions` — slice of `[d_model]` direction vectors
+    /// * `target_layer` — downstream layer to examine decoders at
+    /// * `top_k` — number of top-scoring features to return per direction
+    /// * `cosine` — whether to use cosine similarity
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Config`] if any direction has wrong shape, directions is
+    /// empty, or `target_layer` is out of range.
+    /// Returns [`MIError::Download`] if decoder files cannot be fetched.
+    /// Returns [`MIError::Model`] on tensor operation failure.
+    pub fn score_features_by_decoder_projection_batch(
+        &mut self,
+        directions: &[Tensor],
+        target_layer: usize,
+        top_k: usize,
+        cosine: bool,
+    ) -> Result<Vec<Vec<(CltFeatureId, f32)>>> {
+        let d_model = self.config.d_model;
+        let n_words = directions.len();
+        if n_words == 0 {
+            return Err(MIError::Config(
+                "at least one direction vector required".into(),
+            ));
+        }
+        for (i, dir) in directions.iter().enumerate() {
+            if dir.dims() != [d_model] {
+                return Err(MIError::Config(format!(
+                    "direction vector {i} must have shape [{d_model}], got {:?}",
+                    dir.dims()
+                )));
+            }
+        }
+        if target_layer >= self.config.n_layers {
+            return Err(MIError::Config(format!(
+                "target layer {target_layer} out of range (max {})",
+                self.config.n_layers - 1
+            )));
+        }
+
+        // PROMOTE: Stack directions to [n_words, d_model] on CPU, F32.
+        let dirs_f32: Vec<Tensor> = directions
+            .iter()
+            .map(|d| d.to_dtype(DType::F32)?.to_device(&Device::Cpu))
+            .collect::<std::result::Result<_, _>>()?;
+        let stacked = Tensor::stack(&dirs_f32, 0)?; // [n_words, d_model]
+
+        // For cosine: row-normalize direction vectors to unit length.
+        let stacked_norm = if cosine {
+            let norms = stacked.sqr()?.sum(1)?.sqrt()?; // [n_words]
+            let ones = Tensor::ones_like(&norms)?;
+            let safe_norms = norms.maximum(&(&ones * 1e-10f64)?)?; // [n_words]
+            stacked.broadcast_div(&safe_norms.unsqueeze(1)?)?
+        } else {
+            stacked
+        };
+        let directions_t = stacked_norm.t()?; // [d_model, n_words]
+
+        // Per-word score accumulators.
+        let mut all_scores: Vec<Vec<(CltFeatureId, f32)>> =
+            (0..n_words).map(|_| Vec::new()).collect();
+
+        for source_layer in 0..self.config.n_layers {
+            if target_layer < source_layer {
+                continue;
+            }
+            let target_offset = target_layer - source_layer;
+
+            // Load decoder file ONCE for all words.
+            let dec_path = self.ensure_decoder_path(source_layer)?;
+            let data = std::fs::read(&dec_path)?;
+            info!(
+                "score_features_batch: loaded {} MB for layer {}",
+                data.len() / (1024 * 1024),
+                source_layer
+            );
+            let st = SafeTensors::deserialize(&data).map_err(|e| {
+                MIError::Config(format!(
+                    "failed to deserialize decoder layer {source_layer}: {e}"
+                ))
+            })?;
+            let dec_name = format!("W_dec_{source_layer}");
+            let w_dec = tensor_from_view(
+                &st.tensor(&dec_name)
+                    .map_err(|e| MIError::Config(format!("tensor '{dec_name}' not found: {e}")))?,
+                &Device::Cpu,
+            )?;
+            // PROMOTE: F32 for numerical stability
+            let w_dec_f32 = w_dec.to_dtype(DType::F32)?;
+            let dec_slice = w_dec_f32.i((.., target_offset, ..))?; // [n_features, d_model]
+
+            // Batch matmul: [n_features, d_model] × [d_model, n_words] = [n_features, n_words]
+            let raw_scores = dec_slice.matmul(&directions_t)?;
+
+            // Transpose to [n_words, n_features] for easy extraction.
+            let scores_2d: Vec<Vec<f32>> = if cosine {
+                let dec_norms = dec_slice.sqr()?.sum(1)?.sqrt()?; // [n_features]
+                let cosine_scores = raw_scores.broadcast_div(&dec_norms.unsqueeze(1)?)?;
+                cosine_scores.t()?.to_vec2()?
+            } else {
+                raw_scores.t()?.to_vec2()?
+            };
+
+            for (w, word_scores) in scores_2d.iter().enumerate() {
+                for (idx, &score) in word_scores.iter().enumerate() {
+                    if score.is_finite() {
+                        if let Some(word_vec) = all_scores.get_mut(w) {
+                            word_vec.push((
+                                CltFeatureId {
+                                    layer: source_layer,
+                                    index: idx,
+                                },
+                                score,
+                            ));
+                        }
+                    }
+                }
+            }
+
+            info!(
+                "Batch scored {} words × {} features at source layer {} (target layer {})",
+                n_words,
+                scores_2d.first().map_or(0, Vec::len),
+                source_layer,
+                target_layer
+            );
+        }
+
+        // Sort and truncate per word.
+        for word_scores in &mut all_scores {
+            word_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+            word_scores.truncate(top_k);
+        }
+
+        Ok(all_scores)
+    }
+
+    /// Extract decoder vectors for a set of features at a specific target layer.
+    ///
+    /// Groups features by source layer, loads each decoder file once, and
+    /// extracts the decoder vector at the target layer offset as an independent
+    /// F32 CPU tensor. Uses the OOM-safe `to_vec1` + `from_vec` pattern to
+    /// ensure large decoder files are freed before processing the next layer.
+    ///
+    /// # Shapes
+    /// - returns: `HashMap<CltFeatureId, Tensor>` where each tensor is `[d_model]` (F32, CPU)
+    ///
+    /// # Arguments
+    /// * `features` — feature IDs to extract decoder vectors for
+    /// * `target_layer` — downstream layer to extract decoders at
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Config`] if any feature layer or `target_layer` is out
+    /// of range, or if `target_layer < feature.layer` for any feature.
+    /// Returns [`MIError::Download`] if decoder files cannot be fetched.
+    /// Returns [`MIError::Model`] on tensor operation failure.
+    pub fn extract_decoder_vectors(
+        &mut self,
+        features: &[CltFeatureId],
+        target_layer: usize,
+    ) -> Result<HashMap<CltFeatureId, Tensor>> {
+        if target_layer >= self.config.n_layers {
+            return Err(MIError::Config(format!(
+                "target layer {target_layer} out of range (max {})",
+                self.config.n_layers - 1
+            )));
+        }
+
+        // Group by source layer.
+        let mut by_source: HashMap<usize, Vec<usize>> = HashMap::new();
+        for fid in features {
+            if fid.layer >= self.config.n_layers {
+                return Err(MIError::Config(format!(
+                    "feature source layer {} out of range (max {})",
+                    fid.layer,
+                    self.config.n_layers - 1
+                )));
+            }
+            if target_layer < fid.layer {
+                return Err(MIError::Config(format!(
+                    "target layer {target_layer} must be >= source layer {}",
+                    fid.layer
+                )));
+            }
+            by_source.entry(fid.layer).or_default().push(fid.index);
+        }
+
+        let mut result: HashMap<CltFeatureId, Tensor> = HashMap::new();
+        let n_source_layers = by_source.len();
+
+        for (layer_idx, (source_layer, indices)) in by_source.iter().enumerate() {
+            info!(
+                "extract_decoder_vectors: loading decoder for source layer {} ({}/{})",
+                source_layer,
+                layer_idx + 1,
+                n_source_layers
+            );
+            let target_offset = target_layer - source_layer;
+
+            // Load decoder file to CPU, extract needed rows as independent tensors.
+            let dec_path = self.ensure_decoder_path(*source_layer)?;
+            let data = std::fs::read(&dec_path)?;
+            let st = SafeTensors::deserialize(&data).map_err(|e| {
+                MIError::Config(format!(
+                    "failed to deserialize decoder layer {source_layer}: {e}"
+                ))
+            })?;
+            let dec_name = format!("W_dec_{source_layer}");
+            let w_dec = tensor_from_view(
+                &st.tensor(&dec_name)
+                    .map_err(|e| MIError::Config(format!("tensor '{dec_name}' not found: {e}")))?,
+                &Device::Cpu,
+            )?;
+
+            for &index in indices {
+                let fid = CltFeatureId {
+                    layer: *source_layer,
+                    index,
+                };
+                if let std::collections::hash_map::Entry::Vacant(e) = result.entry(fid) {
+                    // Extract as independent F32 tensor (OOM-safe copy).
+                    let view = w_dec.i((index, target_offset))?;
+                    let dims = view.dims().to_vec();
+                    // PROMOTE: F32 for numerical stability
+                    let values = view.to_dtype(DType::F32)?.to_vec1::<f32>()?;
+                    let independent = Tensor::from_vec(values, dims.as_slice(), &Device::Cpu)?;
+                    e.insert(independent);
+                }
+            }
+            // data, st, w_dec drop here — freeing the large decoder file.
+        }
+
+        info!(
+            "Extracted {} decoder vectors across {} source layers",
+            result.len(),
+            n_source_layers
+        );
+
+        Ok(result)
+    }
+
+    /// Build an attribution graph by scoring features against a direction.
+    ///
+    /// Convenience wrapper around
+    /// [`score_features_by_decoder_projection`](Self::score_features_by_decoder_projection)
+    /// that returns an [`AttributionGraph`] instead of a raw Vec.
+    ///
+    /// # Shapes
+    /// - `direction`: `[d_model]`
+    ///
+    /// # Errors
+    ///
+    /// Same as [`score_features_by_decoder_projection`](Self::score_features_by_decoder_projection).
+    pub fn build_attribution_graph(
+        &mut self,
+        direction: &Tensor,
+        target_layer: usize,
+        top_k: usize,
+        cosine: bool,
+    ) -> Result<AttributionGraph> {
+        let scored =
+            self.score_features_by_decoder_projection(direction, target_layer, top_k, cosine)?;
+        Ok(AttributionGraph {
+            target_layer,
+            edges: scored
+                .into_iter()
+                .map(|(feature, score)| AttributionEdge { feature, score })
+                .collect(),
+        })
+    }
+
+    /// Build attribution graphs for multiple directions in a single pass.
+    ///
+    /// Convenience wrapper around
+    /// [`score_features_by_decoder_projection_batch`](Self::score_features_by_decoder_projection_batch)
+    /// that returns `Vec<AttributionGraph>`.
+    ///
+    /// # Shapes
+    /// - `directions`: slice of `[d_model]` tensors
+    ///
+    /// # Errors
+    ///
+    /// Same as [`score_features_by_decoder_projection_batch`](Self::score_features_by_decoder_projection_batch).
+    pub fn build_attribution_graph_batch(
+        &mut self,
+        directions: &[Tensor],
+        target_layer: usize,
+        top_k: usize,
+        cosine: bool,
+    ) -> Result<Vec<AttributionGraph>> {
+        let batch = self.score_features_by_decoder_projection_batch(
+            directions,
+            target_layer,
+            top_k,
+            cosine,
+        )?;
+        Ok(batch
+            .into_iter()
+            .map(|scored| AttributionGraph {
+                target_layer,
+                edges: scored
+                    .into_iter()
+                    .map(|(feature, score)| AttributionEdge { feature, score })
+                    .collect(),
+            })
+            .collect())
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1310,5 +1868,470 @@ mod tests {
         // Should NOT have interventions at other layers.
         assert!(!hooks.has_intervention_at(&HookPoint::ResidPost(0)));
         assert!(!hooks.has_intervention_at(&HookPoint::ResidPost(4)));
+    }
+
+    // ====================================================================
+    // Attribution graph — pure type tests
+    // ====================================================================
+
+    #[test]
+    fn attribution_edge_basics() {
+        let edge = AttributionEdge {
+            feature: CltFeatureId {
+                layer: 3,
+                index: 42,
+            },
+            score: 0.75,
+        };
+        assert_eq!(edge.feature.layer, 3);
+        assert_eq!(edge.feature.index, 42);
+        assert!((edge.score - 0.75).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn attribution_graph_empty() {
+        let graph = AttributionGraph {
+            target_layer: 5,
+            edges: Vec::new(),
+        };
+        assert_eq!(graph.target_layer(), 5);
+        assert!(graph.is_empty());
+        assert_eq!(graph.len(), 0);
+        assert!(graph.features().is_empty());
+        assert!(graph.into_edges().is_empty());
+    }
+
+    #[test]
+    fn attribution_graph_top_k() {
+        let edges = vec![
+            AttributionEdge {
+                feature: CltFeatureId { layer: 0, index: 0 },
+                score: 5.0,
+            },
+            AttributionEdge {
+                feature: CltFeatureId { layer: 0, index: 1 },
+                score: 3.0,
+            },
+            AttributionEdge {
+                feature: CltFeatureId { layer: 1, index: 0 },
+                score: 1.0,
+            },
+            AttributionEdge {
+                feature: CltFeatureId { layer: 1, index: 1 },
+                score: -1.0,
+            },
+            AttributionEdge {
+                feature: CltFeatureId { layer: 2, index: 0 },
+                score: -4.0,
+            },
+        ];
+        let graph = AttributionGraph {
+            target_layer: 3,
+            edges,
+        };
+
+        assert_eq!(graph.len(), 5);
+
+        let top3 = graph.top_k(3);
+        assert_eq!(top3.len(), 3);
+        assert_eq!(top3.target_layer(), 3);
+        assert!((top3.edges()[0].score - 5.0).abs() < f32::EPSILON);
+        assert!((top3.edges()[1].score - 3.0).abs() < f32::EPSILON);
+        assert!((top3.edges()[2].score - 1.0).abs() < f32::EPSILON);
+
+        // top_k larger than graph size returns all edges.
+        let top10 = graph.top_k(10);
+        assert_eq!(top10.len(), 5);
+    }
+
+    #[test]
+    fn attribution_graph_threshold() {
+        let edges = vec![
+            AttributionEdge {
+                feature: CltFeatureId { layer: 0, index: 0 },
+                score: 5.0,
+            },
+            AttributionEdge {
+                feature: CltFeatureId { layer: 0, index: 1 },
+                score: 3.0,
+            },
+            AttributionEdge {
+                feature: CltFeatureId { layer: 1, index: 0 },
+                score: 1.0,
+            },
+            AttributionEdge {
+                feature: CltFeatureId { layer: 1, index: 1 },
+                score: -1.0,
+            },
+            AttributionEdge {
+                feature: CltFeatureId { layer: 2, index: 0 },
+                score: -4.0,
+            },
+        ];
+        let graph = AttributionGraph {
+            target_layer: 3,
+            edges,
+        };
+
+        // Threshold at 2.0 keeps |score| >= 2.0: 5.0, 3.0, -4.0
+        let pruned = graph.threshold(2.0);
+        assert_eq!(pruned.len(), 3);
+        assert!((pruned.edges()[0].score - 5.0).abs() < f32::EPSILON);
+        assert!((pruned.edges()[1].score - 3.0).abs() < f32::EPSILON);
+        assert!((pruned.edges()[2].score - -4.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn attribution_graph_features() {
+        let edges = vec![
+            AttributionEdge {
+                feature: CltFeatureId { layer: 2, index: 7 },
+                score: 1.0,
+            },
+            AttributionEdge {
+                feature: CltFeatureId { layer: 0, index: 3 },
+                score: 0.5,
+            },
+        ];
+        let graph = AttributionGraph {
+            target_layer: 5,
+            edges,
+        };
+
+        let features = graph.features();
+        assert_eq!(features.len(), 2);
+        assert_eq!(features[0], CltFeatureId { layer: 2, index: 7 });
+        assert_eq!(features[1], CltFeatureId { layer: 0, index: 3 });
+    }
+
+    // ====================================================================
+    // Attribution graph — synthetic decoder file tests
+    // ====================================================================
+
+    /// Create a synthetic decoder safetensors file and return its path.
+    fn create_synthetic_decoder(
+        dir: &std::path::Path,
+        layer: usize,
+        n_features: usize,
+        n_target_layers: usize,
+        d_model: usize,
+        values: &[f32],
+    ) -> PathBuf {
+        assert_eq!(values.len(), n_features * n_target_layers * d_model);
+        let bytes: Vec<u8> = values.iter().flat_map(|v| v.to_le_bytes()).collect();
+        let name = format!("W_dec_{layer}");
+        let shape = vec![n_features, n_target_layers, d_model];
+        let view =
+            safetensors::tensor::TensorView::new(safetensors::Dtype::F32, shape, &bytes).unwrap();
+        let mut tensors = HashMap::new();
+        tensors.insert(name, view);
+        let serialized = safetensors::serialize(&tensors, &None).unwrap();
+        let path = dir.join(format!("W_dec_{layer}.safetensors"));
+        std::fs::write(&path, serialized).unwrap();
+        path
+    }
+
+    #[test]
+    fn score_decoder_projection_synthetic() {
+        // 2 layers, 4 features/layer, d_model=4.
+        // Layer 0 can decode to layers 0 and 1. Layer 1 can decode to layer 1.
+        // Target layer = 1.
+        let dir = tempfile::tempdir().unwrap();
+        let d_model = 4;
+        let n_features = 4;
+
+        // W_dec_0: [4 features, 2 target_layers, 4 d_model]
+        // Feature 0, offset 1 (target layer 1): [1, 0, 0, 0]
+        // Feature 1, offset 1: [0, 1, 0, 0]
+        // Feature 2, offset 1: [0, 0, 1, 0]
+        // Feature 3, offset 1: [0, 0, 0, 1]
+        #[rustfmt::skip]
+        let dec0_values: Vec<f32> = vec![
+            // feature 0: offset 0, offset 1
+            0.0, 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, 0.0,
+            // feature 1
+            0.0, 0.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0,
+            // feature 2
+            0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,
+            // feature 3
+            0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 1.0,
+        ];
+        let path0 = create_synthetic_decoder(dir.path(), 0, n_features, 2, d_model, &dec0_values);
+
+        // W_dec_1: [4 features, 1 target_layer, 4 d_model]
+        // Feature 0, offset 0 (target layer 1): [2, 0, 0, 0]  (strong on dim 0)
+        // Feature 1: [0, 0, 0, 0]
+        // Feature 2: [0, 0, 0, 0]
+        // Feature 3: [0, 3, 0, 0]  (strong on dim 1)
+        #[rustfmt::skip]
+        let dec1_values: Vec<f32> = vec![
+            2.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0,
+            0.0, 3.0, 0.0, 0.0,
+        ];
+        let path1 = create_synthetic_decoder(dir.path(), 1, n_features, 1, d_model, &dec1_values);
+
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![None; 2],
+            decoder_paths: vec![Some(path0), Some(path1)],
+            config: CltConfig {
+                n_layers: 2,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features * 2,
+                model_name: "test".to_owned(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        // Direction: [1, 0, 0, 0] — should pick up L0:0 (score=1) and L1:0 (score=2).
+        let direction =
+            Tensor::from_vec(vec![1.0_f32, 0.0, 0.0, 0.0], (d_model,), &Device::Cpu).unwrap();
+
+        let scores = clt
+            .score_features_by_decoder_projection(&direction, 1, 10, false)
+            .unwrap();
+
+        // Top scorer should be L1:0 (score=2), then L0:0 (score=1).
+        assert!(scores.len() >= 2, "expected at least 2 non-zero scores");
+        assert_eq!(scores[0].0, CltFeatureId { layer: 1, index: 0 });
+        assert!((scores[0].1 - 2.0).abs() < 1e-5);
+        assert_eq!(scores[1].0, CltFeatureId { layer: 0, index: 0 });
+        assert!((scores[1].1 - 1.0).abs() < 1e-5);
+
+        // Direction: [0, 1, 0, 0] — should pick up L1:3 (score=3) and L0:1 (score=1).
+        let direction2 =
+            Tensor::from_vec(vec![0.0_f32, 1.0, 0.0, 0.0], (d_model,), &Device::Cpu).unwrap();
+
+        let scores2 = clt
+            .score_features_by_decoder_projection(&direction2, 1, 10, false)
+            .unwrap();
+
+        assert_eq!(scores2[0].0, CltFeatureId { layer: 1, index: 3 });
+        assert!((scores2[0].1 - 3.0).abs() < 1e-5);
+        assert_eq!(scores2[1].0, CltFeatureId { layer: 0, index: 1 });
+        assert!((scores2[1].1 - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn score_decoder_projection_cosine_synthetic() {
+        // Same setup: verify cosine normalization.
+        let dir = tempfile::tempdir().unwrap();
+        let d_model = 4;
+        let n_features = 2;
+
+        // W_dec_0: [2 features, 1 target_layer, 4 d_model]
+        // Feature 0: [3, 0, 0, 0]  (length 3, aligned with [1,0,0,0])
+        // Feature 1: [1, 1, 0, 0]  (length sqrt(2), partially aligned)
+        #[rustfmt::skip]
+        let dec0_values: Vec<f32> = vec![
+            3.0, 0.0, 0.0, 0.0,
+            1.0, 1.0, 0.0, 0.0,
+        ];
+        let path0 = create_synthetic_decoder(dir.path(), 0, n_features, 1, d_model, &dec0_values);
+
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![None],
+            decoder_paths: vec![Some(path0)],
+            config: CltConfig {
+                n_layers: 1,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features,
+                model_name: "test".to_owned(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        let direction =
+            Tensor::from_vec(vec![1.0_f32, 0.0, 0.0, 0.0], (d_model,), &Device::Cpu).unwrap();
+
+        // Dot product: feature 0 = 3.0, feature 1 = 1.0.
+        let dot_scores = clt
+            .score_features_by_decoder_projection(&direction, 0, 10, false)
+            .unwrap();
+        assert!((dot_scores[0].1 - 3.0).abs() < 1e-5);
+        assert!((dot_scores[1].1 - 1.0).abs() < 1e-5);
+
+        // Cosine: feature 0 = 1.0 (perfectly aligned), feature 1 = 1/sqrt(2) ≈ 0.707.
+        let cos_scores = clt
+            .score_features_by_decoder_projection(&direction, 0, 10, true)
+            .unwrap();
+        assert!(
+            (cos_scores[0].1 - 1.0).abs() < 1e-4,
+            "expected ~1.0, got {}",
+            cos_scores[0].1
+        );
+        let expected_cos = 1.0 / 2.0_f32.sqrt();
+        assert!(
+            (cos_scores[1].1 - expected_cos).abs() < 1e-4,
+            "expected ~{expected_cos}, got {}",
+            cos_scores[1].1
+        );
+    }
+
+    #[test]
+    fn score_decoder_projection_batch_synthetic() {
+        let dir = tempfile::tempdir().unwrap();
+        let d_model = 4;
+        let n_features = 2;
+
+        // W_dec_0: feature 0 = [1,0,0,0], feature 1 = [0,1,0,0]
+        #[rustfmt::skip]
+        let dec0_values: Vec<f32> = vec![
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+        ];
+        let path0 = create_synthetic_decoder(dir.path(), 0, n_features, 1, d_model, &dec0_values);
+
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![None],
+            decoder_paths: vec![Some(path0)],
+            config: CltConfig {
+                n_layers: 1,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features,
+                model_name: "test".to_owned(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        // Two directions: [1,0,0,0] and [0,1,0,0].
+        let dir0 =
+            Tensor::from_vec(vec![1.0_f32, 0.0, 0.0, 0.0], (d_model,), &Device::Cpu).unwrap();
+        let dir1 =
+            Tensor::from_vec(vec![0.0_f32, 1.0, 0.0, 0.0], (d_model,), &Device::Cpu).unwrap();
+
+        let batch = clt
+            .score_features_by_decoder_projection_batch(&[dir0, dir1], 0, 10, false)
+            .unwrap();
+
+        assert_eq!(batch.len(), 2);
+
+        // Direction 0 should score feature 0 highest.
+        assert_eq!(batch[0][0].0, CltFeatureId { layer: 0, index: 0 });
+        assert!((batch[0][0].1 - 1.0).abs() < 1e-5);
+
+        // Direction 1 should score feature 1 highest.
+        assert_eq!(batch[1][0].0, CltFeatureId { layer: 0, index: 1 });
+        assert!((batch[1][0].1 - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn extract_decoder_vectors_synthetic() {
+        let dir = tempfile::tempdir().unwrap();
+        let d_model = 4;
+        let n_features = 3;
+
+        // W_dec_0: [3 features, 2 target_layers, 4 d_model]
+        #[rustfmt::skip]
+        let dec0_values: Vec<f32> = vec![
+            // feature 0: offset 0, offset 1
+            1.0, 2.0, 3.0, 4.0,  5.0, 6.0, 7.0, 8.0,
+            // feature 1
+            9.0, 10.0, 11.0, 12.0,  13.0, 14.0, 15.0, 16.0,
+            // feature 2
+            17.0, 18.0, 19.0, 20.0,  21.0, 22.0, 23.0, 24.0,
+        ];
+        let path0 = create_synthetic_decoder(dir.path(), 0, n_features, 2, d_model, &dec0_values);
+
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![None; 2],
+            decoder_paths: vec![Some(path0), None],
+            config: CltConfig {
+                n_layers: 2,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features * 2,
+                model_name: "test".to_owned(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        let features = vec![
+            CltFeatureId { layer: 0, index: 0 },
+            CltFeatureId { layer: 0, index: 2 },
+        ];
+
+        // Extract at target_layer=1 (offset 1 for source layer 0).
+        let vectors = clt.extract_decoder_vectors(&features, 1).unwrap();
+        assert_eq!(vectors.len(), 2);
+
+        // Feature 0, offset 1: [5, 6, 7, 8]
+        let v0: Vec<f32> = vectors[&CltFeatureId { layer: 0, index: 0 }]
+            .to_vec1()
+            .unwrap();
+        assert_eq!(v0, vec![5.0, 6.0, 7.0, 8.0]);
+
+        // Feature 2, offset 1: [21, 22, 23, 24]
+        let v2: Vec<f32> = vectors[&CltFeatureId { layer: 0, index: 2 }]
+            .to_vec1()
+            .unwrap();
+        assert_eq!(v2, vec![21.0, 22.0, 23.0, 24.0]);
+    }
+
+    #[test]
+    fn build_attribution_graph_synthetic() {
+        let dir = tempfile::tempdir().unwrap();
+        let d_model = 4;
+        let n_features = 2;
+
+        #[rustfmt::skip]
+        let dec0_values: Vec<f32> = vec![
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 2.0, 0.0, 0.0,
+        ];
+        let path0 = create_synthetic_decoder(dir.path(), 0, n_features, 1, d_model, &dec0_values);
+
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![None],
+            decoder_paths: vec![Some(path0)],
+            config: CltConfig {
+                n_layers: 1,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features,
+                model_name: "test".to_owned(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        let direction =
+            Tensor::from_vec(vec![0.0_f32, 1.0, 0.0, 0.0], (d_model,), &Device::Cpu).unwrap();
+
+        let graph = clt
+            .build_attribution_graph(&direction, 0, 10, false)
+            .unwrap();
+
+        assert_eq!(graph.target_layer(), 0);
+        assert!(!graph.is_empty());
+        // Feature 1 has score 2.0, feature 0 has score 0.0.
+        assert_eq!(
+            graph.edges()[0].feature,
+            CltFeatureId { layer: 0, index: 1 }
+        );
+        assert!((graph.edges()[0].score - 2.0).abs() < 1e-5);
+
+        // Pruning: threshold at 1.0 should keep only feature 1.
+        let pruned = graph.threshold(1.0);
+        assert_eq!(pruned.len(), 1);
+        assert_eq!(pruned.features()[0], CltFeatureId { layer: 0, index: 1 });
     }
 }

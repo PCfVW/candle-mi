@@ -96,7 +96,10 @@ pub use rwkv::{GenericRwkv, RwkvConfig, RwkvLoraDims, RwkvVersion};
 
 // CLT (Cross-Layer Transcoder)
 #[cfg(feature = "clt")]
-pub use clt::{CltConfig, CltFeatureId, CrossLayerTranscoder, SparseActivations};
+pub use clt::{
+    AttributionEdge, AttributionGraph, CltConfig, CltFeatureId, CrossLayerTranscoder,
+    SparseActivations,
+};
 
 // Cache
 pub use cache::{ActivationCache, AttentionCache, FullActivationCache, KVCache};
