@@ -127,8 +127,10 @@ impl MIModel {
     ///
     /// # `DType` selection
     ///
-    /// - **CUDA**: `BF16` (matches training dtype; `F16` causes issues on some models)
-    /// - **CPU**: `F32` for full precision
+    /// Always uses `F32` for research-grade precision — numerically identical
+    /// to Python/PyTorch F32 on both CPU and CUDA.  Models up to ~7B fit in
+    /// 16 GB VRAM at F32.  For larger models or when speed matters more than
+    /// precision, use the backend-specific `load()` API with `DType::BF16`.
     ///
     /// # Errors
     ///
@@ -138,11 +140,8 @@ impl MIModel {
     pub fn from_pretrained(model_id: &str) -> Result<Self> {
         // --- Device and dtype ---
         let device = Self::select_device()?;
-        let dtype = if device.is_cuda() {
-            DType::BF16
-        } else {
-            DType::F32
-        };
+        // F32 everywhere: research-grade precision, matching Python/PyTorch.
+        let dtype = DType::F32;
 
         // --- Download / resolve local files ---
         let files = hf_fetch_model::download_files_blocking(model_id.to_owned())

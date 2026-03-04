@@ -142,7 +142,17 @@ fn safetensors_paths(snapshot: &std::path::Path) -> Vec<std::path::PathBuf> {
 }
 
 /// Load the RWKV-7 model and tokenizer from the local HF cache.
+///
+/// Uses F32 everywhere for research-grade precision matching Python/PyTorch.
 fn load_rwkv7_on(device: &Device) -> (GenericRwkv, MITokenizer, RwkvConfig) {
+    load_rwkv7_on_with_dtype(device, DType::F32)
+}
+
+/// Load the RWKV-7 model with a specific dtype.
+fn load_rwkv7_on_with_dtype(
+    device: &Device,
+    dtype: DType,
+) -> (GenericRwkv, MITokenizer, RwkvConfig) {
     let snapshot =
         find_snapshot(MODEL_ID).unwrap_or_else(|| panic!("{MODEL_ID} not found in HF cache"));
 
@@ -150,13 +160,6 @@ fn load_rwkv7_on(device: &Device) -> (GenericRwkv, MITokenizer, RwkvConfig) {
     let config_str = std::fs::read_to_string(snapshot.join("config.json")).unwrap();
     let json: serde_json::Value = serde_json::from_str(&config_str).unwrap();
     let config = RwkvConfig::from_hf_config(&json).unwrap();
-
-    // DType: BF16 for CUDA, F32 for CPU
-    let dtype = if device.is_cuda() {
-        DType::BF16
-    } else {
-        DType::F32
-    };
 
     // Resolve safetensors paths
     let paths = safetensors_paths(&snapshot);
@@ -355,7 +358,62 @@ fn rwkv7_forward_gpu() {
     let reference = load_reference();
 
     let top_k = top_k_last_token(&model, &tokenizer, &device, &reference.test_prompt, 10);
-    print_top_k("GPU", &reference.test_prompt, &top_k);
+    print_top_k("GPU-F32", &reference.test_prompt, &top_k);
+
+    // Top-1 should be "if" (token 1942)
+    let (top1_id, top1_token, top1_logit) = &top_k[0];
+    assert_eq!(
+        *top1_id, 1942,
+        "Expected top-1 token ID 1942 ('if'), got {top1_id} ('{top1_token}')"
+    );
+
+    // F32 on GPU should be very close to the Python F32 reference
+    let ref_logit = reference.top_predictions[0].2;
+    let logit_diff = (*top1_logit - ref_logit).abs();
+    println!(
+        "GPU-F32 top-1 logit diff from Python reference: {logit_diff:.6} (ref={ref_logit:.4})"
+    );
+    assert!(
+        logit_diff < 1.0,
+        "Top-1 logit {top1_logit:.4} differs from reference {ref_logit:.4} by {logit_diff:.4}"
+    );
+
+    // Top-5 token IDs should match
+    for (rank, (ref_id, ref_token, _ref_logit)) in
+        reference.top_predictions.iter().take(5).enumerate()
+    {
+        let (got_id, got_token, _) = &top_k[rank];
+        assert_eq!(
+            got_id,
+            ref_id,
+            "Rank {}: expected token {ref_id} ('{ref_token}'), got {got_id} ('{got_token}')",
+            rank + 1
+        );
+    }
+}
+
+// ===========================================================================
+// GPU forward pass (BF16) — regression test for reduced-precision mode
+// ===========================================================================
+
+#[test]
+#[serial]
+fn rwkv7_forward_gpu_bf16() {
+    let Some(device) = cuda_device() else {
+        eprintln!("SKIP: no CUDA device");
+        return;
+    };
+
+    if find_snapshot(MODEL_ID).is_none() {
+        eprintln!("SKIP: {MODEL_ID} not in HF cache");
+        return;
+    }
+
+    let (model, tokenizer, _config) = load_rwkv7_on_with_dtype(&device, DType::BF16);
+    let reference = load_reference();
+
+    let top_k = top_k_last_token(&model, &tokenizer, &device, &reference.test_prompt, 10);
+    print_top_k("GPU-BF16", &reference.test_prompt, &top_k);
 
     // Top-1 should be "if" (token 1942)
     let (top1_id, top1_token, top1_logit) = &top_k[0];

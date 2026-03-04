@@ -285,14 +285,12 @@ impl MIBackend for GenericTransformer {
 
     fn forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache> {
         let device = input_ids.device();
-        let dtype = if device.is_cuda() {
-            DType::BF16
-        } else {
-            DType::F32
-        };
 
         // --- Embedding ---
         let mut hidden = self.embed_tokens.forward(input_ids)?;
+
+        // Mask dtype matches the weight dtype (F32 or BF16).
+        let dtype = hidden.dtype();
 
         // Optional embedding scale (Gemma)
         if let Some(scale) = self.config.embedding_scale {

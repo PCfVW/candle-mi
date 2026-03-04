@@ -108,12 +108,8 @@ fn load_model_on(
     let json: serde_json::Value = serde_json::from_str(&config_str).unwrap();
     let config = TransformerConfig::from_hf_config(&json).unwrap();
 
-    // DType: BF16 for CUDA, F32 for CPU
-    let dtype = if device.is_cuda() {
-        DType::BF16
-    } else {
-        DType::F32
-    };
+    // F32 everywhere: research-grade precision matching Python/PyTorch.
+    let dtype = DType::F32;
 
     // Resolve safetensors paths (single or sharded)
     let paths = safetensors_paths(&snapshot);
