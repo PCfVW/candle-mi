@@ -390,6 +390,9 @@ impl MIBackend for GenericTransformer {
             if hooks.is_captured(&HookPoint::ResidPost(layer_idx)) {
                 cache.store(HookPoint::ResidPost(layer_idx), hidden.clone());
             }
+            for intervention in hooks.interventions_at(&HookPoint::ResidPost(layer_idx)) {
+                hidden = crate::hooks::apply_intervention(&hidden, intervention)?;
+            }
         }
 
         // --- Final norm ---

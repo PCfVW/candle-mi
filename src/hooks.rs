@@ -228,7 +228,17 @@ pub enum Intervention {
 pub(crate) fn apply_intervention(tensor: &Tensor, intervention: &Intervention) -> Result<Tensor> {
     match intervention {
         Intervention::Replace(replacement) => Ok(replacement.clone()),
-        Intervention::Add(delta) => Ok(tensor.broadcast_add(delta)?),
+        Intervention::Add(delta) => {
+            // Convert delta to tensor's dtype if mismatched (e.g., F32 injection
+            // into BF16 forward pass). This supports CLT injection where steering
+            // vectors are accumulated in F32 for numerical stability.
+            let delta = if delta.dtype() == tensor.dtype() {
+                delta
+            } else {
+                &delta.to_dtype(tensor.dtype())?
+            };
+            Ok(tensor.broadcast_add(delta)?)
+        }
         Intervention::Knockout(mask) => Ok(tensor.broadcast_add(mask)?),
         Intervention::Scale(factor) => Ok((tensor * *factor)?),
         Intervention::Zero => Ok(tensor.zeros_like()?),
