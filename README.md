@@ -7,4 +7,4 @@
 
 *Mechanistic Interpretability for the Rust of us.*
 
-> **Warning:** This crate is in early development (Phase 0). The API is unstable and will change without notice. Not yet ready for production use. Please read the [CHANGELOG](https://github.com/PCfVW/candle-mi/blob/main/CHANGELOG.md) for more information.
+> **Warning:** This crate is in early development (Phase 3). The API is unstable and will change without notice. Not yet ready for production use. Please read the [CHANGELOG](https://github.com/PCfVW/candle-mi/blob/main/CHANGELOG.md) for more information.
