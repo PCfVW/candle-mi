@@ -447,16 +447,11 @@ fn clt_position_sweep_activations() {
 
     // Sweep: encode at every position.
     let k = 10;
-    let mut per_position_top_features: Vec<Vec<(CltFeatureId, f32)>> =
-        Vec::with_capacity(seq_len);
+    let mut per_position_top_features: Vec<Vec<(CltFeatureId, f32)>> = Vec::with_capacity(seq_len);
     let mut per_position_counts: Vec<usize> = Vec::with_capacity(seq_len);
 
     for pos in 0..seq_len {
-        let residual = resid_mid
-            .i((0, pos))
-            .unwrap()
-            .to_device(&device)
-            .unwrap();
+        let residual = resid_mid.i((0, pos)).unwrap().to_device(&device).unwrap();
         let sparse = clt.encode(&residual, encode_layer).unwrap();
         let total_active = sparse.len();
         let top = clt.top_k(&residual, encode_layer, k).unwrap();
@@ -467,8 +462,7 @@ fn clt_position_sweep_activations() {
         let tok_str = tokenizer.decode(&[token_ids[pos]]).unwrap();
         println!(
             "Pos {pos} '{tok_str}': {total_active} active features, top: {} (act={:.4})",
-            top.features[0].0,
-            top.features[0].1,
+            top.features[0].0, top.features[0].1,
         );
     }
 
@@ -522,8 +516,10 @@ fn clt_position_sweep_activations() {
     );
 
     // Jaccard similarity between first and last position top-k should be < 0.8.
-    let first_top_ids: std::collections::HashSet<CltFeatureId> =
-        per_position_top_features[0].iter().map(|(f, _)| *f).collect();
+    let first_top_ids: std::collections::HashSet<CltFeatureId> = per_position_top_features[0]
+        .iter()
+        .map(|(f, _)| *f)
+        .collect();
     let last_top_ids: std::collections::HashSet<CltFeatureId> = per_position_top_features
         [seq_len - 1]
         .iter()
@@ -546,9 +542,7 @@ fn clt_position_sweep_activations() {
     );
 
     // Summary table.
-    println!(
-        "\n=== Position Sweep Summary (layer {encode_layer}) ==="
-    );
+    println!("\n=== Position Sweep Summary (layer {encode_layer}) ===");
     println!(
         "{:>3}  {:<15}  {:>8}  {:>12}  {:>12}",
         "Pos", "Token", "#Active", "Top1 Feature", "Top1 Act"
@@ -633,31 +627,18 @@ fn clt_position_sweep_causal() {
         .unwrap()
         .to_dtype(DType::F32)
         .unwrap();
-    let bl_last: Vec<f32> = baseline_f32
-        .i((0, seq_len - 1))
-        .unwrap()
-        .to_vec1()
-        .unwrap();
+    let bl_last: Vec<f32> = baseline_f32.i((0, seq_len - 1)).unwrap().to_vec1().unwrap();
 
     // --- Sweep: inject at each position, measure L2 distance ---
     let strength: f32 = 5.0;
     let mut l2_distances: Vec<f32> = Vec::with_capacity(seq_len);
 
-    println!(
-        "\n{:>3}  {:<15}  {:>12}",
-        "Pos", "Token", "L2 Distance"
-    );
+    println!("\n{:>3}  {:<15}  {:>12}", "Pos", "Token", "L2 Distance");
     println!("{:->3}  {:->15}  {:->12}", "", "", "");
 
     for pos in 0..seq_len {
         let injection_hooks = clt
-            .prepare_hook_injection(
-                &features_for_injection,
-                pos,
-                seq_len,
-                strength,
-                &device,
-            )
+            .prepare_hook_injection(&features_for_injection, pos, seq_len, strength, &device)
             .unwrap();
 
         let injected_result = model.forward(&input, &injection_hooks).unwrap();
@@ -668,11 +649,7 @@ fn clt_position_sweep_causal() {
             .unwrap()
             .to_dtype(DType::F32)
             .unwrap();
-        let ij_last: Vec<f32> = injected_f32
-            .i((0, seq_len - 1))
-            .unwrap()
-            .to_vec1()
-            .unwrap();
+        let ij_last: Vec<f32> = injected_f32.i((0, seq_len - 1)).unwrap().to_vec1().unwrap();
 
         let l2: f32 = bl_last
             .iter()
@@ -767,13 +744,7 @@ fn clt_position_sweep_causal() {
 
     // Re-run at the max-effect position for the comparison printout.
     let best_hooks = clt
-        .prepare_hook_injection(
-            &features_for_injection,
-            max_pos,
-            seq_len,
-            strength,
-            &device,
-        )
+        .prepare_hook_injection(&features_for_injection, max_pos, seq_len, strength, &device)
         .unwrap();
     let best_result = model.forward(&input, &best_hooks).unwrap();
     let best_logits = best_result
@@ -782,11 +753,7 @@ fn clt_position_sweep_causal() {
         .unwrap()
         .to_dtype(DType::F32)
         .unwrap();
-    let best_last: Vec<f32> = best_logits
-        .i((0, seq_len - 1))
-        .unwrap()
-        .to_vec1()
-        .unwrap();
+    let best_last: Vec<f32> = best_logits.i((0, seq_len - 1)).unwrap().to_vec1().unwrap();
     print_top5(&format!("Injected (pos={max_pos})"), &best_last);
 
     // --- Cleanup ---
