@@ -739,7 +739,8 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 
 **Goal:** Load and use pre-trained cross-layer transcoders. CLT infrastructure already validated in plip-rs (`src/clt.rs`, 1,640 lines) — port and generalise.
 
-- [ ] Port CLT weight loading from plip-rs (circuit-tracer format, lazy HF download) — **commit**
+- [x] Single-file download API in `hf-fetch-model` (`download_file` / `download_file_blocking`) — replaces plip-rs's lazy `hf_hub::Api::repo().get()` pattern with chunked parallel transfer, checksum verification, and retry. See `design/hf-fetch-model-single-file-api.md`.
+- [ ] Port CLT weight loading from plip-rs (circuit-tracer format, per-file download via `hf-fetch-model`) — **commit**
 - [ ] Port CLT encoding (activations → feature activations, sparse top-k) — **commit**
 - [ ] Port CLT feature injection (suppress+inject protocol from melometis/tragos) — **commit**
 - [ ] Validate: load Gemma 2 2B CLT, reproduce melometis position-sweep results — **commit** — **PUSH** (CLT pipeline green on Gemma 2)
@@ -801,8 +802,14 @@ Detailed design proposals live in the [`design/`](design/) directory. Summary:
 3. **Hook overhead** — zero-cost when inactive (conditional clone at each hook point). See [`design/hook-overhead.md`](design/hook-overhead.md).
 4. **Intervention API** — unified `forward(tokens, config)` (pyvene-style). See [`design/intervention-api.md`](design/intervention-api.md).
 5. **Error handling** — typed `MIError` enum with `thiserror`. See [`design/error-handling.md`](design/error-handling.md).
-6. **Candle version** — pin to `=0.9`, update incrementally. See [`design/candle-version.md`](design/candle-version.md).
-7. **RWKV-7 effective attention** — diag+rank-1 state transition; needs mathematical work. See [`design/rwkv7-effective-attention.md`](design/rwkv7-effective-attention.md).
+6. **Candle version** — pin to `0.9`, update incrementally. See [`design/candle-version.md`](design/candle-version.md).
+7. **RWKV-7 effective attention** — diag+rank-1 state transition via backward linear functional (implemented in Phase 2). See [`design/rwkv7-effective-attention.md`](design/rwkv7-effective-attention.md).
+8. **Config-driven architecture** — one `TransformerConfig` struct with ~12 axes, parsed from HuggingFace `config.json` via `from_hf_config`. Adding a model family = one `parse_*` function (~30 lines), not a new forward pass. `SUPPORTED_MODEL_TYPES` enumerates accepted `model_type` strings.
+9. **Lint single source of truth** — `Cargo.toml [lints]` is the sole authority for lint configuration. `src/lib.rs` retains only the 3 attributes that `Cargo.toml` cannot express (`deny(warnings)`, two `cfg_attr` for `unsafe_code`).
+10. **`apply_intervention` consolidation** — all intervention application goes through a single `pub(crate) fn apply_intervention` in `crate::hooks`, shared by transformer and RWKV backends.
+11. **GPU test serialization** — all GPU integration tests carry `#[serial]` (from `serial_test`) to prevent CUDA OOM from concurrent model loading on 16 GB GPUs.
+12. **`#[must_use]` policy (Rule 17)** — all pure public functions and methods that return a value carry `#[must_use]`. Enforced by `clippy::must_use_candidate` at `warn` level (promoted to error by `#![deny(warnings)]`).
+13. **Coding conventions** — `CONVENTIONS.md` codifies mandatory annotation patterns (PROMOTE, CONTIGUOUS, TRAIT_OBJECT, EXHAUSTIVE, EXPLICIT, BORROW), shape documentation (Rule 12), `#[non_exhaustive]` policy (Rule 11), hook purity contract (Rule 16), and `#[must_use]` policy (Rule 17). Follows [Amphigraphic Strict / Grit](https://github.com/PCfVW/Amphigraphic-Strict).
 
 ---
 
