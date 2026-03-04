@@ -6,7 +6,10 @@
 //! - `google/gemma-2-2b` and `mntss/clt-gemma-2-2b-426k`
 //! - `meta-llama/Llama-3.2-1B` and `mntss/clt-llama-3.2-1b-524k`
 //!
-//! Tests are `#[ignore]`-gated and require a CUDA GPU.
+//! Tests are `#[ignore]`-gated and require a CUDA GPU with **at least 16 GiB VRAM**.
+//! Models are loaded at F32 precision for research-grade validation, and CUDA's
+//! memory pool retains allocations across sequential tests, so peak usage approaches
+//! 16 GiB when running the full suite.
 //!
 //! Run:
 //!   `cargo test --test validate_clt --features clt,transformer -- --ignored --test-threads=1`
@@ -261,6 +264,11 @@ fn clt_encode_gemma2_residuals() {
             }
         }
     }
+
+    // Free GPU memory before next test.
+    drop(clt);
+    drop(result);
+    drop(model);
 }
 
 // ===========================================================================
@@ -421,6 +429,10 @@ fn clt_injection_shifts_logits() {
     // --- Cleanup ---
     clt.clear_steering_cache();
     assert_eq!(clt.steering_cache_len(), 0);
+
+    // Free GPU memory before next test.
+    drop(clt);
+    drop(model);
 }
 
 // ===========================================================================
@@ -574,6 +586,11 @@ fn clt_position_sweep_activations() {
             pos, tok_str, per_position_counts[pos], fid, act
         );
     }
+
+    // Free GPU memory before next test.
+    drop(clt);
+    drop(result);
+    drop(model);
 }
 
 // ===========================================================================
@@ -778,6 +795,10 @@ fn clt_position_sweep_causal() {
     // --- Cleanup ---
     clt.clear_steering_cache();
     assert_eq!(clt.steering_cache_len(), 0);
+
+    // Free GPU memory before next test.
+    drop(clt);
+    drop(model);
 }
 
 // ===========================================================================
@@ -921,6 +942,11 @@ fn clt_encode_llama_residuals() {
             }
         }
     }
+
+    // Free GPU memory before next test.
+    drop(clt);
+    drop(result);
+    drop(model);
 }
 
 // ===========================================================================
@@ -1080,6 +1106,10 @@ fn clt_injection_shifts_logits_llama() {
     // --- Cleanup ---
     clt.clear_steering_cache();
     assert_eq!(clt.steering_cache_len(), 0);
+
+    // Free GPU memory before next test.
+    drop(clt);
+    drop(model);
 }
 
 // ===========================================================================
@@ -1233,6 +1263,11 @@ fn clt_position_sweep_activations_llama() {
             pos, tok_str, per_position_counts[pos], fid, act
         );
     }
+
+    // Free GPU memory before next test.
+    drop(clt);
+    drop(result);
+    drop(model);
 }
 
 // ===========================================================================
@@ -1437,4 +1472,8 @@ fn clt_position_sweep_causal_llama() {
     // --- Cleanup ---
     clt.clear_steering_cache();
     assert_eq!(clt.steering_cache_len(), 0);
+
+    // Free GPU memory before next test.
+    drop(clt);
+    drop(model);
 }
