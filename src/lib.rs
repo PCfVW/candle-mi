@@ -62,6 +62,8 @@
 
 pub mod backend;
 pub mod cache;
+#[cfg(feature = "clt")]
+pub mod clt;
 pub mod config;
 pub mod download;
 pub mod error;
@@ -91,6 +93,10 @@ pub use transformer::GenericTransformer;
 // RWKV backend
 #[cfg(feature = "rwkv")]
 pub use rwkv::{GenericRwkv, RwkvConfig, RwkvLoraDims, RwkvVersion};
+
+// CLT (Cross-Layer Transcoder)
+#[cfg(feature = "clt")]
+pub use clt::{CltConfig, CltFeatureId, CrossLayerTranscoder, SparseActivations};
 
 // Cache
 pub use cache::{ActivationCache, AttentionCache, FullActivationCache, KVCache};

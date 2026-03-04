@@ -1413,6 +1413,7 @@ pub struct CltLayerInjection {
 #[cfg(feature = "clt")]
 impl CltInjectionSpec {
     /// Create an empty injection spec.
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             injections: Vec::new(),
@@ -1429,11 +1430,13 @@ impl CltInjectionSpec {
     }
 
     /// Check if any injection targets this layer.
+    #[must_use]
     pub fn applies_to_layer(&self, layer: usize) -> bool {
         self.injections.iter().any(|inj| inj.target_layer == layer)
     }
 
     /// Get all injections targeting a specific layer.
+    #[must_use]
     pub fn injections_for_layer(&self, layer: usize) -> Vec<&CltLayerInjection> {
         self.injections
             .iter()
@@ -1492,6 +1495,7 @@ pub struct CltLogitShiftResult {
 #[cfg(feature = "clt")]
 impl CltLogitShiftResult {
     /// Create a new CLT logit shift result.
+    #[must_use]
     pub const fn new(baseline_logits: Tensor, injected_logits: Tensor) -> Self {
         Self {
             baseline_logits,
