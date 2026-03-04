@@ -2,8 +2,8 @@
 
 > *MI for the Rust of us*
 
-**Date:** February 19, 2026 (last updated: March 1, 2026)
-**Status:** Phase 0 + Phase 1 + Phase 2 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.3.
+**Date:** February 19, 2026 (last updated: March 4, 2026)
+**Status:** Phase 0 + Phase 1 + Phase 2 complete; Phase 3 in progress (CLT loading, encoding, injection, and Gemma 2 2B validation done). Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.3. Default dtype changed to F32 for research-grade precision.
 **Context:** Building on plip-rs experience (7 model backends incl. Gemma 2, attention knockout, state knockout, effective attention, steering, logit lens, CLT encoding/injection). Two successful replications of Anthropic's "Planning in Poems" Figure 13 validate the approach: Gemma 2 2B with 426K CLTs (melometis branch) and Llama 3.2 1B with 524K CLTs (tragos branch). Target: a publishable, generic Rust MI crate endorsed by HuggingFace.
 
 ---
@@ -44,8 +44,8 @@
   - [7.0 Git Workflow](#70-git-workflow)
   - [Phase 0: Foundation](#phase-0-foundation) ✅
   - [Phase 1: Generic Transformer](#phase-1-generic-transformer) ✅
-  - [Phase 2: RWKV-6 + RWKV-7](#phase-2-rwkv-6--rwkv-7)
-  - [Phase 3: CLT Support](#phase-3-clt-support)
+  - [Phase 2: RWKV-6 + RWKV-7](#phase-2-rwkv-6--rwkv-7) ✅
+  - [Phase 3: CLT Support](#phase-3-clt-support) 🔧
   - [Phase 3b: SAE Support](#phase-3b-sae-support)
   - [Phase 4: Polish + Publish](#phase-4-polish--publish)
   - [Phase 5+: Extensions (Future)](#phase-5-extensions-future)
@@ -287,17 +287,15 @@ With this config, **one implementation** covers:
 | **Yi** | GQA, SiLU, RmsNorm (LLaMA-like) | — |
 | **InternLM 2** | GQA, SiLU, RmsNorm (LLaMA-like) | — |
 
-**VRAM budget (BF16, RTX 5060 Ti 16 GB).** Non-validated families have at least one size that fits on 16 GB:
+**VRAM budget (F32, RTX 5060 Ti 16 GB).** Since v0.0.3+, candle-mi defaults to F32 for research-grade precision (see §8, decision 14). This doubles the VRAM footprint vs BF16 but gives exact numerical parity with Python/PyTorch. Non-validated families that fit on 16 GB at F32:
 
-| Model Family | Smallest Size | BF16 VRAM est. |
-|--------------|---------------|----------------|
-| Gemma 1 / CodeGemma | 2B (~2.5 B actual) | ~6 GB |
-| DeepSeek-Coder (dense) | 1.3B | ~3.6 GB |
-| Yi 1.5 | 6B | ~13 GB |
-| InternLM 2 | 1.8B | ~4.6 GB |
-| Phi-4-mini | 3.8B | ~8.6 GB |
+| Model Family | Smallest Size | F32 VRAM est. |
+|--------------|---------------|---------------|
+| Gemma 1 / CodeGemma | 2B (~2.5 B actual) | ~12 GB |
+| DeepSeek-Coder (dense) | 1.3B | ~7 GB |
+| InternLM 2 | 1.8B | ~9 GB |
 
-The 7 B variants (DeepSeek-LLM 7B, InternLM 2 7B) are borderline at ~15 GB and require short sequences.
+The 3B+ variants (Yi 6B, Phi-4-mini 3.8B, 7B models) exceed 16 GB at F32 and require BF16 or larger GPUs.
 
 ### 3.4 What It Does NOT Cover
 
@@ -525,8 +523,8 @@ Where `A_t` (transition), `B_t` (input), and `C_t` (output) vary by architecture
 
 | Capability | Priority | Notes |
 |-----------|----------|-------|
-| **CLT loading + encoding** | High | Validated in plip-rs (`src/clt.rs`, 1,640 lines); lazy HF loading, sparse encoding, 90/90 top-10 match vs Python |
-| **CLT feature injection** | High | Validated in plip-rs (suppress+inject protocol); port and generalise |
+| **CLT loading + encoding** | ✅ Working (Phase 3) | `CrossLayerTranscoder` struct; per-file download via `hf-fetch-model`; `encode()` for full sparse activations, `top_k()` for strongest features; validated on Gemma 2 2B (8/8 top-1 match vs Python HF, <5% relative error) |
+| **CLT feature injection** | ✅ Working (Phase 3) | `cache_steering_vectors_all_downstream()` + `prepare_hook_injection()` for multi-layer causal interventions; `Intervention::Add` at `ResidPost` with dtype coercion; melometis position-sweep reproduced (last-position L2 ranks #1 in both Rust and Python) |
 | **Attribution graphs** | High | Record edge weights through CLT features; prune to circuits |
 | **SAE loading + encoding** | Medium | Load pre-trained SAE weights; encode activations |
 | **SAE feature injection** | Medium | Same as CLT but for SAEs |
@@ -572,21 +570,19 @@ candle-mi/
 │   │   ├── norm.rs                 — RmsNorm, LayerNorm, GemmaRmsNorm
 │   │   └── rope.rs                 — Rotary position embeddings (pre-computed cos/sin)
 │   │
-│   ├── rwkv/                       — Generic RWKV (feature: "rwkv") — Phase 2
-│   │   ├── mod.rs                  — GenericRwkv struct, version dispatch
-│   │   ├── wkv_v6.rs              — RWKV-6 WKV kernel (from plip-rs)
-│   │   ├── wkv_v7.rs              — RWKV-7 WKV kernel
-│   │   ├── channel_mix.rs         — Receptance-gated (v6) + plain MLP (v7)
-│   │   └── token_shift.rs         — Static lerp + data-dependent lerp
+│   ├── rwkv/                       — Generic RWKV (feature: "rwkv") ✅ Phase 2
+│   │   ├── mod.rs                  — GenericRwkv struct, version dispatch, WKV kernels
+│   │   ├── config.rs               — RwkvConfig, version-aware parsing
+│   │   └── norm.rs                 — LayerNorm (with bias, RWKV-style)
+│   │
+│   ├── clt/                        — Cross-layer transcoder (feature: "clt") ✅ Phase 3
+│   │   └── mod.rs                  — CrossLayerTranscoder, CltConfig, CltFeatureId, SparseActivations, encode/top_k/inject
 │   │
 │   ├── interp/                     — Interpretability tools ✅ (core)
 │   │   ├── mod.rs
 │   │   ├── intervention.rs         — Knockout, steering, ablation spec types
 │   │   ├── steering.rs             — Calibration, dose-response
-│   │   ├── logit_lens.rs           — Per-layer vocab projection
-│   │   ├── clt.rs                  — Cross-layer transcoder — Phase 3a
-│   │   ├── sae.rs                  — Sparse autoencoder — Phase 3b
-│   │   └── attribution.rs          — Attribution graphs — Phase 3a
+│   │   └── logit_lens.rs           — Per-layer vocab projection
 │   │
 │   ├── cache/                      — Caching infrastructure ✅
 │   │   ├── mod.rs
@@ -598,22 +594,33 @@ candle-mi/
 │   │   ├── mod.rs                  — MITokenizer (HuggingFace tokenizers wrapper)
 │   │   └── rwkv.rs                 — RWKV World tokenizer (feature: "rwkv-tokenizer")
 │   │
+│   ├── download.rs                 — download_model / download_model_blocking (hf-fetch-model) ✅
+│   │
 │   └── util/                       — Shared utilities ✅
 │       ├── mod.rs
 │       ├── masks.rs                — Causal/generation masks with caching
 │       └── positioning.rs          — Character ↔ token mapping
 │
-├── examples/                       — Quick start + capability examples — Phase 4
-│   ├── quick_start_transformer.rs  — Load model, forward pass, print top tokens
-│   ├── logit_lens.rs               — Run logit lens on any supported model
-│   ├── attention_patterns.rs       — Extract and print attention patterns
-│   ├── knockout.rs                 — Attention knockout experiment
-│   ├── steering.rs                 — Attention steering experiment
-│   └── clt_scan.rs                 — CLT feature scan
+├── examples/                       — Quick start + capability examples
+│   ├── quick_start_transformer.rs  — Load model, forward pass, print top tokens ✅
+│   └── fast_download.rs            — Parallel multi-connection model download ✅
+│
+├── scripts/                        — Validation scripts and reference data
+│   ├── rwkv7_validation.py         — Python RWKV-7 reference output generator ✅
+│   ├── rwkv7_validation_comparison.md — Rust vs Python RWKV-7 comparison ✅
+│   ├── clt_position_sweep_validation.py — Python CLT position-sweep reference ✅
+│   ├── clt_position_sweep_comparison.md — Rust vs Python CLT comparison ✅
+│   ├── rwkv6_reference.json        — RWKV-6 reference logits ✅
+│   ├── rwkv7_reference.json        — RWKV-7 reference logits ✅
+│   └── clt_position_sweep_reference.json — CLT reference activations ✅
 │
 └── tests/
-    ├── validate_models.rs          — Per-family validation against Python HF reference ✅
-    └── bench_hook_overhead.rs      — Hook overhead benchmark ✅
+    ├── validate_models.rs          — Per-family transformer validation (CPU + GPU) ✅
+    ├── validate_rwkv6.rs           — RWKV-6 validation against plip-rs reference ✅
+    ├── validate_rwkv7.rs           — RWKV-7 validation (CPU F32 + GPU F32 + GPU BF16) ✅
+    ├── validate_clt.rs             — CLT encode/inject + melometis position-sweep ✅
+    ├── bench_hook_overhead.rs      — Hook overhead benchmark ✅
+    └── fast_download.rs            — Download integration test ✅
 ```
 
 ### 6.1 Feature Gates
@@ -641,7 +648,7 @@ probing = ["linfa", "linfa-logistic", "ndarray"]  # Linear probing
 | **BACKENDS.md** | Markdown | Step-by-step guide to adding a new model architecture: config parser, weight map, validation protocol |
 | **HOOKS.md** | Markdown | Hook point reference table (mirroring §2.1), intervention API walkthrough, worked examples (capture attention, run knockout, steer residual stream) |
 | **CHANGELOG.md** | Markdown | [Keep a Changelog](https://keepachangelog.com/) format from v0.0.1 onwards |
-| **Examples** | Rust (`examples/`) | Quick-start per backend (`quick_start_transformer.rs`, `quick_start_rwkv.rs`, etc.) + one per major capability (`logit_lens.rs`, `knockout.rs`, `steering.rs`, `clt_scan.rs`) — each self-contained with inline comments |
+| **Examples** | Rust (`examples/`) | Quick-start per backend (`quick_start_transformer.rs` ✅, `fast_download.rs` ✅) + planned: one per major capability (`logit_lens.rs`, `knockout.rs`, `steering.rs`, `clt_scan.rs`) — each self-contained with inline comments |
 
 **Rustdoc policy:** Every `pub` item must have a doc comment. Types include a one-line summary + "# Examples" section with a runnable doc-test. `#![warn(missing_docs)]` enforced at crate level.
 
@@ -709,12 +716,12 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
   5. [x] **StarCoder2** 3B — "Hello" #1 (CPU/GPU) — **commit** — **PUSH**
   6. [x] **Mistral** 7B v0.1 — "Paris" #4 (CPU/GPU, exact match with Python HF) — **commit** — **PUSH**
 - [x] Benchmark hook overhead on LLaMA 3.2 1B (16 layers × 12 hooks = 194 hook points):
-  - GPU (CUDA BF16): +11.5% overhead with full capture (25.5ms → 28.5ms)
+  - GPU (CUDA F32): +11.5% overhead with full capture (originally measured at BF16; now runs at F32)
   - CPU (F32): within noise (zero overhead when inactive) — **commit**
 
 **Deliverable:** `MIModel::from_pretrained("meta-llama/Llama-3.2-1B")` works with full MI support. — **PUSH + tag `v0.0.2-phase1`** ✅ Completed on 2026-02-25.
 
-**Validation protocol:** For each model family, compare top-10 logits for 5 test prompts against Python HuggingFace outputs. Tolerance: abs < 1e-4 (F32). Validate in the incremental order above — if LLaMA works and Qwen2 breaks, the bug is in QKV bias or tied embeddings.
+**Validation protocol:** For each model family, compare top-10 logits for 5 test prompts against Python HuggingFace outputs. Tolerance: abs < 1e-4 (F32). All tests now run at F32 on GPU (research-grade precision; see §8 decision 14). Validate in the incremental order above — if LLaMA works and Qwen2 breaks, the bug is in QKV bias or tied embeddings.
 
 ### Phase 2: RWKV-6 + RWKV-7
 
@@ -740,10 +747,10 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 **Goal:** Load and use pre-trained cross-layer transcoders. CLT infrastructure already validated in plip-rs (`src/clt.rs`, 1,640 lines) — port and generalise.
 
 - [x] Single-file download API in `hf-fetch-model` (`download_file` / `download_file_blocking`) — replaces plip-rs's lazy `hf_hub::Api::repo().get()` pattern with chunked parallel transfer, checksum verification, and retry. See `design/hf-fetch-model-single-file-api.md`.
-- [ ] Port CLT weight loading from plip-rs (circuit-tracer format, per-file download via `hf-fetch-model`) — **commit**
-- [ ] Port CLT encoding (activations → feature activations, sparse top-k) — **commit**
-- [ ] Port CLT feature injection (suppress+inject protocol from melometis/tragos) — **commit**
-- [ ] Validate: load Gemma 2 2B CLT, reproduce melometis position-sweep results — **commit** — **PUSH** (CLT pipeline green on Gemma 2)
+- [x] Port CLT weight loading from plip-rs (circuit-tracer format, per-file download via `hf-fetch-model`) — `CrossLayerTranscoder`, `CltConfig`, `CltFeatureId`, `SparseActivations` — **commit `e230a45`**
+- [x] Port CLT encoding (activations → feature activations, sparse top-k) — `encode()`, `top_k()` — **commit `6e5b231`**
+- [x] Port CLT feature injection (suppress+inject protocol from melometis/tragos) — `cache_steering_vectors_all_downstream()`, `prepare_hook_injection()`, `Intervention::Add` at `ResidPost` — **commit `39013d1`**
+- [x] Validate: load Gemma 2 2B CLT, reproduce melometis position-sweep results — correlational (8/8 top-1 match, <5% relative error) + causal (last-position L2 ranks #1), cross-validated against Python HF reference — **commit `7d7bd96`** — **PUSH** (CLT pipeline green on Gemma 2)
 - [ ] Validate: load Llama 3.2 1B CLT, reproduce tragos position-sweep results — **commit** — **PUSH** (CLT pipeline green on Llama 3.2)
 - [ ] Implement attribution graph construction — **commit**
 
@@ -810,6 +817,9 @@ Detailed design proposals live in the [`design/`](design/) directory. Summary:
 11. **GPU test serialization** — all GPU integration tests carry `#[serial]` (from `serial_test`) to prevent CUDA OOM from concurrent model loading on 16 GB GPUs.
 12. **`#[must_use]` policy (Rule 17)** — all pure public functions and methods that return a value carry `#[must_use]`. Enforced by `clippy::must_use_candidate` at `warn` level (promoted to error by `#![deny(warnings)]`).
 13. **Coding conventions** — `CONVENTIONS.md` codifies mandatory annotation patterns (PROMOTE, CONTIGUOUS, TRAIT_OBJECT, EXHAUSTIVE, EXPLICIT, BORROW), shape documentation (Rule 12), `#[non_exhaustive]` policy (Rule 11), hook purity contract (Rule 16), and `#[must_use]` policy (Rule 17). Follows [Amphigraphic Strict / Grit](https://github.com/PCfVW/Amphigraphic-Strict).
+14. **F32 research-grade precision** — default GPU dtype changed from BF16 to F32 for exact numerical parity with Python/PyTorch. Evidence: RWKV-7 GPU logit error dropped from 0.027 (0.36% relative) under BF16 to 0.000002 (6 decimal places) under F32 — identical to CPU F32 and Python F32. Models up to ~7B fit in 16 GB VRAM at F32. The BF16 GPU test is retained as a regression test. Transformer attention mask dtype is derived from `hidden.dtype()` instead of being hardcoded.
+15. **CLT as separate module** — CLT code lives in `src/clt/mod.rs` (feature: `"clt"`), not inside `interp/`. This keeps the interpretability module focused on model-agnostic spec types while CLT has its own weight loading, encoding, and injection logic. `CltFeatureId` encodes `(layer, feature_index)` as a newtype for type safety.
+16. **Cross-implementation validation** — every backend (transformer, RWKV, CLT) is validated against a Python reference script (`scripts/`) that produces a JSON reference file, with a markdown comparison document recording the side-by-side results. This ensures reproducibility and documents the expected accuracy bounds for each dtype/backend combination.
 
 ---
 
