@@ -73,6 +73,10 @@ required-features = ["rwkv", "rwkv-tokenizer"]
 name = "validate_clt"
 required-features = ["clt", "transformer"]
 
+[[test]]
+name = "validate_anacrousis"
+required-features = ["transformer"]
+
 [features]
 default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]
