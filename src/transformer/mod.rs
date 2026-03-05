@@ -9,7 +9,7 @@
 pub(crate) mod attention;
 pub(crate) mod mlp;
 pub(crate) mod norm;
-pub mod recurrent;
+pub(crate) mod recurrent;
 pub(crate) mod rope;
 
 use candle_core::{DType, Device, IndexOp, Module, Tensor};
@@ -518,7 +518,6 @@ impl GenericTransformer {
     ///
     /// Returns [`MIError::Intervention`] if the spec is invalid, or
     /// [`MIError::Model`] on tensor/generation failures.
-    #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
     pub fn generate_recurrent(
         &self,
         prompt_tokens: &[u32],
@@ -691,6 +690,7 @@ fn inject_feedback_at_position(
     // Build a [1, seq_len, d_model] delta tensor that is zero everywhere
     // except at the target position.
     let mut delta_data = vec![0.0_f32; seq_len * d_model];
+    // PROMOTE: feedback vector may be BF16 from embedding; F32 for host-side copy
     let vec_f32: Vec<f32> = vector
         .to_dtype(candle_core::DType::F32)?
         .flatten_all()?

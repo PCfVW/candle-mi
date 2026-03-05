@@ -28,7 +28,7 @@
 
 use std::time::Instant;
 
-use candle_core::{DType, Device, Tensor};
+use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::{
     GenericTransformer, HookSpec, MIBackend, MITokenizer, RecurrentPassSpec, TransformerConfig,
     sample_token,
@@ -113,7 +113,7 @@ fn load_llama(device: &Device) -> (GenericTransformer, MITokenizer, TransformerC
 
 struct CoupletDef {
     id: u32,
-    target_word: &'static str,
+    _target_word: &'static str,
     line1: &'static str,
     rhyme_family: &'static [&'static str],
 }
@@ -122,7 +122,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
     vec![
         CoupletDef {
             id: 1,
-            target_word: "light",
+            _target_word: "light",
             line1: "The moon casts silver light,",
             rhyme_family: &[
                 "light", "night", "bright", "sight", "might", "flight", "right", "tight", "white",
@@ -132,7 +132,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 2,
-            target_word: "play",
+            _target_word: "play",
             line1: "The children laugh and play,",
             rhyme_family: &[
                 "play", "day", "way", "say", "stay", "sway", "ray", "bay", "may", "lay", "pay",
@@ -141,7 +141,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 3,
-            target_word: "sound",
+            _target_word: "sound",
             line1: "The thunder makes a sound,",
             rhyme_family: &[
                 "sound", "ground", "found", "round", "bound", "around", "mound", "pound", "hound",
@@ -150,7 +150,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 4,
-            target_word: "rain",
+            _target_word: "rain",
             line1: "The clouds bring heavy rain,",
             rhyme_family: &[
                 "rain", "pain", "gain", "main", "vain", "plain", "chain", "train", "brain",
@@ -160,7 +160,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 5,
-            target_word: "time",
+            _target_word: "time",
             line1: "The old clock measures time,",
             rhyme_family: &[
                 "time", "rhyme", "climb", "crime", "dime", "lime", "mime", "prime", "chime",
@@ -169,7 +169,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 6,
-            target_word: "air",
+            _target_word: "air",
             line1: "The geese fly through the air,",
             rhyme_family: &[
                 "air", "there", "fair", "care", "bare", "dare", "rare", "share", "stare", "where",
@@ -179,7 +179,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 7,
-            target_word: "gold",
+            _target_word: "gold",
             line1: "The sunset gleams like gold,",
             rhyme_family: &[
                 "gold",
@@ -199,7 +199,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 8,
-            target_word: "fire",
+            _target_word: "fire",
             line1: "The embers feed the fire,",
             rhyme_family: &[
                 "fire", "hire", "wire", "desire", "tire", "inspire", "acquire", "higher", "entire",
@@ -208,7 +208,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 9,
-            target_word: "stone",
+            _target_word: "stone",
             line1: "The castle walls of stone,",
             rhyme_family: &[
                 "stone", "bone", "tone", "lone", "zone", "throne", "phone", "own", "known",
@@ -217,7 +217,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 10,
-            target_word: "dream",
+            _target_word: "dream",
             line1: "I wandered through a dream,",
             rhyme_family: &[
                 "dream", "stream", "seem", "team", "beam", "cream", "gleam", "scheme", "theme",
@@ -226,7 +226,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 11,
-            target_word: "strange",
+            _target_word: "strange",
             line1: "The silence felt so strange,",
             rhyme_family: &[
                 "strange", "change", "range", "arrange", "exchange", "grange",
@@ -234,13 +234,13 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 12,
-            target_word: "love",
+            _target_word: "love",
             line1: "I never knew such love,",
             rhyme_family: &["love", "above", "dove", "of", "shove", "glove", "thereof"],
         },
         CoupletDef {
             id: 13,
-            target_word: "truth",
+            _target_word: "truth",
             line1: "She spoke the honest truth,",
             rhyme_family: &[
                 "truth", "youth", "tooth", "booth", "smooth", "sleuth", "ruth", "uncouth",
@@ -248,7 +248,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 14,
-            target_word: "world",
+            _target_word: "world",
             line1: "He traveled all the world,",
             rhyme_family: &[
                 "world", "curled", "unfurled", "whirled", "hurled", "swirled", "pearled", "furled",
@@ -257,7 +257,7 @@ fn couplet_defs() -> Vec<CoupletDef> {
         },
         CoupletDef {
             id: 15,
-            target_word: "earth",
+            _target_word: "earth",
             line1: "The seeds lay in the earth,",
             rhyme_family: &[
                 "earth", "birth", "worth", "mirth", "berth", "girth", "dearth", "rebirth", "hearth",
@@ -352,7 +352,6 @@ fn averaged_rhyme_direction(
     model: &GenericTransformer,
     tokenizer: &MITokenizer,
     rhyme_words: &[&str],
-    device: &Device,
 ) -> Tensor {
     let mut embeddings: Vec<Tensor> = Vec::new();
 
@@ -390,8 +389,6 @@ fn generate_baseline(
     max_tokens: usize,
     stop_tokens: &[u32],
 ) -> Vec<u32> {
-    let device = model.config().rope_theta; // just need a device reference
-    let _ = device; // suppress unused
     let embed_device = model.embedding_vector(0).unwrap().device().clone();
     let mut tokens = prompt_tokens.to_vec();
 
@@ -470,12 +467,8 @@ fn anacrousis_28x15_full_matrix() {
                     let mut spec =
                         RecurrentPassSpec::no_feedback(start, end).with_sustained(cond.sustained);
                     if let Some(strength) = cond.feedback_strength {
-                        let rhyme_dir = averaged_rhyme_direction(
-                            &model,
-                            &tokenizer,
-                            couplet.rhyme_family,
-                            &device,
-                        );
+                        let rhyme_dir =
+                            averaged_rhyme_direction(&model, &tokenizer, couplet.rhyme_family);
                         spec.add_feedback(planning_pos, rhyme_dir, strength);
                     }
                     model
@@ -487,11 +480,7 @@ fn anacrousis_28x15_full_matrix() {
             // Decode only the generated tokens (skip prompt to avoid BOS prefix mismatch)
             let generated_tokens = &all_tokens[prompt_ids.len()..];
             let generated_text = tokenizer.decode(generated_tokens).unwrap();
-            let line2 = generated_text
-                .lines()
-                .next()
-                .unwrap_or("")
-                .to_string();
+            let line2 = generated_text.lines().next().unwrap_or("").to_string();
 
             let last_word = extract_last_word(&line2);
             let rhymes = word_rhymes(&last_word, &rhyme_set);
@@ -572,11 +561,7 @@ fn anacrousis_28x15_full_matrix() {
     // 3. Best condition is a superset of baseline successes
     assert_eq!(baseline_rhymes.len(), 15);
     assert_eq!(best_rhymes.len(), 15);
-    for (i, (&baseline, &best)) in baseline_rhymes
-        .iter()
-        .zip(best_rhymes.iter())
-        .enumerate()
-    {
+    for (i, (&baseline, &best)) in baseline_rhymes.iter().zip(best_rhymes.iter()).enumerate() {
         if baseline {
             assert!(
                 best,
