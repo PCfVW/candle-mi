@@ -79,7 +79,7 @@ pub mod util;
 // --- Public re-exports ---------------------------------------------------
 
 // Backend
-pub use backend::{GenerationResult, MIBackend, MIModel};
+pub use backend::{GenerationResult, MIBackend, MIModel, sample_token};
 
 // Config
 pub use config::{
@@ -89,6 +89,10 @@ pub use config::{
 // Transformer backend
 #[cfg(feature = "transformer")]
 pub use transformer::GenericTransformer;
+
+// Recurrent feedback (anacrousis)
+#[cfg(feature = "transformer")]
+pub use transformer::recurrent::{RecurrentFeedbackEntry, RecurrentPassSpec};
 
 // RWKV backend
 #[cfg(feature = "rwkv")]

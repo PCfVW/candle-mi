@@ -9,12 +9,13 @@
 pub(crate) mod attention;
 pub(crate) mod mlp;
 pub(crate) mod norm;
+pub mod recurrent;
 pub(crate) mod rope;
 
-use candle_core::{DType, Device, Module, Tensor};
+use candle_core::{DType, Device, IndexOp, Module, Tensor};
 use candle_nn::{Embedding, Linear, VarBuilder};
 
-use crate::backend::MIBackend;
+use crate::backend::{self, MIBackend};
 use crate::config::TransformerConfig;
 use crate::error::Result;
 use crate::hooks::{HookCache, HookPoint, HookSpec};
@@ -23,6 +24,7 @@ use crate::util::masks;
 use self::attention::Attention;
 use self::mlp::Mlp;
 use self::norm::{Norm, create_norm};
+use self::recurrent::RecurrentPassSpec;
 use self::rope::RopeCache;
 
 // ---------------------------------------------------------------------------
@@ -216,6 +218,360 @@ impl GenericTransformer {
         &self.config
     }
 
+    /// Forward pass through a range of layers (internal helper).
+    ///
+    /// Processes layers `start..end` with full hook support (capture +
+    /// intervention at every hook point).
+    ///
+    /// # Shapes
+    /// - `hidden`: `[batch, seq, hidden_size]`
+    /// - returns: `[batch, seq, hidden_size]`
+    #[allow(clippy::too_many_arguments)]
+    fn forward_layer_range(
+        &self,
+        mut hidden: Tensor,
+        start: usize,
+        end: usize,
+        seq_len: usize,
+        device: &Device,
+        dtype: DType,
+        hooks: &HookSpec,
+        cache: &mut HookCache,
+    ) -> Result<Tensor> {
+        let layer_slice = self
+            .layers
+            .get(start..end)
+            .ok_or_else(|| {
+                crate::error::MIError::Intervention(format!(
+                    "layer range {start}..{end} out of bounds (n_layers={})",
+                    self.layers.len()
+                ))
+            })?;
+        for (offset, layer) in layer_slice.iter().enumerate() {
+            let layer_idx = start + offset;
+
+            // Hook: ResidPre
+            if hooks.is_captured(&HookPoint::ResidPre(layer_idx)) {
+                cache.store(HookPoint::ResidPre(layer_idx), hidden.clone());
+            }
+
+            let residual = hidden.clone();
+
+            // Pre-attention norm
+            hidden = layer.input_norm.forward(&hidden)?;
+
+            // Attention mask for this layer
+            let mask = self.mask_for_layer(layer_idx, seq_len, device, dtype)?;
+
+            // Self-attention (hooks for Q, K, V, Scores, Pattern handled inside)
+            hidden = layer.attention.forward(
+                &hidden,
+                &mask,
+                &self.rope_cache,
+                layer_idx,
+                hooks,
+                cache,
+            )?;
+
+            // Optional post-attention norm (Gemma 2)
+            if let Some(ref norm) = layer.post_attention_norm {
+                hidden = norm.forward(&hidden)?;
+            }
+
+            // Hook: AttnOut
+            if hooks.is_captured(&HookPoint::AttnOut(layer_idx)) {
+                cache.store(HookPoint::AttnOut(layer_idx), hidden.clone());
+            }
+
+            // Residual connection after attention
+            hidden = (residual + &hidden)?;
+
+            // Hook: ResidMid
+            if hooks.is_captured(&HookPoint::ResidMid(layer_idx)) {
+                cache.store(HookPoint::ResidMid(layer_idx), hidden.clone());
+            }
+
+            let residual = hidden.clone();
+
+            // Pre-MLP norm
+            hidden = layer.mid_norm.forward(&hidden)?;
+
+            // Hook: MlpPre
+            if hooks.is_captured(&HookPoint::MlpPre(layer_idx)) {
+                cache.store(HookPoint::MlpPre(layer_idx), hidden.clone());
+            }
+
+            // MLP
+            hidden = layer.mlp.forward(&hidden)?;
+
+            // Hook: MlpPost
+            if hooks.is_captured(&HookPoint::MlpPost(layer_idx)) {
+                cache.store(HookPoint::MlpPost(layer_idx), hidden.clone());
+            }
+
+            // Optional post-feedforward norm (Gemma 2)
+            if let Some(ref norm) = layer.post_feedforward_norm {
+                hidden = norm.forward(&hidden)?;
+            }
+
+            // Hook: MlpOut
+            if hooks.is_captured(&HookPoint::MlpOut(layer_idx)) {
+                cache.store(HookPoint::MlpOut(layer_idx), hidden.clone());
+            }
+
+            // Residual connection after MLP
+            hidden = (residual + &hidden)?;
+
+            // Hook: ResidPost
+            if hooks.is_captured(&HookPoint::ResidPost(layer_idx)) {
+                cache.store(HookPoint::ResidPost(layer_idx), hidden.clone());
+            }
+            for intervention in hooks.interventions_at(&HookPoint::ResidPost(layer_idx)) {
+                hidden = crate::hooks::apply_intervention(&hidden, intervention)?;
+            }
+        }
+        Ok(hidden)
+    }
+
+    /// Embed input tokens and apply embedding scale + Embed hook.
+    ///
+    /// Returns `(hidden, dtype, cache)`.
+    ///
+    /// # Shapes
+    /// - `input_ids`: `[batch, seq]`
+    /// - returns hidden: `[batch, seq, hidden_size]`
+    fn embed_with_hooks(
+        &self,
+        input_ids: &Tensor,
+        hooks: &HookSpec,
+    ) -> Result<(Tensor, DType, HookCache)> {
+        let device = input_ids.device();
+        let mut hidden = self.embed_tokens.forward(input_ids)?;
+        let dtype = hidden.dtype();
+
+        if let Some(scale) = self.config.embedding_scale {
+            hidden = (hidden * scale)?;
+        }
+
+        let mut cache = HookCache::new(Tensor::zeros(1, DType::F32, device)?);
+
+        if hooks.is_captured(&HookPoint::Embed) {
+            cache.store(HookPoint::Embed, hidden.clone());
+        }
+        for intervention in hooks.interventions_at(&HookPoint::Embed) {
+            hidden = crate::hooks::apply_intervention(&hidden, intervention)?;
+        }
+
+        Ok((hidden, dtype, cache))
+    }
+
+    /// Apply final norm, logit projection, and softcapping.
+    ///
+    /// # Shapes
+    /// - `hidden`: `[batch, seq, hidden_size]`
+    /// - returns logits: `[batch, seq, vocab_size]`
+    fn finalize_logits(
+        &self,
+        mut hidden: Tensor,
+        hooks: &HookSpec,
+        cache: &mut HookCache,
+    ) -> Result<Tensor> {
+        hidden = self.final_norm.forward(&hidden)?;
+
+        if hooks.is_captured(&HookPoint::FinalNorm) {
+            cache.store(HookPoint::FinalNorm, hidden.clone());
+        }
+
+        let mut logits = self.project_logits(&hidden)?;
+
+        if let Some(cap) = self.config.final_logit_softcapping {
+            logits = ((logits / cap)?.tanh()? * cap)?;
+        }
+
+        Ok(logits)
+    }
+
+    // --- Recurrent forward pass -------------------------------------------
+
+    /// Forward pass with recurrent re-execution of a layer block.
+    ///
+    /// Re-runs layers `spec.loop_start..=spec.loop_end` a second time,
+    /// with optional feedback injected between passes.
+    ///
+    /// # Algorithm
+    ///
+    /// ```text
+    /// embed → layers[0..loop_start)
+    ///   → save_input (if feedback)
+    ///   → layers[loop_start..=loop_end]  (pass 1)
+    ///   → if feedback: hidden = saved_input + feedback entries
+    ///     else:        hidden = pass 1 output (true recurrence)
+    ///   → layers[loop_start..=loop_end]  (pass 2)
+    ///   → layers[(loop_end+1)..n_layers)
+    ///   → norm → logits
+    /// ```
+    ///
+    /// Hooks fire at every layer in every pass. For loop layers, pass 2
+    /// captures overwrite pass 1 in the [`HookCache`].
+    ///
+    /// # Shapes
+    /// - `input_ids`: `[batch, seq]`
+    /// - returns: [`HookCache`] containing logits at `[batch, seq, vocab_size]`
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Intervention`] if the spec is invalid for this model,
+    /// or [`MIError::Model`] on tensor operation failures.
+    pub fn forward_recurrent(
+        &self,
+        input_ids: &Tensor,
+        hooks: &HookSpec,
+        spec: &RecurrentPassSpec,
+    ) -> Result<HookCache> {
+        let (mut hidden, dtype, mut cache) = self.embed_with_hooks(input_ids, hooks)?;
+        let device = input_ids.device();
+        let (_, seq_len, _) = hidden.dims3()?;
+
+        spec.validate(self.config.num_layers, seq_len, self.config.hidden_size)?;
+
+        // Pre-loop layers
+        hidden = self.forward_layer_range(
+            hidden,
+            0,
+            spec.loop_start,
+            seq_len,
+            device,
+            dtype,
+            hooks,
+            &mut cache,
+        )?;
+
+        // Save input to the loop block (needed for feedback injection)
+        let saved_input = if spec.feedback.is_empty() {
+            None
+        } else {
+            Some(hidden.clone())
+        };
+
+        // Pass 1 through loop layers
+        hidden = self.forward_layer_range(
+            hidden,
+            spec.loop_start,
+            spec.loop_end + 1,
+            seq_len,
+            device,
+            dtype,
+            hooks,
+            &mut cache,
+        )?;
+
+        // Determine pass 2 input
+        if let Some(saved) = saved_input {
+            // With feedback: inject into saved pre-loop state
+            hidden = saved;
+            for entry in &spec.feedback {
+                let scaled = (&entry.vector * f64::from(entry.strength))?;
+                hidden = inject_feedback_at_position(&hidden, &scaled, entry.position)?;
+            }
+        }
+        // Without feedback: hidden stays as pass 1 output (true recurrence)
+
+        // Pass 2 through loop layers
+        hidden = self.forward_layer_range(
+            hidden,
+            spec.loop_start,
+            spec.loop_end + 1,
+            seq_len,
+            device,
+            dtype,
+            hooks,
+            &mut cache,
+        )?;
+
+        // Post-loop layers
+        hidden = self.forward_layer_range(
+            hidden,
+            spec.loop_end + 1,
+            self.config.num_layers,
+            seq_len,
+            device,
+            dtype,
+            hooks,
+            &mut cache,
+        )?;
+
+        let logits = self.finalize_logits(hidden, hooks, &mut cache)?;
+        cache.set_output(logits);
+        Ok(cache)
+    }
+
+    // --- Recurrent generation ---------------------------------------------
+
+    /// Generate tokens with recurrent re-execution.
+    ///
+    /// Since candle-mi recomputes the full sequence at every step (no KV
+    /// cache), the recurrent double-pass applies at every generation step.
+    ///
+    /// - **Prefill-only** (`sustained: false`): feedback at original
+    ///   prompt positions only.
+    /// - **Sustained** (`sustained: true`): feedback is also injected
+    ///   at the current last-token position at each step.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Intervention`] if the spec is invalid, or
+    /// [`MIError::Model`] on tensor/generation failures.
+    #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
+    pub fn generate_recurrent(
+        &self,
+        prompt_tokens: &[u32],
+        max_tokens: usize,
+        temperature: f32,
+        stop_tokens: &[u32],
+        spec: &RecurrentPassSpec,
+    ) -> Result<Vec<u32>> {
+        let device = self.embed_tokens.embeddings().device();
+        let mut tokens = prompt_tokens.to_vec();
+
+        for _ in 0..max_tokens {
+            let input_tensor = Tensor::new(tokens.as_slice(), device)?.unsqueeze(0)?;
+
+            // Build effective spec for this step
+            let effective_spec = if spec.sustained && !spec.feedback.is_empty() {
+                let mut step_spec = spec.clone();
+                // Add feedback at the current last position (sustained pressure)
+                let last_pos = tokens.len() - 1;
+                for entry in &spec.feedback {
+                    step_spec.feedback.push(recurrent::RecurrentFeedbackEntry {
+                        position: last_pos,
+                        vector: entry.vector.clone(),
+                        strength: entry.strength,
+                    });
+                }
+                step_spec
+            } else {
+                spec.clone()
+            };
+
+            let hook_cache =
+                self.forward_recurrent(&input_tensor, &HookSpec::new(), &effective_spec)?;
+
+            // Extract last-token logits
+            let logits = hook_cache.output();
+            let seq_len = logits.dim(1)?;
+            let last_logits = logits.i((.., seq_len - 1, ..))?.squeeze(1)?;
+            let last_logits_flat = last_logits.flatten_all()?;
+
+            let next_token = backend::sample_token(&last_logits_flat, temperature)?;
+            if stop_tokens.contains(&next_token) {
+                break;
+            }
+            tokens.push(next_token);
+        }
+
+        Ok(tokens)
+    }
+
     /// Project hidden states to vocabulary logits (internal helper).
     ///
     /// # Shapes
@@ -285,144 +641,78 @@ impl MIBackend for GenericTransformer {
 
     fn forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache> {
         let device = input_ids.device();
-
-        // --- Embedding ---
-        let mut hidden = self.embed_tokens.forward(input_ids)?;
-
-        // Mask dtype matches the weight dtype (F32 or BF16).
-        let dtype = hidden.dtype();
-
-        // Optional embedding scale (Gemma)
-        if let Some(scale) = self.config.embedding_scale {
-            hidden = (hidden * scale)?;
-        }
-
-        // Capture cache — collects hook captures; output set at the end.
-        let mut cache = HookCache::new(Tensor::zeros(1, DType::F32, device)?);
-
-        // Hook: Embed
-        if hooks.is_captured(&HookPoint::Embed) {
-            cache.store(HookPoint::Embed, hidden.clone());
-        }
-        for intervention in hooks.interventions_at(&HookPoint::Embed) {
-            hidden = crate::hooks::apply_intervention(&hidden, intervention)?;
-        }
-
+        let (hidden, dtype, mut cache) = self.embed_with_hooks(input_ids, hooks)?;
         let (_, seq_len, _) = hidden.dims3()?;
 
-        // --- Layer loop ---
-        for (layer_idx, layer) in self.layers.iter().enumerate() {
-            // Hook: ResidPre
-            if hooks.is_captured(&HookPoint::ResidPre(layer_idx)) {
-                cache.store(HookPoint::ResidPre(layer_idx), hidden.clone());
-            }
+        // --- All layers ---
+        let hidden = self.forward_layer_range(
+            hidden,
+            0,
+            self.config.num_layers,
+            seq_len,
+            device,
+            dtype,
+            hooks,
+            &mut cache,
+        )?;
 
-            let residual = hidden.clone();
-
-            // Pre-attention norm
-            hidden = layer.input_norm.forward(&hidden)?;
-
-            // Attention mask for this layer
-            let mask = self.mask_for_layer(layer_idx, seq_len, device, dtype)?;
-
-            // Self-attention (hooks for Q, K, V, Scores, Pattern handled inside)
-            hidden = layer.attention.forward(
-                &hidden,
-                &mask,
-                &self.rope_cache,
-                layer_idx,
-                hooks,
-                &mut cache,
-            )?;
-
-            // Optional post-attention norm (Gemma 2)
-            if let Some(ref norm) = layer.post_attention_norm {
-                hidden = norm.forward(&hidden)?;
-            }
-
-            // Hook: AttnOut
-            if hooks.is_captured(&HookPoint::AttnOut(layer_idx)) {
-                cache.store(HookPoint::AttnOut(layer_idx), hidden.clone());
-            }
-
-            // Residual connection after attention
-            hidden = (residual + &hidden)?;
-
-            // Hook: ResidMid
-            if hooks.is_captured(&HookPoint::ResidMid(layer_idx)) {
-                cache.store(HookPoint::ResidMid(layer_idx), hidden.clone());
-            }
-
-            let residual = hidden.clone();
-
-            // Pre-MLP norm
-            hidden = layer.mid_norm.forward(&hidden)?;
-
-            // Hook: MlpPre
-            if hooks.is_captured(&HookPoint::MlpPre(layer_idx)) {
-                cache.store(HookPoint::MlpPre(layer_idx), hidden.clone());
-            }
-
-            // MLP
-            hidden = layer.mlp.forward(&hidden)?;
-
-            // Hook: MlpPost
-            if hooks.is_captured(&HookPoint::MlpPost(layer_idx)) {
-                cache.store(HookPoint::MlpPost(layer_idx), hidden.clone());
-            }
-
-            // Optional post-feedforward norm (Gemma 2)
-            if let Some(ref norm) = layer.post_feedforward_norm {
-                hidden = norm.forward(&hidden)?;
-            }
-
-            // Hook: MlpOut
-            if hooks.is_captured(&HookPoint::MlpOut(layer_idx)) {
-                cache.store(HookPoint::MlpOut(layer_idx), hidden.clone());
-            }
-
-            // Residual connection after MLP
-            hidden = (residual + &hidden)?;
-
-            // Hook: ResidPost
-            if hooks.is_captured(&HookPoint::ResidPost(layer_idx)) {
-                cache.store(HookPoint::ResidPost(layer_idx), hidden.clone());
-            }
-            for intervention in hooks.interventions_at(&HookPoint::ResidPost(layer_idx)) {
-                hidden = crate::hooks::apply_intervention(&hidden, intervention)?;
-            }
-        }
-
-        // --- Final norm ---
-        hidden = self.final_norm.forward(&hidden)?;
-
-        // Hook: FinalNorm
-        if hooks.is_captured(&HookPoint::FinalNorm) {
-            cache.store(HookPoint::FinalNorm, hidden.clone());
-        }
-
-        // --- LM head ---
-        let mut logits = self.project_logits(&hidden)?;
-
-        // Optional final logit soft-capping (Gemma 2)
-        if let Some(cap) = self.config.final_logit_softcapping {
-            logits = ((logits / cap)?.tanh()? * cap)?;
-        }
-
-        // Set the real output (logits) on the capture cache.
+        let logits = self.finalize_logits(hidden, hooks, &mut cache)?;
         cache.set_output(logits);
-
         Ok(cache)
     }
 
     fn project_to_vocab(&self, hidden: &Tensor) -> Result<Tensor> {
         self.project_logits(hidden)
     }
+
+    fn embedding_vector(&self, token_id: u32) -> Result<Tensor> {
+        let device = self.embed_tokens.embeddings().device();
+        let ids = Tensor::new(&[token_id], device)?;
+        let emb = self.embed_tokens.forward(&ids)?; // [1, d_model]
+        Ok(emb.squeeze(0)?) // [d_model]
+    }
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/// Inject a vector at a specific sequence position in a hidden state.
+///
+/// # Shapes
+/// - `hidden`: `[batch, seq_len, d_model]`
+/// - `vector`: `[d_model]` (pre-scaled)
+/// - returns: `[batch, seq_len, d_model]` with `hidden[:, position, :] += vector`
+fn inject_feedback_at_position(
+    hidden: &Tensor,
+    vector: &Tensor,
+    position: usize,
+) -> Result<Tensor> {
+    let seq_len = hidden.dim(1)?;
+    let d_model = hidden.dim(2)?;
+
+    // Build a [1, seq_len, d_model] delta tensor that is zero everywhere
+    // except at the target position.
+    let mut delta_data = vec![0.0_f32; seq_len * d_model];
+    let vec_f32: Vec<f32> = vector
+        .to_dtype(candle_core::DType::F32)?
+        .flatten_all()?
+        .to_vec1()?;
+    let start = position * d_model;
+    let dest = delta_data
+        .get_mut(start..start + d_model)
+        .ok_or_else(|| {
+            crate::error::MIError::Intervention(format!(
+                "feedback position {position} out of bounds (seq_len={seq_len})"
+            ))
+        })?;
+    dest.copy_from_slice(&vec_f32);
+
+    let delta = Tensor::from_vec(delta_data, (1, seq_len, d_model), hidden.device())?
+        .to_dtype(hidden.dtype())?;
+
+    Ok(hidden.broadcast_add(&delta)?)
+}
 
 /// Create a sliding window causal mask.
 ///
