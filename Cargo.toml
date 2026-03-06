@@ -77,6 +77,10 @@ required-features = ["clt", "transformer"]
 name = "validate_anacrousis"
 required-features = ["transformer"]
 
+[[test]]
+name = "validate_sae"
+required-features = ["sae", "transformer"]
+
 [features]
 default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]
