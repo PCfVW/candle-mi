@@ -11,11 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Sparse Autoencoder (SAE) support** — `SparseAutoencoder` struct with
   `SaeConfig`, `SaeFeatureId`, `SaeArchitecture`, `NormalizeActivations`, and
-  `TopKStrategy` types; loading SAELens-format safetensors + `cfg.json` from
-  local directories or HuggingFace repositories (e.g.
-  `jbloom/Gemma-2-2B-Residual-Stream-SAEs`); three architecture variants:
-  ReLU, JumpReLU (learned threshold per feature), and TopK (keep only k
-  largest activations with auto-detected CPU/GPU dual-path)
+  `TopKStrategy` types; loading from SAELens-format safetensors + `cfg.json`
+  or from Gemma Scope NPZ archives; three architecture variants: ReLU,
+  JumpReLU (learned threshold per feature), and TopK (keep only k largest
+  activations with auto-detected CPU/GPU dual-path)
+- **NPZ/NPY parser** (`src/sae/npz.rs`) — from-scratch NumPy archive parser
+  using the `zip` crate; supports NPY format v1/v2, float32/float64 dtypes
+  (promoted to F32), C-order arrays; `load_npz()` returns a HashMap of candle
+  Tensors; designed for future extraction to `hf-fetch-model` crate
+- **SAE NPZ loading** — `from_npz()` and `from_pretrained_npz()` methods
+  load SAE weights from Google Gemma Scope NPZ files
+  (`google/gemma-scope-2b-pt-res`); config inferred from tensor shapes;
+  architecture auto-detected (threshold present → JumpReLU, else ReLU);
+  downloads via `hf-fetch-model`
 - **SAE encoding and decoding** — `encode()` for batched dense encoding,
   `encode_sparse()` for single-position sparse features sorted by magnitude,
   `decode()` for reconstruction, `reconstruct()` and `reconstruction_error()`
@@ -27,8 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Generic `SparseActivations<F: FeatureId>`** — refactored from CLT-only
   to a generic sparse representation shared between CLT and SAE; `FeatureId`
   marker trait implemented by both `CltFeatureId` and `SaeFeatureId`
-- Python validation script (`scripts/sae_validation.py`) for SAELens
-  reference output generation; integration tests (`tests/validate_sae.rs`)
+- Python validation script (`scripts/sae_validation.py`) using direct NPZ
+  loading (no SAELens dependency); integration tests (`tests/validate_sae.rs`)
   with 4 test cases: config detection, encode/decode/sparse, injection, and
   Python reference comparison; `quick_start_sae` example
 
