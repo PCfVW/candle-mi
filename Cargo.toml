@@ -81,6 +81,12 @@ required-features = ["transformer"]
 name = "validate_sae"
 required-features = ["sae", "transformer"]
 
+# Examples — gated behind features to avoid compilation errors when
+# features are not enabled.
+[[example]]
+name = "quick_start_sae"
+required-features = ["sae", "transformer"]
+
 [features]
 default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]
