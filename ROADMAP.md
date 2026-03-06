@@ -3,7 +3,7 @@
 > *MI for the Rust of us*
 
 **Date:** February 19, 2026 (last updated: March 6, 2026)
-**Status:** Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.4. Default dtype changed to F32 for research-grade precision.
+**Status:** Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.5. Default dtype changed to F32 for research-grade precision.
 **Context:** Building on plip-rs experience (7 model backends incl. Gemma 2, attention knockout, state knockout, effective attention, steering, logit lens, CLT encoding/injection). Two successful replications of Anthropic's "Planning in Poems" Figure 13 validate the approach: Gemma 2 2B with 426K CLTs (melometis branch) and Llama 3.2 1B with 524K CLTs (tragos branch). Target: a publishable, generic Rust MI crate endorsed by HuggingFace.
 
 ---
@@ -284,7 +284,7 @@ With this config, **one implementation** covers:
 | **Gemma 1 / CodeGemma** | GQA, GELU, GemmaRmsNorm, sqrt embedding scale, tied lm_head | — |
 | **Gemma 2** | + GeluApprox, soft-capping, 4-norm, custom attn scalar, alternating sliding window | Gemma 2 2B |
 | **Phi-3 / Phi-4** | GQA, SiLU, RmsNorm, fused QKV, fused MLP | Phi-3 Mini 4K |
-| **StarCoder2** | GQA, GeluApprox, RmsNorm, plain MLP, bias everywhere, tied lm_head | StarCoder2 3B |
+| **StarCoder2** | GQA, GeluApprox, LayerNorm, plain MLP, bias everywhere, tied lm_head | StarCoder2 3B |
 | **Mistral / Mixtral** (dense layers) | GQA, SiLU, RmsNorm, sliding window | Mistral 7B v0.1 |
 | **DeepSeek** (dense layers) | GQA, SiLU, RmsNorm | — |
 | **Yi** | GQA, SiLU, RmsNorm (LLaMA-like) | — |
@@ -530,8 +530,8 @@ Where `A_t` (transition), `B_t` (input), and `C_t` (output) vary by architecture
 | **CLT loading + encoding** | ✅ Working (Phase 3) | `CrossLayerTranscoder` struct; per-file download via `hf-fetch-model`; `encode()` for full sparse activations, `top_k()` for strongest features; validated on Gemma 2 2B (8/8 top-1 match vs Python HF, <5% relative error) |
 | **CLT feature injection** | ✅ Working (Phase 3) | `cache_steering_vectors_all_downstream()` + `prepare_hook_injection()` for multi-layer causal interventions; `Intervention::Add` at `ResidPost` with dtype coercion; melometis position-sweep reproduced (last-position L2 ranks #1 in both Rust and Python) |
 | **Attribution graphs** | ✅ Working (Phase 3) | `AttributionEdge`, `AttributionGraph` with `top_k()`/`threshold()` pruning; `score_features_by_decoder_projection()`, `build_attribution_graph()` |
-| **SAE loading + encoding** | Medium (Phase 4) | Load pre-trained SAE weights; encode activations |
-| **SAE feature injection** | Medium (Phase 4) | Same as CLT but for SAEs |
+| **SAE loading + encoding** | ✅ Working (Phase 4) | `SparseAutoencoder` struct; Gemma Scope NPZ format; `encode()` for sparse activations; validated on Gemma 2 2B |
+| **SAE feature injection** | ✅ Working (Phase 4) | Same as CLT but for SAEs; `Intervention::Add` at hook points |
 | **Activation patching** | High (Phase 6a) | Swap activations between clean/corrupted runs at specific hook points |
 | **Residual stream decomposition** | High (Phase 6a) | Decompose residual stream into per-layer, per-component contributions |
 
@@ -582,6 +582,10 @@ candle-mi/
 │   ├── clt/                        — Cross-layer transcoder (feature: "clt") ✅ Phase 3
 │   │   └── mod.rs                  — CrossLayerTranscoder, CltConfig, CltFeatureId, SparseActivations, encode/top_k/inject
 │   │
+│   ├── sae/                        — Sparse autoencoder (feature: "sae") ✅ Phase 4
+│   │   ├── mod.rs                  — SparseAutoencoder, SaeConfig, encode/inject
+│   │   └── npz.rs                  — NPZ parser for Gemma Scope SAE weights
+│   │
 │   ├── interp/                     — Interpretability tools ✅ (core)
 │   │   ├── mod.rs
 │   │   ├── intervention.rs         — Knockout, steering, ablation spec types
@@ -607,22 +611,31 @@ candle-mi/
 │
 ├── examples/                       — Quick start + capability examples
 │   ├── quick_start_transformer.rs  — Load model, forward pass, print top tokens ✅
-│   └── fast_download.rs            — Parallel multi-connection model download ✅
+│   ├── quick_start_sae.rs          — Load SAE, encode activations, print top features ✅
+│   ├── fast_download.rs            — Parallel multi-connection model download ✅
+│   └── README.md                   — Example descriptions and usage instructions ✅
 │
 ├── scripts/                        — Validation scripts and reference data
+│   ├── README.md                   — Validation script docs and regeneration instructions ✅
 │   ├── rwkv7_validation.py         — Python RWKV-7 reference output generator ✅
 │   ├── rwkv7_validation_comparison.md — Rust vs Python RWKV-7 comparison ✅
-│   ├── clt_position_sweep_validation.py — Python CLT position-sweep reference ✅
+│   ├── clt_position_sweep_validation.py — Python CLT position-sweep reference (Gemma 2) ✅
+│   ├── clt_position_sweep_validation_llama.py — Python CLT position-sweep reference (Llama 3.2) ✅
 │   ├── clt_position_sweep_comparison.md — Rust vs Python CLT comparison ✅
+│   ├── sae_validation.py           — Python SAE reference output generator ✅
 │   ├── rwkv6_reference.json        — RWKV-6 reference logits ✅
 │   ├── rwkv7_reference.json        — RWKV-7 reference logits ✅
-│   └── clt_position_sweep_reference.json — CLT reference activations ✅
+│   ├── clt_position_sweep_reference.json — CLT reference activations ✅
+│   ├── anacrousis_reference.json   — Anacrousis reference data ✅
+│   └── sae_reference.json          — SAE reference activations ✅
 │
 └── tests/
     ├── validate_models.rs          — Per-family transformer validation (CPU + GPU) ✅
     ├── validate_rwkv6.rs           — RWKV-6 validation against plip-rs reference ✅
     ├── validate_rwkv7.rs           — RWKV-7 validation (CPU F32 + GPU F32 + GPU BF16) ✅
     ├── validate_clt.rs             — CLT encode/inject + melometis position-sweep ✅
+    ├── validate_anacrousis.rs      — Anacrousis recurrent feedback validation ✅
+    ├── validate_sae.rs             — SAE encode/inject validation ✅
     ├── bench_hook_overhead.rs      — Hook overhead benchmark ✅
     └── fast_download.rs            — Download integration test ✅
 ```
@@ -652,7 +665,7 @@ probing = ["linfa", "linfa-logistic", "ndarray"]  # Linear probing
 | **BACKENDS.md** | Markdown | Step-by-step guide to adding a new model architecture: config parser, weight map, validation protocol |
 | **HOOKS.md** | Markdown | Hook point reference table (mirroring §2.1), intervention API walkthrough, worked examples (capture attention, run knockout, steer residual stream) |
 | **CHANGELOG.md** | Markdown | [Keep a Changelog](https://keepachangelog.com/) format from v0.0.1 onwards |
-| **Examples** | Rust (`examples/`) | Quick-start per backend (`quick_start_transformer.rs` ✅, `fast_download.rs` ✅) + planned: one per major capability (`logit_lens.rs`, `knockout.rs`, `steering.rs`, `clt_scan.rs`) — each self-contained with inline comments |
+| **Examples** | Rust (`examples/`) | Quick-start per backend (`quick_start_transformer.rs` ✅, `quick_start_sae.rs` ✅, `fast_download.rs` ✅) + planned: one per major capability (`logit_lens.rs`, `knockout.rs`, `steering.rs`, `clt_scan.rs`) — each self-contained with inline comments |
 
 **Rustdoc policy:** Every `pub` item must have a doc comment. Types include a one-line summary + "# Examples" section with a runnable doc-test. `#![warn(missing_docs)]` enforced at crate level.
 
@@ -771,20 +784,20 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [x] Implement SAE encoding and feature injection — `ee39a87`
 - [x] Validate: load Gemma Scope SAE, encode activations, verify reconstruction — `8adefae`, `fd07235`
 
-**Deliverable:** SAE pipeline working alongside CLTs (`ee39a87`..`fa22d1b`). — **PUSH + tag `v0.0.5-phase4`**
+**Deliverable:** SAE pipeline working alongside CLTs (`ee39a87`..`fa22d1b`). — **PUSH + tag `v0.0.5-phase4`** ✅
 
 ### Phase 5: Polish + Publish + Auto-Config
 
-**Goal:** Documentation, examples, auto-config for unknown model families, crates.io v0.1.0.
+**Goal:** Auto-config for unknown model families, API polish, documentation, examples, crates.io v0.1.0.
 
+- [ ] Implement `from_hf_config_auto()` — generic config parser for unknown `model_type` values; reads `config.json` scalars (Tier 1–2) + safetensors tensor names (Tier 3: QKV/MLP layout, bias flags, norm type, post-norms) + `model_type` fixups (Tier 4: GemmaRmsNorm, embedding_scale, alternating_sliding_window). Two-tier dispatch: known families use existing parsers, unknown families use auto-parser. ~100 lines + ~20 lines tensor-name utilities. See `candle-mi-auto-config-brainstorming.md` for field-by-field derivation plan — **commit**
+- [ ] Validate auto-config against all 7 known families (must produce identical configs to manual parsers) — **commit**
+- [ ] Audit public API surface (`pub` vs `pub(crate)`) — **commit**
 - [ ] Write crate-level documentation with examples — **commit**
 - [ ] Write `BACKENDS.md` — how to add a new model architecture — **commit**
 - [ ] Write `HOOKS.md` — hook point reference and intervention walkthrough — **commit**
 - [ ] Write example programs (logit lens, knockout, steering, CLT scan) — **commit per example**
-- [ ] Audit public API surface (`pub` vs `pub(crate)`) — **commit**
-- [ ] Implement `from_hf_config_auto()` — generic config parser for unknown `model_type` values; reads `config.json` scalars (Tier 1–2) + safetensors tensor names (Tier 3: QKV/MLP layout, bias flags, norm type, post-norms) + `model_type` fixups (Tier 4: GemmaRmsNorm, embedding_scale, alternating_sliding_window). Two-tier dispatch: known families use existing parsers, unknown families use auto-parser. ~100 lines + ~20 lines tensor-name utilities. See `candle-mi-auto-config-brainstorming.md` for field-by-field derivation plan — **commit**
-- [ ] Validate auto-config against all 7 known families (must produce identical configs to manual parsers) — **commit**
-- [ ] Populate CHANGELOG.md with all notable changes from Phases 0–4 — **commit** — **PUSH** (release candidate)
+- [ ] Update CHANGELOG.md with Phase 5 changes — **commit** — **PUSH** (release candidate)
 - [ ] **Release workflow** (publish v0.1.0 to crates.io — automated via `publish.yml`):
   1. Ensure `main` is clean: `git status` shows no uncommitted changes
   2. Bump version in `Cargo.toml` to `0.1.0` + update `Cargo.lock` — **commit: `release: v0.1.0`** — **PUSH**
