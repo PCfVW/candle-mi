@@ -99,16 +99,14 @@ fn parse_npy(bytes: &[u8]) -> Result<NpyArray> {
             (len as usize, 12_usize + len as usize)
         }
         _ => {
-            return Err(MIError::Config(format!(
-                "unsupported NPY version {major}"
-            )));
+            return Err(MIError::Config(format!("unsupported NPY version {major}")));
         }
     };
 
     // Extract header string.
-    let header_bytes = bytes.get(data_offset - header_len..data_offset).ok_or_else(|| {
-        MIError::Config("NPY header extends past end of file".into())
-    })?;
+    let header_bytes = bytes
+        .get(data_offset - header_len..data_offset)
+        .ok_or_else(|| MIError::Config("NPY header extends past end of file".into()))?;
     let header_str = std::str::from_utf8(header_bytes)
         .map_err(|e| MIError::Config(format!("NPY header is not valid UTF-8: {e}")))?;
 
@@ -149,7 +147,8 @@ fn parse_npy(bytes: &[u8]) -> Result<NpyArray> {
         shape,
         bytes_per_element,
         is_f64,
-        data: data.get(..expected_bytes)
+        data: data
+            .get(..expected_bytes)
             .ok_or_else(|| MIError::Config("NPY data slice out of bounds".into()))?
             .to_vec(),
     })
@@ -183,12 +182,7 @@ fn parse_npy_header(header: &str) -> Result<(String, bool, Vec<usize>)> {
             let value = value.trim();
             match key {
                 "descr" => {
-                    descr = Some(
-                        value
-                            .trim_matches('\'')
-                            .trim_matches('"')
-                            .to_owned(),
-                    );
+                    descr = Some(value.trim_matches('\'').trim_matches('"').to_owned());
                 }
                 "fortran_order" => {
                     fortran_order = value == "True";
@@ -201,10 +195,8 @@ fn parse_npy_header(header: &str) -> Result<(String, bool, Vec<usize>)> {
         }
     }
 
-    let descr =
-        descr.ok_or_else(|| MIError::Config("NPY header missing 'descr' field".into()))?;
-    let shape =
-        shape.ok_or_else(|| MIError::Config("NPY header missing 'shape' field".into()))?;
+    let descr = descr.ok_or_else(|| MIError::Config("NPY header missing 'descr' field".into()))?;
+    let shape = shape.ok_or_else(|| MIError::Config("NPY header missing 'shape' field".into()))?;
 
     Ok((descr, fortran_order, shape))
 }
@@ -370,10 +362,7 @@ mod tests {
     fn parse_shape_tuple_basic() {
         assert_eq!(parse_shape_tuple("(3, 4)").unwrap(), vec![3, 4]);
         assert_eq!(parse_shape_tuple("(10,)").unwrap(), vec![10]);
-        assert_eq!(
-            parse_shape_tuple("(2, 3, 4)").unwrap(),
-            vec![2, 3, 4]
-        );
+        assert_eq!(parse_shape_tuple("(2, 3, 4)").unwrap(), vec![2, 3, 4]);
     }
 
     #[test]

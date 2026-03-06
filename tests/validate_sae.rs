@@ -122,7 +122,8 @@ const HOOK_LAYER: usize = 0;
 #[serial]
 fn sae_load_detects_config() {
     let device = Device::Cpu;
-    let sae = SparseAutoencoder::from_pretrained_npz(SAE_REPO, SAE_NPZ, HOOK_LAYER, &device).unwrap();
+    let sae =
+        SparseAutoencoder::from_pretrained_npz(SAE_REPO, SAE_NPZ, HOOK_LAYER, &device).unwrap();
     let cfg = sae.config();
 
     assert_eq!(cfg.d_in, 2304, "Gemma 2 2B hidden dim is 2304");
@@ -169,7 +170,8 @@ fn sae_encode_gemma2_residuals() {
     println!("resid_post shape: {:?}", resid_post.dims());
 
     // Load SAE.
-    let sae = SparseAutoencoder::from_pretrained_npz(SAE_REPO, SAE_NPZ, HOOK_LAYER, &device).unwrap();
+    let sae =
+        SparseAutoencoder::from_pretrained_npz(SAE_REPO, SAE_NPZ, HOOK_LAYER, &device).unwrap();
     assert_eq!(sae.d_in(), 2304);
 
     // --- Dense encode ---
@@ -342,7 +344,8 @@ fn sae_injection_shifts_logits() {
         .unwrap();
     let resid_last = resid_post.i((0, seq_len - 1)).unwrap();
 
-    let sae = SparseAutoencoder::from_pretrained_npz(SAE_REPO, SAE_NPZ, HOOK_LAYER, &device).unwrap();
+    let sae =
+        SparseAutoencoder::from_pretrained_npz(SAE_REPO, SAE_NPZ, HOOK_LAYER, &device).unwrap();
     let sparse = sae.encode_sparse(&resid_last).unwrap();
 
     assert!(
@@ -446,7 +449,8 @@ fn sae_vs_python_reference() {
     let resid_post = result.require(&HookPoint::ResidPost(hook_layer)).unwrap();
 
     // Load SAE.
-    let sae = SparseAutoencoder::from_pretrained_npz(SAE_REPO, SAE_NPZ, HOOK_LAYER, &device).unwrap();
+    let sae =
+        SparseAutoencoder::from_pretrained_npz(SAE_REPO, SAE_NPZ, HOOK_LAYER, &device).unwrap();
     assert_eq!(sae.d_in(), py_d_in, "d_in mismatch");
     assert_eq!(sae.d_sae(), py_d_sae, "d_sae mismatch");
 
