@@ -613,6 +613,7 @@ candle-mi/
 │   ├── quick_start_transformer.rs  — Load model, forward pass, print top tokens ✅
 │   ├── quick_start_sae.rs          — Load SAE, encode activations, print top features ✅
 │   ├── fast_download.rs            — Parallel multi-connection model download ✅
+│   ├── auto_config_dogfood.rs      — Auto-config + compatibility check dogfooding ✅
 │   └── README.md                   — Example descriptions and usage instructions ✅
 │
 ├── scripts/                        — Validation scripts and reference data
