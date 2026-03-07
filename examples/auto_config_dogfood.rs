@@ -14,16 +14,23 @@
 //!    auto-config for unknown model families.
 //! 4. Runs a short forward pass to verify the model works end-to-end.
 
-fn main() -> candle_mi::Result<()> {
+fn main() {
     tracing_subscriber::fmt::init();
 
     let model_id = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "allenai/OLMo-1B-hf".to_string());
 
-    download_phase(&model_id)?;
-    inspect_config(&model_id)?;
-    let model = load_phase(&model_id)?;
+    if let Err(e) = run(&model_id) {
+        eprintln!("\nError: {e}");
+        std::process::exit(1);
+    }
+}
+
+fn run(model_id: &str) -> candle_mi::Result<()> {
+    download_phase(model_id)?;
+    inspect_config(model_id)?;
+    let model = load_phase(model_id)?;
     forward_phase(&model)?;
 
     eprintln!("\n=== Done ===");
