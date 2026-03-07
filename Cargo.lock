@@ -1367,20 +1367,22 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hf-fetch-model"
-version = "0.6.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "527a772a2b4e003c71219d8e5b9ff86487e0ae6a80dfd4a725e1fd7a52cef0ce"
+checksum = "777d718d660d8f719b5c5be60e95eb76dd990a3881463ebbc89a3d02e185e238"
 dependencies = [
  "dirs",
  "futures-util",
  "globset",
  "hf-hub",
+ "indicatif 0.17.11",
  "reqwest",
  "serde",
  "serde_json",
  "sha2",
  "thiserror 2.0.18",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

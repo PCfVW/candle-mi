@@ -8,13 +8,15 @@
 //! `HuggingFace` cache directory (`~/.cache/huggingface/hub/`), ensuring
 //! compatibility with [`MIModel::from_pretrained()`](crate::MIModel::from_pretrained).
 //!
+//! Progress is displayed via `indicatif` progress bars: per-file bars show
+//! bytes, throughput, and ETA; an overall bar tracks completed files.
+//!
 //! # Usage pattern
 //!
 //! ```rust,no_run
 //! # async fn example() -> candle_mi::Result<()> {
-//! // 1. Pre-download the model (fast, async, with progress via tracing)
+//! // 1. Pre-download the model (fast, async, with progress bars)
 //! let path = candle_mi::download_model("meta-llama/Llama-3.2-1B".to_owned()).await?;
-//! tracing::info!("model cached at {}", path.display());
 //!
 //! // 2. Load from cache (sync, no network needed)
 //! let model = candle_mi::MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
@@ -34,8 +36,8 @@ use crate::error::{MIError, Result};
 /// [`MIModel::from_pretrained()`](crate::MIModel::from_pretrained)
 /// finds them without re-downloading.
 ///
-/// Progress is reported via `tracing` at `info` level. To see progress
-/// output, initialise a tracing subscriber before calling this function.
+/// Progress is displayed via `indicatif` progress bars showing per-file
+/// bytes, throughput, and ETA.
 ///
 /// # Arguments
 ///
@@ -46,17 +48,10 @@ use crate::error::{MIError, Result};
 /// Returns [`MIError::Download`] if the download fails for any reason
 /// (network, authentication, repository not found, checksum mismatch).
 pub async fn download_model(repo_id: String) -> Result<PathBuf> {
+    let progress = hf_fetch_model::progress::IndicatifProgress::new();
+
     let config = hf_fetch_model::FetchConfig::builder()
-        .on_progress(|event| {
-            tracing::info!(
-                filename = %event.filename,
-                percent = event.percent,
-                bytes_downloaded = event.bytes_downloaded,
-                bytes_total = event.bytes_total,
-                files_remaining = event.files_remaining,
-                "download progress",
-            );
-        })
+        .on_progress(move |event| progress.handle(event))
         .build()
         .map_err(|e| MIError::Download(e.to_string()))?;
 
