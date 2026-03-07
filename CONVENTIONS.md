@@ -49,6 +49,127 @@ Required on explicit `.as_str()`, `.as_bytes()`, `.to_owned()` conversions (Grit
 Required on every `unsafe` block or function (inline comment, not a doc comment).
 Not expected in candle-mi (`#![forbid(unsafe_code)]`); included for completeness.
 
+### `// INDEX: <reason>`
+Required on every direct slice index (`slice[i]`, `slice[a..b]`) that cannot
+be replaced by an iterator. Direct indexing panics on out-of-bounds; prefer
+`.get(i)` with `?` or explicit error handling. Use direct indexing only when
+the bound is provably valid and an iterator idiom would be significantly less
+readable.
+> Example: `// INDEX: i is bounded by dims.len() checked two lines above`
+
+### `// CAST: <from> → <to>, <reason>`
+Required on every `as` cast between numeric types. Prefer `From`/`Into` for
+lossless conversions and `TryFrom`/`TryInto` with `?` for fallible ones.
+Use `as` only when truncation or wrapping is the deliberate intent, or when
+interfacing with a C-style API that mandates it.
+> Example: `// CAST: usize → u32, tensor dim fits in u32 (checked at construction)`
+> Example: `// CAST: f64 → f32, precision loss acceptable; value is a display scalar`
+
+---
+
+## Doc-Comment Rules
+
+### Backtick Hygiene (`doc_markdown`)
+
+All identifiers, types, trait names, field names, crate names, and
+file-format names in doc comments must be wrapped in backticks so that
+rustdoc renders them as inline code and Clippy's `doc_markdown` lint passes.
+
+Applies to: struct/enum/field names, method names (`fn foo`), types
+(`Vec<T>`, `Option<f32>`), crate names (`candle_core`, `safetensors`),
+file extensions (`.npy`, `.npz`, `.safetensors`), and acronyms that double
+as types (`DType`, `NaN`, `CPU`, `GPU`).
+
+> ✅ `/// Loads weights from a [`.safetensors`] file into a [`Tensor`].`
+> ❌ `/// Loads weights from a .safetensors file into a Tensor.`
+
+### Field-Level Docs
+
+Every field of every `pub` struct must carry a `///` doc comment describing:
+1. what the field represents,
+2. its unit or valid range where applicable.
+
+Fields of `pub(crate)` structs follow the same rule. Private fields inside a
+`pub(crate)` or `pub` struct must have at minimum a `//` comment if their
+purpose is not self-evident from the name alone.
+
+> Example:
+> ```rust
+> pub struct AttentionConfig {
+>     /// Number of query heads. Must be a multiple of `n_kv_heads`.
+>     pub n_heads: usize,
+>     /// Number of key/value heads (grouped-query attention).
+>     pub n_kv_heads: usize,
+>     /// Per-head dimension. Total hidden size = `n_heads * head_dim`.
+>     pub head_dim: usize,
+> }
+> ```
+
+---
+
+## Control-Flow Rules
+
+### `if let` vs `match` (`match_like_matches_macro`, `single_match`)
+
+Use the most specific construct for the pattern at hand:
+
+| Situation | Preferred form |
+|---|---|
+| Testing a single variant, no binding needed | `matches!(expr, Pat)` |
+| Testing a single variant, binding needed | `if let Pat(x) = expr { … }` |
+| Two or more variants with different bodies | `match expr { … }` |
+| Exhaustive dispatch over an enum | `match expr { … }` (never `if let` chains) |
+
+Never use a `match` with a single non-`_` arm and a no-op `_ => {}` where
+`if let` or `matches!` would be clearer. Conversely, never chain three or
+more `if let … else if let …` arms where a `match` would be exhaustive.
+
+> ✅ `if let Some(w) = weight { apply(w); }`
+> ✅ `matches!(dtype, DType::F16 | DType::BF16)`
+> ❌ `match weight { Some(w) => apply(w), None => {} }`
+
+---
+
+## Function Signature Rules
+
+### `const fn`
+
+Declare a function `const fn` when **all** of the following hold:
+1. The body contains no heap allocation, I/O, or `dyn` dispatch.
+2. All called functions are themselves `const fn`.
+3. There are no trait-method calls that are not yet `const`.
+
+This applies to constructors, accessors, and pure arithmetic helpers.
+When in doubt, annotate and let the compiler reject it — do not omit `const`
+preemptively.
+
+> ✅ `pub const fn head_dim(&self) -> usize { self.hidden_size / self.n_heads }`
+> ❌ `pub fn head_dim(&self) -> usize { self.hidden_size / self.n_heads }`
+
+### Pass by Value vs Reference (`needless_pass_by_ref_mut`, `trivially_copy_pass_by_ref`)
+
+Follow these rules for function parameters:
+
+| Type | Rule |
+|---|---|
+| `Copy` type ≤ 2 words (`usize`, `f32`, `bool`, small `enum`) | Pass by value |
+| `Copy` type > 2 words | Pass by reference |
+| Non-`Copy`, not mutated | Pass by `&T` or `&[T]` |
+| Non-`Copy`, mutated | Pass by `&mut T` |
+| Owned, consumed by callee | Pass by value (move semantics) |
+| `&mut T` not actually mutated in body | Change to `&T` |
+
+Never accept `&mut T` when the function body never writes through the reference;
+Clippy's `needless_pass_by_ref_mut` will flag it and callers lose the ability
+to pass shared references.
+
+> ✅ `fn scale(x: f32, factor: f32) -> f32`
+> ❌ `fn scale(x: &f32, factor: &f32) -> f32`
+> ✅ `fn apply_mask(tensor: &mut Tensor, mask: &Tensor)`
+> ❌ `fn apply_mask(tensor: &mut Tensor, mask: &mut Tensor)` ← if mask is only read
+
+---
+
 ## Shape Documentation Format (Rule 12)
 
 All public functions that accept or return `Tensor` must document shapes in
