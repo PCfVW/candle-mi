@@ -158,17 +158,6 @@ pub fn clear_mask_caches() -> Result<()> {
     Ok(())
 }
 
-/// Get the current number of cached masks.
-///
-/// Useful for debugging and memory profiling.
-///
-/// # Errors
-///
-/// Returns [`MIError::Hook`] if the cache lock is poisoned.
-pub fn mask_cache_size() -> Result<usize> {
-    Ok(lock_cache()?.len())
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

@@ -200,8 +200,9 @@ pub fn convert_positions(
 ///
 /// Returns the byte offset of the first occurrence of `marker` in `text`,
 /// or `None` if not found.
+#[cfg(test)]
 #[must_use]
-pub fn find_marker_char_pos(text: &str, marker: &str) -> Option<usize> {
+fn find_marker_char_pos(text: &str, marker: &str) -> Option<usize> {
     text.find(marker)
 }
 

@@ -87,7 +87,7 @@ pub use backend::{GenerationResult, MIBackend, MIModel, sample_token};
 // Config
 pub use config::{
     Activation, CompatibilityReport, MlpLayout, NormType, QkvLayout, SUPPORTED_MODEL_TYPES,
-    TransformerConfig, tensor_names_from_index, tensor_names_from_safetensors,
+    TransformerConfig,
 };
 
 // Transformer backend
@@ -138,14 +138,11 @@ pub use interp::logit_lens::{LogitLensAnalysis, LogitLensResult, TokenPrediction
 pub use interp::steering::{DoseResponseCurve, DoseResponsePoint, SteeringCalibration};
 
 // Utility — masks
-pub use util::masks::{
-    clear_mask_caches, create_causal_mask, create_generation_mask, mask_cache_size,
-};
+pub use util::masks::{clear_mask_caches, create_causal_mask, create_generation_mask};
 
 // Utility — positioning
 pub use util::positioning::{
     EncodingWithOffsets, PositionConversion, TokenWithOffset, convert_positions,
-    find_marker_char_pos,
 };
 
 // Tokenizer

@@ -60,7 +60,7 @@ impl std::fmt::Display for CltFeatureId {
     }
 }
 
-pub use crate::sparse::{FeatureId, SparseActivations};
+use crate::sparse::{FeatureId, SparseActivations};
 
 impl FeatureId for CltFeatureId {}
 
