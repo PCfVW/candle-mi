@@ -6,7 +6,7 @@
 //! the underlying tokenizer implementation.
 
 #[cfg(feature = "rwkv-tokenizer")]
-pub mod rwkv;
+mod rwkv;
 
 use crate::error::{MIError, Result};
 

@@ -52,7 +52,7 @@
 //! - `b_dec`: shape `[d_in]` — decoder bias
 //! - `threshold`: shape `[d_sae]` — `JumpReLU` threshold (optional)
 
-pub mod npz;
+mod npz;
 
 use std::path::Path;
 
@@ -60,60 +60,9 @@ use candle_core::{DType, Device, Tensor};
 use safetensors::tensor::SafeTensors;
 use tracing::info;
 
-#[cfg(feature = "clt")]
-use crate::clt::{FeatureId, SparseActivations};
 use crate::error::{MIError, Result};
 use crate::hooks::{HookPoint, HookSpec, Intervention};
-
-// ---------------------------------------------------------------------------
-// Feature ID (when CLT is not enabled, define FeatureId locally)
-// ---------------------------------------------------------------------------
-
-#[cfg(not(feature = "clt"))]
-/// Marker trait for feature identifiers in sparse activation vectors.
-pub trait FeatureId:
-    std::fmt::Debug
-    + Clone
-    + Copy
-    + PartialEq
-    + Eq
-    + PartialOrd
-    + Ord
-    + std::hash::Hash
-    + std::fmt::Display
-{
-}
-
-#[cfg(not(feature = "clt"))]
-/// Sparse representation of feature activations.
-///
-/// Only features with non-zero activation are stored,
-/// sorted by activation magnitude in descending order.
-#[derive(Debug, Clone)]
-pub struct SparseActivations<F: FeatureId> {
-    /// Active features with their activation magnitudes, sorted descending.
-    pub features: Vec<(F, f32)>,
-}
-
-#[cfg(not(feature = "clt"))]
-impl<F: FeatureId> SparseActivations<F> {
-    /// Number of active features.
-    #[must_use]
-    pub const fn len(&self) -> usize {
-        self.features.len()
-    }
-
-    /// Whether no features are active.
-    #[must_use]
-    pub const fn is_empty(&self) -> bool {
-        self.features.is_empty()
-    }
-
-    /// Truncate to the top-k most active features.
-    pub fn truncate(&mut self, k: usize) {
-        self.features.truncate(k);
-    }
-}
+use crate::sparse::{FeatureId, SparseActivations};
 
 // ---------------------------------------------------------------------------
 // Public types

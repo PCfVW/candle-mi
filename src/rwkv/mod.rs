@@ -16,7 +16,7 @@
 //!   → Final LN → LM Head → logits
 //! ```
 
-pub mod config;
+mod config;
 pub(crate) mod norm;
 
 use candle_core::{DType, Device, IndexOp, Module, Tensor};

@@ -73,10 +73,11 @@ pub mod interp;
 pub mod rwkv;
 #[cfg(feature = "sae")]
 pub mod sae;
+pub mod sparse;
 pub mod tokenizer;
 #[cfg(feature = "transformer")]
 pub mod transformer;
-pub mod util;
+mod util;
 
 // --- Public re-exports ---------------------------------------------------
 
@@ -101,12 +102,12 @@ pub use transformer::recurrent::{RecurrentFeedbackEntry, RecurrentPassSpec};
 #[cfg(feature = "rwkv")]
 pub use rwkv::{GenericRwkv, RwkvConfig, RwkvLoraDims, RwkvVersion};
 
+// Sparse feature types (shared by CLT and SAE)
+pub use sparse::{FeatureId, SparseActivations};
+
 // CLT (Cross-Layer Transcoder)
 #[cfg(feature = "clt")]
-pub use clt::{
-    AttributionEdge, AttributionGraph, CltConfig, CltFeatureId, CrossLayerTranscoder, FeatureId,
-    SparseActivations,
-};
+pub use clt::{AttributionEdge, AttributionGraph, CltConfig, CltFeatureId, CrossLayerTranscoder};
 
 // SAE (Sparse Autoencoder)
 #[cfg(feature = "sae")]
@@ -137,10 +138,15 @@ pub use interp::logit_lens::{LogitLensAnalysis, LogitLensResult, TokenPrediction
 pub use interp::steering::{DoseResponseCurve, DoseResponsePoint, SteeringCalibration};
 
 // Utility — masks
-pub use util::masks::{create_causal_mask, create_generation_mask};
+pub use util::masks::{
+    clear_mask_caches, create_causal_mask, create_generation_mask, mask_cache_size,
+};
 
 // Utility — positioning
-pub use util::positioning::{EncodingWithOffsets, PositionConversion, TokenWithOffset};
+pub use util::positioning::{
+    EncodingWithOffsets, PositionConversion, TokenWithOffset, convert_positions,
+    find_marker_char_pos,
+};
 
 // Tokenizer
 pub use tokenizer::MITokenizer;

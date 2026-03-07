@@ -34,7 +34,7 @@ pub struct TokenWithOffset {
 /// # Example
 ///
 /// ```
-/// use candle_mi::util::positioning::EncodingWithOffsets;
+/// use candle_mi::EncodingWithOffsets;
 ///
 /// let encoding = EncodingWithOffsets::new(
 ///     vec![1, 2, 3],
