@@ -248,7 +248,12 @@ fn run() -> candle_mi::Result<()> {
     let strength = args.strength.unwrap_or(preset.strength);
 
     let suppress_features: Vec<CltFeatureId> = if args.suppress_feature.is_empty() {
-        preset.suppress_features.iter().copied().map(feature_id).collect()
+        preset
+            .suppress_features
+            .iter()
+            .copied()
+            .map(feature_id)
+            .collect()
     } else {
         args.suppress_feature
             .iter()
@@ -334,7 +339,11 @@ fn run() -> candle_mi::Result<()> {
         .map(|l| (inject_feature, l))
         .collect();
 
-    eprintln!("Suppress: {} entries across {} features", suppress_entries.len(), suppress_features.len());
+    eprintln!(
+        "Suppress: {} entries across {} features",
+        suppress_entries.len(),
+        suppress_features.len()
+    );
     eprintln!(
         "Inject: {} entries (layers {}–{})",
         inject_entries.len(),
