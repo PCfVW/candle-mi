@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `MITokenizer::find_token_id()` — look up a token ID by word string
 - `MITokenizer::decode_token()` — decode a single token ID back to string
 
+### Changed
+
+- **Public API surface audit** — tightened visibility (`pub` → `pub(crate)`)
+  across all modules; added missing `#[must_use]` annotations on all pure
+  public functions and methods (two rounds: `70649e9`, `8595a61`, `2eedecf`)
+
 ### Fixed
 
 - Adapted to `hf-fetch-model` 0.7.2 `DownloadOutcome` API — added
