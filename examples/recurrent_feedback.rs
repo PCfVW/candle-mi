@@ -10,8 +10,10 @@
 //!
 //! Inspired by the structural correspondence between DRC planning
 //! (Taufeeque et al., "Planning in a recurrent neural network that plays
-//! Sokoban", arXiv:2407.15421, 2024) and transformer planning (Lindsey et al.,
-//! "On the Biology of a Large Language Model", Anthropic, 2025).
+//! Sokoban", arXiv:2407.15421, 2024; mechanistic follow-up: Taufeeque et al.,
+//! "Path Channels and Plan Extension Kernels", arXiv:2506.10138, 2025) and
+//! transformer planning (Lindsey et al., "On the Biology of a Large Language
+//! Model", Anthropic, 2025).
 //!
 //! See also: Eric Jacopin, "Replicating 'Planning in Poems' with Open Tools"
 //! (plip-rs, anacrousis branch) for the full 28-condition experiment.
@@ -26,6 +28,10 @@
 //! # Custom layer range and strength
 //! cargo run --release --features transformer --example recurrent_feedback -- \
 //!     --loop-start 14 --loop-end 15 --strength 1.0 --sustained
+//!
+//! # With JSON output
+//! cargo run --release --features transformer --example recurrent_feedback -- \
+//!     --output examples/results/recurrent_feedback/llama-3.2-1b-prefill.json
 //! ```
 
 #![allow(clippy::doc_markdown)]
@@ -33,15 +39,18 @@
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::missing_docs_in_private_items)]
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use candle_core::{DType, IndexOp, Tensor};
 use clap::Parser;
+use serde::Serialize;
 
 use candle_mi::{
     GenericTransformer, HookSpec, MIBackend, MITokenizer, RecurrentPassSpec, TransformerConfig,
     sample_token,
 };
+#[cfg(feature = "memory")]
+use candle_mi::{MemoryReport, MemorySnapshot};
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -74,6 +83,42 @@ struct Args {
     /// Maximum number of couplets to test (default: all 15)
     #[arg(long)]
     max_couplets: Option<usize>,
+
+    /// Write structured JSON output to this file
+    #[arg(long)]
+    output: Option<PathBuf>,
+}
+
+// ---------------------------------------------------------------------------
+// JSON output
+// ---------------------------------------------------------------------------
+
+#[derive(Serialize)]
+struct JsonOutput {
+    model_id: String,
+    n_layers: usize,
+    hidden_size: usize,
+    loop_start: usize,
+    loop_end: usize,
+    strength: f32,
+    mode: String,
+    baseline_rhymes: usize,
+    recurrent_rhymes: usize,
+    total_couplets: usize,
+    couplets: Vec<JsonCouplet>,
+}
+
+#[derive(Serialize)]
+struct JsonCouplet {
+    id: u32,
+    target: String,
+    line1: String,
+    baseline_word: String,
+    baseline_rhymes: bool,
+    recurrent_word: String,
+    recurrent_rhymes: bool,
+    recurrent_line: String,
+    result: String,
 }
 
 // ---------------------------------------------------------------------------
@@ -255,25 +300,40 @@ fn run() -> candle_mi::Result<()> {
     } else {
         "prefill-only"
     };
-    println!("=== Recurrent Feedback (Anacrousis) ===\n");
-    println!("  Model:     {}", args.model);
-    println!("  Layers:    {}–{}", args.loop_start, args.loop_end);
-    println!("  Strength:  {:.1}", args.strength);
-    println!("  Mode:      {mode}\n");
+    println!("=== {} ===", args.model);
 
     // --- Load model ---
-    let t_start = std::time::Instant::now();
-    eprintln!("Loading model...");
+    let t0 = std::time::Instant::now();
+
+    #[cfg(feature = "memory")]
+    let mem_before = MemorySnapshot::now(
+        &candle_core::Device::cuda_if_available(0).unwrap_or(candle_core::Device::Cpu),
+    )?;
+
     let (model, tokenizer, _config) = load_transformer(&args.model)?;
+    let load_time = t0.elapsed();
 
     let n_layers = model.num_layers();
+    let hidden = model.hidden_size();
     let device = model.embedding_vector(0)?.device().clone();
-    eprintln!(
-        "  {} layers, {} hidden, device={device:?} ({:.1}s)\n",
-        n_layers,
-        model.hidden_size(),
-        t_start.elapsed().as_secs_f64()
-    );
+    // CAST: usize → f64, values are small enough for exact representation
+    #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+    let weight_mb = estimate_weight_mb(n_layers, hidden);
+    println!("  Layers: {n_layers}, hidden: {hidden}, device: {device:?}");
+    println!("  Estimated F32 weight size: {weight_mb:.0} MB");
+    println!("  Load time: {load_time:.2?}");
+
+    #[cfg(feature = "memory")]
+    {
+        let mem_after = MemorySnapshot::now(&device)?;
+        MemoryReport::new(mem_before, mem_after).print_before_after("Model load");
+    }
+
+    println!();
+    println!("  Recurrent layers: {}–{}", args.loop_start, args.loop_end);
+    println!("  Strength:  {:.1}", args.strength);
+    println!("  Mode:      {mode}");
+    println!();
 
     // --- Prepare couplets ---
     let couplets = couplet_defs();
@@ -297,6 +357,7 @@ fn run() -> candle_mi::Result<()> {
 
     let mut baseline_rhymes = 0_usize;
     let mut recurrent_rhymes = 0_usize;
+    let mut json_couplets: Vec<JsonCouplet> = Vec::new();
 
     for couplet in couplets {
         let prompt = format!("{}\n", couplet.line1);
@@ -358,6 +419,18 @@ fn run() -> candle_mi::Result<()> {
             result,
             recurrent_line.trim()
         );
+
+        json_couplets.push(JsonCouplet {
+            id: couplet.id,
+            target: couplet.target_word.into(),
+            line1: couplet.line1.into(),
+            baseline_word: baseline_word.clone(),
+            baseline_rhymes: baseline_ok,
+            recurrent_word: recurrent_word.clone(),
+            recurrent_rhymes: recurrent_ok,
+            recurrent_line: recurrent_line.trim().into(),
+            result: result.into(),
+        });
     }
 
     // --- Summary ---
@@ -381,7 +454,25 @@ fn run() -> candle_mi::Result<()> {
         }
     }
 
-    println!("\n  Total elapsed: {:.2}s", t_start.elapsed().as_secs_f64());
+    // --- JSON output ---
+    if let Some(ref path) = args.output {
+        write_json_output(
+            path,
+            &args.model,
+            n_layers,
+            model.hidden_size(),
+            args.loop_start,
+            args.loop_end,
+            args.strength,
+            mode,
+            baseline_rhymes,
+            recurrent_rhymes,
+            couplets.len(),
+            json_couplets,
+        )?;
+    }
+
+    println!("\n  Total elapsed: {:.2}s", t0.elapsed().as_secs_f64());
 
     Ok(())
 }
@@ -497,6 +588,56 @@ fn create_var_builder(
 }
 
 // ---------------------------------------------------------------------------
+// JSON output
+// ---------------------------------------------------------------------------
+
+#[allow(clippy::too_many_arguments)]
+fn write_json_output(
+    path: &Path,
+    model_id: &str,
+    n_layers: usize,
+    hidden_size: usize,
+    loop_start: usize,
+    loop_end: usize,
+    strength: f32,
+    mode: &str,
+    baseline_rhymes: usize,
+    recurrent_rhymes: usize,
+    total_couplets: usize,
+    couplets: Vec<JsonCouplet>,
+) -> candle_mi::Result<()> {
+    let output = JsonOutput {
+        model_id: model_id.into(),
+        n_layers,
+        hidden_size,
+        loop_start,
+        loop_end,
+        strength,
+        mode: mode.into(),
+        baseline_rhymes,
+        recurrent_rhymes,
+        total_couplets,
+        couplets,
+    };
+
+    let json = serde_json::to_string_pretty(&output)
+        .map_err(|e| candle_mi::MIError::Config(format!("JSON serialization failed: {e}")))?;
+
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| {
+            candle_mi::MIError::Config(format!("failed to create {}: {e}", parent.display()))
+        })?;
+    }
+
+    std::fs::write(path, &json).map_err(|e| {
+        candle_mi::MIError::Config(format!("failed to write {}: {e}", path.display()))
+    })?;
+
+    println!("  JSON written to {}", path.display());
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
 // Generation helpers
 // ---------------------------------------------------------------------------
 
@@ -568,6 +709,14 @@ fn extract_last_word(text: &str) -> String {
         .unwrap_or("")
         .trim_end_matches(|c: char| c.is_ascii_punctuation())
         .to_lowercase()
+}
+
+/// Rough estimate of F32 weight memory in MB.
+#[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+fn estimate_weight_mb(n_layers: usize, hidden: usize) -> f64 {
+    let params_per_layer = 12.0 * (hidden as f64) * (hidden as f64);
+    let total_params = (n_layers as f64) * params_per_layer;
+    total_params * 4.0 / 1_000_000.0
 }
 
 /// Check if a word matches any member of the rhyme family.
