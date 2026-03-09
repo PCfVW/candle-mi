@@ -333,7 +333,7 @@ Output JSON and Mathematica plotting script are in
 OLMo-1B fails the compatibility check because its weight names
 (`model.layers.*.input_layernorm.weight`, `model.final_norm.weight`) do not
 match the normalisation tensor patterns that `GenericTransformer` expects.
-candle-mi currently supports 6 model families: LLaMA, Qwen2, Gemma/Gemma 2,
+candle-mi currently supports 7 model families: LLaMA, Qwen2, Gemma, Gemma 2,
 Phi-3, Mistral, and StarCoder2.
 
 ### Example output: `figure13_planning_poems`

@@ -12,9 +12,9 @@
 //!
 //! ## Supported backends
 //!
-//! - **Generic Transformer** — covers `LLaMA`, `Qwen2`, Gemma 2, `Phi-3`,
-//!   `StarCoder2`, Mistral, and more via configuration axes (feature:
-//!   `transformer`).
+//! - **Generic Transformer** — covers `LLaMA`, `Qwen2`, Gemma, Gemma 2,
+//!   `Phi-3`, `StarCoder2`, Mistral, and more via configuration axes
+//!   (feature: `transformer`).
 //! - **Generic RWKV** — covers RWKV-6 (Finch) and RWKV-7 (Goose) linear RNN
 //!   models (feature: `rwkv`).
 //!
@@ -25,7 +25,7 @@
 //!
 //! ```rust,no_run
 //! # async fn example() -> candle_mi::Result<()> {
-//! // Pre-download with parallel chunks and progress via tracing
+//! // Pre-download with parallel chunks and progress bars
 //! let path = candle_mi::download_model("meta-llama/Llama-3.2-1B".to_owned()).await?;
 //!
 //! // Load from cache (sync, no network needed)
@@ -130,7 +130,8 @@ pub use hooks::{HookCache, HookPoint, HookSpec, Intervention};
 pub use interp::intervention::{
     AblationResult, AttentionEdge, HeadSpec, InterventionType, KnockoutSpec, LayerSpec,
     StateAblationResult, StateKnockoutSpec, StateSteeringResult, StateSteeringSpec, SteeringResult,
-    SteeringSpec,
+    SteeringSpec, apply_steering, create_knockout_mask, kl_divergence,
+    measure_attention_to_targets,
 };
 
 // Interpretability — logit lens

@@ -2,7 +2,7 @@
 
 //! Generic transformer implementation.
 //!
-//! A single forward pass covers `LLaMA`, `Qwen2`, Gemma 2, `Phi-3`,
+//! A single forward pass covers `LLaMA`, `Qwen2`, Gemma, Gemma 2, `Phi-3`,
 //! `StarCoder2`, Mistral, and more — parameterized by
 //! [`TransformerConfig`].
 

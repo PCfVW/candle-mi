@@ -160,7 +160,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   bring `run_knockout` under clippy's 100-line threshold; removed file-level
   `allow(too_many_lines)`
 
-## [0.0.5-phase4] - 2026-03-06
+## [0.0.5] - 2026-03-06
 
 ### Added
 
@@ -343,12 +343,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `#[must_use]` policy applied across public API (Rule 17)
 - Phase 1 audit remediation (code quality, documentation, consistency)
 
-## [0.0.2-phase1] - 2026-02-25
+## [0.0.2] - 2026-02-25
 
 ### Added
 
 - **Generic Transformer backend** — one config-driven forward pass covering
-  6 model families: LLaMA, Qwen2, Gemma 2, Phi-3, StarCoder2, Mistral
+  7 model families: LLaMA, Qwen2, Gemma, Gemma 2, Phi-3, StarCoder2, Mistral
 - `TransformerConfig` with ~12 configuration axes parsed from HuggingFace
   `config.json` (norm type, activation, QKV layout, MLP layout, bias
   granularity, embedding scale, soft-capping, sliding window, etc.)
