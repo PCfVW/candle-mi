@@ -117,10 +117,11 @@ rwkv = []
 rwkv-tokenizer = []
 clt = []
 sae = []
+memory = []
 probing = ["linfa", "linfa-logistic", "ndarray"]
 
 [lints.rust]
-# unsafe_code is controlled via cfg_attr in lib.rs (forbid by default, deny with mmap)
+# unsafe_code is controlled via cfg_attr in lib.rs (forbid by default, deny with mmap/memory)
 elided_lifetimes_in_paths = "deny"     # Rule 1
 missing_docs              = "warn"     # Rule 12 prerequisite
 

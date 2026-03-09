@@ -47,7 +47,24 @@ Required on explicit `.as_str()`, `.as_bytes()`, `.to_owned()` conversions (Grit
 
 ### `// SAFETY: <invariants>`
 Required on every `unsafe` block or function (inline comment, not a doc comment).
-Not expected in candle-mi (`#![forbid(unsafe_code)]`); included for completeness.
+
+candle-mi is `#![forbid(unsafe_code)]` **by default**. Specific feature flags
+relax this to `#![deny(unsafe_code)]` for narrowly scoped platform FFI:
+
+| Feature | Accepted `unsafe` scope |
+|---------|------------------------|
+| `mmap` | Memory-mapped file I/O for sharded safetensors |
+| `memory` | OS/GPU memory queries (`GetProcessMemoryInfo`, `cuMemGetInfo`) |
+
+Each accepted use must satisfy all of:
+1. The `unsafe` block is in a **single, dedicated module** (e.g., `src/mmap.rs`,
+   `src/memory.rs`) — never scattered across the codebase.
+2. Every `unsafe` block carries a `// SAFETY:` comment documenting the invariants.
+3. The module is gated behind `#[cfg(feature = "...")]` — users who don't
+   enable the feature get `forbid(unsafe_code)` with zero exceptions.
+
+Adding a new accepted use requires updating this table and the `cfg_attr` lines
+in `lib.rs`.
 
 ### `// INDEX: <reason>`
 Required on every direct slice index (`slice[i]`, `slice[a..b]`) that cannot

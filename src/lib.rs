@@ -57,8 +57,8 @@
 //! ```
 
 #![deny(warnings)] // All warns → errors in CI
-#![cfg_attr(not(feature = "mmap"), forbid(unsafe_code))] // Rule 5: safe by default
-#![cfg_attr(feature = "mmap", deny(unsafe_code))] // mmap: deny except one function
+#![cfg_attr(not(any(feature = "mmap", feature = "memory")), forbid(unsafe_code))] // Rule 5: safe by default
+#![cfg_attr(any(feature = "mmap", feature = "memory"), deny(unsafe_code))] // mmap/memory: deny for scoped FFI
 
 pub mod backend;
 pub mod cache;
@@ -69,6 +69,8 @@ pub mod download;
 pub mod error;
 pub mod hooks;
 pub mod interp;
+#[cfg(feature = "memory")]
+pub mod memory;
 #[cfg(feature = "rwkv")]
 pub mod rwkv;
 #[cfg(feature = "sae")]
@@ -147,6 +149,10 @@ pub use util::positioning::{
 
 // Tokenizer
 pub use tokenizer::MITokenizer;
+
+// Memory reporting
+#[cfg(feature = "memory")]
+pub use memory::{MemoryReport, MemorySnapshot};
 
 // Download
 pub use download::{download_model, download_model_blocking};

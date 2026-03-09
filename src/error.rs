@@ -38,6 +38,12 @@ pub enum MIError {
     /// Returned when downloading a model from the `HuggingFace` Hub fails.
     #[error("download error: {0}")]
     Download(String),
+
+    /// Memory measurement error.
+    ///
+    /// Returned when a platform API for RAM or VRAM measurement fails.
+    #[error("memory error: {0}")]
+    Memory(String),
 }
 
 /// Result type alias for candle-mi operations.
