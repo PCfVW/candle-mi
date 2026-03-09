@@ -50,6 +50,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   plotting script and CLT landscape documentation
 - **Download progress bars** — switched from tracing log lines to `indicatif`
   progress bars showing bytes, throughput, and ETA (via `hf-fetch-model` 0.7.1)
+- **Steering dose-response example** (`steering_dose_response.rs`) —
+  calibrates steering interventions and builds dose-response curves;
+  demonstrates `SteeringCalibration`, `DoseResponseCurve`, `SteeringSpec`,
+  `SteeringResult`, `apply_steering`, `measure_attention_to_targets`,
+  `DOSE_LEVELS`, and `Intervention::Replace`; sweeps 6 dose levels with
+  KL divergence and logit diff tracking; tested on Llama 3.2 1B, Gemma 2 2B,
+  StarCoder2 3B
+- **Attention patterns example** (`attention_patterns.rs`) — captures
+  per-head attention patterns at every layer via `AttentionCache`; demonstrates
+  `attention_from_position`, `attention_to_position`, and
+  `top_attended_positions`; identifies the BOS sink pattern and peak
+  last→first attention layer; tested on Llama 3.2 1B, Gemma 2 2B,
+  StarCoder2 3B
+- **Opt-in memory reporting** in all 5 high-impact examples — RAM + VRAM
+  before/after model load via `MemorySnapshot` and `MemoryReport`, gated
+  behind `#[cfg(feature = "memory")]`
 - `extract_token_prob()` — extract a single token's probability from logits
   (softmax over last position)
 - `HookSpec::extend()` — merge two hook specs (used to combine suppress +
@@ -81,6 +97,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `.into_inner()` calls across `clt/mod.rs` (4 sites), `sae/mod.rs`
   (3 sites), `download.rs` (1 site), and `auto_config_dogfood.rs` (1 site)
 - `Display` formatting for error messages in `auto_config_dogfood` example
+- **Logit lens probability formatting** — adaptive precision via
+  `format_probability()`: ≥1% shows 1 decimal, ≥0.01% shows 3 decimals,
+  <0.01% uses scientific notation; applied to both `print_summary` and
+  `print_detailed` output
 
 ## [0.0.5-phase4] - 2026-03-06
 

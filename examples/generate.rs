@@ -106,12 +106,13 @@ fn run_single_model(model_id: &str, prompt: &str, max_new_tokens: usize) -> cand
     let load_time = t0.elapsed();
 
     let n_layers = model.num_layers();
+    let n_heads = model.num_heads();
     let hidden = model.hidden_size();
     // CAST: usize → f64, values are small enough for exact representation
     #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
-    let weight_mb = estimate_weight_mb(n_layers, hidden, model.num_heads());
+    let weight_mb = estimate_weight_mb(n_layers, hidden);
     println!(
-        "  Layers: {n_layers}, hidden: {hidden}, device: {:?}",
+        "  Layers: {n_layers}, heads: {n_heads}, hidden: {hidden}, device: {:?}",
         model.device()
     );
     println!("  Estimated F32 weight size: {weight_mb:.0} MB");
@@ -244,13 +245,15 @@ fn run_model(
     let load_time = t0.elapsed();
 
     let n_layers = model.num_layers();
+    let n_heads = model.num_heads();
     let hidden = model.hidden_size();
     // CAST: usize → f64, values are small enough for exact representation
     #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
-    let weight_mb = estimate_weight_mb(n_layers, hidden, model.num_heads());
+    let weight_mb = estimate_weight_mb(n_layers, hidden);
     println!(
-        "  {} layers, {} hidden, device: {:?}",
+        "  {} layers, {} heads, {} hidden, device: {:?}",
         n_layers,
+        n_heads,
         hidden,
         model.device()
     );
@@ -359,10 +362,8 @@ fn generate(
 /// This approximates the dominant weight matrices (QKV, O, gate, up, down)
 /// per transformer layer. The actual size varies by architecture.
 #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
-fn estimate_weight_mb(n_layers: usize, hidden: usize, _n_heads: usize) -> f64 {
-    // Each layer has ~12 * hidden^2 parameters (QKV + O + gate + up + down)
+fn estimate_weight_mb(n_layers: usize, hidden: usize) -> f64 {
     let params_per_layer = 12.0 * (hidden as f64) * (hidden as f64);
     let total_params = (n_layers as f64) * params_per_layer;
-    // F32 = 4 bytes per param, convert to MB
     total_params * 4.0 / 1_000_000.0
 }

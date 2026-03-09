@@ -106,12 +106,13 @@ fn run_single_model(model_id: &str, prompt: &str, top_k: usize) -> candle_mi::Re
     let load_time = t0.elapsed();
 
     let n_layers = model.num_layers();
+    let n_heads = model.num_heads();
     let hidden = model.hidden_size();
     // CAST: usize → f64, values are small enough for exact representation
     #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
     let weight_mb = estimate_weight_mb(n_layers, hidden);
     println!(
-        "  Layers: {n_layers}, hidden: {hidden}, device: {:?}",
+        "  Layers: {n_layers}, heads: {n_heads}, hidden: {hidden}, device: {:?}",
         model.device()
     );
     println!("  Estimated F32 weight size: {weight_mb:.0} MB");
@@ -227,13 +228,15 @@ fn run_model(model_id: &str, snapshot: &Path, prompt: &str, top_k: usize) -> can
     let load_time = t0.elapsed();
 
     let n_layers = model.num_layers();
+    let n_heads = model.num_heads();
     let hidden = model.hidden_size();
     // CAST: usize → f64, values are small enough for exact representation
     #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
     let weight_mb = estimate_weight_mb(n_layers, hidden);
     println!(
-        "  {} layers, {} hidden, device: {:?}",
+        "  {} layers, {} heads, {} hidden, device: {:?}",
         n_layers,
+        n_heads,
         hidden,
         model.device()
     );

@@ -38,6 +38,7 @@
 #![allow(clippy::cast_precision_loss)]
 
 use candle_mi::interp::intervention::create_knockout_mask;
+use candle_mi::interp::logit_lens::format_probability;
 use candle_mi::{
     AblationResult, HookPoint, HookSpec, Intervention, KnockoutSpec, MIModel, MITokenizer,
     SUPPORTED_MODEL_TYPES,
@@ -348,12 +349,12 @@ fn run_knockout(model: &MIModel, tokenizer: &MITokenizer, prompt: &str) -> candl
     for (rank, &(token_id, baseline_p, ablated_p, abs_diff)) in changed.iter().enumerate() {
         let token_text = tokenizer.decode(&[token_id])?;
         println!(
-            "  {:>4}  {:>15}  {:>9.4}%  {:>9.4}%  {:>9.4}%",
+            "  {:>4}  {:>15}  {:>10}  {:>10}  {:>10}",
             rank + 1,
             format!("\"{}\"", token_text.trim()),
-            baseline_p * 100.0,
-            ablated_p * 100.0,
-            abs_diff * 100.0
+            format_probability(baseline_p),
+            format_probability(ablated_p),
+            format_probability(abs_diff),
         );
     }
     println!();

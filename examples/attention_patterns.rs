@@ -133,7 +133,7 @@ fn run_single_model(model_id: &str, prompt: &str) -> candle_mi::Result<()> {
 }
 
 // ---------------------------------------------------------------------------
-// Cache discovery (same pattern as other examples)
+// Cache discovery (same pattern as quick_start_transformer)
 // ---------------------------------------------------------------------------
 
 /// Return the `HuggingFace` Hub cache directory.
