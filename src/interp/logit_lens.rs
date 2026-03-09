@@ -113,10 +113,10 @@ impl LogitLensAnalysis {
         for result in &self.layer_results {
             if let Some(top) = result.predictions.first() {
                 println!(
-                    "  Layer {:2}: {:>12} ({:.1}%)",
+                    "  Layer {:2}: {:>12} ({})",
                     result.layer,
                     format!("\"{}\"", format_token(&top.token)),
-                    top.probability * 100.0
+                    format_probability(top.probability),
                 );
             }
         }
@@ -130,10 +130,10 @@ impl LogitLensAnalysis {
             println!("\nLayer {}:", result.layer);
             for (i, pred) in result.predictions.iter().take(top_k).enumerate() {
                 println!(
-                    "  {}. {:>15} ({:.2}%)",
+                    "  {}. {:>15} ({})",
                     i + 1,
                     format!("\"{}\"", format_token(&pred.token)),
-                    pred.probability * 100.0
+                    format_probability(pred.probability),
                 );
             }
         }
@@ -181,6 +181,23 @@ pub fn format_token(token: &str) -> String {
         .replace('\n', "\\n")
         .replace('\t', "\\t")
         .replace('\r', "\\r")
+}
+
+/// Format a probability for display with adaptive precision.
+///
+/// - ≥ 1%: `"12.3%"` (1 decimal place)
+/// - ≥ 0.01%: `"0.123%"` (3 decimal places)
+/// - < 0.01%: `"1.2e-4%"` (scientific notation)
+#[must_use]
+pub fn format_probability(prob: f32) -> String {
+    let pct = prob * 100.0;
+    if pct >= 1.0 {
+        format!("{pct:.1}%")
+    } else if pct >= 0.01 {
+        format!("{pct:.3}%")
+    } else {
+        format!("{pct:.1e}%")
+    }
 }
 
 // ---------------------------------------------------------------------------
