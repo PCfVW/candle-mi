@@ -21,6 +21,8 @@ Runnable examples demonstrating candle-mi features.
 | `attention_patterns` | `transformer` | Capture and analyze per-head attention patterns at every layer |
 | `activation_patching` | `transformer` | Causal tracing via position-specific activation patching (Meng et al., 2022) |
 | `token_positions` | *(default)* | Character-to-token mapping with `EncodingWithOffsets` and `convert_positions` |
+| `rwkv_inference` | `rwkv` | RWKV-7 linear RNN inference with state hook capture and state knockout |
+| `recurrent_feedback` | `transformer` | Anacrousis / recurrent passes for rhyme completion (Taufeeque et al., 2024) |
 | `figure13_planning_poems` | `clt`, `transformer` | Replication of [Anthropic's Figure 13](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poem-location) (suppress + inject position sweep) |
 
 ## Running
@@ -82,6 +84,24 @@ cargo run --example token_positions -- "meta-llama/Llama-3.2-1B"
 
 # Token positions — all cached models
 cargo run --example token_positions
+
+# RWKV inference — auto-discover cached RWKV models
+cargo run --release --features rwkv --example rwkv_inference
+
+# RWKV inference — specific model
+cargo run --release --features rwkv --example rwkv_inference -- "RWKV/RWKV7-Goose-World3-1.5B-HF"
+
+# RWKV inference — RWKV-6 model (requires rwkv-tokenizer feature)
+cargo run --release --features rwkv,rwkv-tokenizer --example rwkv_inference -- "RWKV/v6-Finch-1B6-HF"
+
+# Recurrent feedback — default (Llama 3.2 1B, unembed layers 8-15, strength 2.0)
+cargo run --release --features transformer --example recurrent_feedback
+
+# Recurrent feedback — sustained mode with lower strength
+cargo run --release --features transformer --example recurrent_feedback -- --sustained --strength 1.0
+
+# Recurrent feedback — custom layer range and couplet limit
+cargo run --release --features transformer --example recurrent_feedback -- --loop-start 14 --loop-end 15 --max-couplets 5
 
 # Figure 13 replication — Llama 3.2 1B (default)
 cargo run --release --features clt,transformer --example figure13_planning_poems
@@ -209,6 +229,45 @@ tokens across models. `char_range_to_tokens()` handles this automatically,
 and `convert_positions()` provides exact-vs-fuzzy matching for positions
 between or beyond token boundaries.
 
+### Example output: `rwkv_inference`
+
+Prompt: *"The capital of France is"* — RWKV-7 linear RNN inference with state
+hooks and state knockout.
+
+**RWKV-7 Goose 1.5B**: Top-1 prediction is "Paris" at high probability. The
+example captures RWKV-specific hook points — `RwkvState` (recurrent state
+matrix, shape `[1, heads, head_dim, head_dim]`), `RwkvDecay` (data-dependent
+decay), and `ResidPost` (residual stream) — demonstrating the structural
+differences between recurrent and attention-based architectures.
+
+State knockout at position 0 (making the first token invisible to future tokens)
+shows the impact on factual recall via KL divergence and top changed tokens.
+
+### Example output: `recurrent_feedback`
+
+15 canonical couplets from Taufeeque et al. (2024) — baseline generation vs.
+recurrent feedback with averaged rhyme direction injection.
+
+| Mode | Settings | Rhymes | Rescued |
+|------|----------|--------|---------|
+| Baseline | — | 9/15 | — |
+| Recurrent (prefill) | unembed L8–15, s=2.0 | 11/15 | +2 |
+| Recurrent (sustained) | unembed L14–15, s=1.0 | 9/15 | +0 |
+
+**Prefill mode** (default) injects the rhyme direction during the original
+prompt positions only. **Sustained mode** (`--sustained`) also injects at the
+current last token during each generation step. The prefill mode with layers
+8–15 and strength 2.0 shows the best improvement (+2 rescued couplets).
+
+Note: candle-mi recomputes the full sequence at each generation step (no KV
+cache), so every step gets the double-pass benefit. This differs from plip-rs
+where only the prefill step benefits from the recurrent pass.
+
+**References:**
+- Taufeeque et al., "Planning in Poems", arXiv:2407.15421, 2024
+- Lindsey et al., "On the Biology of a Large Language Model", 2025
+- Eric Jacopin, "Replicating 'Planning in Poems' with Open Tools" (plip-rs)
+
 ### Example output: `auto_config_dogfood`
 
 **Success** on Llama 3.2 1B (known family, uses manual parser):
@@ -246,5 +305,9 @@ Output JSON and Mathematica plotting script are in
   automatically via `hf-fetch-model`.
 - **figure13_planning_poems** requires a CLT from `HuggingFace` (downloaded
   automatically on first run). Gemma 2 2B preset requires `--features mmap`.
+- **rwkv_inference** requires an RWKV model cached locally. RWKV-7 models
+  include `tokenizer.json`; RWKV-6 models require `--features rwkv-tokenizer`.
+- **recurrent_feedback** requires `meta-llama/Llama-3.2-1B` (default) cached
+  locally.
 - **GPU recommended** for models larger than 1B parameters. candle-mi is
   developed on an RTX 5060 Ti (16 GB VRAM) with 64 GB RAM and CUDA 13.1.

@@ -1,6 +1,6 @@
 # Examples Coverage Audit
 
-**Date:** 2026-03-08 (initial) · 2026-03-09 (updated with medium-impact examples)
+**Date:** 2026-03-08 (initial) · 2026-03-09 (updated with medium-impact + lower-priority examples)
 **Scope:** candle-mi public API vs. existing `examples/` folder
 **Goal:** Identify missing crate-level examples for Phase 5 documentation.
 
@@ -22,8 +22,10 @@
 | `attention_patterns.rs` | **NEW — Implemented** | `AttentionCache`, `HookPoint::AttnPattern`, `attention_from_position`, `attention_to_position`, `top_attended_positions` |
 | `activation_patching.rs` | **NEW — Implemented** | `FullActivationCache`, `Intervention::Replace`, `Intervention::Add`, `HookPoint::ResidPost`, `HookPoint::Embed`, `kl_divergence`, position-specific patching |
 | `token_positions.rs` | **NEW — Implemented** | `EncodingWithOffsets`, `convert_positions`, `TokenWithOffset`, `PositionConversion`, `encode_with_offsets`, `char_to_token`, `token_to_char_range`, `char_range_to_tokens` |
+| `rwkv_inference.rs` | **NEW — Implemented** | `MIModel::from_pretrained` (RWKV), `HookPoint::RwkvState`, `HookPoint::RwkvDecay`, `HookPoint::ResidPost`, `StateKnockoutSpec`, `StateAblationResult`, `HookSpec::capture`, `sample_token` |
+| `recurrent_feedback.rs` | **NEW — Implemented** | `GenericTransformer`, `RecurrentPassSpec`, `RecurrentFeedbackEntry`, `forward_recurrent`, `generate_recurrent`, `embedding_vector`, `MITokenizer`, `sample_token` |
 
-**Coverage estimate:** ~75 % of the public API surface (up from ~65 %).
+**Coverage estimate:** ~85 % of the public API surface (up from ~75 %).
 
 ---
 
@@ -54,12 +56,13 @@
 - `create_causal_mask`, `create_generation_mask`
 
 ### RWKV Backend
-- `GenericRwkv`, `RwkvConfig`, `RwkvVersion`, `RwkvLoraDims`
-- `StateKnockoutSpec`, `StateSteeringSpec`, `StateAblationResult`,
-  `StateSteeringResult`
+- ~~`GenericRwkv`, `RwkvConfig`, `RwkvVersion`~~ → covered by `rwkv_inference.rs`
+- ~~`StateKnockoutSpec`, `StateAblationResult`~~ → covered by `rwkv_inference.rs`
+- `RwkvLoraDims`, `StateSteeringSpec`, `StateSteeringResult` (LoRA and
+  state steering remain uncovered)
 
 ### Recurrent Feedback
-- `RecurrentFeedbackEntry`, `RecurrentPassSpec`
+- ~~`RecurrentFeedbackEntry`, `RecurrentPassSpec`~~ → covered by `recurrent_feedback.rs`
 
 ### Intervention Primitives (direct use)
 - ~~`Intervention::Replace`~~ → covered by `steering_dose_response.rs`, `activation_patching.rs`
@@ -364,25 +367,30 @@ Also added `encode_with_offsets()` and `encode_raw_with_offsets()` to
 
 ### Lower Priority
 
-#### `rwkv_inference.rs` — RWKV-7 Linear RNN Inference
+#### ~~`rwkv_inference.rs` — RWKV-7 Linear RNN Inference~~ ✅ Implemented
 
-Forward pass with `GenericRwkv`, demonstrating the recurrent state handling that
-differs from transformer attention.
+~~Forward pass with `GenericRwkv`, demonstrating the recurrent state handling that
+differs from transformer attention.~~
 
-**Key API surface:**
-`GenericRwkv`, `RwkvConfig`, `RwkvVersion`, `RwkvLoraDims`,
-`StateKnockoutSpec`, `StateSteeringSpec`, `StateAblationResult`,
-`StateSteeringResult`
+**Implemented** with three sections: basic inference (top-10 predictions), RWKV
+hook capture (`RwkvState`, `RwkvDecay`, `ResidPost` shapes), and state knockout
+(KL divergence, top changed tokens). Auto-discovers cached RWKV models. Supports
+RWKV-7 (HF tokenizer) and RWKV-6 (via `rwkv-tokenizer` feature fallback).
+Tested on RWKV-7 Goose 1.5B and RWKV-6 Finch 1.6B.
 
 ---
 
-#### `recurrent_feedback.rs` — Anacrousis / Recurrent Passes
+#### ~~`recurrent_feedback.rs` — Anacrousis / Recurrent Passes~~ ✅ Implemented
 
-Demonstrate `RecurrentPassSpec` and `RecurrentFeedbackEntry` for multi-pass
-generation with recurrent feedback.
+~~Demonstrate `RecurrentPassSpec` and `RecurrentFeedbackEntry` for multi-pass
+generation with recurrent feedback.~~
 
-**Key API surface:**
-`RecurrentFeedbackEntry`, `RecurrentPassSpec`
+**Implemented** with 15 canonical couplets from Taufeeque et al. (2024),
+baseline vs. recurrent generation comparison. Uses `GenericTransformer` directly
+(not `MIModel`) because `generate_recurrent()` is only on `GenericTransformer`.
+CLI via clap: `--model`, `--loop-start`, `--loop-end`, `--strength`,
+`--sustained`, `--max-couplets`. Tested on Llama 3.2 1B: default mode rescues
++2 couplets (9/15 → 11/15).
 
 ---
 
@@ -403,13 +411,13 @@ generation with recurrent feedback.
 | **Activation patching** | Missing | ✅ `activation_patching.rs` | ✅ |
 | **CLT attribution** | Missing | Missing | `clt_attribution.rs` |
 | **Token positioning** | Missing | ✅ `token_positions.rs` | ✅ |
-| **RWKV backend** | Missing | Missing | `rwkv_inference.rs` |
-| **Recurrent feedback** | Missing | Missing | `recurrent_feedback.rs` |
+| **RWKV backend** | Missing | ✅ `rwkv_inference.rs` | ✅ |
+| **Recurrent feedback** | Missing | ✅ `recurrent_feedback.rs` | ✅ |
 | **KV-cached generation** | Missing | Missing | No proposed example yet |
 | **PCA / dimensionality reduction** | Missing | Missing | `character_count_helix.rs` (§7) |
 | **Paper replication** | Missing | Missing | `character_count_helix.rs` (§7) |
 
-**Estimated coverage:** ~75 % now → ~95 % after all proposed examples.
+**Estimated coverage:** ~85 % now → ~95 % after all proposed examples.
 
 ---
 
@@ -452,8 +460,8 @@ examples/
 ├── screenshots/                       # (existing) auto-config screenshots
 
 │   # ── Alternative Backends ─────────────────────────────────
-├── rwkv_inference.rs                  # (proposed) RWKV-7 forward pass
-├── recurrent_feedback.rs              # (proposed) anacrousis
+├── rwkv_inference.rs                  # ✅ RWKV-7 forward pass + state hooks
+├── recurrent_feedback.rs              # ✅ anacrousis / recurrent feedback
 
 │   # ── Golden Outputs ───────────────────────────────────────
 └── results/                           # checked-in reference JSON
@@ -498,8 +506,8 @@ feature flag — they fail gracefully at runtime if the backend isn't available.
 | `character_count_helix` | `["transformer"]` | Proposed |
 | `clt_attribution` | `["clt", "transformer"]` | Proposed |
 | `token_positions` | — (no feature gate) | ✅ Implemented |
-| `rwkv_inference` | `["rwkv"]` | Proposed |
-| `recurrent_feedback` | `["transformer"]` | Proposed |
+| `rwkv_inference` | `["rwkv"]` | ✅ Implemented |
+| `recurrent_feedback` | `["transformer"]` | ✅ Implemented |
 | `auto_config_dogfood` | — (runtime only) | Existing, auto-discovered |
 | `fast_download` | — (no feature gate) | Existing, auto-discovered |
 
