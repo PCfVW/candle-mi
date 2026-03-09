@@ -147,21 +147,22 @@ last token to position 0 (first token) across all heads at the middle layer.
 
 | Model | Layer | Heads | KL div | "Paris" baseline | "Paris" ablated | Logit diff |
 |-------|-------|-------|--------|-----------------|----------------|------------|
-| Llama 3.2 1B | 8 | 32 | 0.056 | 39.3% | 26.0% | −1.06 |
+| Llama 3.2 1B | 8 | 32 | 0.056 | 39.3% | 26.0% | +0.55 |
 | Gemma 2 2B | 13 | 8 | 0.017 | 3.9% | 6.7% | −0.33 |
-| StarCoder2 3B | 15 | 24 | 0.029 | — | — | −1.08 |
+| StarCoder2 3B | 15 | 24 | 0.029 | 40.9% (" Par") | 32.2% (" Par") | −1.08 |
 
 **Llama 3.2 1B** shows the strongest effect: "Paris" drops from 39.3% to
 26.0% when the last token can't attend to the first token at layer 8.
 The model relies on early-position attention at mid-depth for factual recall.
 
-**Gemma 2 2B** shows a weaker and inverted effect: "Paris" *increases* from
-3.9% to 6.7%. With only 8 KV heads (GQA) and soft-capped logits, the
-knockout redistributes probability mass differently.
+**Gemma 2 2B** shows an inverted effect: "Paris" *increases* from 3.9% to
+6.7%. The middle-layer attention edge carries inhibitory signal — hedging
+tokens ("also", "not") drop when it's removed, consistent with Gemma 2's
+late factual resolution (layers 22+).
 
-**StarCoder2 3B** predicts "Par" (a code subword) rather than "Paris", so the
-logit diff applies to " Paris" (token 316) which has negligible baseline
-probability.
+**StarCoder2 3B** shows " Par" (BPE subword for "Paris") dropping from 40.9%
+to 32.2%. Code tokens ("{", "{}") rise and competing capitals ("Mad",
+"London") appear — the model partially reverts to its code-completion prior.
 
 ### Example output: `steering_dose_response`
 

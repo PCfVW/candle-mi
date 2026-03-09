@@ -33,9 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   single attention edge (last → first token) across all heads at a middle
   layer; baseline vs ablated forward passes with `KnockoutSpec`,
   `create_knockout_mask`, and `Intervention::Knockout`; prints KL divergence,
-  logit diff, and top-10 changed tokens; tested on Llama 3.2 1B (Paris
-  39.3% → 26.0%, KL=0.056), Gemma 2 2B (Paris 3.9% → 6.7%, inverted),
-  StarCoder2 3B (code model, "Par" dominates)
+  logit diff, and top-10 changed tokens; Clap CLI with `--output` for
+  structured JSON export; tested on Llama 3.2 1B (Paris 39.3% → 26.0%,
+  KL=0.056), Gemma 2 2B (Paris 3.9% → 6.7%, inverted), StarCoder2 3B
+  (code model, "Par" dominates); golden JSON in
+  `examples/results/attention_knockout/`
 - **Cross-model result tables** in `examples/README.md` — documented logit
   lens convergence and attention knockout effects across 3 model families
 - **Auto-config for unknown model families** — `from_hf_config_auto()`
@@ -138,6 +140,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `format_probability()`: ≥1% shows 1 decimal, ≥0.01% shows 3 decimals,
   <0.01% uses scientific notation; applied to both `print_summary` and
   `print_detailed` output
+- **`--output` parent directories** — `logit_lens`, `attention_knockout`, and
+  `figure13_planning_poems` now auto-create parent directories via
+  `create_dir_all` before writing JSON output
+- **Sharded model error message** — `buffered_var_builder` now reports the
+  number of shard files and shows both library (`features = ["mmap"]`) and
+  example (`--features mmap`) remediation paths
+- **`figure13_planning_poems` clippy fixes** — replaced `Vec` indexing in
+  `parse_feature` with `split_once` (eliminates `indexing_slicing` errors);
+  inlined format args; split 248-line `run()` into `select_preset`,
+  `run_experiment`, `sweep_positions`, `print_sweep_summary`, and
+  `write_sweep_output`
+- **`attention_knockout` refactoring** — extracted `write_knockout_json` to
+  bring `run_knockout` under clippy's 100-line threshold; removed file-level
+  `allow(too_many_lines)`
 
 ## [0.0.5-phase4] - 2026-03-06
 

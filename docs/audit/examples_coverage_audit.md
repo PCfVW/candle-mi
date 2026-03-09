@@ -102,7 +102,8 @@ input adds friction without adding value for single-prompt examples.
 #### Output format: CLI printing + opt-in JSON
 
 Examples print human-readable results to stdout by default. JSON output for
-programmatic consumption is opt-in via `--output <path>` (implemented in logit_lens, figure13).
+programmatic consumption is opt-in via `--output <path>` (implemented in logit_lens,
+attention_knockout, figure13).
 
 - CLI output follows a consistent format: model name header, indented results,
   summary tables.
@@ -217,9 +218,9 @@ StarCoder2 3B. Each model produces output characteristic of its training data
 
 | Model | Layers | "Paris" first appears | Final prediction |
 |-------|--------|-----------------------|------------------|
-| Llama 3.2 1B | 16 | Layer 11 (top-5) | "Paris" (top-1) |
-| Gemma 2 2B | 26 | Never in top-10 | " a" (soft-capped logits flatten distribution) |
-| StarCoder2 3B | 30 | Never in top-10 | Code tokens dominate |
+| Llama 3.2 1B | 16 | Layer 11 (rank 1) | "Paris" (top-1) |
+| Gemma 2 2B | 26 | Layer 25 (rank 8) | " a" (soft-capped logits; Paris appears only at final layer) |
+| StarCoder2 3B | 30 | Never (BPE split) | " Par" BPE subword dominates from layer 22 |
 
 ### 3.4 `attention_knockout.rs` — Head / Edge Ablation ✅
 
@@ -240,18 +241,26 @@ specifications but the example constructs a mask directly.
 - Compares baseline and ablated logit distributions
 - Reports KL divergence, target token probability change, top changed tokens
 - Single-edge knockout (not full-row) to avoid NaN in softmax
+- Clap CLI with `--output <path>` for structured JSON export
+- Golden JSON results in `examples/results/attention_knockout/`
 
 **Test results:**
 
 | Model | Layer | Heads | KL div | "Paris" baseline | "Paris" ablated | Logit diff |
 |-------|-------|-------|--------|-----------------|----------------|------------|
-| Llama 3.2 1B | 8 | 32 | 0.056 | 39.3% | 26.0% | −1.06 |
+| Llama 3.2 1B | 8 | 32 | 0.056 | 39.3% | 26.0% | +0.55 |
 | Gemma 2 2B | 13 | 8 | 0.017 | 3.9% | 6.7% | −0.33 |
-| StarCoder2 3B | 15 | 24 | 0.029 | — | — | −1.08 |
+| StarCoder2 3B | 15 | 24 | 0.029 | 40.9% (" Par") | 32.2% (" Par") | −1.08 |
 
-**Key finding:** Llama 3.2 1B shows the strongest effect — factual recall
-relies on early-position attention at mid-depth. Gemma 2's GQA + soft-capping
-redistributes probability mass differently after knockout.
+**Key findings:**
+- **LLaMA 3.2 1B**: strongest effect — "Paris" drops 13pp after ablation;
+  middle-layer attention to position 0 carries factual signal.
+- **Gemma 2 2B**: ablation *increases* "Paris" probability (+2.8pp); the
+  middle-layer edge carried inhibitory signal (hedging tokens "also"/"not"
+  drop), consistent with Gemma 2's late factual resolution in layers 22+.
+- **StarCoder2 3B**: "Par" (BPE subword) drops 8.8pp; code tokens ("{",
+  "{}") rise, and competing capitals ("Mad", "London") appear — the model
+  partially reverts to its code-completion prior.
 
 **Bug fixed during implementation:** Full-row knockout (zeroing all attention
 from a position) caused NaN in softmax. Fixed by using single-edge knockout,
