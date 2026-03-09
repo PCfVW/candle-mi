@@ -1,6 +1,6 @@
 # Examples Coverage Audit
 
-**Date:** 2026-03-08 (initial) · 2026-03-09 (updated with implementation status)
+**Date:** 2026-03-08 (initial) · 2026-03-09 (updated with medium-impact examples)
 **Scope:** candle-mi public API vs. existing `examples/` folder
 **Goal:** Identify missing crate-level examples for Phase 5 documentation.
 
@@ -20,8 +20,10 @@
 | `attention_knockout.rs` | **NEW — Implemented** | `KnockoutSpec`, `AblationResult`, `Intervention::Knockout`, `create_knockout_mask`, `HookPoint::AttnScores`, `format_probability` |
 | `steering_dose_response.rs` | **NEW — Implemented** | `SteeringCalibration`, `DoseResponseCurve`, `SteeringSpec`, `SteeringResult`, `apply_steering`, `measure_attention_to_targets`, `DOSE_LEVELS`, `Intervention::Replace` |
 | `attention_patterns.rs` | **NEW — Implemented** | `AttentionCache`, `HookPoint::AttnPattern`, `attention_from_position`, `attention_to_position`, `top_attended_positions` |
+| `activation_patching.rs` | **NEW — Implemented** | `FullActivationCache`, `Intervention::Replace`, `Intervention::Add`, `HookPoint::ResidPost`, `HookPoint::Embed`, `kl_divergence`, position-specific patching |
+| `token_positions.rs` | **NEW — Implemented** | `EncodingWithOffsets`, `convert_positions`, `TokenWithOffset`, `PositionConversion`, `encode_with_offsets`, `char_to_token`, `token_to_char_range`, `char_range_to_tokens` |
 
-**Coverage estimate:** ~65 % of the public API surface (up from ~55 %).
+**Coverage estimate:** ~75 % of the public API surface (up from ~65 %).
 
 ---
 
@@ -40,12 +42,13 @@
 - `AttnScores` capture for analysis (knockout uses it for intervention only)
 
 ### Caching
-- `ActivationCache`, `FullActivationCache`
+- ~~`FullActivationCache`~~ → covered by `activation_patching.rs`
+- `ActivationCache` (last-token-only cache; not yet demonstrated separately)
 - `KVCache` (`generate.rs` uses full-sequence recompute; KV-cached
   generation remains undemonstrated)
 
 ### Positioning Utilities
-- `EncodingWithOffsets`, `convert_positions`, `TokenWithOffset`
+- ~~`EncodingWithOffsets`, `convert_positions`, `TokenWithOffset`~~ → covered by `token_positions.rs`
 
 ### Mask Utilities
 - `create_causal_mask`, `create_generation_mask`
@@ -59,10 +62,11 @@
 - `RecurrentFeedbackEntry`, `RecurrentPassSpec`
 
 ### Intervention Primitives (direct use)
-- ~~`Intervention::Replace`~~ → covered by `steering_dose_response.rs`
-- `Intervention::Add`, `Intervention::Scale`,
+- ~~`Intervention::Replace`~~ → covered by `steering_dose_response.rs`, `activation_patching.rs`
+- ~~`Intervention::Add`~~ → covered by `activation_patching.rs`
+- `Intervention::Scale`,
   `Intervention::Zero` (knockout uses `Intervention::Knockout`; these
-  three remain uncovered)
+  two remain uncovered)
 
 ### CLT Attribution
 - `AttributionGraph`, `AttributionEdge` (injection is shown in figure13, but
@@ -321,14 +325,15 @@ peaks early (layer 2), while Gemma 2 2B peaks late (layer 22).
 
 ### Medium Impact
 
-#### `activation_patching.rs` — Causal Tracing via Patching
+#### ~~`activation_patching.rs` — Causal Tracing via Patching~~ ✅ Implemented
 
-Run two forward passes (clean and corrupted), capture `FullActivationCache` for
+~~Run two forward passes (clean and corrupted), capture `FullActivationCache` for
 both, then patch clean activations into the corrupted run layer-by-layer using
-`Intervention::Replace` to localize the causal site.
+`Intervention::Replace` to localize the causal site.~~
 
-**Key API surface:**
-`FullActivationCache`, `Intervention::Replace`, `Intervention::Add`
+**Implemented** with position-specific patching (Meng et al., 2022): clean vs.
+corrupted prompt ("France" → "Poland"/"Canada"), restore subject token residual
+at each layer. Tested on Llama 3.2 1B, Gemma 2 2B, StarCoder2 3B.
 
 ---
 
@@ -346,14 +351,14 @@ implemented — this example depends on its addition (tracked in ROADMAP).
 
 ---
 
-#### `token_positions.rs` — Character-to-Token Mapping
+#### ~~`token_positions.rs` — Character-to-Token Mapping~~ ✅ Implemented
 
-Demonstrate `EncodingWithOffsets`, `convert_positions()`, and the various
-`char_to_token` / `token_to_char_range` helpers. Essential for any analysis that
-maps character-level annotations to token positions.
+~~Demonstrate `EncodingWithOffsets`, `convert_positions()`, and the various
+`char_to_token` / `token_to_char_range` helpers.~~
 
-**Key API surface:**
-`EncodingWithOffsets`, `convert_positions`, `TokenWithOffset`, `PositionConversion`
+**Implemented** as a pure utility example (no GPU, no `transformer` feature).
+Also added `encode_with_offsets()` and `encode_raw_with_offsets()` to
+`MITokenizer`. Tested on Llama 3.2 1B, Gemma 2 2B, StarCoder2 3B.
 
 ---
 
@@ -395,16 +400,16 @@ generation with recurrent feedback.
 | **Steering calibration** | Missing | ✅ `steering_dose_response.rs` | ✅ |
 | **Attention patterns** | Missing | ✅ `attention_patterns.rs` | ✅ |
 | **Memory reporting** | N/A | ✅ Opt-in in all 5 examples | ✅ |
-| **Activation patching** | Missing | Missing | `activation_patching.rs` |
+| **Activation patching** | Missing | ✅ `activation_patching.rs` | ✅ |
 | **CLT attribution** | Missing | Missing | `clt_attribution.rs` |
-| **Token positioning** | Missing | Missing | `token_positions.rs` |
+| **Token positioning** | Missing | ✅ `token_positions.rs` | ✅ |
 | **RWKV backend** | Missing | Missing | `rwkv_inference.rs` |
 | **Recurrent feedback** | Missing | Missing | `recurrent_feedback.rs` |
 | **KV-cached generation** | Missing | Missing | No proposed example yet |
 | **PCA / dimensionality reduction** | Missing | Missing | `character_count_helix.rs` (§7) |
 | **Paper replication** | Missing | Missing | `character_count_helix.rs` (§7) |
 
-**Estimated coverage:** ~65 % now → ~95 % after all proposed examples.
+**Estimated coverage:** ~75 % now → ~95 % after all proposed examples.
 
 ---
 
@@ -431,7 +436,7 @@ examples/
 ├── logit_lens.rs                      # ✅ layer-by-layer predictions
 ├── attention_knockout.rs              # ✅ head/edge ablation
 ├── attention_patterns.rs              # ✅ head-level attention
-├── activation_patching.rs             # (proposed) causal tracing
+├── activation_patching.rs             # ✅ causal tracing (Meng et al., 2022)
 ├── steering_dose_response.rs          # ✅ intervention calibration
 ├── character_count_helix.rs           # (proposed) helix replication (§7)
 
@@ -441,7 +446,7 @@ examples/
 ├── figure13/                          # (existing) figure13 assets
 
 │   # ── Utilities ────────────────────────────────────────────
-├── token_positions.rs                 # (proposed) character-to-token mapping
+├── token_positions.rs                 # ✅ character-to-token mapping
 ├── fast_download.rs                   # (existing) parallel download
 ├── auto_config_dogfood.rs             # (existing) auto-config + compat check
 ├── screenshots/                       # (existing) auto-config screenshots
@@ -488,11 +493,11 @@ feature flag — they fail gracefully at runtime if the backend isn't available.
 | `logit_lens` | `["transformer"]` | ✅ Implemented |
 | `attention_knockout` | `["transformer"]` | ✅ Implemented |
 | `attention_patterns` | `["transformer"]` | ✅ Implemented |
-| `activation_patching` | `["transformer"]` | Proposed |
+| `activation_patching` | `["transformer"]` | ✅ Implemented |
 | `steering_dose_response` | `["transformer"]` | ✅ Implemented |
 | `character_count_helix` | `["transformer"]` | Proposed |
 | `clt_attribution` | `["clt", "transformer"]` | Proposed |
-| `token_positions` | — (no feature gate) | Proposed |
+| `token_positions` | — (no feature gate) | ✅ Implemented |
 | `rwkv_inference` | `["rwkv"]` | Proposed |
 | `recurrent_feedback` | `["transformer"]` | Proposed |
 | `auto_config_dogfood` | — (runtime only) | Existing, auto-discovered |

@@ -19,6 +19,8 @@ Runnable examples demonstrating candle-mi features.
 | `attention_knockout` | `transformer` | Knock out a specific attention edge (last→first token), measure KL divergence and top changed tokens |
 | `steering_dose_response` | `transformer` | Sweep steering dose levels, build a dose-response curve, and interpolate target attention |
 | `attention_patterns` | `transformer` | Capture and analyze per-head attention patterns at every layer |
+| `activation_patching` | `transformer` | Causal tracing via position-specific activation patching (Meng et al., 2022) |
+| `token_positions` | *(default)* | Character-to-token mapping with `EncodingWithOffsets` and `convert_positions` |
 | `figure13_planning_poems` | `clt`, `transformer` | Replication of [Anthropic's Figure 13](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poem-location) (suppress + inject position sweep) |
 
 ## Running
@@ -68,6 +70,18 @@ cargo run --release --features transformer --example attention_patterns -- "meta
 
 # Attention patterns — all cached models
 cargo run --release --features transformer,mmap --example attention_patterns
+
+# Activation patching (causal tracing) — single model
+cargo run --release --features transformer --example activation_patching -- "meta-llama/Llama-3.2-1B"
+
+# Activation patching — all cached models
+cargo run --release --features transformer,mmap --example activation_patching
+
+# Token positions — single model (tokenizer only, no GPU)
+cargo run --example token_positions -- "meta-llama/Llama-3.2-1B"
+
+# Token positions — all cached models
+cargo run --example token_positions
 
 # Figure 13 replication — Llama 3.2 1B (default)
 cargo run --release --features clt,transformer --example figure13_planning_poems
@@ -153,6 +167,47 @@ All three models show strong attention to the first token across most layers
 (the "BOS sink" pattern). **StarCoder2 3B** lacks a BOS token so the first
 real token ("The") serves as the attention sink. **Llama 3.2 1B** peaks early
 (layer 2), while **Gemma 2 2B** peaks late (layer 22).
+
+### Example output: `activation_patching`
+
+Clean prompt: *"The capital of France is"* vs. corrupted: *"The capital of Poland
+is"*. For each layer, the clean residual at the subject position ("France") is
+patched into the corrupted forward pass. Recovery measures how much the clean
+"Paris" prediction is restored.
+
+| Model | Subject pos | Corrupted KL | Best layer | Best recovery | Sharp cliff |
+|-------|------------|-------------|------------|--------------|-------------|
+| Llama 3.2 1B | 4 | 3.78 | 1 (100%) | Layers 0-8: >99% | Layer 9-15: 92%→0% |
+| Gemma 2 2B | 4 | 0.50 | 1 (100%) | Layers 0-17: >89% | Layer 18-25: 74%→0% |
+| StarCoder2 3B | 3 | 4.16 | 9 (99.9%) | Layers 0-20: >94% | Layer 21: 5% cliff |
+
+**Llama 3.2 1B** shows a gradual decline: recovery drops from 100% at early
+layers to 72% at layer 11, reaching 0% by the final layer. The factual
+association "France → Paris" forms in the middle layers (8-13).
+
+**Gemma 2 2B** maintains high recovery through layer 17 (89%), then drops
+sharply. The factual lookup happens later in the network, consistent with
+its deeper architecture.
+
+**StarCoder2 3B** shows an abrupt cliff at layer 21: recovery drops from
+94% to 5% in a single layer. As a code model, it stores factual knowledge
+in a concentrated layer band.
+
+### Example output: `token_positions`
+
+Text: *"The Eiffel Tower is located in Paris, France."* — mapping character
+annotations to token positions across different tokenizers.
+
+| Entity | Char range | Llama 3.2 1B tokens | Gemma 2 2B tokens | StarCoder2 3B tokens |
+|--------|-----------|--------------------|--------------------|---------------------|
+| "Eiffel Tower" | 4-16 | 4 tokens (E+iff+el+Tower) | 2 tokens (Eiffel+Tower) | 5 tokens (E+iff+el+T+ower) |
+| "Paris" | 31-36 | 1 token | 1 token | 2 tokens (Par+is) |
+| "France" | 38-44 | 1 token | 1 token | 1 token |
+
+The example shows how the same character span maps to different numbers of
+tokens across models. `char_range_to_tokens()` handles this automatically,
+and `convert_positions()` provides exact-vs-fuzzy matching for positions
+between or beyond token boundaries.
 
 ### Example output: `auto_config_dogfood`
 
