@@ -150,6 +150,7 @@ impl Attention {
             candle_nn::linear_no_bias(q_dim, config.hidden_size, vb.pp("o_proj"))?
         };
 
+        // CAST: usize → f64, head_dim fits in f64 mantissa
         #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
         let scale = config.query_pre_attn_scalar.map_or_else(
             || 1.0 / (config.head_dim as f64).sqrt(),

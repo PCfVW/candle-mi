@@ -46,9 +46,10 @@ impl RopeCache {
         // Compute inverse frequencies: theta^(-2i/d) for i in 0..half_dim
         let inv_freq: Vec<f32> = (0..half_dim)
             .map(|i| {
+                // CAST: usize → f64, loop index and head_dim fit in f64 mantissa
                 #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
                 let freq = 1.0 / theta.powf(2.0 * i as f64 / head_dim as f64);
-                // Safe: f64 → f32 truncation is intentional for RoPE frequencies
+                // CAST: f64 → f32, precision loss acceptable for RoPE frequencies
                 #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
                 let freq_f32 = freq as f32;
                 freq_f32
@@ -58,6 +59,7 @@ impl RopeCache {
         let inv_freq_tensor = Tensor::from_vec(inv_freq, (1, half_dim), device)?.to_dtype(dtype)?;
 
         // Position indices: [0, 1, 2, ..., max_position - 1]
+        // CAST: usize → u32, max_position fits in u32 (max ~128K)
         #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
         let pos_tensor = Tensor::arange(0u32, max_position as u32, device)?
             .to_dtype(dtype)?

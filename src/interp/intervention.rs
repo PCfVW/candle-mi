@@ -686,6 +686,7 @@ fn logit_diff_impl(baseline: &Tensor, other: &Tensor, token_id: u32) -> Result<f
     let baseline_vec: Vec<f32> = baseline_f32.flatten_all()?.to_vec1()?;
     let other_vec: Vec<f32> = other_f32.flatten_all()?.to_vec1()?;
 
+    // CAST: u32 → usize, token ID used as Vec index
     #[allow(clippy::as_conversions)]
     let idx = token_id as usize;
     let b = baseline_vec
@@ -698,6 +699,7 @@ fn logit_diff_impl(baseline: &Tensor, other: &Tensor, token_id: u32) -> Result<f
 }
 
 /// Compute top-k changed tokens between two logit tensors.
+// CAST: usize → u32, vocab index fits in u32
 #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
 fn top_changed_impl(
     baseline: &Tensor,
@@ -951,6 +953,7 @@ pub fn apply_scale_steering(
 /// # Errors
 ///
 /// Returns [`MIError::Intervention`] on tensor extraction failures.
+// CAST: usize → f32, small counts (seq_len, edge count) fit in f32
 #[allow(
     clippy::indexing_slicing, // Operating on extracted Vecs with validated bounds
     clippy::cast_precision_loss,
@@ -1065,6 +1068,7 @@ pub fn measure_attention_to_targets(
     if count == 0 {
         Ok(0.0)
     } else {
+        // CAST: usize → f32, count is number of matching heads — fits in f32
         #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
         Ok(total / count as f32)
     }

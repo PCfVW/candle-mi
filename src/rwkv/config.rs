@@ -192,6 +192,7 @@ impl RwkvConfig {
     ///
     /// Falls back to `norm_eps` if `head_size_divisor` is `None`.
     #[must_use]
+    // CAST: usize → f64, head_size_divisor is small (typically 8 or 16)
     #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
     pub fn group_norm_eps(&self) -> f64 {
         self.head_size_divisor
@@ -271,6 +272,7 @@ impl RwkvConfig {
     /// # Errors
     ///
     /// Returns [`MIError::Config`] if required dimension fields are missing.
+    // CAST: usize → f64 for LoRA dim computation; f64 → usize for rounding back
     #[allow(
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
@@ -356,6 +358,7 @@ impl RwkvConfig {
 
     /// Compute fla-style default `LoRA` dimension:
     /// `max(32, round_to_32(scale * sqrt_h * factor))`.
+    // CAST: f64 → usize, result is a small positive integer after rounding
     #[allow(
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,

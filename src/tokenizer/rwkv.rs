@@ -60,10 +60,8 @@ impl RwkvTokenizer {
     /// # Errors
     ///
     /// Returns [`MIError::Tokenizer`] if the file cannot be read or parsed.
-    #[allow(
-        clippy::cast_possible_truncation,
-        clippy::as_conversions // idx is always < 65536
-    )]
+    // CAST: usize → u32, RWKV vocab indices are always < 65536
+    #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
     pub fn from_file(path: &Path) -> Result<Self> {
         let content = std::fs::read_to_string(path).map_err(|e| {
             MIError::Tokenizer(format!("failed to read vocab file {}: {e}", path.display()))
@@ -191,6 +189,7 @@ impl RwkvTokenizer {
     ///
     /// Returns [`MIError::Tokenizer`] if a token ID is out of range
     /// or the resulting bytes are not valid UTF-8.
+    // CAST: u32 → usize, token ID used as Vec index
     #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
     pub fn decode(&self, ids: &[u32]) -> Result<String> {
         let mut bytes = Vec::new();

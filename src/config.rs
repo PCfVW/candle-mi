@@ -468,6 +468,7 @@ impl TransformerConfig {
             qkv_bias: false,
             o_proj_bias: false,
             mlp_bias: false,
+            // CAST: usize → f64, hidden_size fits in f64 mantissa (d_model <= 2^52)
             #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
             // PROMOTE: embedding scale is sqrt(hidden_size); precision loss negligible for d_model <= 2^52
             embedding_scale: Some((hidden_size as f64).sqrt()),
@@ -518,6 +519,7 @@ impl TransformerConfig {
             qkv_bias: false,
             o_proj_bias: false,
             mlp_bias: false,
+            // CAST: usize → f64, hidden_size fits in f64 mantissa (d_model <= 2^52)
             #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
             // PROMOTE: embedding scale is sqrt(hidden_size); precision loss negligible for d_model <= 2^52
             embedding_scale: Some((hidden_size as f64).sqrt()),
@@ -958,6 +960,7 @@ impl TransformerConfig {
             base_norm_type
         };
 
+        // CAST: usize → f64, hidden_size fits in f64 mantissa (d_model <= 2^52)
         // PROMOTE: embedding scale is sqrt(hidden_size); precision loss negligible for d_model <= 2^52
         let embedding_scale = if is_gemma {
             Some((hidden_size as f64).sqrt())

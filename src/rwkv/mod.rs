@@ -1083,6 +1083,7 @@ impl TimeMixV7 {
 
         // --- GroupNorm per head ---
         // V7 uses eps = head_dim * norm_eps (per fla code)
+        // CAST: usize → f64, head_dim fits in f64 mantissa
         let gn_eps = (self.head_dim as f64) * self.norm_eps;
         let out_flat = out.reshape((bt, h))?;
         let out_gn = norm::group_norm(
