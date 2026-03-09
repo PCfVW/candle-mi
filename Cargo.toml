@@ -123,6 +123,10 @@ required-features = ["transformer"]
 name = "rwkv_inference"
 required-features = ["rwkv"]
 
+[[example]]
+name = "recurrent_feedback"
+required-features = ["transformer"]
+
 [features]
 default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]
