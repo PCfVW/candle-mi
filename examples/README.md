@@ -100,8 +100,11 @@ cargo run --release --features rwkv,rwkv-tokenizer --example rwkv_inference -- "
 # Recurrent feedback — default (Llama 3.2 1B, unembed layers 8-15, strength 2.0)
 cargo run --release --features transformer --example recurrent_feedback
 
-# Recurrent feedback — sustained mode with lower strength
-cargo run --release --features transformer --example recurrent_feedback -- --sustained --strength 1.0
+# Recurrent feedback — with JSON output (prefill mode)
+cargo run --release --features transformer --example recurrent_feedback -- --output examples/results/recurrent_feedback/prefill.json
+
+# Recurrent feedback — sustained mode with JSON output
+cargo run --release --features transformer --example recurrent_feedback -- --sustained --loop-start 14 --loop-end 15 --strength 1.0 --output examples/results/recurrent_feedback/sustained.json
 
 # Recurrent feedback — custom layer range and couplet limit
 cargo run --release --features transformer --example recurrent_feedback -- --loop-start 14 --loop-end 15 --max-couplets 5
@@ -266,19 +269,56 @@ recurrent feedback with averaged rhyme direction injection.
 | Recurrent (prefill) | unembed L8–15, s=2.0 | 11/15 | +2 |
 | Recurrent (sustained) | unembed L14–15, s=1.0 | 9/15 | +0 |
 
-**Prefill mode** (default) injects the rhyme direction during the original
-prompt positions only. **Sustained mode** (`--sustained`) also injects at the
-current last token during each generation step. The prefill mode with layers
-8–15 and strength 2.0 shows the best improvement (+2 rescued couplets).
+Per-couplet breakdown (from golden JSON in `results/recurrent_feedback/`):
 
-Note: candle-mi recomputes the full sequence at each generation step (no KV
-cache), so every step gets the double-pass benefit. This differs from plip-rs
-where only the prefill step benefits from the recurrent pass.
+| id | target | baseline | prefill L8–15 s=2.0 | sustained L14–15 s=1.0 |
+|----|--------|----------|---------------------|------------------------|
+| 1 | light | light | light | light |
+| 2 | play | talk X | laugh X | talk X |
+| 3 | sound | flashes X | flashes X | flashes X |
+| 4 | rain | falls X | ground X | ground X |
+| 5 | time | time | time | time |
+| 6 | air | air | air | air |
+| 7 | gold | fair X | fair X | fair X |
+| 8 | fire | embers X | **fire RESCUED** | embers X |
+| 9 | stone | stone | stone | stone |
+| 10 | dream | dream | dream | dream |
+| 11 | strange | alone X | **strange RESCUED** | alone X |
+| 12 | love | love | love | love |
+| 13 | truth | truth | truth | truth |
+| 14 | world | world | world | world |
+| 15 | earth | earth | earth | earth |
+
+**Prefill mode** (default) re-runs the recurrent block (double pass + feedback
+injection) over the original prompt tokens before generation starts.
+**Sustained mode** (`--sustained`) additionally re-runs the recurrent block at
+the current last token during each autoregressive generation step. Prefill mode
+with layers 8–15 and strength 2.0 shows the best improvement (+2 rescued
+couplets: fire and strange, both producing the exact target word).
+
+**Why candle-mi differs from plip-rs.** candle-mi recomputes the full sequence
+at each generation step (no KV cache), so "prefill-only" mode already
+re-applies the recurrent block over the entire prompt at every step — making it
+functionally closer to plip-rs's sustained mode. In plip-rs (which uses KV
+cache), prefill-only truly fires once and sustained mode was needed to get +1.
+In candle-mi, prefill-only already achieves +2 because every generation step
+benefits from the double pass. This is an MI-first design trade-off:
+full-sequence recompute is slower but gives maximum observability — hooks can
+re-observe how earlier positions change under intervention at every step, and
+interventions "just work" without KV cache invalidation.
+
+Resistant failures (2, 3, 4, 7) persist across both conditions, representing
+couplets where no quality-preserving intervention redirects the generation
+trajectory.
+
+Output JSON and Mathematica plotting script are in
+[`examples/figure13/`](figure13/) and [`examples/results/recurrent_feedback/`](results/recurrent_feedback/).
 
 **References:**
-- Taufeeque et al., "Planning in Poems", arXiv:2407.15421, 2024
-- Lindsey et al., "On the Biology of a Large Language Model", 2025
-- Eric Jacopin, "Replicating 'Planning in Poems' with Open Tools" (plip-rs)
+- Taufeeque et al., "Planning in a recurrent neural network that plays Sokoban", [arXiv:2407.15421](https://arxiv.org/abs/2407.15421v2), 2024
+- Taufeeque et al., "Path Channels and Plan Extension Kernels: a Mechanistic Description of Planning in a Sokoban RNN", [arXiv:2506.10138](https://arxiv.org/abs/2506.10138), 2025 — reverse-engineers the planning circuits discovered in the 2024 paper
+- Lindsey et al., ["On the Biology of a Large Language Model"](https://transformer-circuits.pub/2025/attribution-graphs/biology.html), 2025
+- Eric Jacopin, ["Replicating 'Planning in Poems' with Open Tools"](https://github.com/PCfVW/plip-rs/tree/melometis/docs/planning-in-poems) (plip-rs melometis branch)
 
 ### Example output: `auto_config_dogfood`
 

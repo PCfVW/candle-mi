@@ -23,7 +23,7 @@
 | `activation_patching.rs` | **NEW — Implemented** | `FullActivationCache`, `Intervention::Replace`, `Intervention::Add`, `HookPoint::ResidPost`, `HookPoint::Embed`, `kl_divergence`, position-specific patching |
 | `token_positions.rs` | **NEW — Implemented** | `EncodingWithOffsets`, `convert_positions`, `TokenWithOffset`, `PositionConversion`, `encode_with_offsets`, `char_to_token`, `token_to_char_range`, `char_range_to_tokens` |
 | `rwkv_inference.rs` | **NEW — Implemented** | `MIModel::from_pretrained` (RWKV), `HookPoint::RwkvState`, `HookPoint::RwkvDecay`, `HookPoint::ResidPost`, `StateKnockoutSpec`, `StateAblationResult`, `HookSpec::capture`, `sample_token` |
-| `recurrent_feedback.rs` | **NEW — Implemented** | `GenericTransformer`, `RecurrentPassSpec`, `RecurrentFeedbackEntry`, `forward_recurrent`, `generate_recurrent`, `embedding_vector`, `MITokenizer`, `sample_token` |
+| `recurrent_feedback.rs` | **NEW — Implemented** | `GenericTransformer`, `RecurrentPassSpec`, `RecurrentFeedbackEntry`, `forward_recurrent`, `generate_recurrent`, `embedding_vector`, `MITokenizer`, `sample_token`, `--output` JSON export, `MemorySnapshot`/`MemoryReport` |
 
 **Coverage estimate:** ~85 % of the public API surface (up from ~75 %).
 
@@ -76,7 +76,7 @@
   graph scoring is not)
 
 ### Memory Reporting
-- ~~`MemorySnapshot`, `MemoryReport`~~ → opt-in in all 5 high-impact examples
+- ~~`MemorySnapshot`, `MemoryReport`~~ → opt-in in all 6 high-impact examples
   via `#[cfg(feature = "memory")]`
 
 ---
@@ -85,7 +85,7 @@
 
 ### 3.1 Design Conventions (decided during brainstorming)
 
-The following conventions apply to all 5 implemented examples and should be
+The following conventions apply to all implemented examples and should be
 followed by future examples.
 
 #### Input format: CLI arguments (not JSON)
@@ -103,7 +103,7 @@ input adds friction without adding value for single-prompt examples.
 
 Examples print human-readable results to stdout by default. JSON output for
 programmatic consumption is opt-in via `--output <path>` (implemented in logit_lens,
-attention_knockout, figure13).
+attention_knockout, figure13, recurrent_feedback).
 
 - CLI output follows a consistent format: model name header, indented results,
   summary tables.
@@ -111,8 +111,8 @@ attention_knockout, figure13).
 
 #### CLI argument parsing
 
-The 5 implemented examples use `std::env::args()` for simplicity (single
-optional model ID, no flags). For future examples with richer CLI (e.g.,
+The original 5 examples use `std::env::args()` for simplicity (single
+optional model ID, no flags). For examples with richer CLI (e.g.,
 `--output`, `--layer`, `--top-k`), the agreed convention is **Clap isolation**:
 separate CLI parsing from MI logic with clear section comments:
 
@@ -174,7 +174,7 @@ precision (`.3` for attention weights, `.6` for KL/attention measurements).
 
 The `memory` feature (`src/memory.rs`) provides `MemorySnapshot` and
 `MemoryReport` for exact per-process RAM measurement (Windows FFI / Linux
-procfs) and device-wide VRAM (nvidia-smi). All 5 high-impact examples include
+procfs) and device-wide VRAM (nvidia-smi). All 6 high-impact examples include
 opt-in memory reporting via `#[cfg(feature = "memory")]` guards, activated
 with `--features memory`.
 
@@ -398,8 +398,12 @@ generation with recurrent feedback.~~
 baseline vs. recurrent generation comparison. Uses `GenericTransformer` directly
 (not `MIModel`) because `generate_recurrent()` is only on `GenericTransformer`.
 CLI via clap: `--model`, `--loop-start`, `--loop-end`, `--strength`,
-`--sustained`, `--max-couplets`. Tested on Llama 3.2 1B: default mode rescues
-+2 couplets (9/15 → 11/15).
+`--sustained`, `--max-couplets`, `--output`. Includes `--output` for structured
+JSON export and opt-in memory reporting via `#[cfg(feature = "memory")]`.
+Golden JSON results in `examples/results/recurrent_feedback/` (prefill L8–15
+s=2.0: baseline 9/15 → 11/15, +2 rescued; sustained L14–15 s=1.0: 9/15, +0).
+Mathematica plotting script in `examples/figure13/recurrent_feedback_plot.wl`.
+Tested on Llama 3.2 1B.
 
 ---
 
@@ -416,7 +420,7 @@ CLI via clap: `--model`, `--loop-start`, `--loop-end`, `--strength`,
 | **Attention knockout** | Missing | ✅ `attention_knockout.rs` | ✅ |
 | **Steering calibration** | Missing | ✅ `steering_dose_response.rs` | ✅ |
 | **Attention patterns** | Missing | ✅ `attention_patterns.rs` | ✅ |
-| **Memory reporting** | N/A | ✅ Opt-in in all 5 examples | ✅ |
+| **Memory reporting** | N/A | ✅ Opt-in in all 6 examples | ✅ |
 | **Activation patching** | Missing | ✅ `activation_patching.rs` | ✅ |
 | **CLT attribution** | Missing | Missing | `clt_attribution.rs` |
 | **Token positioning** | Missing | ✅ `token_positions.rs` | ✅ |
@@ -482,6 +486,9 @@ examples/
     │   ├── llama-3.2-1b.json
     │   ├── gemma-2-2b.json
     │   └── starcoder2-3b.json
+    ├── recurrent_feedback/
+    │   ├── prefill.json
+    │   └── sustained.json
     └── character_count_helix/         # (future)
         └── helix_plot.wl
 ```
@@ -491,7 +498,8 @@ examples/
 Reference JSON files for key models are checked into `examples/results/`. These
 serve as regression baselines and documentation of expected behavior. They are
 **not** tested automatically — they document "what a real run produces" for
-users who don't have the model weights cached.
+users who don't have the model weights cached. Current golden output
+directories: `logit_lens/`, `attention_knockout/`, `recurrent_feedback/`.
 
 ### `Cargo.toml` `[[example]]` entries
 
@@ -773,7 +781,7 @@ the `// SAFETY:` section with a policy table.
 
 ### Integration status
 
-All 5 high-impact examples wrap model loading with `MemorySnapshot::now(device)`
+All 6 high-impact examples wrap model loading with `MemorySnapshot::now(device)`
 before and after, then print the delta via `MemoryReport::print_before_after()`.
 This gives users concrete numbers for their hardware. Activated with
 `--features memory` (e.g., `cargo run --release --features transformer,memory
