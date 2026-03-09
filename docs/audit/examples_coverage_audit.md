@@ -6,7 +6,7 @@
 
 ---
 
-## 1. Existing Examples
+## 1. All Implemented Examples
 
 | Example | Status | API Features Demonstrated |
 |---|---|---|
@@ -59,17 +59,18 @@
 - `RecurrentFeedbackEntry`, `RecurrentPassSpec`
 
 ### Intervention Primitives (direct use)
-- `Intervention::Replace`, `Intervention::Add`, `Intervention::Scale`,
-  `Intervention::Zero` (knockout uses `Intervention::Knockout`; the others
-  remain uncovered)
+- ~~`Intervention::Replace`~~ → covered by `steering_dose_response.rs`
+- `Intervention::Add`, `Intervention::Scale`,
+  `Intervention::Zero` (knockout uses `Intervention::Knockout`; these
+  three remain uncovered)
 
 ### CLT Attribution
 - `AttributionGraph`, `AttributionEdge` (injection is shown in figure13, but
   graph scoring is not)
 
 ### Memory Reporting
-- `MemorySnapshot`, `MemoryReport` (new `memory` feature — implemented in
-  `src/memory.rs` but no example yet)
+- ~~`MemorySnapshot`, `MemoryReport`~~ → opt-in in all 5 high-impact examples
+  via `#[cfg(feature = "memory")]`
 
 ---
 
@@ -249,23 +250,26 @@ redistributes probability mass differently after knockout.
 from a position) caused NaN in softmax. Fixed by using single-edge knockout,
 which is also more interpretable.
 
----
-
-## 4. Proposed Future Examples
-
-### High Impact
-
-#### 4. `steering_dose_response.rs` — Calibrating Intervention Strength ✅
+### 3.5 `steering_dose_response.rs` — Calibrating Intervention Strength ✅
 
 **Status:** Implemented and tested on 3 models.
 
-Uses `SteeringCalibration` to compute a recommended scale factor, then sweeps
-`DOSE_LEVELS` to build a `DoseResponseCurve` and finds `scale_for_target()`.
+**API surface covered:**
+- `SteeringCalibration`, `DoseResponseCurve`, `DoseResponsePoint`, `DOSE_LEVELS`
+- `SteeringSpec`, `SteeringResult`, `InterventionType`
+- `apply_steering()`, `measure_attention_to_targets()`
+- `Intervention::Replace`, `HookPoint::AttnPattern`
+- Multi-model auto-discovery via HuggingFace cache scanning
 
-**Key API surface:**
-`SteeringCalibration`, `SteeringSpec`, `SteeringResult`, `DoseResponseCurve`,
-`DoseResponsePoint`, `DOSE_LEVELS`, `apply_steering`,
-`measure_attention_to_targets`, `Intervention::Replace`
+**Design:**
+- Measures baseline attention from last token to position 0 at a target layer
+- Creates `SteeringCalibration` from measured baseline and a 2× reference
+- Sweeps `DOSE_LEVELS` (0.5–6.0): builds `SteeringSpec`, applies
+  `apply_steering()` with renormalization, injects via `Intervention::Replace`
+- Builds `SteeringResult` for KL divergence and logit diff analysis
+- Records in `DoseResponseCurve`, queries `scale_for_target()` for interpolation
+- Reports calibration info, dose-response table, and dose levels as absolute
+  attention targets
 
 **Test results:**
 
@@ -275,18 +279,28 @@ Uses `SteeringCalibration` to compute a recommended scale factor, then sweeps
 | Gemma 2 2B | 13 | 0.589 | 0.001 | 0.002 | 0.003 |
 | StarCoder2 3B | 15 | 0.673 | 0.002 | 0.004 | 0.005 |
 
----
+**Key finding:** Llama 3.2 1B shows the strongest dose-response: KL divergence
+grows from 0.006 at half-dose to 0.043 at 6× dose. Gemma 2 2B is robust to
+single-edge steering (KL stays below 0.004 even at 6× dose) due to GQA and
+soft-capped logits.
 
-#### 5. `attention_patterns.rs` — Inspecting Head-Level Attention ✅
+### 3.6 `attention_patterns.rs` — Inspecting Head-Level Attention ✅
 
 **Status:** Implemented and tested on 3 models.
 
-Captures `AttnPattern` hooks across layers, stores in `AttentionCache`, and
-inspects per-head attention distributions for a prompt.
+**API surface covered:**
+- `AttentionCache`, `HookPoint::AttnPattern`
+- `attention_from_position()`, `attention_to_position()`,
+  `top_attended_positions()`
+- `HookSpec::capture()` at all layers in a single forward pass
+- Multi-model auto-discovery via HuggingFace cache scanning
 
-**Key API surface:**
-`AttentionCache`, `HookPoint::AttnPattern`, `attention_from_position`,
-`attention_to_position`, `top_attended_positions`
+**Design:**
+- Captures `AttnPattern` at all layers in a single forward pass
+- Builds `AttentionCache`, queries per-layer attention distributions
+- Per-layer top-5 attended positions for the last token
+- Tracks incoming attention to position 0 across all layers
+- Identifies peak last→first attention layer (connects to knockout experiment)
 
 **Test results:**
 
@@ -296,11 +310,18 @@ inspects per-head attention distributions for a prompt.
 | Gemma 2 2B | 22 | 0.845 | BOS |
 | StarCoder2 3B | 26 | 0.866 | "The" (no BOS) |
 
+**Key finding:** All three models show strong attention to the first token
+across most layers (the "BOS sink" pattern). StarCoder2 3B lacks a BOS token
+so the first real token ("The") serves as the attention sink. Llama 3.2 1B
+peaks early (layer 2), while Gemma 2 2B peaks late (layer 22).
+
 ---
+
+## 4. Proposed Future Examples
 
 ### Medium Impact
 
-#### 6. `activation_patching.rs` — Causal Tracing via Patching
+#### `activation_patching.rs` — Causal Tracing via Patching
 
 Run two forward passes (clean and corrupted), capture `FullActivationCache` for
 both, then patch clean activations into the corrupted run layer-by-layer using
@@ -311,7 +332,7 @@ both, then patch clean activations into the corrupted run layer-by-layer using
 
 ---
 
-#### 7. `clt_attribution.rs` — Feature Attribution Scoring
+#### `clt_attribution.rs` — Feature Attribution Scoring
 
 Use `build_attribution_graph()` to score CLT features against a target logit
 direction, then inspect `AttributionEdge` scores. Complements the existing
@@ -325,7 +346,7 @@ implemented — this example depends on its addition (tracked in ROADMAP).
 
 ---
 
-#### 8. `token_positions.rs` — Character-to-Token Mapping
+#### `token_positions.rs` — Character-to-Token Mapping
 
 Demonstrate `EncodingWithOffsets`, `convert_positions()`, and the various
 `char_to_token` / `token_to_char_range` helpers. Essential for any analysis that
@@ -338,7 +359,7 @@ maps character-level annotations to token positions.
 
 ### Lower Priority
 
-#### 9. `rwkv_inference.rs` — RWKV-7 Linear RNN Inference
+#### `rwkv_inference.rs` — RWKV-7 Linear RNN Inference
 
 Forward pass with `GenericRwkv`, demonstrating the recurrent state handling that
 differs from transformer attention.
@@ -350,7 +371,7 @@ differs from transformer attention.
 
 ---
 
-#### 10. `recurrent_feedback.rs` — Anacrousis / Recurrent Passes
+#### `recurrent_feedback.rs` — Anacrousis / Recurrent Passes
 
 Demonstrate `RecurrentPassSpec` and `RecurrentFeedbackEntry` for multi-pass
 generation with recurrent feedback.
@@ -362,7 +383,7 @@ generation with recurrent feedback.
 
 ## 5. Coverage After All Proposed Examples
 
-| Category | Before audit | After 3 implemented | After all proposed |
+| Category | Before audit | After 5 implemented | After all proposed |
 |---|---|---|---|
 | Basic inference & loading | Covered | Covered | Covered |
 | Download & auto-config | Covered | Covered | Covered |
@@ -371,15 +392,15 @@ generation with recurrent feedback.
 | **Text generation** | Missing | ✅ `generate.rs` | ✅ |
 | **Logit lens** | Missing | ✅ `logit_lens.rs` | ✅ |
 | **Attention knockout** | Missing | ✅ `attention_knockout.rs` | ✅ |
-| **Steering calibration** | Missing | Missing | ✅ `steering_dose_response.rs` |
-| **Attention patterns** | Missing | Missing | ✅ `attention_patterns.rs` |
+| **Steering calibration** | Missing | ✅ `steering_dose_response.rs` | ✅ |
+| **Attention patterns** | Missing | ✅ `attention_patterns.rs` | ✅ |
+| **Memory reporting** | N/A | ✅ Opt-in in all 5 examples | ✅ |
 | **Activation patching** | Missing | Missing | `activation_patching.rs` |
 | **CLT attribution** | Missing | Missing | `clt_attribution.rs` |
 | **Token positioning** | Missing | Missing | `token_positions.rs` |
 | **RWKV backend** | Missing | Missing | `rwkv_inference.rs` |
 | **Recurrent feedback** | Missing | Missing | `recurrent_feedback.rs` |
 | **KV-cached generation** | Missing | Missing | No proposed example yet |
-| **Memory reporting** | N/A | API implemented (`memory` feature) | ✅ Opt-in in all 5 examples |
 | **PCA / dimensionality reduction** | Missing | Missing | `character_count_helix.rs` (§7) |
 | **Paper replication** | Missing | Missing | `character_count_helix.rs` (§7) |
 
@@ -409,9 +430,9 @@ examples/
 │   # ── Interpretability ─────────────────────────────────────
 ├── logit_lens.rs                      # ✅ layer-by-layer predictions
 ├── attention_knockout.rs              # ✅ head/edge ablation
-├── attention_patterns.rs              # (proposed) head-level attention
+├── attention_patterns.rs              # ✅ head-level attention
 ├── activation_patching.rs             # (proposed) causal tracing
-├── steering_dose_response.rs          # (proposed) intervention calibration
+├── steering_dose_response.rs          # ✅ intervention calibration
 ├── character_count_helix.rs           # (proposed) helix replication (§7)
 
 │   # ── Sparse Features ──────────────────────────────────────
@@ -728,9 +749,10 @@ The `memory` feature relaxes `#![forbid(unsafe_code)]` to
 as the existing `mmap` feature. This is documented in `CONVENTIONS.md` under
 the `// SAFETY:` section with a policy table.
 
-### Future integration
+### Integration status
 
-Examples that load models can wrap the loading + forward pass with
-`MemorySnapshot::now(device)` before and after, then print the delta. This gives
-users concrete numbers for their hardware (e.g., "Llama 3.2 1B: +1,204 MB RAM,
-+3,891 MB VRAM").
+All 5 high-impact examples wrap model loading with `MemorySnapshot::now(device)`
+before and after, then print the delta via `MemoryReport::print_before_after()`.
+This gives users concrete numbers for their hardware. Activated with
+`--features memory` (e.g., `cargo run --release --features transformer,memory
+--example generate -- "meta-llama/Llama-3.2-1B"`).
