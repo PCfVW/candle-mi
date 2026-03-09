@@ -1,0 +1,1700 @@
+{
+  "model_id": "google/gemma-2-2b",
+  "prompt": "The capital of France is",
+  "n_layers": 26,
+  "n_heads": 8,
+  "hidden_size": 2304,
+  "paris_first_top10": 25,
+  "layers": [
+    {
+      "layer": 0,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 1.0
+        },
+        {
+          "rank": 2,
+          "token_id": 729,
+          "token": " was",
+          "probability": 5.0630977e-23
+        },
+        {
+          "rank": 3,
+          "token_id": 708,
+          "token": " are",
+          "probability": 3.9669917e-26
+        },
+        {
+          "rank": 4,
+          "token_id": 919,
+          "token": " has",
+          "probability": 1.0120402e-27
+        },
+        {
+          "rank": 5,
+          "token_id": 2125,
+          "token": " Is",
+          "probability": 5.57585e-30
+        },
+        {
+          "rank": 6,
+          "token_id": 502,
+          "token": "is",
+          "probability": 2.1641608e-32
+        },
+        {
+          "rank": 7,
+          "token_id": 109,
+          "token": "\n\n",
+          "probability": 7.5888595e-35
+        },
+        {
+          "rank": 8,
+          "token_id": 4118,
+          "token": " IS",
+          "probability": 1.1997795e-35
+        },
+        {
+          "rank": 9,
+          "token_id": 235303,
+          "token": "'",
+          "probability": 8.392634e-36
+        },
+        {
+          "rank": 10,
+          "token_id": 235248,
+          "token": " ",
+          "probability": 4.6868403e-36
+        }
+      ]
+    },
+    {
+      "layer": 1,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 2,
+          "token": "<bos>",
+          "probability": 0.99988854
+        },
+        {
+          "rank": 2,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.00011139147
+        },
+        {
+          "rank": 3,
+          "token_id": 708,
+          "token": " are",
+          "probability": 1.9427944e-21
+        },
+        {
+          "rank": 4,
+          "token_id": 729,
+          "token": " was",
+          "probability": 7.275272e-22
+        },
+        {
+          "rank": 5,
+          "token_id": 919,
+          "token": " has",
+          "probability": 1.7818875e-24
+        },
+        {
+          "rank": 6,
+          "token_id": 502,
+          "token": "is",
+          "probability": 3.200217e-30
+        },
+        {
+          "rank": 7,
+          "token_id": 2125,
+          "token": " Is",
+          "probability": 2.9312449e-30
+        },
+        {
+          "rank": 8,
+          "token_id": 877,
+          "token": " will",
+          "probability": 1.6208439e-31
+        },
+        {
+          "rank": 9,
+          "token_id": 235303,
+          "token": "'",
+          "probability": 7.620311e-32
+        },
+        {
+          "rank": 10,
+          "token_id": 798,
+          "token": " can",
+          "probability": 3.776157e-32
+        }
+      ]
+    },
+    {
+      "layer": 2,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 1.0
+        },
+        {
+          "rank": 2,
+          "token_id": 2,
+          "token": "<bos>",
+          "probability": 2.559618e-14
+        },
+        {
+          "rank": 3,
+          "token_id": 708,
+          "token": " are",
+          "probability": 1.434999e-15
+        },
+        {
+          "rank": 4,
+          "token_id": 729,
+          "token": " was",
+          "probability": 4.3973843e-16
+        },
+        {
+          "rank": 5,
+          "token_id": 919,
+          "token": " has",
+          "probability": 2.973375e-17
+        },
+        {
+          "rank": 6,
+          "token_id": 780,
+          "token": " not",
+          "probability": 2.9746253e-23
+        },
+        {
+          "rank": 7,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 1.3137079e-23
+        },
+        {
+          "rank": 8,
+          "token_id": 877,
+          "token": " will",
+          "probability": 1.1660894e-23
+        },
+        {
+          "rank": 9,
+          "token_id": 575,
+          "token": " in",
+          "probability": 2.9053952e-24
+        },
+        {
+          "rank": 10,
+          "token_id": 798,
+          "token": " can",
+          "probability": 2.2814893e-24
+        }
+      ]
+    },
+    {
+      "layer": 3,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 2,
+          "token": "<bos>",
+          "probability": 0.8495221
+        },
+        {
+          "rank": 2,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.15047787
+        },
+        {
+          "rank": 3,
+          "token_id": 729,
+          "token": " was",
+          "probability": 5.663257e-13
+        },
+        {
+          "rank": 4,
+          "token_id": 708,
+          "token": " are",
+          "probability": 1.062626e-13
+        },
+        {
+          "rank": 5,
+          "token_id": 919,
+          "token": " has",
+          "probability": 3.1179923e-14
+        },
+        {
+          "rank": 6,
+          "token_id": 780,
+          "token": " not",
+          "probability": 1.6633444e-18
+        },
+        {
+          "rank": 7,
+          "token_id": 575,
+          "token": " in",
+          "probability": 1.6755327e-19
+        },
+        {
+          "rank": 8,
+          "token_id": 877,
+          "token": " will",
+          "probability": 4.3272396e-20
+        },
+        {
+          "rank": 9,
+          "token_id": 476,
+          "token": " a",
+          "probability": 9.841906e-21
+        },
+        {
+          "rank": 10,
+          "token_id": 798,
+          "token": " can",
+          "probability": 4.2487724e-21
+        }
+      ]
+    },
+    {
+      "layer": 4,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 2,
+          "token": "<bos>",
+          "probability": 0.85297894
+        },
+        {
+          "rank": 2,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.14702098
+        },
+        {
+          "rank": 3,
+          "token_id": 729,
+          "token": " was",
+          "probability": 1.1942553e-9
+        },
+        {
+          "rank": 4,
+          "token_id": 708,
+          "token": " are",
+          "probability": 3.3044947e-10
+        },
+        {
+          "rank": 5,
+          "token_id": 780,
+          "token": " not",
+          "probability": 1.0504341e-10
+        },
+        {
+          "rank": 6,
+          "token_id": 919,
+          "token": " has",
+          "probability": 4.1729387e-11
+        },
+        {
+          "rank": 7,
+          "token_id": 9518,
+          "token": " certainly",
+          "probability": 4.9950183e-12
+        },
+        {
+          "rank": 8,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 2.5572172e-12
+        },
+        {
+          "rank": 9,
+          "token_id": 25073,
+          "token": "Geplaatst",
+          "probability": 1.4725477e-12
+        },
+        {
+          "rank": 10,
+          "token_id": 4247,
+          "token": " actually",
+          "probability": 3.071335e-13
+        }
+      ]
+    },
+    {
+      "layer": 5,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 2,
+          "token": "<bos>",
+          "probability": 1.0
+        },
+        {
+          "rank": 2,
+          "token_id": 603,
+          "token": " is",
+          "probability": 2.0964267e-15
+        },
+        {
+          "rank": 3,
+          "token_id": 729,
+          "token": " was",
+          "probability": 1.4098229e-22
+        },
+        {
+          "rank": 4,
+          "token_id": 708,
+          "token": " are",
+          "probability": 5.651397e-23
+        },
+        {
+          "rank": 5,
+          "token_id": 919,
+          "token": " has",
+          "probability": 7.1928944e-25
+        },
+        {
+          "rank": 6,
+          "token_id": 9518,
+          "token": " certainly",
+          "probability": 2.6679912e-25
+        },
+        {
+          "rank": 7,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 7.7768946e-26
+        },
+        {
+          "rank": 8,
+          "token_id": 8118,
+          "token": " definitely",
+          "probability": 5.765842e-26
+        },
+        {
+          "rank": 9,
+          "token_id": 780,
+          "token": " not",
+          "probability": 4.949144e-26
+        },
+        {
+          "rank": 10,
+          "token_id": 1490,
+          "token": " now",
+          "probability": 1.038169e-26
+        }
+      ]
+    },
+    {
+      "layer": 6,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.99998593
+        },
+        {
+          "rank": 2,
+          "token_id": 25073,
+          "token": "Geplaatst",
+          "probability": 0.0000133175
+        },
+        {
+          "rank": 3,
+          "token_id": 729,
+          "token": " was",
+          "probability": 6.5902486e-7
+        },
+        {
+          "rank": 4,
+          "token_id": 708,
+          "token": " are",
+          "probability": 1.3445202e-7
+        },
+        {
+          "rank": 5,
+          "token_id": 919,
+          "token": " has",
+          "probability": 1.13562475e-8
+        },
+        {
+          "rank": 6,
+          "token_id": 8118,
+          "token": " definitely",
+          "probability": 8.699036e-9
+        },
+        {
+          "rank": 7,
+          "token_id": 9518,
+          "token": " certainly",
+          "probability": 5.1364712e-9
+        },
+        {
+          "rank": 8,
+          "token_id": 780,
+          "token": " not",
+          "probability": 2.1325266e-9
+        },
+        {
+          "rank": 9,
+          "token_id": 66831,
+          "token": " capitale",
+          "probability": 2.808691e-10
+        },
+        {
+          "rank": 10,
+          "token_id": 4247,
+          "token": " actually",
+          "probability": 1.3394474e-10
+        }
+      ]
+    },
+    {
+      "layer": 7,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.99994576
+        },
+        {
+          "rank": 2,
+          "token_id": 66831,
+          "token": " capitale",
+          "probability": 0.000029255292
+        },
+        {
+          "rank": 3,
+          "token_id": 3413,
+          "token": " city",
+          "probability": 0.00000652307
+        },
+        {
+          "rank": 4,
+          "token_id": 729,
+          "token": " was",
+          "probability": 0.00000464976
+        },
+        {
+          "rank": 5,
+          "token_id": 919,
+          "token": " has",
+          "probability": 0.0000037130771
+        },
+        {
+          "rank": 6,
+          "token_id": 1490,
+          "token": " now",
+          "probability": 0.0000036874155
+        },
+        {
+          "rank": 7,
+          "token_id": 708,
+          "token": " are",
+          "probability": 0.000002807379
+        },
+        {
+          "rank": 8,
+          "token_id": 8118,
+          "token": " definitely",
+          "probability": 0.0000014257013
+        },
+        {
+          "rank": 9,
+          "token_id": 9518,
+          "token": " certainly",
+          "probability": 8.471978e-7
+        },
+        {
+          "rank": 10,
+          "token_id": 575,
+          "token": " in",
+          "probability": 2.4287903e-7
+        }
+      ]
+    },
+    {
+      "layer": 8,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.9998609
+        },
+        {
+          "rank": 2,
+          "token_id": 3413,
+          "token": " city",
+          "probability": 0.000055230408
+        },
+        {
+          "rank": 3,
+          "token_id": 919,
+          "token": " has",
+          "probability": 0.00004586191
+        },
+        {
+          "rank": 4,
+          "token_id": 1490,
+          "token": " now",
+          "probability": 0.000007720355
+        },
+        {
+          "rank": 5,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.000006126204
+        },
+        {
+          "rank": 6,
+          "token_id": 66831,
+          "token": " capitale",
+          "probability": 0.0000050412677
+        },
+        {
+          "rank": 7,
+          "token_id": 729,
+          "token": " was",
+          "probability": 0.0000043884083
+        },
+        {
+          "rank": 8,
+          "token_id": 5344,
+          "token": " itself",
+          "probability": 0.000003924249
+        },
+        {
+          "rank": 9,
+          "token_id": 708,
+          "token": " are",
+          "probability": 0.0000038675157
+        },
+        {
+          "rank": 10,
+          "token_id": 3151,
+          "token": " called",
+          "probability": 8.9257844e-7
+        }
+      ]
+    },
+    {
+      "layer": 9,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.99962306
+        },
+        {
+          "rank": 2,
+          "token_id": 919,
+          "token": " has",
+          "probability": 0.00013484791
+        },
+        {
+          "rank": 3,
+          "token_id": 8118,
+          "token": " definitely",
+          "probability": 0.000036600184
+        },
+        {
+          "rank": 4,
+          "token_id": 729,
+          "token": " was",
+          "probability": 0.00003551643
+        },
+        {
+          "rank": 5,
+          "token_id": 1490,
+          "token": " now",
+          "probability": 0.000034146567
+        },
+        {
+          "rank": 6,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.000029455052
+        },
+        {
+          "rank": 7,
+          "token_id": 221792,
+          "token": " היתה",
+          "probability": 0.000021401904
+        },
+        {
+          "rank": 8,
+          "token_id": 7094,
+          "token": " currently",
+          "probability": 0.000013893241
+        },
+        {
+          "rank": 9,
+          "token_id": 25230,
+          "token": " situated",
+          "probability": 0.000011233185
+        },
+        {
+          "rank": 10,
+          "token_id": 7023,
+          "token": " located",
+          "probability": 0.000010648479
+        }
+      ]
+    },
+    {
+      "layer": 10,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.99985707
+        },
+        {
+          "rank": 2,
+          "token_id": 919,
+          "token": " has",
+          "probability": 0.00011204148
+        },
+        {
+          "rank": 3,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.0000266694
+        },
+        {
+          "rank": 4,
+          "token_id": 1490,
+          "token": " now",
+          "probability": 0.0000024027559
+        },
+        {
+          "rank": 5,
+          "token_id": 575,
+          "token": " in",
+          "probability": 9.259881e-7
+        },
+        {
+          "rank": 6,
+          "token_id": 729,
+          "token": " was",
+          "probability": 3.8080913e-7
+        },
+        {
+          "rank": 7,
+          "token_id": 611,
+          "token": " on",
+          "probability": 6.7953245e-8
+        },
+        {
+          "rank": 8,
+          "token_id": 578,
+          "token": " and",
+          "probability": 6.7657474e-8
+        },
+        {
+          "rank": 9,
+          "token_id": 7094,
+          "token": " currently",
+          "probability": 5.6144497e-8
+        },
+        {
+          "rank": 10,
+          "token_id": 235269,
+          "token": ",",
+          "probability": 5.5393105e-8
+        }
+      ]
+    },
+    {
+      "layer": 11,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.9999212
+        },
+        {
+          "rank": 2,
+          "token_id": 919,
+          "token": " has",
+          "probability": 0.00007601589
+        },
+        {
+          "rank": 3,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.0000016530512
+        },
+        {
+          "rank": 4,
+          "token_id": 729,
+          "token": " was",
+          "probability": 7.1779215e-7
+        },
+        {
+          "rank": 5,
+          "token_id": 575,
+          "token": " in",
+          "probability": 1.9429605e-7
+        },
+        {
+          "rank": 6,
+          "token_id": 1490,
+          "token": " now",
+          "probability": 1.4557128e-7
+        },
+        {
+          "rank": 7,
+          "token_id": 235269,
+          "token": ",",
+          "probability": 3.4464474e-8
+        },
+        {
+          "rank": 8,
+          "token_id": 221792,
+          "token": " היתה",
+          "probability": 2.1261679e-8
+        },
+        {
+          "rank": 9,
+          "token_id": 7094,
+          "token": " currently",
+          "probability": 1.4253764e-8
+        },
+        {
+          "rank": 10,
+          "token_id": 8118,
+          "token": " definitely",
+          "probability": 1.2906269e-8
+        }
+      ]
+    },
+    {
+      "layer": 12,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.9999546
+        },
+        {
+          "rank": 2,
+          "token_id": 919,
+          "token": " has",
+          "probability": 0.000044473458
+        },
+        {
+          "rank": 3,
+          "token_id": 729,
+          "token": " was",
+          "probability": 2.8418498e-7
+        },
+        {
+          "rank": 4,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 2.4617205e-7
+        },
+        {
+          "rank": 5,
+          "token_id": 575,
+          "token": " in",
+          "probability": 2.1325026e-7
+        },
+        {
+          "rank": 6,
+          "token_id": 611,
+          "token": " on",
+          "probability": 5.6546664e-8
+        },
+        {
+          "rank": 7,
+          "token_id": 708,
+          "token": " are",
+          "probability": 4.8139874e-8
+        },
+        {
+          "rank": 8,
+          "token_id": 2593,
+          "token": " always",
+          "probability": 2.32296e-8
+        },
+        {
+          "rank": 9,
+          "token_id": 7094,
+          "token": " currently",
+          "probability": 2.3159613e-8
+        },
+        {
+          "rank": 10,
+          "token_id": 1490,
+          "token": " now",
+          "probability": 2.0701384e-8
+        }
+      ]
+    },
+    {
+      "layer": 13,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.9999813
+        },
+        {
+          "rank": 2,
+          "token_id": 575,
+          "token": " in",
+          "probability": 0.000008537217
+        },
+        {
+          "rank": 3,
+          "token_id": 919,
+          "token": " has",
+          "probability": 0.0000070055466
+        },
+        {
+          "rank": 4,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.0000010783899
+        },
+        {
+          "rank": 5,
+          "token_id": 729,
+          "token": " was",
+          "probability": 9.376652e-7
+        },
+        {
+          "rank": 6,
+          "token_id": 611,
+          "token": " on",
+          "probability": 3.264573e-7
+        },
+        {
+          "rank": 7,
+          "token_id": 476,
+          "token": " a",
+          "probability": 2.1695206e-7
+        },
+        {
+          "rank": 8,
+          "token_id": 576,
+          "token": " of",
+          "probability": 1.9361444e-7
+        },
+        {
+          "rank": 9,
+          "token_id": 1490,
+          "token": " now",
+          "probability": 1.7548517e-7
+        },
+        {
+          "rank": 10,
+          "token_id": 235269,
+          "token": ",",
+          "probability": 8.1439616e-8
+        }
+      ]
+    },
+    {
+      "layer": 14,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.9992279
+        },
+        {
+          "rank": 2,
+          "token_id": 919,
+          "token": " has",
+          "probability": 0.0005094777
+        },
+        {
+          "rank": 3,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.00017721154
+        },
+        {
+          "rank": 4,
+          "token_id": 575,
+          "token": " in",
+          "probability": 0.00002076381
+        },
+        {
+          "rank": 5,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.000014615993
+        },
+        {
+          "rank": 6,
+          "token_id": 729,
+          "token": " was",
+          "probability": 0.000010452954
+        },
+        {
+          "rank": 7,
+          "token_id": 1578,
+          "token": " well",
+          "probability": 0.0000073913457
+        },
+        {
+          "rank": 8,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.000006334344
+        },
+        {
+          "rank": 9,
+          "token_id": 1490,
+          "token": " now",
+          "probability": 0.000004507832
+        },
+        {
+          "rank": 10,
+          "token_id": 8118,
+          "token": " definitely",
+          "probability": 0.0000029956213
+        }
+      ]
+    },
+    {
+      "layer": 15,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.81921864
+        },
+        {
+          "rank": 2,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.14861085
+        },
+        {
+          "rank": 3,
+          "token_id": 2593,
+          "token": " always",
+          "probability": 0.010287041
+        },
+        {
+          "rank": 4,
+          "token_id": 2447,
+          "token": " never",
+          "probability": 0.0064594564
+        },
+        {
+          "rank": 5,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.0038048003
+        },
+        {
+          "rank": 6,
+          "token_id": 1490,
+          "token": " now",
+          "probability": 0.0026079006
+        },
+        {
+          "rank": 7,
+          "token_id": 8118,
+          "token": " definitely",
+          "probability": 0.002578334
+        },
+        {
+          "rank": 8,
+          "token_id": 9518,
+          "token": " certainly",
+          "probability": 0.0020267821
+        },
+        {
+          "rank": 9,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.001092704
+        },
+        {
+          "rank": 10,
+          "token_id": 10094,
+          "token": " indeed",
+          "probability": 0.0008926422
+        }
+      ]
+    },
+    {
+      "layer": 16,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.7594128
+        },
+        {
+          "rank": 2,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.15970679
+        },
+        {
+          "rank": 3,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.06154662
+        },
+        {
+          "rank": 4,
+          "token_id": 2593,
+          "token": " always",
+          "probability": 0.007941707
+        },
+        {
+          "rank": 5,
+          "token_id": 573,
+          "token": " the",
+          "probability": 0.0061896346
+        },
+        {
+          "rank": 6,
+          "token_id": 8118,
+          "token": " definitely",
+          "probability": 0.0017441991
+        },
+        {
+          "rank": 7,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.001067117
+        },
+        {
+          "rank": 8,
+          "token_id": 1508,
+          "token": " very",
+          "probability": 0.00057953433
+        },
+        {
+          "rank": 9,
+          "token_id": 10094,
+          "token": " indeed",
+          "probability": 0.0003554454
+        },
+        {
+          "rank": 10,
+          "token_id": 919,
+          "token": " has",
+          "probability": 0.00033317972
+        }
+      ]
+    },
+    {
+      "layer": 17,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.86869013
+        },
+        {
+          "rank": 2,
+          "token_id": 2593,
+          "token": " always",
+          "probability": 0.08669782
+        },
+        {
+          "rank": 3,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.031775333
+        },
+        {
+          "rank": 4,
+          "token_id": 573,
+          "token": " the",
+          "probability": 0.0060258717
+        },
+        {
+          "rank": 5,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.0028476473
+        },
+        {
+          "rank": 6,
+          "token_id": 974,
+          "token": " one",
+          "probability": 0.0015932958
+        },
+        {
+          "rank": 7,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.0013745027
+        },
+        {
+          "rank": 8,
+          "token_id": 1508,
+          "token": " very",
+          "probability": 0.0005700935
+        },
+        {
+          "rank": 9,
+          "token_id": 235248,
+          "token": " ",
+          "probability": 0.0001490469
+        },
+        {
+          "rank": 10,
+          "token_id": 8118,
+          "token": " definitely",
+          "probability": 0.00014696638
+        }
+      ]
+    },
+    {
+      "layer": 18,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.9483318
+        },
+        {
+          "rank": 2,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.02928685
+        },
+        {
+          "rank": 3,
+          "token_id": 2593,
+          "token": " always",
+          "probability": 0.011972441
+        },
+        {
+          "rank": 4,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.008435433
+        },
+        {
+          "rank": 5,
+          "token_id": 8118,
+          "token": " definitely",
+          "probability": 0.00052486174
+        },
+        {
+          "rank": 6,
+          "token_id": 974,
+          "token": " one",
+          "probability": 0.00042895364
+        },
+        {
+          "rank": 7,
+          "token_id": 1508,
+          "token": " very",
+          "probability": 0.00042704504
+        },
+        {
+          "rank": 8,
+          "token_id": 573,
+          "token": " the",
+          "probability": 0.0004167454
+        },
+        {
+          "rank": 9,
+          "token_id": 3695,
+          "token": " often",
+          "probability": 0.000039438808
+        },
+        {
+          "rank": 10,
+          "token_id": 603,
+          "token": " is",
+          "probability": 0.000022996337
+        }
+      ]
+    },
+    {
+      "layer": 19,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.9289276
+        },
+        {
+          "rank": 2,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.034269657
+        },
+        {
+          "rank": 3,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.02784149
+        },
+        {
+          "rank": 4,
+          "token_id": 2593,
+          "token": " always",
+          "probability": 0.005817023
+        },
+        {
+          "rank": 5,
+          "token_id": 3836,
+          "token": " known",
+          "probability": 0.0013133183
+        },
+        {
+          "rank": 6,
+          "token_id": 10964,
+          "token": " famous",
+          "probability": 0.0005799605
+        },
+        {
+          "rank": 7,
+          "token_id": 974,
+          "token": " one",
+          "probability": 0.00048682996
+        },
+        {
+          "rank": 8,
+          "token_id": 573,
+          "token": " the",
+          "probability": 0.00034428434
+        },
+        {
+          "rank": 9,
+          "token_id": 1508,
+          "token": " very",
+          "probability": 0.0001370817
+        },
+        {
+          "rank": 10,
+          "token_id": 3695,
+          "token": " often",
+          "probability": 0.00010943332
+        }
+      ]
+    },
+    {
+      "layer": 20,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.96266997
+        },
+        {
+          "rank": 2,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.032876857
+        },
+        {
+          "rank": 3,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.0021543894
+        },
+        {
+          "rank": 4,
+          "token_id": 974,
+          "token": " one",
+          "probability": 0.0008922268
+        },
+        {
+          "rank": 5,
+          "token_id": 3836,
+          "token": " known",
+          "probability": 0.00088089064
+        },
+        {
+          "rank": 6,
+          "token_id": 573,
+          "token": " the",
+          "probability": 0.0002852642
+        },
+        {
+          "rank": 7,
+          "token_id": 2593,
+          "token": " always",
+          "probability": 0.00018183338
+        },
+        {
+          "rank": 8,
+          "token_id": 671,
+          "token": " an",
+          "probability": 0.00003496875
+        },
+        {
+          "rank": 9,
+          "token_id": 3695,
+          "token": " often",
+          "probability": 0.000010101492
+        },
+        {
+          "rank": 10,
+          "token_id": 10964,
+          "token": " famous",
+          "probability": 0.000005947656
+        }
+      ]
+    },
+    {
+      "layer": 21,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.9324523
+        },
+        {
+          "rank": 2,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.0668777
+        },
+        {
+          "rank": 3,
+          "token_id": 3836,
+          "token": " known",
+          "probability": 0.0002815136
+        },
+        {
+          "rank": 4,
+          "token_id": 974,
+          "token": " one",
+          "probability": 0.00014871782
+        },
+        {
+          "rank": 5,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.00007532542
+        },
+        {
+          "rank": 6,
+          "token_id": 573,
+          "token": " the",
+          "probability": 0.00006812253
+        },
+        {
+          "rank": 7,
+          "token_id": 2078,
+          "token": " home",
+          "probability": 0.000051816984
+        },
+        {
+          "rank": 8,
+          "token_id": 10964,
+          "token": " famous",
+          "probability": 0.000036887977
+        },
+        {
+          "rank": 9,
+          "token_id": 2593,
+          "token": " always",
+          "probability": 0.0000047296103
+        },
+        {
+          "rank": 10,
+          "token_id": 671,
+          "token": " an",
+          "probability": 0.0000013070579
+        }
+      ]
+    },
+    {
+      "layer": 22,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.5125215
+        },
+        {
+          "rank": 2,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.48308468
+        },
+        {
+          "rank": 3,
+          "token_id": 3836,
+          "token": " known",
+          "probability": 0.0018283842
+        },
+        {
+          "rank": 4,
+          "token_id": 573,
+          "token": " the",
+          "probability": 0.0011226898
+        },
+        {
+          "rank": 5,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.00079617614
+        },
+        {
+          "rank": 6,
+          "token_id": 2078,
+          "token": " home",
+          "probability": 0.00036794296
+        },
+        {
+          "rank": 7,
+          "token_id": 10964,
+          "token": " famous",
+          "probability": 0.00013791151
+        },
+        {
+          "rank": 8,
+          "token_id": 974,
+          "token": " one",
+          "probability": 0.0001224586
+        },
+        {
+          "rank": 9,
+          "token_id": 2593,
+          "token": " always",
+          "probability": 0.000011668817
+        },
+        {
+          "rank": 10,
+          "token_id": 671,
+          "token": " an",
+          "probability": 0.0000051354764
+        }
+      ]
+    },
+    {
+      "layer": 23,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.94942623
+        },
+        {
+          "rank": 2,
+          "token_id": 2247,
+          "token": " full",
+          "probability": 0.036647774
+        },
+        {
+          "rank": 3,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.007690176
+        },
+        {
+          "rank": 4,
+          "token_id": 573,
+          "token": " the",
+          "probability": 0.004616586
+        },
+        {
+          "rank": 5,
+          "token_id": 974,
+          "token": " one",
+          "probability": 0.00079530413
+        },
+        {
+          "rank": 6,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.0006715424
+        },
+        {
+          "rank": 7,
+          "token_id": 2078,
+          "token": " home",
+          "probability": 0.00007232792
+        },
+        {
+          "rank": 8,
+          "token_id": 3836,
+          "token": " known",
+          "probability": 0.00004202579
+        },
+        {
+          "rank": 9,
+          "token_id": 671,
+          "token": " an",
+          "probability": 0.000020617508
+        },
+        {
+          "rank": 10,
+          "token_id": 10545,
+          "token": " filled",
+          "probability": 0.000007940998
+        }
+      ]
+    },
+    {
+      "layer": 24,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.9890063
+        },
+        {
+          "rank": 2,
+          "token_id": 2078,
+          "token": " home",
+          "probability": 0.0036445286
+        },
+        {
+          "rank": 3,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.0034801017
+        },
+        {
+          "rank": 4,
+          "token_id": 974,
+          "token": " one",
+          "probability": 0.002089646
+        },
+        {
+          "rank": 5,
+          "token_id": 573,
+          "token": " the",
+          "probability": 0.0013007714
+        },
+        {
+          "rank": 6,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.00030747062
+        },
+        {
+          "rank": 7,
+          "token_id": 3836,
+          "token": " known",
+          "probability": 0.000111959045
+        },
+        {
+          "rank": 8,
+          "token_id": 10964,
+          "token": " famous",
+          "probability": 0.000020073763
+        },
+        {
+          "rank": 9,
+          "token_id": 671,
+          "token": " an",
+          "probability": 0.00001945861
+        },
+        {
+          "rank": 10,
+          "token_id": 2247,
+          "token": " full",
+          "probability": 0.000012355252
+        }
+      ]
+    },
+    {
+      "layer": 25,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 476,
+          "token": " a",
+          "probability": 0.99559855
+        },
+        {
+          "rank": 2,
+          "token_id": 573,
+          "token": " the",
+          "probability": 0.002924872
+        },
+        {
+          "rank": 3,
+          "token_id": 974,
+          "token": " one",
+          "probability": 0.00073788624
+        },
+        {
+          "rank": 4,
+          "token_id": 1170,
+          "token": " also",
+          "probability": 0.0006066076
+        },
+        {
+          "rank": 5,
+          "token_id": 2078,
+          "token": " home",
+          "probability": 0.000050287017
+        },
+        {
+          "rank": 6,
+          "token_id": 3836,
+          "token": " known",
+          "probability": 0.000040559946
+        },
+        {
+          "rank": 7,
+          "token_id": 780,
+          "token": " not",
+          "probability": 0.000019769905
+        },
+        {
+          "rank": 8,
+          "token_id": 7127,
+          "token": " Paris",
+          "probability": 0.000013480925
+        },
+        {
+          "rank": 9,
+          "token_id": 2247,
+          "token": " full",
+          "probability": 0.0000025250606
+        },
+        {
+          "rank": 10,
+          "token_id": 671,
+          "token": " an",
+          "probability": 0.0000021995845
+        }
+      ]
+    }
+  ]
+}

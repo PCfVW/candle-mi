@@ -53,7 +53,7 @@ cargo run --release --features transformer,mmap --example generate
 cargo run --release --features transformer --example logit_lens -- "meta-llama/Llama-3.2-1B"
 
 # Logit lens — with JSON output
-cargo run --release --features transformer --example logit_lens -- "meta-llama/Llama-3.2-1B" --json examples/results/logit_lens/llama-3.2-1b.json
+cargo run --release --features transformer --example logit_lens -- "meta-llama/Llama-3.2-1B" --output examples/results/logit_lens/llama-3.2-1b.json
 
 # Logit lens — all cached models
 cargo run --release --features transformer,mmap --example logit_lens
@@ -121,16 +121,24 @@ cargo run --release --features clt,transformer,mmap --example figure13_planning_
 Prompt: *"The capital of France is"* — tracking when "Paris" first enters the
 top predictions across layers.
 
-**Llama 3.2 1B** (16 layers): "Paris" first appears at layer 11 (top-5).
-Early layers predict generic tokens; convergence happens in the final third.
+**Llama 3.2 1B** (16 layers): "Paris" first appears at layer 11 (rank 1).
+Early layers predict generic tokens ("is", "was"); by layer 4 semantic concepts
+emerge ("city", "capitals"). At layer 11, "Paris" surfaces alongside related
+cities (Marseille, Bordeaux, Brussels). Convergence at ~69% depth — typical for
+factual recall in small LLMs.
 
-**Gemma 2 2B** (26 layers): "Paris" never reaches top-10. The model predicts
-" a" at the final layer — consistent with Gemma 2's soft-capped logit
-distribution which flattens probabilities across the vocabulary.
+**Gemma 2 2B** (26 layers): "Paris" first appears at layer 25 (rank 8, the very
+last layer). Through most of its depth, Gemma 2 strongly predicts continuation
+patterns — " is" dominates layers 0-14 (often 99.9%), then " also" takes over
+(layers 15-21), then " a" (layers 22-25). Factual resolution happens extremely
+late; "Paris" only barely enters the top-10 at 0.001% probability.
 
-**StarCoder2 3B** (30 layers): "Paris" never reaches top-10. As a code model,
-predictions are dominated by code tokens (`\_\-`, `selecione`, `Par`). Natural
-language knowledge is minimal.
+**StarCoder2 3B** (30 layers): "Paris" as a complete token never reaches top-10.
+However, the BPE subword " Par" (the first piece of " Paris") dominates from
+layer 22 onward (33% → 74% by layer 26), alongside variants "Par", " par",
+"PAR". The model clearly knows the answer but its code-oriented tokenizer splits
+" Paris" across multiple tokens, so the `first_appearance` substring check
+misses it.
 
 ### Example output: `attention_knockout`
 

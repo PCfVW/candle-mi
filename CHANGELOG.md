@@ -24,9 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Logit lens example** (`logit_lens.rs`) — captures `ResidPost` at every
   layer, projects to vocabulary via `project_to_vocab`, builds
   `LogitLensAnalysis` with per-layer top-k predictions; demonstrates
-  `first_appearance()` for convergence tracking; tested on Llama 3.2 1B
-  ("Paris" at layer 11), Gemma 2 2B (never in top-10, soft-capped), and
-  StarCoder2 3B (code tokens dominate)
+  `first_appearance()` for convergence tracking; Clap CLI with `--output`
+  for structured JSON export; tested on Llama 3.2 1B ("Paris" at layer 11),
+  Gemma 2 2B ("Paris" at layer 25, rank 8), and StarCoder2 3B (BPE subword
+  "Par" dominates from layer 22); golden JSON results in
+  `examples/results/logit_lens/`
 - **Attention knockout example** (`attention_knockout.rs`) — knocks out a
   single attention edge (last → first token) across all heads at a middle
   layer; baseline vs ablated forward passes with `KnockoutSpec`,
@@ -72,6 +74,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   inject interventions)
 - `MITokenizer::find_token_id()` — look up a token ID by word string
 - `MITokenizer::decode_token()` — decode a single token ID back to string
+- `MITokenizer::encode_with_offsets()` and `encode_raw_with_offsets()` — encode
+  text with character offset mapping, returning `EncodingWithOffsets` for
+  character-to-token position lookups; RWKV backend returns an error (offset
+  mapping not supported)
+- **Activation patching example** (`activation_patching.rs`) — causal tracing
+  via position-specific activation patching (Meng et al., "Locating and Editing
+  Factual Associations in GPT", NeurIPS 2022); clean vs. corrupted prompt
+  ("France" → "Poland"/"Canada"), restore subject token residual at each layer,
+  measure recovery; demonstrates `FullActivationCache`, `Intervention::Replace`,
+  `Intervention::Add`, `HookPoint::Embed`; tested on Llama 3.2 1B, Gemma 2 2B,
+  StarCoder2 3B
+- **Token positions example** (`token_positions.rs`) — character-to-token
+  mapping with `EncodingWithOffsets` and `convert_positions`; pure utility
+  example (no GPU, no `transformer` feature); demonstrates `char_to_token`,
+  `char_range_to_tokens`, `token_to_char_range`, `tokens_with_offsets`, and
+  exact vs. fuzzy batch conversion; tested on Llama 3.2 1B, Gemma 2 2B,
+  StarCoder2 3B
+- **RWKV inference example** (`rwkv_inference.rs`) — RWKV linear RNN inference
+  with RWKV-specific hook capture (`RwkvState`, `RwkvDecay`, `ResidPost`) and
+  state knockout via `StateKnockoutSpec`; supports both RWKV-6 (Finch) and
+  RWKV-7 (Goose); auto-discovers cached RWKV models; RWKV-6 requires
+  `rwkv-tokenizer` feature for the RWKV World tokenizer fallback
+- **Recurrent feedback example** (`recurrent_feedback.rs`) — anacrousis /
+  recurrent passes for rhyme completion; loads `GenericTransformer` directly
+  (not via `MIModel`) to access `forward_recurrent()` and `generate_recurrent()`;
+  15 couplets with rhyme direction computed from averaged L2-normalised
+  embedding vectors; Clap CLI with `--sustained`, `--strength`, `--loop-start`,
+  `--loop-end`, `--max-couplets` options; reference: Taufeeque et al.,
+  arXiv:2407.15421, 2024
 - Rust 2024 edition badge in `README.md`
 
 ### Changed
@@ -89,6 +120,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **`project_to_vocab` now applies final layer norm** — the logit lens
+  projection was missing the final norm (`RmsNorm`/`LayerNorm`) before the
+  unembedding matrix, producing near-random predictions from intermediate
+  layers; both transformer and RWKV backends now apply the model's final norm
+  before projection, matching the standard logit lens technique
+  (nostalgebraist, 2020) and TransformerLens convention
 - **Attention knockout NaN** — full-row knockout (`from_position`) caused NaN
   in softmax (all attention weights become -inf after causal mask); changed
   to single-edge knockout (`edge(last, 0)`) which preserves valid attention

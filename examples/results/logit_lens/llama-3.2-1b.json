@@ -1,0 +1,1050 @@
+{
+  "model_id": "meta-llama/Llama-3.2-1B",
+  "prompt": "The capital of France is",
+  "n_layers": 16,
+  "n_heads": 32,
+  "hidden_size": 2048,
+  "paris_first_top10": 11,
+  "layers": [
+    {
+      "layer": 0,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 374,
+          "token": " is",
+          "probability": 0.000010752619
+        },
+        {
+          "rank": 2,
+          "token_id": 574,
+          "token": " was",
+          "probability": 0.00000993491
+        },
+        {
+          "rank": 3,
+          "token_id": 31530,
+          "token": "-is",
+          "probability": 0.000009642265
+        },
+        {
+          "rank": 4,
+          "token_id": 2209,
+          "token": " Is",
+          "probability": 0.000009583149
+        },
+        {
+          "rank": 5,
+          "token_id": 20501,
+          "token": "\tis",
+          "probability": 0.000009569373
+        },
+        {
+          "rank": 6,
+          "token_id": 706,
+          "token": " has",
+          "probability": 0.000009543487
+        },
+        {
+          "rank": 7,
+          "token_id": 87538,
+          "token": "$is",
+          "probability": 0.000009363676
+        },
+        {
+          "rank": 8,
+          "token_id": 285,
+          "token": "is",
+          "probability": 0.000009355555
+        },
+        {
+          "rank": 9,
+          "token_id": 62510,
+          "token": ",is",
+          "probability": 0.0000093304625
+        },
+        {
+          "rank": 10,
+          "token_id": 47527,
+          "token": "/is",
+          "probability": 0.000009309696
+        }
+      ]
+    },
+    {
+      "layer": 1,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 374,
+          "token": " is",
+          "probability": 0.000009912919
+        },
+        {
+          "rank": 2,
+          "token_id": 574,
+          "token": " was",
+          "probability": 0.000009674258
+        },
+        {
+          "rank": 3,
+          "token_id": 20501,
+          "token": "\tis",
+          "probability": 0.000009557774
+        },
+        {
+          "rank": 4,
+          "token_id": 117396,
+          "token": "사는",
+          "probability": 0.000009540832
+        },
+        {
+          "rank": 5,
+          "token_id": 42925,
+          "token": "edis",
+          "probability": 0.000009444448
+        },
+        {
+          "rank": 6,
+          "token_id": 74245,
+          "token": "直",
+          "probability": 0.000009439944
+        },
+        {
+          "rank": 7,
+          "token_id": 67023,
+          "token": "\\:",
+          "probability": 0.000009396447
+        },
+        {
+          "rank": 8,
+          "token_id": 62510,
+          "token": ",is",
+          "probability": 0.000009388007
+        },
+        {
+          "rank": 9,
+          "token_id": 18995,
+          "token": " zijn",
+          "probability": 0.000009386604
+        },
+        {
+          "rank": 10,
+          "token_id": 66291,
+          "token": ".ak",
+          "probability": 0.000009382124
+        }
+      ]
+    },
+    {
+      "layer": 2,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 22552,
+          "token": " hereby",
+          "probability": 0.000010048415
+        },
+        {
+          "rank": 2,
+          "token_id": 117727,
+          "token": "正式",
+          "probability": 0.000009853431
+        },
+        {
+          "rank": 3,
+          "token_id": 55171,
+          "token": "implemented",
+          "probability": 0.00000980282
+        },
+        {
+          "rank": 4,
+          "token_id": 73208,
+          "token": "ningen",
+          "probability": 0.000009776498
+        },
+        {
+          "rank": 5,
+          "token_id": 42747,
+          "token": "acos",
+          "probability": 0.000009586506
+        },
+        {
+          "rank": 6,
+          "token_id": 17812,
+          "token": "Es",
+          "probability": 0.0000095775185
+        },
+        {
+          "rank": 7,
+          "token_id": 24669,
+          "token": "uela",
+          "probability": 0.00000955998
+        },
+        {
+          "rank": 8,
+          "token_id": 75371,
+          "token": " shuffled",
+          "probability": 0.000009542986
+        },
+        {
+          "rank": 9,
+          "token_id": 31310,
+          "token": "emplo",
+          "probability": 0.000009540346
+        },
+        {
+          "rank": 10,
+          "token_id": 47527,
+          "token": "/is",
+          "probability": 0.000009538687
+        }
+      ]
+    },
+    {
+      "layer": 3,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 74714,
+          "token": "Localization",
+          "probability": 0.000011034003
+        },
+        {
+          "rank": 2,
+          "token_id": 71779,
+          "token": "osti",
+          "probability": 0.00001081718
+        },
+        {
+          "rank": 3,
+          "token_id": 6864,
+          "token": " capital",
+          "probability": 0.000010760205
+        },
+        {
+          "rank": 4,
+          "token_id": 66699,
+          "token": " afforded",
+          "probability": 0.00001072156
+        },
+        {
+          "rank": 5,
+          "token_id": 40875,
+          "token": " baseUrl",
+          "probability": 0.000010657817
+        },
+        {
+          "rank": 6,
+          "token_id": 13948,
+          "token": "icode",
+          "probability": 0.000010649883
+        },
+        {
+          "rank": 7,
+          "token_id": 65860,
+          "token": ".iso",
+          "probability": 0.000010632427
+        },
+        {
+          "rank": 8,
+          "token_id": 78387,
+          "token": " CAPITAL",
+          "probability": 0.000010627285
+        },
+        {
+          "rank": 9,
+          "token_id": 16353,
+          "token": "currency",
+          "probability": 0.000010606853
+        },
+        {
+          "rank": 10,
+          "token_id": 10434,
+          "token": " served",
+          "probability": 0.0000105608815
+        }
+      ]
+    },
+    {
+      "layer": 4,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 3363,
+          "token": " city",
+          "probability": 0.000011806759
+        },
+        {
+          "rank": 2,
+          "token_id": 16353,
+          "token": "currency",
+          "probability": 0.000011728764
+        },
+        {
+          "rank": 3,
+          "token_id": 47652,
+          "token": " CITY",
+          "probability": 0.00001169169
+        },
+        {
+          "rank": 4,
+          "token_id": 4409,
+          "token": " City",
+          "probability": 0.000011508822
+        },
+        {
+          "rank": 5,
+          "token_id": 27418,
+          "token": "Currency",
+          "probability": 0.000011184641
+        },
+        {
+          "rank": 6,
+          "token_id": 5762,
+          "token": " held",
+          "probability": 0.000011097595
+        },
+        {
+          "rank": 7,
+          "token_id": 9103,
+          "token": "city",
+          "probability": 0.000011076427
+        },
+        {
+          "rank": 8,
+          "token_id": 60449,
+          "token": " marty",
+          "probability": 0.000011049363
+        },
+        {
+          "rank": 9,
+          "token_id": 76941,
+          "token": "daemon",
+          "probability": 0.00001104642
+        },
+        {
+          "rank": 10,
+          "token_id": 13020,
+          "token": "City",
+          "probability": 0.000011037393
+        }
+      ]
+    },
+    {
+      "layer": 5,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 47652,
+          "token": " CITY",
+          "probability": 0.000011920826
+        },
+        {
+          "rank": 2,
+          "token_id": 3363,
+          "token": " city",
+          "probability": 0.000011687759
+        },
+        {
+          "rank": 3,
+          "token_id": 97618,
+          "token": " mutating",
+          "probability": 0.000011231151
+        },
+        {
+          "rank": 4,
+          "token_id": 4409,
+          "token": " City",
+          "probability": 0.000011190099
+        },
+        {
+          "rank": 5,
+          "token_id": 9103,
+          "token": "city",
+          "probability": 0.000011169585
+        },
+        {
+          "rank": 6,
+          "token_id": 94099,
+          "token": " capitals",
+          "probability": 0.000011129935
+        },
+        {
+          "rank": 7,
+          "token_id": 107368,
+          "token": "가는",
+          "probability": 0.000011120493
+        },
+        {
+          "rank": 8,
+          "token_id": 23530,
+          "token": "市",
+          "probability": 0.000011108006
+        },
+        {
+          "rank": 9,
+          "token_id": 59674,
+          "token": " debated",
+          "probability": 0.000011090381
+        },
+        {
+          "rank": 10,
+          "token_id": 14090,
+          "token": " largely",
+          "probability": 0.000011066922
+        }
+      ]
+    },
+    {
+      "layer": 6,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 50684,
+          "token": " melting",
+          "probability": 0.000012092879
+        },
+        {
+          "rank": 2,
+          "token_id": 89938,
+          "token": " bombed",
+          "probability": 0.000011725027
+        },
+        {
+          "rank": 3,
+          "token_id": 97618,
+          "token": " mutating",
+          "probability": 0.0000116848005
+        },
+        {
+          "rank": 4,
+          "token_id": 98467,
+          "token": " WON",
+          "probability": 0.000011649002
+        },
+        {
+          "rank": 5,
+          "token_id": 113143,
+          "token": " مرکزی",
+          "probability": 0.000011630286
+        },
+        {
+          "rank": 6,
+          "token_id": 47652,
+          "token": " CITY",
+          "probability": 0.000011593246
+        },
+        {
+          "rank": 7,
+          "token_id": 44081,
+          "token": " notorious",
+          "probability": 0.000011548963
+        },
+        {
+          "rank": 8,
+          "token_id": 94099,
+          "token": " capitals",
+          "probability": 0.00001152747
+        },
+        {
+          "rank": 9,
+          "token_id": 61545,
+          "token": " resorts",
+          "probability": 0.000011511397
+        },
+        {
+          "rank": 10,
+          "token_id": 75353,
+          "token": "-ok",
+          "probability": 0.000011414923
+        }
+      ]
+    },
+    {
+      "layer": 7,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 97618,
+          "token": " mutating",
+          "probability": 0.000012707563
+        },
+        {
+          "rank": 2,
+          "token_id": 54048,
+          "token": " japanese",
+          "probability": 0.000012408052
+        },
+        {
+          "rank": 3,
+          "token_id": 87223,
+          "token": " stad",
+          "probability": 0.000012369097
+        },
+        {
+          "rank": 4,
+          "token_id": 74328,
+          "token": "setQuery",
+          "probability": 0.000012359712
+        },
+        {
+          "rank": 5,
+          "token_id": 37545,
+          "token": " internationally",
+          "probability": 0.000012220526
+        },
+        {
+          "rank": 6,
+          "token_id": 32654,
+          "token": " technically",
+          "probability": 0.000012158514
+        },
+        {
+          "rank": 7,
+          "token_id": 40294,
+          "token": " kicking",
+          "probability": 0.000012144721
+        },
+        {
+          "rank": 8,
+          "token_id": 90652,
+          "token": "IMATE",
+          "probability": 0.000012141769
+        },
+        {
+          "rank": 9,
+          "token_id": 53314,
+          "token": "mute",
+          "probability": 0.000012069854
+        },
+        {
+          "rank": 10,
+          "token_id": 83109,
+          "token": "storms",
+          "probability": 0.000012052282
+        }
+      ]
+    },
+    {
+      "layer": 8,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 112261,
+          "token": "olit",
+          "probability": 0.000014492315
+        },
+        {
+          "rank": 2,
+          "token_id": 17346,
+          "token": "ilon",
+          "probability": 0.000014169601
+        },
+        {
+          "rank": 3,
+          "token_id": 49039,
+          "token": "isia",
+          "probability": 0.000013777371
+        },
+        {
+          "rank": 4,
+          "token_id": 116046,
+          "token": " приня",
+          "probability": 0.000013143653
+        },
+        {
+          "rank": 5,
+          "token_id": 47652,
+          "token": " CITY",
+          "probability": 0.000013018007
+        },
+        {
+          "rank": 6,
+          "token_id": 19073,
+          "token": " officially",
+          "probability": 0.000012887985
+        },
+        {
+          "rank": 7,
+          "token_id": 90256,
+          "token": " bustling",
+          "probability": 0.000012843142
+        },
+        {
+          "rank": 8,
+          "token_id": 90652,
+          "token": "IMATE",
+          "probability": 0.0000127813155
+        },
+        {
+          "rank": 9,
+          "token_id": 59674,
+          "token": " debated",
+          "probability": 0.000012740771
+        },
+        {
+          "rank": 10,
+          "token_id": 80124,
+          "token": " ControllerBase",
+          "probability": 0.000012702075
+        }
+      ]
+    },
+    {
+      "layer": 9,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 112261,
+          "token": "olit",
+          "probability": 0.000016678767
+        },
+        {
+          "rank": 2,
+          "token_id": 19073,
+          "token": " officially",
+          "probability": 0.00001626945
+        },
+        {
+          "rank": 3,
+          "token_id": 91627,
+          "token": "polit",
+          "probability": 0.000015751453
+        },
+        {
+          "rank": 4,
+          "token_id": 51287,
+          "token": " famously",
+          "probability": 0.000015633037
+        },
+        {
+          "rank": 5,
+          "token_id": 90256,
+          "token": " bustling",
+          "probability": 0.000015419026
+        },
+        {
+          "rank": 6,
+          "token_id": 7995,
+          "token": " certainly",
+          "probability": 0.000015313388
+        },
+        {
+          "rank": 7,
+          "token_id": 17551,
+          "token": " laid",
+          "probability": 0.000015139621
+        },
+        {
+          "rank": 8,
+          "token_id": 116007,
+          "token": " město",
+          "probability": 0.000015130261
+        },
+        {
+          "rank": 9,
+          "token_id": 49025,
+          "token": " shining",
+          "probability": 0.000015073132
+        },
+        {
+          "rank": 10,
+          "token_id": 22552,
+          "token": " hereby",
+          "probability": 0.00001499393
+        }
+      ]
+    },
+    {
+      "layer": 10,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 19073,
+          "token": " officially",
+          "probability": 0.00002023173
+        },
+        {
+          "rank": 2,
+          "token_id": 51287,
+          "token": " famously",
+          "probability": 0.000019080462
+        },
+        {
+          "rank": 3,
+          "token_id": 116007,
+          "token": " město",
+          "probability": 0.000018269395
+        },
+        {
+          "rank": 4,
+          "token_id": 124605,
+          "token": " місто",
+          "probability": 0.000018206243
+        },
+        {
+          "rank": 5,
+          "token_id": 17346,
+          "token": "ilon",
+          "probability": 0.000018062727
+        },
+        {
+          "rank": 6,
+          "token_id": 90256,
+          "token": " bustling",
+          "probability": 0.000017911487
+        },
+        {
+          "rank": 7,
+          "token_id": 17551,
+          "token": " laid",
+          "probability": 0.000017830442
+        },
+        {
+          "rank": 8,
+          "token_id": 38048,
+          "token": " undoubtedly",
+          "probability": 0.000017823671
+        },
+        {
+          "rank": 9,
+          "token_id": 112261,
+          "token": "olit",
+          "probability": 0.000017492166
+        },
+        {
+          "rank": 10,
+          "token_id": 58506,
+          "token": " metropolitan",
+          "probability": 0.00001743567
+        }
+      ]
+    },
+    {
+      "layer": 11,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 12366,
+          "token": " Paris",
+          "probability": 0.000038437218
+        },
+        {
+          "rank": 2,
+          "token_id": 88793,
+          "token": " Marseille",
+          "probability": 0.000030315765
+        },
+        {
+          "rank": 3,
+          "token_id": 60704,
+          "token": "Paris",
+          "probability": 0.0000302399
+        },
+        {
+          "rank": 4,
+          "token_id": 38048,
+          "token": " undoubtedly",
+          "probability": 0.00002910177
+        },
+        {
+          "rank": 5,
+          "token_id": 126855,
+          "token": " Пари",
+          "probability": 0.000028353166
+        },
+        {
+          "rank": 6,
+          "token_id": 85057,
+          "token": " Bordeaux",
+          "probability": 0.000028078297
+        },
+        {
+          "rank": 7,
+          "token_id": 38269,
+          "token": " Brussels",
+          "probability": 0.000027658149
+        },
+        {
+          "rank": 8,
+          "token_id": 41958,
+          "token": " paris",
+          "probability": 0.000027494249
+        },
+        {
+          "rank": 9,
+          "token_id": 13118,
+          "token": " indeed",
+          "probability": 0.00002677119
+        },
+        {
+          "rank": 10,
+          "token_id": 9822,
+          "token": " France",
+          "probability": 0.000026495902
+        }
+      ]
+    },
+    {
+      "layer": 12,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 12366,
+          "token": " Paris",
+          "probability": 0.000055677654
+        },
+        {
+          "rank": 2,
+          "token_id": 38048,
+          "token": " undoubtedly",
+          "probability": 0.000044579763
+        },
+        {
+          "rank": 3,
+          "token_id": 126855,
+          "token": " Пари",
+          "probability": 0.000043513737
+        },
+        {
+          "rank": 4,
+          "token_id": 88793,
+          "token": " Marseille",
+          "probability": 0.00004094875
+        },
+        {
+          "rank": 5,
+          "token_id": 38269,
+          "token": " Brussels",
+          "probability": 0.00004066907
+        },
+        {
+          "rank": 6,
+          "token_id": 60704,
+          "token": "Paris",
+          "probability": 0.000040647912
+        },
+        {
+          "rank": 7,
+          "token_id": 41958,
+          "token": " paris",
+          "probability": 0.000039969833
+        },
+        {
+          "rank": 8,
+          "token_id": 85057,
+          "token": " Bordeaux",
+          "probability": 0.000039611514
+        },
+        {
+          "rank": 9,
+          "token_id": 19073,
+          "token": " officially",
+          "probability": 0.00003668264
+        },
+        {
+          "rank": 10,
+          "token_id": 22225,
+          "token": " surely",
+          "probability": 0.000034571698
+        }
+      ]
+    },
+    {
+      "layer": 13,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 12366,
+          "token": " Paris",
+          "probability": 0.00009909858
+        },
+        {
+          "rank": 2,
+          "token_id": 41958,
+          "token": " paris",
+          "probability": 0.00006415988
+        },
+        {
+          "rank": 3,
+          "token_id": 60704,
+          "token": "Paris",
+          "probability": 0.000062741216
+        },
+        {
+          "rank": 4,
+          "token_id": 88793,
+          "token": " Marseille",
+          "probability": 0.00006214239
+        },
+        {
+          "rank": 5,
+          "token_id": 126855,
+          "token": " Пари",
+          "probability": 0.000059911374
+        },
+        {
+          "rank": 6,
+          "token_id": 38048,
+          "token": " undoubtedly",
+          "probability": 0.00005904522
+        },
+        {
+          "rank": 7,
+          "token_id": 1101,
+          "token": " also",
+          "probability": 0.00005849068
+        },
+        {
+          "rank": 8,
+          "token_id": 19073,
+          "token": " officially",
+          "probability": 0.000054798227
+        },
+        {
+          "rank": 9,
+          "token_id": 7995,
+          "token": " certainly",
+          "probability": 0.000054296823
+        },
+        {
+          "rank": 10,
+          "token_id": 9822,
+          "token": " France",
+          "probability": 0.000053274838
+        }
+      ]
+    },
+    {
+      "layer": 14,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 1101,
+          "token": " also",
+          "probability": 0.0002893495
+        },
+        {
+          "rank": 2,
+          "token_id": 264,
+          "token": " a",
+          "probability": 0.00021525922
+        },
+        {
+          "rank": 3,
+          "token_id": 832,
+          "token": " one",
+          "probability": 0.00021296868
+        },
+        {
+          "rank": 4,
+          "token_id": 279,
+          "token": " the",
+          "probability": 0.00020514103
+        },
+        {
+          "rank": 5,
+          "token_id": 2225,
+          "token": " both",
+          "probability": 0.00019862082
+        },
+        {
+          "rank": 6,
+          "token_id": 459,
+          "token": " an",
+          "probability": 0.00019772304
+        },
+        {
+          "rank": 7,
+          "token_id": 539,
+          "token": " not",
+          "probability": 0.00018688147
+        },
+        {
+          "rank": 8,
+          "token_id": 3967,
+          "token": " known",
+          "probability": 0.00018021886
+        },
+        {
+          "rank": 9,
+          "token_id": 2162,
+          "token": " home",
+          "probability": 0.00016847785
+        },
+        {
+          "rank": 10,
+          "token_id": 12366,
+          "token": " Paris",
+          "probability": 0.00015113447
+        }
+      ]
+    },
+    {
+      "layer": 15,
+      "predictions": [
+        {
+          "rank": 1,
+          "token_id": 12366,
+          "token": " Paris",
+          "probability": 0.00068004057
+        },
+        {
+          "rank": 2,
+          "token_id": 264,
+          "token": " a",
+          "probability": 0.0006281654
+        },
+        {
+          "rank": 3,
+          "token_id": 279,
+          "token": " the",
+          "probability": 0.00061334827
+        },
+        {
+          "rank": 4,
+          "token_id": 832,
+          "token": " one",
+          "probability": 0.0004753272
+        },
+        {
+          "rank": 5,
+          "token_id": 1101,
+          "token": " also",
+          "probability": 0.00044025504
+        },
+        {
+          "rank": 6,
+          "token_id": 539,
+          "token": " not",
+          "probability": 0.0004274776
+        },
+        {
+          "rank": 7,
+          "token_id": 459,
+          "token": " an",
+          "probability": 0.00039700003
+        },
+        {
+          "rank": 8,
+          "token_id": 2162,
+          "token": " home",
+          "probability": 0.0003966878
+        },
+        {
+          "rank": 9,
+          "token_id": 304,
+          "token": " in",
+          "probability": 0.0003814169
+        },
+        {
+          "rank": 10,
+          "token_id": 3967,
+          "token": " known",
+          "probability": 0.0003580197
+        }
+      ]
+    }
+  ]
+}
