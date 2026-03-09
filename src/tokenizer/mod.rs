@@ -150,8 +150,11 @@ impl MITokenizer {
                     .encode(text, add_special_tokens)
                     .map_err(|e| MIError::Tokenizer(format!("HF encode failed: {e}")))?;
                 let ids = encoding.get_ids().to_vec();
-                let tokens: Vec<String> =
-                    encoding.get_tokens().iter().map(ToString::to_string).collect();
+                let tokens: Vec<String> = encoding
+                    .get_tokens()
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect();
                 let offsets = encoding.get_offsets().to_vec();
                 Ok(EncodingWithOffsets::new(ids, tokens, offsets))
             }

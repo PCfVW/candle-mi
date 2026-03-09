@@ -119,6 +119,10 @@ required-features = ["transformer"]
 name = "activation_patching"
 required-features = ["transformer"]
 
+[[example]]
+name = "rwkv_inference"
+required-features = ["rwkv"]
+
 [features]
 default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]
