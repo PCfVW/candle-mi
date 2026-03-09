@@ -31,10 +31,10 @@
 
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::cast_precision_loss)]
-#![allow(clippy::too_many_lines)]
+#![allow(clippy::missing_docs_in_private_items)]
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use candle_core::Tensor;
 use clap::Parser;
@@ -187,17 +187,16 @@ const GEMMA_2M: Preset = Preset {
 
 /// Parse a "layer:index" string into a [`CltFeatureId`].
 fn parse_feature(s: &str) -> candle_mi::Result<CltFeatureId> {
-    let parts: Vec<&str> = s.split(':').collect();
-    if parts.len() != 2 {
-        return Err(candle_mi::MIError::Config(format!(
+    let (layer_str, index_str) = s.split_once(':').ok_or_else(|| {
+        candle_mi::MIError::Config(format!(
             "feature must be in 'layer:index' format, got '{s}'"
-        )));
-    }
-    let layer: usize = parts[0].parse().map_err(|e| {
-        candle_mi::MIError::Config(format!("invalid layer number '{}': {e}", parts[0]))
+        ))
     })?;
-    let index: usize = parts[1].parse().map_err(|e| {
-        candle_mi::MIError::Config(format!("invalid feature index '{}': {e}", parts[1]))
+    let layer: usize = layer_str.parse().map_err(|e| {
+        candle_mi::MIError::Config(format!("invalid layer number '{layer_str}': {e}"))
+    })?;
+    let index: usize = index_str.parse().map_err(|e| {
+        candle_mi::MIError::Config(format!("invalid feature index '{index_str}': {e}"))
     })?;
     Ok(CltFeatureId { layer, index })
 }
@@ -223,16 +222,7 @@ fn run() -> candle_mi::Result<()> {
     let args = Args::parse();
 
     // --- Select preset ---
-    let preset = match args.preset.as_str() {
-        "llama3.2-1b-524k" => &LLAMA,
-        "gemma2-2b-426k" => &GEMMA,
-        "gemma2-2b-2.5m" => &GEMMA_2M,
-        other => {
-            return Err(candle_mi::MIError::Config(format!(
-                "unknown preset '{other}' (expected 'llama3.2-1b-524k', 'gemma2-2b-426k', or 'gemma2-2b-2.5m')"
-            )));
-        }
-    };
+    let preset = select_preset(&args.preset)?;
 
     // --- Resolve experiment parameters (CLI overrides preset) ---
     // BORROW: .to_owned() — convert &'static str to String for owned storage
@@ -270,37 +260,68 @@ fn run() -> candle_mi::Result<()> {
     eprintln!("Preset:   {}", args.preset);
     eprintln!("Model:    {model_id}");
     eprintln!("CLT:      {clt_repo}");
-    eprintln!(
-        "Suppress: \"{}\" features {:?}",
-        suppress_word, suppress_features
-    );
+    eprintln!("Suppress: \"{suppress_word}\" features {suppress_features:?}");
     eprintln!("Inject:   \"{inject_word}\" feature {inject_feature}");
     eprintln!("Strength: {strength}\n");
 
-    // --- Load model ---
+    run_experiment(
+        &model_id,
+        &clt_repo,
+        &prompt,
+        &suppress_word,
+        &inject_word,
+        &suppress_features,
+        inject_feature,
+        strength,
+        args.output.as_deref(),
+    )
+}
+
+/// Select a built-in preset by name.
+fn select_preset(name: &str) -> candle_mi::Result<&'static Preset> {
+    match name {
+        "llama3.2-1b-524k" => Ok(&LLAMA),
+        "gemma2-2b-426k" => Ok(&GEMMA),
+        "gemma2-2b-2.5m" => Ok(&GEMMA_2M),
+        other => Err(candle_mi::MIError::Config(format!(
+            "unknown preset '{other}' \
+             (expected 'llama3.2-1b-524k', 'gemma2-2b-426k', or 'gemma2-2b-2.5m')"
+        ))),
+    }
+}
+
+/// Load model + CLT, run the position sweep, print summary, and write output.
+#[allow(clippy::too_many_arguments)]
+fn run_experiment(
+    model_id: &str,
+    clt_repo_name: &str,
+    prompt: &str,
+    suppress_word: &str,
+    inject_word: &str,
+    suppress_features: &[CltFeatureId],
+    inject_feature: CltFeatureId,
+    strength: f32,
+    output_path: Option<&Path>,
+) -> candle_mi::Result<()> {
     let t_start = std::time::Instant::now();
+
+    // --- Load model ---
     eprintln!("Loading model...");
-    let model = MIModel::from_pretrained(&model_id)?;
+    let model = MIModel::from_pretrained(model_id)?;
     let n_layers = model.num_layers();
     let device = model.device().clone();
-
     let tokenizer = model
         .tokenizer()
         .ok_or_else(|| candle_mi::MIError::Tokenizer("model has no bundled tokenizer".into()))?;
-
     eprintln!(
-        "Model: {} layers, {} hidden, device={:?}",
-        n_layers,
-        model.hidden_size(),
-        device
+        "Model: {n_layers} layers, {} hidden, device={device:?}",
+        model.hidden_size()
     );
 
-    // --- Open CLT ---
-    eprintln!("Opening CLT: {clt_repo}...");
-    let mut clt = CrossLayerTranscoder::open(&clt_repo)?;
-
-    // --- Cache steering vectors for all features ---
-    let mut all_features: Vec<CltFeatureId> = suppress_features.clone();
+    // --- Open CLT + cache steering vectors ---
+    eprintln!("Opening CLT: {clt_repo_name}...");
+    let mut clt = CrossLayerTranscoder::open(clt_repo_name)?;
+    let mut all_features: Vec<CltFeatureId> = suppress_features.to_vec();
     all_features.push(inject_feature);
     eprintln!("Caching decoder vectors for all downstream layers...");
     clt.cache_steering_vectors_all_downstream(&all_features, &device)?;
@@ -309,8 +330,6 @@ fn run() -> candle_mi::Result<()> {
     let prompt_with_space = format!("{prompt} ");
     let token_ids = tokenizer.encode(&prompt_with_space)?;
     let seq_len = token_ids.len();
-
-    // Decode individual tokens for display.
     let token_strs: Vec<String> = token_ids
         .iter()
         .map(|&id| {
@@ -319,18 +338,13 @@ fn run() -> candle_mi::Result<()> {
                 .unwrap_or_else(|_| format!("[{id}]"))
         })
         .collect();
+    eprintln!("Tokens ({seq_len}): {token_strs:?}");
 
-    eprintln!("Tokens ({seq_len}): {:?}", token_strs);
-
-    // --- Find inject word token ID ---
-    let inject_token_id = tokenizer.find_token_id(&inject_word)?;
+    let inject_token_id = tokenizer.find_token_id(inject_word)?;
     let inject_token_str = tokenizer.decode_token(inject_token_id)?;
-    eprintln!(
-        "Inject token: \"{}\" (id={})",
-        inject_token_str, inject_token_id
-    );
+    eprintln!("Inject token: \"{inject_token_str}\" (id={inject_token_id})");
 
-    // --- Build feature entries (feature, target_layer) for all downstream layers ---
+    // --- Build feature entries for all downstream layers ---
     let suppress_entries: Vec<(CltFeatureId, usize)> = suppress_features
         .iter()
         .flat_map(|feat| (feat.layer..n_layers).map(move |l| (*feat, l)))
@@ -338,7 +352,6 @@ fn run() -> candle_mi::Result<()> {
     let inject_entries: Vec<(CltFeatureId, usize)> = (inject_feature.layer..n_layers)
         .map(|l| (inject_feature, l))
         .collect();
-
     eprintln!(
         "Suppress: {} entries across {} features",
         suppress_entries.len(),
@@ -354,29 +367,74 @@ fn run() -> candle_mi::Result<()> {
     // --- Baseline (no intervention) ---
     eprintln!("\nRunning baseline...");
     let input = Tensor::new(&token_ids[..], &device)?.unsqueeze(0)?;
-    let hooks = HookSpec::new();
-    let result = model.forward(&input, &hooks)?;
+    let result = model.forward(&input, &HookSpec::new())?;
     let baseline_prob = extract_token_prob(result.output(), inject_token_id)?;
     eprintln!("Baseline P(\"{inject_token_str}\") = {baseline_prob:.6e}");
 
     // --- Position sweep ---
-    eprintln!(
-        "\nSweeping {} positions (strength={})...",
-        seq_len, strength
-    );
+    let positions = sweep_positions(
+        &model,
+        &clt,
+        &input,
+        seq_len,
+        &token_strs,
+        &suppress_entries,
+        &inject_entries,
+        strength,
+        inject_token_id,
+        baseline_prob,
+        &device,
+    )?;
+
+    // --- Summary ---
+    print_sweep_summary(&positions, baseline_prob, &token_strs);
+
+    // --- JSON output ---
+    let output = SweepOutput {
+        model: model_id.into(),
+        clt_repo: clt_repo_name.into(),
+        prompt: prompt.into(),
+        tokens: token_strs,
+        suppress_word: suppress_word.into(),
+        inject_word: inject_word.into(),
+        suppress_features: suppress_features.to_vec(),
+        inject_feature,
+        strength,
+        baseline_prob,
+        sweep: positions,
+    };
+    write_sweep_output(&output, output_path)?;
+
+    eprintln!("\nTotal elapsed: {:.2?}", t_start.elapsed());
+    Ok(())
+}
+
+/// Run the position sweep and print progress.
+#[allow(clippy::too_many_arguments)]
+fn sweep_positions(
+    model: &MIModel,
+    clt: &CrossLayerTranscoder,
+    input: &Tensor,
+    seq_len: usize,
+    token_strs: &[String],
+    suppress_entries: &[(CltFeatureId, usize)],
+    inject_entries: &[(CltFeatureId, usize)],
+    strength: f32,
+    inject_token_id: u32,
+    baseline_prob: f32,
+    device: &candle_core::Device,
+) -> candle_mi::Result<Vec<PositionResult>> {
+    eprintln!("\nSweeping {seq_len} positions (strength={strength})...");
     let mut positions: Vec<PositionResult> = Vec::with_capacity(seq_len);
 
     for pos in 0..seq_len {
-        // Build suppress hooks (negative strength).
         let mut combined =
-            clt.prepare_hook_injection(&suppress_entries, pos, seq_len, -strength, &device)?;
-
-        // Build inject hooks (positive strength) and merge.
+            clt.prepare_hook_injection(suppress_entries, pos, seq_len, -strength, device)?;
         let inject_hooks =
-            clt.prepare_hook_injection(&inject_entries, pos, seq_len, strength, &device)?;
+            clt.prepare_hook_injection(inject_entries, pos, seq_len, strength, device)?;
         combined.extend(&inject_hooks);
 
-        let result = model.forward(&input, &combined)?;
+        let result = model.forward(input, &combined)?;
         let p_inject = extract_token_prob(result.output(), inject_token_id)?;
 
         positions.push(PositionResult {
@@ -385,7 +443,6 @@ fn run() -> candle_mi::Result<()> {
             prob: p_inject,
         });
 
-        // Progress indicator.
         let delta = p_inject - baseline_prob;
         let marker = if delta > baseline_prob * 10.0 && delta > 1e-12 {
             " ***"
@@ -399,13 +456,14 @@ fn run() -> candle_mi::Result<()> {
             .get(pos)
             .map_or("?", String::as_str)
             .replace('\n', "\\n");
-        eprintln!(
-            "  pos {:>3}  {:<20}  P={:.6e}  delta={:+.6e}{}",
-            pos, display, p_inject, delta, marker
-        );
+        eprintln!("  pos {pos:>3}  {display:<20}  P={p_inject:.6e}  delta={delta:+.6e}{marker}");
     }
 
-    // --- Summary ---
+    Ok(positions)
+}
+
+/// Print the sweep summary to stderr.
+fn print_sweep_summary(positions: &[PositionResult], baseline_prob: f32, token_strs: &[String]) {
     let (max_pos, max_p) = positions
         .iter()
         .enumerate()
@@ -432,33 +490,24 @@ fn run() -> candle_mi::Result<()> {
             .map_or("?", String::as_str)
             .replace('\n', "\\n")
     );
+}
 
-    // --- JSON output ---
-    let output = SweepOutput {
-        model: model_id,
-        clt_repo,
-        prompt,
-        tokens: token_strs,
-        suppress_word,
-        inject_word,
-        suppress_features,
-        inject_feature,
-        strength,
-        baseline_prob,
-        sweep: positions,
-    };
-
-    let json = serde_json::to_string_pretty(&output)
+/// Serialize sweep results to JSON; write to file or stdout.
+fn write_sweep_output(output: &SweepOutput, path: Option<&Path>) -> candle_mi::Result<()> {
+    let json = serde_json::to_string_pretty(output)
         .map_err(|e| candle_mi::MIError::Config(format!("JSON serialization failed: {e}")))?;
 
-    if let Some(ref p) = args.output {
+    if let Some(p) = path {
+        if let Some(parent) = p.parent() {
+            fs::create_dir_all(parent).map_err(|e| {
+                candle_mi::MIError::Config(format!("failed to create {}: {e}", parent.display()))
+            })?;
+        }
         fs::write(p, &json)
             .map_err(|e| candle_mi::MIError::Config(format!("write output: {e}")))?;
         eprintln!("\nOutput written to {}", p.display());
     } else {
         println!("{json}");
     }
-
-    eprintln!("\nTotal elapsed: {:.2?}", t_start.elapsed());
     Ok(())
 }
