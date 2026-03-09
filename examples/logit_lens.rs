@@ -8,6 +8,9 @@
 //!
 //! # Run on all cached models (no argument)
 //! cargo run --release --features transformer,mmap --example logit_lens
+//!
+//! # With real memory reporting (RAM + VRAM)
+//! cargo run --release --features transformer,memory --example logit_lens -- "meta-llama/Llama-3.2-1B"
 //! ```
 //!
 //! **What it does:**
@@ -36,6 +39,8 @@ use candle_mi::{
     HookPoint, HookSpec, LogitLensAnalysis, LogitLensResult, MIModel, MITokenizer,
     SUPPORTED_MODEL_TYPES,
 };
+#[cfg(feature = "memory")]
+use candle_mi::{MemoryReport, MemorySnapshot};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
@@ -91,6 +96,11 @@ fn run() -> candle_mi::Result<()> {
 fn run_single_model(model_id: &str, prompt: &str, top_k: usize) -> candle_mi::Result<()> {
     println!("=== {model_id} ===");
 
+    #[cfg(feature = "memory")]
+    let mem_before = MemorySnapshot::now(
+        &candle_core::Device::cuda_if_available(0).unwrap_or(candle_core::Device::Cpu),
+    )?;
+
     let t0 = Instant::now();
     let model = MIModel::from_pretrained(model_id)?;
     let load_time = t0.elapsed();
@@ -106,6 +116,12 @@ fn run_single_model(model_id: &str, prompt: &str, top_k: usize) -> candle_mi::Re
     );
     println!("  Estimated F32 weight size: {weight_mb:.0} MB");
     println!("  Load time: {load_time:.2?}");
+
+    #[cfg(feature = "memory")]
+    {
+        let mem_after = MemorySnapshot::now(model.device())?;
+        MemoryReport::new(mem_before, mem_after).print_before_after("Model load");
+    }
 
     let tokenizer = model.tokenizer().ok_or(candle_mi::MIError::Tokenizer(
         "model has no embedded tokenizer".into(),
@@ -201,6 +217,11 @@ fn discover_cached_models() -> Vec<(String, String, PathBuf)> {
 
 /// Load a model from a snapshot, run logit lens, and print the analysis.
 fn run_model(model_id: &str, snapshot: &Path, prompt: &str, top_k: usize) -> candle_mi::Result<()> {
+    #[cfg(feature = "memory")]
+    let mem_before = MemorySnapshot::now(
+        &candle_core::Device::cuda_if_available(0).unwrap_or(candle_core::Device::Cpu),
+    )?;
+
     let t0 = Instant::now();
     let model = MIModel::from_pretrained(model_id)?;
     let load_time = t0.elapsed();
@@ -217,6 +238,12 @@ fn run_model(model_id: &str, snapshot: &Path, prompt: &str, top_k: usize) -> can
         model.device()
     );
     println!("  Estimated F32 weight size: {weight_mb:.0} MB  |  Load: {load_time:.2?}");
+
+    #[cfg(feature = "memory")]
+    {
+        let mem_after = MemorySnapshot::now(model.device())?;
+        MemoryReport::new(mem_before, mem_after).print_before_after("Memory");
+    }
 
     let tokenizer_path = snapshot.join("tokenizer.json");
     if !tokenizer_path.exists() {
