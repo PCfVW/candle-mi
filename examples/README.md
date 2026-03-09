@@ -65,6 +65,45 @@ cargo run --release --features clt,transformer,mmap --example figure13_planning_
 cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset gemma2-2b-2.5m
 ```
 
+### Example output: `logit_lens`
+
+Prompt: *"The capital of France is"* — tracking when "Paris" first enters the
+top predictions across layers.
+
+**Llama 3.2 1B** (16 layers): "Paris" first appears at layer 11 (top-5).
+Early layers predict generic tokens; convergence happens in the final third.
+
+**Gemma 2 2B** (26 layers): "Paris" never reaches top-10. The model predicts
+" a" at the final layer — consistent with Gemma 2's soft-capped logit
+distribution which flattens probabilities across the vocabulary.
+
+**StarCoder2 3B** (30 layers): "Paris" never reaches top-10. As a code model,
+predictions are dominated by code tokens (`\_\-`, `selecione`, `Par`). Natural
+language knowledge is minimal.
+
+### Example output: `attention_knockout`
+
+Prompt: *"The capital of France is"* — knock out the attention edge from the
+last token to position 0 (first token) across all heads at the middle layer.
+
+| Model | Layer | Heads | KL div | "Paris" baseline | "Paris" ablated | Logit diff |
+|-------|-------|-------|--------|-----------------|----------------|------------|
+| Llama 3.2 1B | 8 | 32 | 0.056 | 39.3% | 26.0% | −1.06 |
+| Gemma 2 2B | 13 | 8 | 0.017 | 3.9% | 6.7% | −0.33 |
+| StarCoder2 3B | 15 | 24 | 0.029 | — | — | −1.08 |
+
+**Llama 3.2 1B** shows the strongest effect: "Paris" drops from 39.3% to
+26.0% when the last token can't attend to the first token at layer 8.
+The model relies on early-position attention at mid-depth for factual recall.
+
+**Gemma 2 2B** shows a weaker and inverted effect: "Paris" *increases* from
+3.9% to 6.7%. With only 8 KV heads (GQA) and soft-capped logits, the
+knockout redistributes probability mass differently.
+
+**StarCoder2 3B** predicts "Par" (a code subword) rather than "Paris", so the
+logit diff applies to " Paris" (token 316) which has negligible baseline
+probability.
+
 ### Example output: `auto_config_dogfood`
 
 **Success** on Llama 3.2 1B (known family, uses manual parser):
