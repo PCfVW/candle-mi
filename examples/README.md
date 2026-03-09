@@ -16,6 +16,7 @@ Runnable examples demonstrating candle-mi features.
 | `auto_config_dogfood` | `transformer` | Download a model and test auto-config loading with compatibility check |
 | `generate` | `transformer` | Greedy autoregressive text generation on all cached models |
 | `logit_lens` | `transformer` | Layer-by-layer prediction tracking via residual stream projection |
+| `attention_knockout` | `transformer` | Ablate attention heads at a target layer, measure KL divergence and top changed tokens |
 | `figure13_planning_poems` | `clt`, `transformer` | Replication of [Anthropic's Figure 13](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poem-location) (suppress + inject position sweep) |
 
 ## Running
@@ -41,6 +42,9 @@ cargo run --release --features transformer --example generate
 
 # Logit lens on all cached models
 cargo run --release --features transformer --example logit_lens
+
+# Attention knockout on all cached models
+cargo run --release --features transformer --example attention_knockout
 
 # Figure 13 replication — Llama 3.2 1B (default)
 cargo run --release --features clt,transformer --example figure13_planning_poems

@@ -103,6 +103,10 @@ required-features = ["transformer"]
 name = "logit_lens"
 required-features = ["transformer"]
 
+[[example]]
+name = "attention_knockout"
+required-features = ["transformer"]
+
 [features]
 default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]
