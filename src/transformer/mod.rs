@@ -679,7 +679,8 @@ impl MIBackend for GenericTransformer {
     }
 
     fn project_to_vocab(&self, hidden: &Tensor) -> Result<Tensor> {
-        self.project_logits(hidden)
+        let normed = self.final_norm.forward(hidden)?;
+        self.project_logits(&normed)
     }
 
     fn embedding_vector(&self, token_id: u32) -> Result<Tensor> {

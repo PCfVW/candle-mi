@@ -67,8 +67,11 @@ pub trait MIBackend: Send + Sync {
 
     /// Project a hidden-state tensor to vocabulary logits.
     ///
+    /// Applies the model's final layer norm before the unembedding projection,
+    /// matching the standard logit lens technique (nostalgebraist, 2020).
+    ///
     /// # Shapes
-    /// - `hidden`: `[batch, hidden_size]` -- hidden states
+    /// - `hidden`: `[batch, hidden_size]` -- hidden states (pre-norm)
     /// - returns: `[batch, vocab_size]`
     ///
     /// # Errors
@@ -314,8 +317,11 @@ impl MIModel {
 
     /// Project hidden states to vocabulary logits.
     ///
+    /// Applies the model's final layer norm before the unembedding projection,
+    /// matching the standard logit lens technique (nostalgebraist, 2020).
+    ///
     /// # Shapes
-    /// - `hidden`: `[batch, hidden_size]` -- hidden states
+    /// - `hidden`: `[batch, hidden_size]` -- hidden states (pre-norm)
     /// - returns: `[batch, vocab_size]`
     ///
     /// # Errors

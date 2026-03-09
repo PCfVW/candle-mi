@@ -1767,6 +1767,7 @@ impl MIBackend for GenericRwkv {
     }
 
     fn project_to_vocab(&self, hidden: &Tensor) -> Result<Tensor> {
-        Ok(self.lm_head.forward(hidden)?)
+        let normed = self.ln_out.forward(hidden)?;
+        Ok(self.lm_head.forward(&normed)?)
     }
 }
