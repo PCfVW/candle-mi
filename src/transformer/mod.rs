@@ -148,7 +148,7 @@ impl GenericTransformer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model)(crate::error::MIError::Model) if weight loading fails or dimensions
+    /// Returns [`MIError::Model`](crate::MIError::Model) if weight loading fails or dimensions
     /// are inconsistent.
     #[allow(clippy::needless_pass_by_value)] // VarBuilder is candle's pass-by-value convention
     pub fn load(
