@@ -100,6 +100,26 @@ as types (`DType`, `NaN`, `CPU`, `GPU`).
 > ✅ `/// Loads weights from a [`.safetensors`] file into a [`Tensor`].`
 > ❌ `/// Loads weights from a .safetensors file into a Tensor.`
 
+### Intra-Doc Link Safety
+
+Rustdoc intra-doc links must resolve under all feature-flag combinations
+(enforced by `#![deny(warnings)]` → `rustdoc::broken_intra_doc_links`).
+
+Two patterns to watch:
+
+1. **Feature-gated items** — items behind `#[cfg(feature = "...")]` are absent
+   when that feature is off. Use plain backtick text, not link syntax:
+
+   > ✅ `` /// Implemented by `CltFeatureId` (requires `clt` feature). ``
+   > ❌ `` /// Implemented by [`CltFeatureId`](crate::clt::CltFeatureId). ``
+
+2. **Cross-module links** — items re-exported at the crate root (e.g.,
+   `MIError`) are not automatically in scope inside submodules. Use explicit
+   `crate::` paths:
+
+   > ✅ `` /// Returns [`MIError::Model`](crate::MIError::Model) on failure. ``
+   > ❌ `` /// Returns [`MIError::Model`] on failure. ``
+
 ### Field-Level Docs
 
 Every field of every `pub` struct must carry a `///` doc comment describing:

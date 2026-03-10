@@ -170,6 +170,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Networked tests isolated** — `fast_download` integration tests marked
   `#[ignore]` to prevent transient HuggingFace Hub outages from blocking CI
   or publish workflows; run manually with `cargo test --test fast_download -- --ignored`
+- **Rustdoc link fixes** — fixed 10 broken intra-doc links: feature-gated items
+  (`clt::CltFeatureId`, `sae::SaeFeatureId`) replaced with plain text,
+  cross-module references (`MIError::Model`, `MIError::Intervention`) given
+  explicit `crate::` paths
+- **CONVENTIONS.md intra-doc link safety** — new subsection under Doc-Comment
+  Rules documenting two patterns: plain text for feature-gated items, explicit
+  `crate::` paths for cross-module links
 
 - **CONVENTIONS.md `// SAFETY:` policy** — updated from "not expected" to a
   feature-gated policy table; `mmap` and `memory` features each have

@@ -53,7 +53,7 @@ impl TransformerLayer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`] if weight loading fails.
+    /// Returns [`MIError::Model`](crate::MIError::Model) if weight loading fails.
     #[allow(clippy::needless_pass_by_value)] // VarBuilder is candle's pass-by-value convention
     fn load(config: &TransformerConfig, vb: VarBuilder<'_>) -> Result<Self> {
         let input_norm = create_norm(
@@ -148,7 +148,7 @@ impl GenericTransformer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::error::MIError::Model) if weight loading fails or dimensions
+    /// Returns [`MIError::Model`](crate::MIError::Model)(crate::error::MIError::Model) if weight loading fails or dimensions
     /// are inconsistent.
     #[allow(clippy::needless_pass_by_value)] // VarBuilder is candle's pass-by-value convention
     pub fn load(
@@ -438,8 +438,8 @@ impl GenericTransformer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Intervention`] if the spec is invalid for this model,
-    /// or [`MIError::Model`] on tensor operation failures.
+    /// Returns [`MIError::Intervention`](crate::MIError::Intervention) if the spec is invalid for this model,
+    /// or [`MIError::Model`](crate::MIError::Model) on tensor operation failures.
     pub fn forward_recurrent(
         &self,
         input_ids: &Tensor,
@@ -537,8 +537,8 @@ impl GenericTransformer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Intervention`] if the spec is invalid, or
-    /// [`MIError::Model`] on tensor/generation failures.
+    /// Returns [`MIError::Intervention`](crate::MIError::Intervention) if the spec is invalid, or
+    /// [`MIError::Model`](crate::MIError::Model) on tensor/generation failures.
     pub fn generate_recurrent(
         &self,
         prompt_tokens: &[u32],

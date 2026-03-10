@@ -9,9 +9,9 @@
 
 /// Marker trait for feature identifiers in sparse activation vectors.
 ///
-/// Implemented by [`CltFeatureId`](crate::clt::CltFeatureId) (CLT features
-/// with layer + index) and [`SaeFeatureId`](crate::sae::SaeFeatureId) (SAE
-/// features with index only).
+/// Implemented by `CltFeatureId` (CLT features with layer + index,
+/// requires `clt` feature) and `SaeFeatureId` (SAE features with index
+/// only, requires `sae` feature).
 pub trait FeatureId:
     std::fmt::Debug
     + Clone
@@ -31,8 +31,8 @@ pub trait FeatureId:
 /// sorted by activation magnitude in descending order.
 ///
 /// Generic over the feature identifier type `F`:
-/// - [`CltFeatureId`](crate::clt::CltFeatureId) for CLT features (layer + index)
-/// - [`SaeFeatureId`](crate::sae::SaeFeatureId) for SAE features (index only)
+/// - `CltFeatureId` for CLT features (layer + index, requires `clt` feature)
+/// - `SaeFeatureId` for SAE features (index only, requires `sae` feature)
 #[derive(Debug, Clone)]
 pub struct SparseActivations<F: FeatureId> {
     /// Active features with their activation magnitudes, sorted descending.

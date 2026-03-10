@@ -62,7 +62,7 @@ pub struct PcaResult {
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Model`] if any tensor operation fails (shape
+/// Returns [`MIError::Model`](crate::MIError::Model) if any tensor operation fails (shape
 /// mismatch, device error, etc.).
 pub fn pca_top_k(matrix: &Tensor, k: usize, n_iter: usize) -> Result<PcaResult> {
     let device = matrix.device();

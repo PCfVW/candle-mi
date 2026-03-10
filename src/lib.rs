@@ -16,7 +16,7 @@
 //! | Backend | Models | Feature flag |
 //! |---------|--------|-------------|
 //! | [`GenericTransformer`] | `LLaMA`, `Qwen2`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral (+ auto-config for unknown families) | `transformer` |
-//! | [`GenericRwkv`](rwkv::GenericRwkv) | RWKV-6 (Finch), RWKV-7 (Goose) | `rwkv` |
+//! | `GenericRwkv` | RWKV-6 (Finch), RWKV-7 (Goose) | `rwkv` |
 //!
 //! See [`BACKENDS.md`](https://github.com/PCfVW/candle-mi/blob/main/BACKENDS.md)
 //! for how to add a new model architecture.
