@@ -6,55 +6,178 @@
 //! [candle](https://github.com/huggingface/candle).
 //!
 //! candle-mi re-implements model forward passes with built-in hook points
-//! (following the `TransformerLens` design), enabling activation capture,
-//! attention knockout, steering, logit lens, and sparse-feature analysis
-//! (CLTs and SAEs) — all in pure Rust with GPU acceleration.
+//! (following the [`TransformerLens`](https://github.com/TransformerLensOrg/TransformerLens)
+//! design), enabling activation capture, attention knockout, steering, logit
+//! lens, and sparse-feature analysis (CLTs and SAEs) — all in pure Rust with
+//! GPU acceleration.
 //!
 //! ## Supported backends
 //!
-//! - **Generic Transformer** — covers `LLaMA`, `Qwen2`, Gemma, Gemma 2,
-//!   `Phi-3`, `StarCoder2`, Mistral, and more via configuration axes
-//!   (feature: `transformer`).
-//! - **Generic RWKV** — covers RWKV-6 (Finch) and RWKV-7 (Goose) linear RNN
-//!   models (feature: `rwkv`).
+//! | Backend | Models | Feature flag |
+//! |---------|--------|-------------|
+//! | [`GenericTransformer`] | `LLaMA`, `Qwen2`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral (+ auto-config for unknown families) | `transformer` |
+//! | [`GenericRwkv`](rwkv::GenericRwkv) | RWKV-6 (Finch), RWKV-7 (Goose) | `rwkv` |
 //!
-//! ## Fast downloads
+//! See [`BACKENDS.md`](https://github.com/PCfVW/candle-mi/blob/main/BACKENDS.md)
+//! for how to add a new model architecture.
 //!
-//! candle-mi uses [`hf-fetch-model`](https://github.com/PCfVW/hf-fetch-model)
-//! for high-throughput downloads from the `HuggingFace` Hub:
+//! ## Feature flags
 //!
-//! ```rust,no_run
-//! # async fn example() -> candle_mi::Result<()> {
-//! // Pre-download with parallel chunks and progress bars
-//! let path = candle_mi::download_model("meta-llama/Llama-3.2-1B".to_owned()).await?;
+//! | Feature | Default | Description |
+//! |---------|---------|-------------|
+//! | `transformer` | yes | Generic transformer backend (decoder-only) |
+//! | `cuda` | yes | CUDA GPU acceleration |
+//! | `rwkv` | no | RWKV-6/7 linear RNN backend |
+//! | `clt` | no | Cross-Layer Transcoder support |
+//! | `sae` | no | Sparse Autoencoder support |
+//! | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
+//! | `memory` | no | RAM/VRAM memory reporting |
+//! | `metal` | no | Apple Metal GPU acceleration |
 //!
-//! // Load from cache (sync, no network needed)
-//! let model = candle_mi::MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
+//! ## Quick start
+//!
+//! Load a model, run a forward pass, and inspect the output:
+//!
+//! ```no_run
+//! use candle_mi::{HookSpec, MIModel};
+//!
+//! # fn main() -> candle_mi::Result<()> {
+//! let model = MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
+//! let tokenizer = model.tokenizer().unwrap();
+//!
+//! let tokens = tokenizer.encode("The capital of France is")?;
+//! let input = candle_core::Tensor::new(&tokens[..], model.device())?.unsqueeze(0)?;
+//!
+//! let cache = model.forward(&input, &HookSpec::new())?;
+//! let logits = cache.output();  // [1, seq, vocab]
+//!
+//! let last_logits = logits.get(0)?.get(tokens.len() - 1)?;
+//! let token_id = candle_mi::sample_token(&last_logits, 0.0)?;  // greedy
+//! println!("{}", tokenizer.decode(&[token_id])?);  // " Paris"
 //! # Ok(())
 //! # }
 //! ```
 //!
-//! ## Quick start
+//! ## Activation capture
+//!
+//! Use [`HookSpec::capture`] to snapshot tensors at any
+//! [`HookPoint`] during the forward pass:
 //!
 //! ```no_run
 //! use candle_mi::{HookPoint, HookSpec, MIModel};
 //!
 //! # fn main() -> candle_mi::Result<()> {
-//! // Load a model (requires a concrete backend — Phase 1+).
-//! let model = MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
-//!
-//! // Capture attention patterns at layer 5.
+//! # let model = MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
+//! # let tokenizer = model.tokenizer().unwrap();
+//! # let tokens = tokenizer.encode("The capital of France is")?;
+//! # let input = candle_core::Tensor::new(&tokens[..], model.device())?.unsqueeze(0)?;
 //! let mut hooks = HookSpec::new();
-//! hooks.capture(HookPoint::AttnPattern(5));
+//! hooks.capture(HookPoint::AttnPattern(5))       // post-softmax attention
+//!      .capture(HookPoint::ResidPost(10));        // residual stream at layer 10
 //!
-//! let tokens = candle_core::Tensor::zeros(
-//!     (1, 10), candle_core::DType::U32, &candle_core::Device::Cpu,
-//! )?;
-//! let result = model.forward(&tokens, &hooks)?;
-//! let attn = result.require(&HookPoint::AttnPattern(5))?;
+//! let cache = model.forward(&input, &hooks)?;
+//!
+//! let attn = cache.require(&HookPoint::AttnPattern(5))?;   // [1, heads, seq, seq]
+//! let resid = cache.require(&HookPoint::ResidPost(10))?;    // [1, seq, hidden]
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! ## Interventions
+//!
+//! Use [`HookSpec::intervene`] to modify activations mid-forward-pass.
+//! Five intervention types are available: [`Intervention::Replace`],
+//! [`Intervention::Add`], [`Intervention::Knockout`],
+//! [`Intervention::Scale`], and [`Intervention::Zero`].
+//!
+//! ```no_run
+//! use candle_mi::{HookPoint, HookSpec, Intervention, KnockoutSpec, create_knockout_mask};
+//!
+//! # fn main() -> candle_mi::Result<()> {
+//! # let model = candle_mi::MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
+//! # let tokenizer = model.tokenizer().unwrap();
+//! # let tokens = tokenizer.encode("The capital of France is")?;
+//! # let seq_len = tokens.len();
+//! # let input = candle_core::Tensor::new(&tokens[..], model.device())?.unsqueeze(0)?;
+//! // Knock out the attention edge: last token cannot attend to position 0
+//! let spec = KnockoutSpec::new().layer(8).edge(seq_len - 1, 0);
+//! let mask = create_knockout_mask(
+//!     &spec, model.num_heads(), seq_len, model.device(), candle_core::DType::F32,
+//! )?;
+//!
+//! let mut hooks = HookSpec::new();
+//! hooks.intervene(HookPoint::AttnScores(8), Intervention::Knockout(mask));
+//!
+//! let ablated = model.forward(&input, &hooks)?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Logit lens
+//!
+//! Project intermediate residual streams to vocabulary space using
+//! [`MIModel::project_to_vocab`]:
+//!
+//! ```no_run
+//! use candle_mi::{HookPoint, HookSpec, MIModel};
+//!
+//! # fn main() -> candle_mi::Result<()> {
+//! # let model = MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
+//! # let tokenizer = model.tokenizer().unwrap();
+//! # let tokens = tokenizer.encode("The capital of France is")?;
+//! # let seq_len = tokens.len();
+//! # let input = candle_core::Tensor::new(&tokens[..], model.device())?.unsqueeze(0)?;
+//! let mut hooks = HookSpec::new();
+//! for layer in 0..model.num_layers() {
+//!     hooks.capture(HookPoint::ResidPost(layer));
+//! }
+//! let cache = model.forward(&input, &hooks)?;
+//!
+//! for layer in 0..model.num_layers() {
+//!     let resid = cache.require(&HookPoint::ResidPost(layer))?;
+//!     let last = resid.get(0)?.get(seq_len - 1)?.unsqueeze(0)?;
+//!     let logits = model.project_to_vocab(&last)?;
+//!     let token_id = candle_mi::sample_token(&logits.flatten_all()?, 0.0)?;
+//!     println!("Layer {layer:>2}: {}", tokenizer.decode(&[token_id])?);
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Fast downloads
+//!
+//! candle-mi uses [`hf-fetch-model`](https://github.com/PCfVW/hf-fetch-model)
+//! for high-throughput parallel downloads from the `HuggingFace` Hub:
+//!
+//! ```rust,no_run
+//! # async fn example() -> candle_mi::Result<()> {
+//! // Async: parallel chunked download with progress bars
+//! let _path = candle_mi::download_model("meta-llama/Llama-3.2-1B".to_owned()).await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ```no_run
+//! # fn main() -> candle_mi::Result<()> {
+//! // Sync: blocking variant (uses local HF cache if already downloaded)
+//! candle_mi::download_model_blocking("meta-llama/Llama-3.2-1B".to_owned())?;
+//! let model = candle_mi::MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Further reading
+//!
+//! - [`HOOKS.md`](https://github.com/PCfVW/candle-mi/blob/main/HOOKS.md) —
+//!   complete hook point reference with shapes, intervention walkthrough, and
+//!   worked examples.
+//! - [`BACKENDS.md`](https://github.com/PCfVW/candle-mi/blob/main/BACKENDS.md) —
+//!   how to add a new model architecture (auto-config, config parser, or
+//!   custom `MIBackend`).
+//! - [`examples/`](https://github.com/PCfVW/candle-mi/tree/main/examples) —
+//!   15 runnable examples covering inference, logit lens, attention patterns,
+//!   knockout, steering, activation patching, CLT circuits, SAE encoding,
+//!   RWKV inference, and more.
 
 #![deny(warnings)] // All warns → errors in CI
 #![cfg_attr(not(any(feature = "mmap", feature = "memory")), forbid(unsafe_code))] // Rule 5: safe by default
