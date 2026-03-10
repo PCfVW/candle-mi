@@ -62,6 +62,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `GenericTransformer` expectations before loading; validated against all 7
   known model families (produces identical configs to manual parsers);
   `auto_config_dogfood` example demonstrates success and failure cases
+- **Actionable auto-config error diagnostics** — when `check_auto_compatibility()`
+  fails for non-standard models, error messages now show which tensors *were*
+  found per category (embedding, norm, attention, MLP) and detect known naming
+  conventions (GPT-2, Falcon, BLOOM, GPT-NeoX/Pythia) with architecture-specific
+  guidance; unknown naming conventions show the first 5 tensor names as a
+  diagnostic aid
 - **Figure 13 planning-in-poems example** (`figure13_planning_poems`) —
   replicates Anthropic's Figure 13 (suppress + inject position sweep) with
   three presets: `llama3.2-1b-524k` (Llama 3.2 1B, P("that")=0.98),
@@ -83,7 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `top_attended_positions`; identifies the BOS sink pattern and peak
   last→first attention layer; tested on Llama 3.2 1B, Gemma 2 2B,
   StarCoder2 3B
-- **Opt-in memory reporting** in all 6 high-impact examples — RAM + VRAM
+- **Opt-in memory reporting** in all 7 high-impact examples — RAM + VRAM
   before/after model load via `MemorySnapshot` and `MemoryReport`, gated
   behind `#[cfg(feature = "memory")]`
 - `extract_token_prob()` — extract a single token's probability from logits
