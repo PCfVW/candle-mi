@@ -133,6 +133,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `examples/figure13/recurrent_feedback_plot.wl`; reference: Taufeeque et al.,
   arXiv:2407.15421, 2024
 - Rust 2024 edition badge in `README.md`
+- **`HOOKS.md`** — comprehensive hook point reference documenting all 14
+  transformer and 7 RWKV hook points with tensor shapes, `TransformerLens`
+  string equivalents, all 5 `Intervention` types (Replace, Add, Knockout,
+  Scale, Zero), RWKV state interventions (`StateKnockoutSpec`,
+  `StateSteeringSpec`), zero-overhead guarantee, and 5 worked examples
+  (capture, logit lens, knockout, activation patching, RWKV state ablation)
+- **`BACKENDS.md`** — step-by-step guide to adding new model architectures:
+  three paths (auto-config for standard HF transformers, config parser for
+  known families with quirks, custom `MIBackend` for non-transformer
+  architectures); `TransformerConfig` axes reference, existing parser
+  templates, hook integration checklist, weight naming conventions, and
+  testing checklist
+- **Crate-level documentation** (`src/lib.rs`) — expanded from minimal
+  stub to full reference: feature flags table, quick start with real
+  tokenization, activation capture, intervention (knockout), logit lens
+  walkthrough, fast downloads (async + sync), and links to `HOOKS.md`,
+  `BACKENDS.md`, and examples
+- **`README.md` documentation table** — links to API docs, `HOOKS.md`,
+  `BACKENDS.md`, examples, `CHANGELOG.md`, and `ROADMAP.md`
+- **Cross-references** — `design/hook-system.md` and
+  `design/intervention-api.md` now link to `HOOKS.md`; `examples/README.md`
+  has a table of contents with clickable links and see-also references
 
 ### Changed
 
