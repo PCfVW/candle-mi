@@ -2,8 +2,8 @@
 
 > *MI for the Rust of us*
 
-**Date:** February 19, 2026 (last updated: March 6, 2026)
-**Status:** Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 complete. Phase 5 in progress (auto-config done). Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.5. Default dtype changed to F32 for research-grade precision.
+**Date:** February 19, 2026 (last updated: March 10, 2026)
+**Status:** Phase 0–4 complete. Phase 5 in progress (auto-config done, examples done, docs remaining). Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.5. Default dtype changed to F32 for research-grade precision.
 **Context:** Building on plip-rs experience (7 model backends incl. Gemma 2, attention knockout, state knockout, effective attention, steering, logit lens, CLT encoding/injection). Two successful replications of Anthropic's "Planning in Poems" Figure 13 validate the approach: Gemma 2 2B with 426K CLTs (melometis branch) and Llama 3.2 1B with 524K CLTs (tragos branch). Target: a publishable, generic Rust MI crate endorsed by HuggingFace.
 
 ---
@@ -48,10 +48,11 @@
   - [Phase 3: CLT Support](#phase-3-clt-support) ✅
   - [Phase 4: SAE Support](#phase-4-sae-support) ✅
   - [Phase 5: Polish + Publish + Auto-Config](#phase-5-polish--publish--auto-config)
-  - [Phase 6a: Standard MI Analysis Stack](#phase-6a-standard-mi-analysis-stack)
-  - [Phase 6b: Static Circuit Analysis](#phase-6b-static-circuit-analysis)
-  - [Phase 6c: Model Coverage & Ecosystem](#phase-6c-model-coverage--ecosystem)
-  - [Phase 7+: Extensions (Future)](#phase-7-extensions-future)
+  - [Phase 6: Research Examples & Utilities](#phase-6-research-examples--utilities)
+  - [Phase 7: Standard MI Analysis Stack](#phase-7-standard-mi-analysis-stack)
+  - [Phase 8: Static Circuit Analysis](#phase-8-static-circuit-analysis)
+  - [Phase 9: Model Coverage & Ecosystem](#phase-9-model-coverage--ecosystem)
+  - [Phase 10+: Extensions (Future)](#phase-10-extensions-future)
 - [8. Key Design Decisions](#8-key-design-decisions)
 - [9. Relationship to Existing Projects](#9-relationship-to-existing-projects)
   - [9.1 plip-rs (AIware 2026)](#91-plip-rs-aiware-2026)
@@ -309,7 +310,7 @@ The 3B+ variants (Yi 6B, Phi-4-mini 3.8B, 7B models) exceed 16 GB at F32 and req
 | **Mamba / SSM** | Selective state space; different recurrence | Separate backend |
 | **Encoder-only** (BERT, etc.) | Bidirectional attention, [MASK] token | Different forward pass structure |
 | **Encoder-decoder** (T5, etc.) | Cross-attention between encoder and decoder | Different forward pass structure |
-| **Very old architectures** (GPT-2, GPT-J) | Absolute position embeddings, post-norm | Planned for Phase 6c (GPT-2 family + Pythia) |
+| **Very old architectures** (GPT-2, GPT-J) | Absolute position embeddings, post-norm | Planned for Phase 9 (GPT-2 family + Pythia) |
 | **Codestral** (Mistral) | Only available at 22 B; exceeds 16 GB MI GPU budgets | Would need ≥48 GB VRAM (A6000, etc.) |
 
 ### 3.5 Config Parsing from HuggingFace `config.json`
@@ -532,18 +533,18 @@ Where `A_t` (transition), `B_t` (input), and `C_t` (output) vary by architecture
 | **Attribution graphs** | ✅ Working (Phase 3) | `AttributionEdge`, `AttributionGraph` with `top_k()`/`threshold()` pruning; `score_features_by_decoder_projection()`, `build_attribution_graph()` |
 | **SAE loading + encoding** | ✅ Working (Phase 4) | `SparseAutoencoder` struct; Gemma Scope NPZ format; `encode()` for sparse activations; validated on Gemma 2 2B |
 | **SAE feature injection** | ✅ Working (Phase 4) | Same as CLT but for SAEs; `Intervention::Add` at hook points |
-| **Activation patching** | High (Phase 6a) | Swap activations between clean/corrupted runs at specific hook points |
-| **Residual stream decomposition** | High (Phase 6a) | Decompose residual stream into per-layer, per-component contributions |
+| **Activation patching** | High (Phase 7) | Swap activations between clean/corrupted runs at specific hook points |
+| **Residual stream decomposition** | High (Phase 7) | Decompose residual stream into per-layer, per-component contributions |
 
 ### 5.3 Future (not required now)
 
 | Capability | Notes |
 |-----------|-------|
-| **Probing** | Linear probes on activations (Phase 7+) |
-| **Causal scrubbing** | Systematic causal intervention framework (subsumed by activation patching, Phase 6a) |
-| **Indirect object identification** | IOI-style circuit analysis (enabled by Phase 6a activation patching + Phase 6b head detection) |
-| **Induction head detection** | Automated induction head finding (Phase 6b) |
-| **Feature visualization** | Export attention/activation data for visualization tools (Phase 7+); deloson ([live demo](https://PCfVW.github.io/deloson/)) already consumes plip-rs layer scan JSON — candle-mi should preserve this output format |
+| **Probing** | Linear probes on activations (Phase 10+) |
+| **Causal scrubbing** | Systematic causal intervention framework (subsumed by activation patching, Phase 7) |
+| **Indirect object identification** | IOI-style circuit analysis (enabled by Phase 7 activation patching + Phase 10+ head detection) |
+| **Induction head detection** | Automated induction head finding (Phase 10+) |
+| **Feature visualization** | Export attention/activation data for visualization tools (Phase 10+); deloson ([live demo](https://PCfVW.github.io/deloson/)) already consumes plip-rs layer scan JSON — candle-mi should preserve this output format |
 
 ---
 
@@ -607,13 +608,25 @@ candle-mi/
 │   └── util/                       — Shared utilities ✅
 │       ├── mod.rs
 │       ├── masks.rs                — Causal/generation masks with caching
+│       ├── pca.rs                  — PCA via power iteration with deflation ✅
 │       └── positioning.rs          — Character ↔ token mapping
 │
-├── examples/                       — Quick start + capability examples
+├── examples/                       — 15 examples covering MI techniques ✅
 │   ├── quick_start_transformer.rs  — Load model, forward pass, print top tokens ✅
 │   ├── quick_start_sae.rs          — Load SAE, encode activations, print top features ✅
 │   ├── fast_download.rs            — Parallel multi-connection model download ✅
 │   ├── auto_config_dogfood.rs      — Auto-config + compatibility check dogfooding ✅
+│   ├── logit_lens.rs               — Per-layer prediction tracking ✅
+│   ├── attention_patterns.rs       — Attention weight visualization ✅
+│   ├── attention_knockout.rs       — Zero-out specific attention heads ✅
+│   ├── activation_patching.rs      — Causal intervention via patching ✅
+│   ├── steering_dose_response.rs   — Attention steering with dose curves ✅
+│   ├── figure13_planning_poems.rs  — CLT-based circuit analysis ✅
+│   ├── character_count_helix.rs    — Helix manifold replication (Gurnee et al.) ✅
+│   ├── token_positions.rs          — Token ↔ character offset mapping ✅
+│   ├── generate.rs                 — Autoregressive text generation ✅
+│   ├── rwkv_inference.rs           — RWKV model inference ✅
+│   ├── recurrent_feedback.rs       — Anacrousis recurrent CLT feedback ✅
 │   └── README.md                   — Example descriptions and usage instructions ✅
 │
 ├── scripts/                        — Validation scripts and reference data
@@ -666,7 +679,7 @@ probing = ["linfa", "linfa-logistic", "ndarray"]  # Linear probing
 | **BACKENDS.md** | Markdown | Step-by-step guide to adding a new model architecture: config parser, weight map, validation protocol |
 | **HOOKS.md** | Markdown | Hook point reference table (mirroring §2.1), intervention API walkthrough, worked examples (capture attention, run knockout, steer residual stream) |
 | **CHANGELOG.md** | Markdown | [Keep a Changelog](https://keepachangelog.com/) format from v0.0.1 onwards |
-| **Examples** | Rust (`examples/`) | Quick-start per backend (`quick_start_transformer.rs` ✅, `quick_start_sae.rs` ✅, `fast_download.rs` ✅) + planned: one per major capability (`logit_lens.rs`, `knockout.rs`, `steering.rs`, `clt_scan.rs`) — each self-contained with inline comments |
+| **Examples** | Rust (`examples/`) | 15 examples covering model loading, logit lens, attention patterns, knockout, steering, activation patching, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix — each self-contained with inline comments ✅ |
 
 **Rustdoc policy:** Every `pub` item must have a doc comment. Types include a one-line summary + "# Examples" section with a runnable doc-test. `#![warn(missing_docs)]` enforced at crate level.
 
@@ -690,7 +703,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 
 **Branch strategy:** Work directly on `main` during solo development. Use short-lived feature branches only when a change spans multiple sessions and may leave `main` broken in between; merge back when green.
 
-**Tag convention:** Tag at each phase completion: `v0.0.1-phase0`, `v0.0.2-phase1`, etc. Tag `v0.1.0` at publication (Phase 5). Post-v0.1.0 minor bumps: `v0.2.0` (Phase 6a), `v0.3.0` (Phase 6b), `v0.4.0` (Phase 6c). Tags matching `v*` trigger `publish.yml`, which runs full CI then `cargo publish` automatically. **Always wait for `ci.yml` green before tagging** — bump `Cargo.toml` version + commit `Cargo.lock` first.
+**Tag convention:** Tag at each phase completion: `v0.0.1-phase0`, `v0.0.2-phase1`, etc. Tag `v0.1.0` at publication (Phase 5). Post-v0.1.0 minor bumps: `v0.2.0` (Phase 6), `v0.3.0` (Phase 7), `v0.4.0` (Phase 8), `v0.5.0` (Phase 9). Tags matching `v*` trigger `publish.yml`, which runs full CI then `cargo publish` automatically. **Always wait for `ci.yml` green before tagging** — bump `Cargo.toml` version + commit `Cargo.lock` first.
 
 ### Phase 0: Foundation
 
@@ -797,7 +810,8 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [ ] Write crate-level documentation with examples — **commit**
 - [ ] Write `BACKENDS.md` — how to add a new model architecture — **commit**
 - [ ] Write `HOOKS.md` — hook point reference and intervention walkthrough — **commit**
-- [ ] Write example programs (logit lens, knockout, steering, CLT scan) — **commit per example**
+- [x] Write example programs — 15 examples covering forward pass, logit lens, attention patterns, knockout, steering, activation patching, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix — **multiple commits**
+- [ ] Improve auto-config error messaging — when `check_auto_compatibility()` fails for non-standard models (non-HF weight naming), provide actionable error messages listing which weight tensors were expected vs. found — **commit**
 - [ ] Update CHANGELOG.md with Phase 5 changes — **commit** — **PUSH** (release candidate)
 - [ ] **Release workflow** (publish v0.1.0 to crates.io — automated via `publish.yml`):
   1. Ensure `main` is clean: `git status` shows no uncommitted changes
@@ -810,7 +824,24 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [ ] Submit PR to candle repo adding candle-mi to "Useful External Resources" (per Eric Buehler's invitation)
 - [ ] Announce (Rust ML community, MI community)
 
-### Phase 6a: Standard MI Analysis Stack
+### Phase 6: Research Examples & Utilities
+
+**Goal:** Finalize the character count helix example, strengthen PCA utilities, add 2–3 beginner MI examples from the [Nanda quickstart proposal](docs/quickstart-examples-proposal.md). Keep the phase small (~40% unplanned capacity reserved for bug fixes discovered by early users of v0.1.0).
+
+- [ ] Helix finalization — **commit**
+  - **Checkpoint/resume:** after each layer completes, write `layer_XX_variance.jsonl` to the output directory (one JSON object: layer index, top-6 variance ratios, elapsed time, text files used, `max_tokens`). On startup, scan for existing JSONL files and skip already-completed layers. Crash-safe: if the process dies mid-layer, only the incomplete layer is re-run.
+  - **`--stop <N|all>`:** save after scanning N more layers, then exit cleanly. `--stop all` (default) finishes all remaining layers. Enables incremental overnight runs: `--stop 2` scans two layers then exits; re-run the same command to resume.
+  - **Final assembly:** when all layers are done, combine JSONL files into the full `helix_output.json` (cosine similarity matrix, PCA projections, per-layer variance).
+  - **`--pca-n-omit <N>`:** skip the first N character positions from PCA (following [t-tech methodology](https://huggingface.co/spaces/t-tech/manifolds#predicting-token-position), default 0). Reduces noise from short-line edge effects.
+- [ ] PCA enhancements — `pca_n_omit` parameter in `pca_top_k()`, projection helpers (`project_to_pcs()`, `reconstruct_from_pcs()`), optional randomized SVD solver for large matrices — **commit**
+- [ ] `inspect_weights.rs` example — load a model, print layer count / hidden size / head count / vocab size, per-layer weight matrix shapes and Frobenius norms, embedding stats. Lowest barrier to entry; no MI knowledge needed — **commit**
+- [ ] `logit_attribution.rs` example — direct logit attribution: project each layer's residual contribution through unembedding, show per-layer contribution to target prediction. Core MI technique — **commit**
+- [ ] Migrate `.npz` download logic from `candle-mi` to `hf-fetch-model` — single-file download is already there; `.npz` parsing should live in the download crate — **commit**
+- [ ] ~40% unplanned: bug fixes, documentation gaps, user-reported issues — **commits as needed** — **PUSH**
+
+**Deliverable:** Polished examples, stronger PCA, bug fixes. — **PUSH + tag `v0.2.0`**
+
+### Phase 7: Standard MI Analysis Stack
 
 **Goal:** The core causal analysis toolkit — transforms candle-mi from "model loader with hooks" into "general-purpose MI framework." Forward-only methods; no autograd needed (tractable on 16 GB VRAM up to ~7B F32).
 
@@ -819,36 +850,41 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [ ] Direct logit attribution — `logit_attrs()`: dot product of each component's residual contribution with unembedding direction of target tokens. Per-head, per-layer, per-MLP granularity — **commit**
 - [ ] Activation patching framework — `activation_patch()` generic + pre-built variants (`resid_pre`, `attn_out`, `mlp_out`, per-head). Clean/corrupted forward passes with activation swaps at specified hook points — **commit** — **PUSH**
 
-**Deliverable:** Causal tracing, component attribution, circuit localization. — **PUSH + tag `v0.2.0`**
+**Deliverable:** Causal tracing, component attribution, circuit localization. — **PUSH + tag `v0.3.0`**
 
-### Phase 6b: Static Circuit Analysis
+### Phase 8: Static Circuit Analysis
 
-**Goal:** Weight-level understanding without forward passes — the "Mathematical Framework for Transformer Circuits" (Elhage et al. 2021) in Rust.
+**Goal:** Weight-level understanding without forward passes — the "Mathematical Framework for Transformer Circuits" (Elhage et al. 2021) in Rust. Focus on the core primitives; higher-level detection utilities can be built on top later.
 
 - [ ] `FactoredMatrix` type — lazy `A @ B` representation with efficient SVD, eigenvalues, composition scores, corner inspection (no `[d_model, d_model]` materialization) — **commit**
 - [ ] QK/OV circuit extraction — expose `W_Q.T @ W_K` and `W_V @ W_O` as `FactoredMatrix` per head — **commit**
 - [ ] Weight folding — `fold_layer_norm()`, `center_writing_weights()`, `center_unembed()` for clean decomposition (without folding, LayerNorm entangles every component) — **commit**
-- [ ] Composition scores — Q/K/V-composition between head pairs via `FactoredMatrix` — **commit**
-- [ ] Head detection — automated induction head, previous-token head, duplicate-token head identification — **commit**
-- [ ] SVD interpretation — project weight singular vectors through unembedding to token-space representations — **commit** — **PUSH**
+- [ ] Composition scores — Q/K/V-composition between head pairs via `FactoredMatrix` — **commit** — **PUSH**
 
-**Deliverable:** Static circuit analysis toolkit. — **PUSH + tag `v0.3.0`**
+**Deliverable:** Static circuit analysis primitives. — **PUSH + tag `v0.4.0`**
 
-### Phase 6c: Model Coverage & Ecosystem
+*Deferred to Phase 10+:* Head detection (induction, previous-token, duplicate-token) and SVD interpretation (project singular vectors through unembedding) — useful but higher-level; build on Phase 8 primitives.
 
-**Goal:** Breadth — cover the most-studied MI models and improve ergonomics.
+### Phase 9: Model Coverage & Ecosystem
 
+**Goal:** Breadth — cover the most-studied MI models and improve ergonomics. Tensor name remapping unlocks non-HF-standard architectures. Keep scope focused on high-impact additions.
+
+- [ ] Tensor name remapping — build rename map from safetensors tensor names, wrap `VarBuilder` to translate non-standard weight paths (e.g. GPT-2 `transformer.h.{i}.attn.c_attn` → `model.layers.{i}.self_attn.q_proj`). Prerequisite for GPT-2/Pythia — **commit**
 - [ ] GPT-2 family — absolute positional embeddings (new config axis), post-norm architecture. The "fruit fly" of MI research — **commit** — **PUSH**
 - [ ] Pythia family (14M–12B) — EleutherAI MI research models with training checkpoints. Shares GPT-2-like architecture — **commit**
-- [ ] Additional hook points (`hook_rot_q`/`hook_rot_k`, `hook_q_input`/`hook_k_input`/`hook_v_input`, LayerNorm hooks) — **commit**
-- [ ] MoE transformer variant (Mixtral) — router analysis, expert specialization hooks — **commit** — **PUSH**
-- [ ] Evaluation suite (`sanity_check`, `induction_loss`) — quick model validation — **commit**
+- [ ] Additional hook points (`hook_rot_q`/`hook_rot_k`, `hook_q_input`/`hook_k_input`/`hook_v_input`, LayerNorm hooks) — driven by demand from Phase 7 analysis work — **commit**
 - [ ] Richer tokenizer utilities (`to_str_tokens`, `test_prompt`, `tokens_to_residual_directions`) — **commit** — **PUSH**
 
-**Deliverable:** GPT-2/Pythia coverage, MoE support, improved ergonomics. — **PUSH + tag `v0.4.0`**
+**Deliverable:** GPT-2/Pythia coverage, improved ergonomics. — **PUSH + tag `v0.5.0`**
 
-### Phase 7+: Extensions (Future)
+*Deferred to Phase 10+:* MoE transformer variant (Mixtral — router analysis, expert specialization hooks), evaluation suite (`sanity_check`, `induction_loss`).
 
+### Phase 10+: Extensions (Future)
+
+- [ ] Head detection — automated induction head, previous-token head, duplicate-token head identification (builds on Phase 8 primitives)
+- [ ] SVD interpretation — project weight singular vectors through unembedding to token-space representations
+- [ ] MoE transformer variant (Mixtral) — router analysis, expert specialization hooks
+- [ ] Evaluation suite (`sanity_check`, `induction_loss`) — quick model validation
 - [ ] RWKV-4/5 backends (if community demand)
 - [ ] Mamba / Mamba-2 backend
 - [ ] GLA, RetNet backends (via generic linear RNN trait)

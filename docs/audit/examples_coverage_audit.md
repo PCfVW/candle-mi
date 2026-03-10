@@ -24,7 +24,7 @@
 | `token_positions.rs` | **NEW — Implemented** | `EncodingWithOffsets`, `convert_positions`, `TokenWithOffset`, `PositionConversion`, `encode_with_offsets`, `char_to_token`, `token_to_char_range`, `char_range_to_tokens` |
 | `rwkv_inference.rs` | **NEW — Implemented** | `MIModel::from_pretrained` (RWKV), `HookPoint::RwkvState`, `HookPoint::RwkvDecay`, `HookPoint::ResidPost`, `StateKnockoutSpec`, `StateAblationResult`, `HookSpec::capture`, `sample_token` |
 | `recurrent_feedback.rs` | **NEW — Implemented** | `GenericTransformer`, `RecurrentPassSpec`, `RecurrentFeedbackEntry`, `forward_recurrent`, `generate_recurrent`, `embedding_vector`, `MITokenizer`, `sample_token`, `--output` JSON export, `MemorySnapshot`/`MemoryReport` |
-| `character_count_helix.rs` | **NEW — Implemented** | `pca_top_k`, `PcaResult`, `HookPoint::ResidPost`, `HookSpec::capture`, `HookCache::require`, `MIModel::from_pretrained`, `MITokenizer::encode_with_offsets`, `EncodingWithOffsets`, full-sequence activation capture, `--text` custom prose, `--output` JSON export |
+| `character_count_helix.rs` | **NEW — Implemented** | `pca_top_k`, `PcaResult`, `HookPoint::ResidPost`, `HookSpec::capture`, `HookCache::require`, `MIModel::from_pretrained`, `MITokenizer::encode_with_offsets`, `EncodingWithOffsets`, full-sequence activation capture, `--scan-layers` / `--pca-layers` (accept `all` or `START..END`), `--text-dir` multi-file batches, `--max-tokens` OOM guard, `--text` custom prose, `--output` JSON export, `MemorySnapshot`/`MemoryReport` |
 
 **Coverage estimate:** ~87 % of the public API surface (up from ~85 %).
 
@@ -175,7 +175,7 @@ precision (`.3` for attention weights, `.6` for KL/attention measurements).
 
 The `memory` feature (`src/memory.rs`) provides `MemorySnapshot` and
 `MemoryReport` for exact per-process RAM measurement (Windows FFI / Linux
-procfs) and device-wide VRAM (nvidia-smi). All 6 high-impact examples include
+procfs) and device-wide VRAM (nvidia-smi). All 7 high-impact examples include
 opt-in memory reporting via `#[cfg(feature = "memory")]` guards, activated
 with `--features memory`.
 
@@ -421,7 +421,7 @@ Tested on Llama 3.2 1B.
 | **Attention knockout** | Missing | ✅ `attention_knockout.rs` | ✅ |
 | **Steering calibration** | Missing | ✅ `steering_dose_response.rs` | ✅ |
 | **Attention patterns** | Missing | ✅ `attention_patterns.rs` | ✅ |
-| **Memory reporting** | N/A | ✅ Opt-in in all 6 examples | ✅ |
+| **Memory reporting** | N/A | ✅ Opt-in in all 7 examples | ✅ |
 | **Activation patching** | Missing | ✅ `activation_patching.rs` | ✅ |
 | **CLT attribution** | Missing | Missing | `clt_attribution.rs` |
 | **Token positioning** | Missing | ✅ `token_positions.rs` | ✅ |
@@ -460,7 +460,7 @@ examples/
 ├── attention_patterns.rs              # ✅ head-level attention
 ├── activation_patching.rs             # ✅ causal tracing (Meng et al., 2022)
 ├── steering_dose_response.rs          # ✅ intervention calibration
-├── character_count_helix.rs           # (proposed) helix replication (§7)
+├── character_count_helix.rs           # ✅ helix replication (§7)
 
 │   # ── Sparse Features ──────────────────────────────────────
 ├── clt_attribution.rs                 # (proposed) CLT feature attribution
@@ -490,8 +490,9 @@ examples/
     ├── recurrent_feedback/
     │   ├── prefill.json
     │   └── sustained.json
-    └── character_count_helix/         # (future)
-        └── helix_plot.wl
+    └── character_count_helix/         # ✅ implemented
+        ├── helix_plot.wl
+        └── texts/                    # 10 Dickens chapters (~29K words)
 ```
 
 ### Golden outputs
@@ -521,7 +522,7 @@ feature flag — they fail gracefully at runtime if the backend isn't available.
 | `attention_patterns` | `["transformer"]` | ✅ Implemented |
 | `activation_patching` | `["transformer"]` | ✅ Implemented |
 | `steering_dose_response` | `["transformer"]` | ✅ Implemented |
-| `character_count_helix` | `["transformer"]` | Proposed |
+| `character_count_helix` | `["transformer"]` | ✅ Implemented |
 | `clt_attribution` | `["clt", "transformer"]` | Proposed |
 | `token_positions` | — (no feature gate) | ✅ Implemented |
 | `rwkv_inference` | `["rwkv"]` | ✅ Implemented |
@@ -691,44 +692,50 @@ CPU or GPU and serves the helix example, logit lens, activation patching,
 and any future analysis needing dimensionality reduction. No external
 crate required.
 
-### 7.4 Proposed Example: `character_count_helix.rs`
+### 7.4 Implemented Example: `character_count_helix.rs`
 
 **Category:** Interpretability (high impact — replicates a landmark paper)
 
-**Required features:** `["transformer"]`
+**Required features:** `["transformer"]` (optional: `memory`, `mmap`)
 
-**Outline:**
+**CLI:**
 
 ```
-1. Load Gemma 2 2B via MIModel::from_pretrained
-2. Build synthetic dataset:
-   - Take a hardcoded prose passage (~500 words)
-   - Strip newlines
-   - Re-wrap at widths k = 20, 30, 40, ..., 100
-3. For each wrapped passage:
-   a. Tokenize
-   b. Forward pass with HookSpec capturing ResidPost(0)..ResidPost(3)
-   c. For each token position, compute line character count
-   d. Accumulate (character_count → Vec<residual_vector>) mapping per layer
-4. Average residual vectors per character count → 150 × d_model matrix
-5. Center the matrix (subtract grand mean)
-6. PCA via pca_top_k() — power iteration on the kernel matrix, on GPU
-7. Project the 150 mean vectors into the 6D subspace
-8. Output:
-   - JSON of the 150 points in PC1–6 (for 3D plotting)
-   - Cosine similarity matrix as JSON (for heatmap)
-   - Explained variance per component
-9. Print summary: variance captured, helix visual check
+cargo run --features transformer,memory,mmap --release --example character_count_helix -- [OPTIONS]
+
+  [MODEL]               Model ID (default: google/gemma-2-2b)
+  --scan-layers <SPEC>  Lightweight variance scan: "all" or "START..END"
+  --pca-layers <SPEC>   Full PCA + cosine + JSON: "all" or "START..END"
+  --text <FILE>         Custom prose file (strips newlines, re-wraps)
+  --text-dir <DIR>      Directory of .txt files (each file = separate batch)
+  --output <PATH>       JSON export path (multi-layer: helix_L{n}.json)
+  --max-tokens <N>      Truncate sequences to prevent OOM (default: 4096)
 ```
+
+**Algorithm:**
+
+1. Load model via `MIModel::from_pretrained`, report memory delta.
+2. Load prose: `--text-dir` (multi-file), `--text` (single file), or built-in.
+3. Strip newlines, re-wrap at 14 widths (20, 30, 40, ..., 150).
+4. **Scan** (`--scan-layers`): for each layer, accumulate mean residual
+   vectors by character count across all texts and widths, run PCA (6 PCs),
+   print explained variance table. Per-text progress with timing.
+5. **Full PCA** (`--pca-layers`): same accumulation, plus cosine similarity
+   matrix, 6D projections, and JSON export.
+6. Sequences exceeding `--max-tokens` are truncated (logged to stderr).
 
 **What this demonstrates:**
 - `MIModel::from_pretrained`, `HookSpec::capture`, `HookPoint::ResidPost`
 - Full-sequence activation capture (not just last token)
 - `EncodingWithOffsets` for character-to-token mapping
 - `pca_top_k()` — GPU-native PCA via power iteration (new utility)
+- `MemorySnapshot`/`MemoryReport` for RAM/VRAM reporting
 - Candle tensor ops: matmul, normalization, cosine similarity
 - Real MI research workflow: synthetic data → activation capture → analysis
 - JSON output + Mathematica `.wl` companion script (same pattern as figure13)
+
+**Bundled data:** 10 chapters from Dickens' *A Tale of Two Cities* (~29K words)
+in `examples/results/character_count_helix/texts/`.
 
 **What it does NOT attempt** (out of scope for one example):
 - Boundary head QK twist analysis (would need weight extraction)
@@ -741,10 +748,40 @@ crate required.
 including tests) uses power iteration with deflation on the kernel matrix.
 `character_count_helix.rs` example replicates the helix finding using
 Gemma 2 2B (or any cached model). Companion Mathematica script in
-`examples/results/character_count_helix/helix_plot.wl`.
+`examples/results/character_count_helix/helix_plot.wl`. Bundled with 10
+Dickens chapters (~29K words) in `texts/` for large-scale experiments.
 
-Additional feature beyond the original design: `--text` flag for custom
-prose input, enabling replication across different text content.
+Features beyond the original design: `--scan-layers` / `--pca-layers` for
+flexible layer range exploration (`all` or `START..END`), `--text-dir` for
+multi-file batches, `--max-tokens` (default 4096) to prevent OOM on long
+sequences, per-text progress with timing, and `MemorySnapshot`/`MemoryReport`
+for RAM/VRAM reporting.
+
+**Note:** This is the first known replication of the character count helix
+on Gemma 2 2B, and the first implementation in Rust. See §7.6 for a
+comparison with other replications.
+
+### 7.6 Comparison with Other Replications
+
+As of March 2026, no other publicly available replication uses Gemma 2 2B.
+
+| Replication | Model(s) | GPU | Corpus | Widths | PCA Method |
+|---|---|---|---|---|---|
+| **Original** (Gurnee et al.) | Claude 3.5 Haiku | Not disclosed | Unknown | 15–150 | Unknown |
+| [**turtleishly**](https://github.com/turtleishly/Anthropic-Linebreak-replication) (Aiden) | Gemma 2 9B | A100 80GB | Random words, 16×1500 words | Single (200) | `torch.pca_lowrank` |
+| [**t-tech**](https://huggingface.co/spaces/t-tech/manifolds#predicting-token-position) (Sinii & Balagansky) | GPT-2, Pythia, Gemma 2 9B, Gemma 3, Llama 3.1 8B, Qwen3 | Undisclosed (cluster) | FineWeb (1,000 docs) | Single (150) | `sklearn.decomposition.PCA` (full SVD) |
+| **ummagumm-a** (= Sinii) | Llama 3.1 8B | Inaccessible (private) | Unknown | Unknown | Unknown |
+| **candle-mi** (this project) | **Gemma 2 2B** | RTX 5060 Ti 16GB | 10 Dickens chapters (~29K words) | 14 widths (20–150) | Power iteration with deflation |
+
+**Key methodological differences:**
+- t-tech omits the first 20 character positions from PCA (`pca_n_omit: 20`)
+- t-tech uses a single line width (150); candle-mi uses 14 widths (20–150)
+- turtleishly uses random words; candle-mi and t-tech use natural prose
+- candle-mi is the only Rust implementation; all others use Python/PyTorch
+
+**Note:** t-tech's code repository includes a `configs/gemma-2-2b.yml` file,
+but Gemma 2 2B results are not reported in their article. The config may have
+been prepared but not executed, or results were not included in the publication.
 
 ---
 
@@ -774,7 +811,7 @@ the `// SAFETY:` section with a policy table.
 
 ### Integration status
 
-All 6 high-impact examples wrap model loading with `MemorySnapshot::now(device)`
+All 7 high-impact examples wrap model loading with `MemorySnapshot::now(device)`
 before and after, then print the delta via `MemoryReport::print_before_after()`.
 This gives users concrete numbers for their hardware. Activated with
 `--features memory` (e.g., `cargo run --release --features transformer,memory
