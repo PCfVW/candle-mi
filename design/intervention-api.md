@@ -31,3 +31,7 @@ This collapses plip-rs's 5+ forward methods into one, while keeping the API decl
 
 - Should `ForwardConfig` be reusable across calls (amortize allocation) or built fresh each time?
 - How to handle interventions that need state from a previous forward pass (e.g., activation patching)?
+
+## See also
+
+- [HOOKS.md](../HOOKS.md) — user-facing reference for the intervention types and worked examples.

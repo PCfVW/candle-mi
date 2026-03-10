@@ -3,7 +3,7 @@
 > *MI for the Rust of us*
 
 **Date:** February 19, 2026 (last updated: March 10, 2026)
-**Status:** Phase 0–4 complete. Phase 5 in progress (auto-config done, examples done, docs remaining). Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.5. Default dtype changed to F32 for research-grade precision.
+**Status:** Phase 0–4 complete. Phase 5 in progress (auto-config done, examples done, docs done, CHANGELOG and release remaining). Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.5. Default dtype changed to F32 for research-grade precision.
 **Context:** Building on plip-rs experience (7 model backends incl. Gemma 2, attention knockout, state knockout, effective attention, steering, logit lens, CLT encoding/injection). Two successful replications of Anthropic's "Planning in Poems" Figure 13 validate the approach: Gemma 2 2B with 426K CLTs (melometis branch) and Llama 3.2 1B with 524K CLTs (tragos branch). Target: a publishable, generic Rust MI crate endorsed by HuggingFace.
 
 ---
@@ -807,9 +807,9 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [x] Implement `from_hf_config_auto()` — generic config parser for unknown `model_type` values; reads `config.json` scalars (Tier 1–2) + safetensors tensor names (Tier 3: QKV/MLP layout, bias flags, norm type, post-norms) + `model_type` fixups (Tier 4: GemmaRmsNorm, embedding_scale, alternating_sliding_window). Two-tier dispatch: known families use existing parsers, unknown families use auto-parser. Includes `CompatibilityReport` preflight check that detects incompatible models (missing norms, projections, etc.) before weight loading. ~120 lines + ~20 lines tensor-name utilities + ~80 lines compatibility check. See `candle-mi-auto-config-brainstorming.md` for field-by-field derivation plan — **commit `9948bc0`**, **commit `ceee9ac`**
 - [x] Validate auto-config against all 7 known families (must produce identical configs to manual parsers) — **commit `8037419`**
 - [x] Audit public API surface (`pub` vs `pub(crate)`) — **commits `70649e9`, `2eedecf`, `8595a61`**
-- [ ] Write crate-level documentation with examples — **commit**
-- [ ] Write `BACKENDS.md` — how to add a new model architecture — **commit**
-- [ ] Write `HOOKS.md` — hook point reference and intervention walkthrough — **commit**
+- [x] Write crate-level documentation with examples — **commit `c7cbf9e`**
+- [x] Write `BACKENDS.md` — how to add a new model architecture — **commit `36b5208`**
+- [x] Write `HOOKS.md` — hook point reference and intervention walkthrough — **commit `4384545`**
 - [x] Write example programs — 15 examples covering forward pass, logit lens, attention patterns, knockout, steering, activation patching, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix — **multiple commits**
 - [x] Improve auto-config error messaging — when `check_auto_compatibility()` fails for non-standard models (non-HF weight naming), provide actionable error messages listing which weight tensors were expected vs. found — **commit** `2685893`
 - [ ] Update CHANGELOG.md with Phase 5 changes — **commit** — **PUSH** (release candidate)

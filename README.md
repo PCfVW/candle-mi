@@ -8,4 +8,15 @@
 
 *Mechanistic Interpretability for the Rust of us.*
 
-> **Warning:** This crate is in early development (Phase 5). The API is unstable and will change without notice. Not yet ready for production use. Please read the [CHANGELOG](https://github.com/PCfVW/candle-mi/blob/main/CHANGELOG.md) for more information.
+> **Warning:** This crate is in early development (Phase 5). The API is unstable and will change without notice. Not yet ready for production use. Please read the [CHANGELOG](CHANGELOG.md) for more information.
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [API docs (docs.rs)](https://docs.rs/candle-mi) | Crate-level documentation with quick start and examples |
+| [HOOKS.md](HOOKS.md) | Hook point reference, intervention API walkthrough, and worked examples |
+| [BACKENDS.md](BACKENDS.md) | How to add a new model architecture (auto-config, config parser, custom backend) |
+| [examples/](examples/) | 15 runnable examples covering inference, logit lens, knockout, steering, and more |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
+| [ROADMAP.md](ROADMAP.md) | Development roadmap and architecture decisions |

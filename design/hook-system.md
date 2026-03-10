@@ -88,3 +88,7 @@ This requires `impl From<&str> for HookPoint` which parses the string and falls 
 
 - Should `Custom` hooks participate in the zero-overhead guarantee (§8 item 3), or are they allowed a small allocation cost?
 - Should the enum carry architecture tags (`Transformer(_)` vs `Rwkv(_)`) or stay flat?
+
+## See also
+
+- [HOOKS.md](../HOOKS.md) — user-facing reference with hook point shapes, intervention walkthrough, and worked examples.
