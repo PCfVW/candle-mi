@@ -5,6 +5,25 @@
 ![RAM](https://img.shields.io/badge/RAM-64%20GB-blue)
 
 Runnable examples demonstrating candle-mi features.
+See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BACKENDS.md) for adding new models.
+
+## Table of Contents
+
+- [Available Examples](#available-examples)
+- [Running](#running)
+- Example output:
+  [logit_lens](#example-output-logit_lens) |
+  [attention_knockout](#example-output-attention_knockout) |
+  [steering_dose_response](#example-output-steering_dose_response) |
+  [attention_patterns](#example-output-attention_patterns) |
+  [activation_patching](#example-output-activation_patching) |
+  [token_positions](#example-output-token_positions) |
+  [rwkv_inference](#example-output-rwkv_inference) |
+  [recurrent_feedback](#example-output-recurrent_feedback) |
+  [character_count_helix](#example-output-character_count_helix) |
+  [auto_config_dogfood](#example-output-auto_config_dogfood) |
+  [figure13_planning_poems](#example-output-figure13_planning_poems)
+- [Prerequisites](#prerequisites)
 
 ## Available Examples
 
