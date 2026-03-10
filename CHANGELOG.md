@@ -155,8 +155,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Cross-references** — `design/hook-system.md` and
   `design/intervention-api.md` now link to `HOOKS.md`; `examples/README.md`
   has a table of contents with clickable links and see-also references
+- **`README.md` rewrite** — pedagogical structure: "What is this?" section
+  explaining mechanistic interpretability, "Why Rust?" motivation (consumer GPU,
+  memory/runtime bottlenecks, candle), MI techniques table with links to example
+  output, quick start code block, auto-config screenshot, supported models table
+  distinguishing model families from validated models, complete feature flags
+  table, clickable table of contents, license links, development credits
+- **Feature flag documentation** — added `rwkv-tokenizer` and `probing` to
+  feature tables in both `README.md` and `src/lib.rs` crate-level docs
 
 ### Changed
+
+- **Version bump to v0.1.0** — first minor release
+- **Networked tests isolated** — `fast_download` integration tests marked
+  `#[ignore]` to prevent transient HuggingFace Hub outages from blocking CI
+  or publish workflows; run manually with `cargo test --test fast_download -- --ignored`
 
 - **CONVENTIONS.md `// SAFETY:` policy** — updated from "not expected" to a
   feature-gated policy table; `mmap` and `memory` features each have

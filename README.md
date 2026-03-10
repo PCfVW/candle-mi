@@ -95,10 +95,12 @@ Here is what an end-to-end run looks like (auto-config loading LLaMA 3.2 1B — 
 | `transformer` | yes | Generic transformer backend (decoder-only) |
 | `cuda` | yes | CUDA GPU acceleration |
 | `rwkv` | no | RWKV-6/7 linear RNN backend |
+| `rwkv-tokenizer` | no | RWKV world tokenizer (required for RWKV inference) |
 | `clt` | no | Cross-Layer Transcoder support |
 | `sae` | no | Sparse Autoencoder support |
 | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
 | `memory` | no | RAM/VRAM memory reporting |
+| `probing` | no | Linear probing via linfa (experimental) |
 | `metal` | no | Apple Metal GPU acceleration |
 
 ## Documentation

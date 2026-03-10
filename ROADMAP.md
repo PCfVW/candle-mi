@@ -815,7 +815,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [x] Update CHANGELOG.md with Phase 5 changes — **commit `359a623`** — **PUSH** (release candidate)
 - [ ] **Release workflow** (publish v0.1.0 to crates.io — automated via `publish.yml`):
   1. Ensure `main` is clean: `git status` shows no uncommitted changes
-  2. Bump version in `Cargo.toml` to `0.1.0` + update `Cargo.lock` — **commit: `release: v0.1.0`** — **PUSH**
+  2. ~~Bump version in `Cargo.toml` to `0.1.0` + update `Cargo.lock`~~ — **done** (commit `092431e`)
   3. Wait for `ci.yml` to pass on the version-bump commit (build + clippy + fmt + tests)
   4. `git tag v0.1.0` — tag the exact commit that CI validated
   5. `git push origin v0.1.0` — push the tag (triggers `publish.yml`)
