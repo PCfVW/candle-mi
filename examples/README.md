@@ -110,17 +110,23 @@ cargo run --release --features transformer --example recurrent_feedback -- --sus
 # Recurrent feedback — custom layer range and couplet limit
 cargo run --release --features transformer --example recurrent_feedback -- --loop-start 14 --loop-end 15 --max-couplets 5
 
-# Character count helix — default model (Gemma 2 2B), layer 1
-cargo run --release --features transformer --example character_count_helix
+# Character count helix — default model (Gemma 2 2B, requires mmap for sharded weights)
+cargo run --release --features transformer,mmap --example character_count_helix
 
 # Character count helix — with JSON output for Mathematica plotting
-cargo run --release --features transformer --example character_count_helix -- --output examples/results/character_count_helix/helix_output.json
+cargo run --release --features transformer,mmap --example character_count_helix -- --output examples/results/character_count_helix/helix_output.json
 
 # Character count helix — compare variance across layers 0-3
-cargo run --release --features transformer --example character_count_helix -- --all-layers
+cargo run --release --features transformer,mmap --example character_count_helix -- --all-layers
 
-# Character count helix — use your own prose file
-cargo run --release --features transformer --example character_count_helix -- --text mytext.txt
+# Character count helix — use a bundled prose file (Gettysburg Address)
+cargo run --release --features transformer,mmap --example character_count_helix -- --text examples/results/character_count_helix/texts/gettysburg.txt
+
+# Character count helix — use a bundled prose file (Dickens)
+cargo run --release --features transformer,mmap --example character_count_helix -- --text examples/results/character_count_helix/texts/dickens_two_cities.txt
+
+# Character count helix — non-sharded model (mmap not needed)
+cargo run --release --features transformer --example character_count_helix -- "meta-llama/Llama-3.2-1B"
 
 # Figure 13 replication — Llama 3.2 1B (default)
 cargo run --release --features clt,transformer --example figure13_planning_poems
@@ -401,7 +407,9 @@ Output JSON and Mathematica plotting script are in
   include `tokenizer.json`; RWKV-6 models require `--features rwkv-tokenizer`.
 - **recurrent_feedback** requires `meta-llama/Llama-3.2-1B` (default) cached
   locally.
-- **character_count_helix** defaults to `google/gemma-2-2b` (~8 GB VRAM at F32).
-  Use `--text` to supply your own prose file instead of the built-in passage.
+- **character_count_helix** defaults to `google/gemma-2-2b` (~8 GB VRAM at F32,
+  requires `--features mmap` for sharded weights). Two bundled prose files
+  (Gettysburg Address, Dickens) are in `results/character_count_helix/texts/`.
+  Use `--text` to supply any plain-text file.
 - **GPU recommended** for models larger than 1B parameters. candle-mi is
   developed on an RTX 5060 Ti (16 GB VRAM) with 64 GB RAM and CUDA 13.1.

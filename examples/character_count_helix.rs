@@ -5,23 +5,23 @@
 //! "When Models Manipulate Manifolds" (Transformer Circuits).
 //!
 //! ```bash
-//! # Run with default model (Gemma 2 2B) and layer 1
-//! cargo run --release --features transformer --example character_count_helix
+//! # Run with default model (Gemma 2 2B, requires mmap for sharded weights)
+//! cargo run --release --features transformer,mmap --example character_count_helix
 //!
-//! # Specify a different model
+//! # Specify a different model (non-sharded models don't need mmap)
 //! cargo run --release --features transformer --example character_count_helix -- "meta-llama/Llama-3.2-1B"
 //!
 //! # Export JSON for external plotting
-//! cargo run --release --features transformer --example character_count_helix -- --output results.json
+//! cargo run --release --features transformer,mmap --example character_count_helix -- --output results.json
 //!
 //! # Analyse a specific layer
-//! cargo run --release --features transformer --example character_count_helix -- --layer 2
+//! cargo run --release --features transformer,mmap --example character_count_helix -- --layer 2
 //!
 //! # Compare variance across layers 0-3
-//! cargo run --release --features transformer --example character_count_helix -- --all-layers
+//! cargo run --release --features transformer,mmap --example character_count_helix -- --all-layers
 //!
 //! # Use your own prose file
-//! cargo run --release --features transformer --example character_count_helix -- --text mytext.txt
+//! cargo run --release --features transformer,mmap --example character_count_helix -- --text mytext.txt
 //! ```
 //!
 //! **What it does:**
