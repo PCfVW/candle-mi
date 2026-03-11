@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-03-11
+
 ### Added
 
 - **PCA utility** (`src/util/pca.rs`) — `pca_top_k()` computes the top principal
@@ -472,7 +474,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.0.5-phase4...HEAD
+[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/PCfVW/candle-mi/compare/v0.0.5-phase4...v0.1.0
 [0.0.5-phase4]: https://github.com/PCfVW/candle-mi/compare/v0.0.4-phase3...v0.0.5-phase4
 [0.0.4]: https://github.com/PCfVW/candle-mi/compare/v0.0.3...v0.0.4-phase3
 [0.0.3]: https://github.com/PCfVW/candle-mi/releases/tag/v0.0.3
