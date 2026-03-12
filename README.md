@@ -152,7 +152,7 @@ candle-mi makes a deliberate trade-off: **full-sequence recompute at every gener
 - **Maximum observability.** Hooks can re-observe how earlier positions change under intervention at every step. Interventions "just work" without KV cache invalidation.
 - **Interventions compound.** When steering the residual stream during autoregressive generation, each new token is generated with the intervention re-applied across the full context. This is why candle-mi's [recurrent feedback](examples/README.md#example-output-recurrent_feedback) rescues +2 rhyming couplets (out of 15) where a KV-cached approach gets +1 — the intervention is observed at every step, not just once during prefill.
 
-This is a research-first design: MI analyses need to see everything, and the performance cost is acceptable when the alternative is missing causal effects.
+This is a research-first design: MI analyses need to see everything, and the performance cost is acceptable when the alternative is missing causal effects. candle-mi is not an inference engine — for production serving, see [candle-vllm](https://github.com/EricLBuehler/candle-vllm), [vllm.rs](https://github.com/guoqingbao/vllm.rs), or [vLLM](https://github.com/vllm-project/vllm) (Python). It is optimized for observability, not throughput.
 
 ## Paper replications
 

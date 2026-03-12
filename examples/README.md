@@ -433,8 +433,9 @@ Output JSON and Mathematica plotting script are in
   or via Python (`huggingface_hub.snapshot_download()`).
 - **quick_start_sae** downloads the Gemma Scope SAE (`google/gemma-scope-2b-pt-res`)
   automatically via `hf-fetch-model`.
-- **figure13_planning_poems** requires a CLT from `HuggingFace` (downloaded
-  automatically on first run). Gemma 2 2B preset requires `--features mmap`.
+- **figure13_planning_poems** — model and CLT weights download automatically
+  on first run (~2.5 GB + CLT weights). The Llama preset requires `HF_TOKEN`
+  and Meta license acceptance; Gemma 2 2B preset requires `--features mmap`.
 - **rwkv_inference** requires an RWKV model cached locally. RWKV-7 models
   include `tokenizer.json`; RWKV-6 models require `--features rwkv-tokenizer`.
 - **recurrent_feedback** requires `meta-llama/Llama-3.2-1B` (default) cached

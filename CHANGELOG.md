@@ -18,10 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **README overhaul** — added supported model families table, hardware
   statement, RWKV callout, "See it in action" section with logit lens and
   CLT flagship examples, hook point definition, Quick Start with hooks,
-  Paper Replications table, Design Philosophy section, and measured
-  GPU/CPU timing
+  Paper Replications table, Design Philosophy section with "not an
+  inference engine" positioning, and measured GPU/CPU timing
 - **BACKENDS.md** — added "What failure looks like" subsection with three
   runnable auto-config commands (success, weight mismatch, unsupported arch)
+- **examples/README.md** — updated `figure13_planning_poems` prerequisites
+  to document automatic model/CLT download, sizes, and `HF_TOKEN` requirement
 - **VRAM measurement upgraded to per-process** (`src/memory.rs`) — replaced
   `nvidia-smi` subprocess with direct NVML FFI via `libloading`; dynamically
   loads `nvml.dll` (Windows) or `libnvidia-ml.so.1` (Linux) at runtime and
