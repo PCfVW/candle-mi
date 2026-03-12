@@ -108,6 +108,32 @@ Auto-config does **not** handle:
 If auto-config fails, write a config parser (Path 2) or a custom backend
 (Path 3).
 
+### What failure looks like
+
+The `auto_config_dogfood` example demonstrates both success and failure modes:
+
+```bash
+# Success — known family, uses manual parser
+cargo run --release --features transformer --example auto_config_dogfood -- "meta-llama/Llama-3.2-1B"
+
+# Failure — unsupported architecture (weight name mismatch)
+cargo run --release --features transformer --example auto_config_dogfood -- "allenai/OLMo-1B-hf"
+
+# Failure — actionable diagnostics (non-standard naming convention)
+cargo run --release --features transformer --example auto_config_dogfood -- "EleutherAI/pythia-1.4b"
+```
+
+**OLMo-1B** fails the compatibility check because its weight names
+(`model.layers.*.input_layernorm.weight`, `model.final_norm.weight`) do not
+match the normalisation tensor patterns that `GenericTransformer` expects.
+
+**Pythia 1.4B** uses the `gpt_neox.layers.{i}` weight prefix instead of the
+HF-standard `model.layers.{i}`. The error message shows which tensors
+*were* found for each expected category (embedding, norm, attention, MLP),
+detects the GPT-NeoX / Pythia naming convention, and points to Phase 9
+(tensor name remapping) for planned support. This is the diagnostic output
+that tells contributors exactly where to look when adding a new model family.
+
 ---
 
 ## Path 2: Config Parser (Recommended for Known Families)
