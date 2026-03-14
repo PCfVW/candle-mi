@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **`sync_and_trim_gpu` public API** (`src/memory.rs`) — synchronizes the CUDA
+  device and trims the stream-ordered memory pool (`cuMemPoolTrimTo`) to release
+  unused reserved VRAM back to the device; exported from `candle_mi` for use by
+  examples and downstream crates
+- **VRAM-aware `max_tokens` auto-tuning** in `character_count_helix` — measures
+  free VRAM after model load and selects a safe chunk size (1024 on 16 GB cards)
+  to prevent OOM from cuBLAS workspace accumulation across hundreds of forward
+  passes; prints `Auto-tuned max_tokens: N` when the value is lowered
+- **Explicit GPU tensor cleanup** in `character_count_helix` — drops all GPU
+  tensors (`cache`, `input`, residuals) and calls `sync_and_trim_gpu` after each
+  chunk to bound VRAM usage; keeps memory flat at ~+20 MB above model load
+  across entire sweeps
+
+### Changed
+
+- **`dxgi-debug` feature renamed to `memory-debug`** — now covers both raw DXGI
+  query output and per-chunk VRAM measurements; all references updated in
+  `Cargo.toml`, `src/memory.rs`, `examples/character_count_helix.rs`,
+  `examples/README.md`, and `CHANGELOG.md`
+
+### Fixed
+
+- **Compile error without `memory` feature** — `sync_and_trim_gpu` was called
+  unconditionally in `character_count_helix` but only imported under
+  `#[cfg(feature = "memory")]`; added matching `cfg` guard on the call site
+- **Missing `#[must_use]` on `vram_qualifier()`** (`src/memory.rs`) — pure
+  accessor was missing the annotation required by CONVENTIONS.md Rule 17
+
 ## [0.1.2] - 2026-03-14
 
 ### Added
@@ -20,9 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   description from DXGI (e.g., `NVIDIA GeForce RTX 5060 Ti`);
   `MemoryReport::print_before_after` appends it to the VRAM line for
   multi-GPU identification
-- **`dxgi-debug` feature** (implies `memory`) — prints raw DXGI query results
-  (adapter name, dedicated VRAM, current usage, budget) to stderr for
-  diagnosing GPU memory reporting issues
+- **`memory-debug` feature** (implies `memory`, replaces `dxgi-debug`) — prints
+  raw DXGI query results (adapter name, dedicated VRAM, current usage, budget)
+  and per-chunk VRAM measurements to stderr for diagnosing GPU memory issues
 - **`--sweep` mode** for `character_count_helix` — one-layer-per-invocation
   PCA analysis with auto-resume from JSON output file; repeated runs walk
   through layers 0, 1, 2, ... automatically
@@ -53,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   NVML for Linux per-process
 - **`GpuMemoryResult` type alias** — extracted complex return tuple into a
   named type for readability
-- **`examples/README.md`** — added `memory` and `dxgi-debug` feature examples,
+- **`examples/README.md`** — added `memory` and `memory-debug` feature examples,
   Dickens `--text-dir` sweep command, and prerequisites section for the
   `memory` feature explaining the DXGI/NVML/WDDM story
 
