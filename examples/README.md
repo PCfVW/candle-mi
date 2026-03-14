@@ -135,11 +135,26 @@ cargo run --release --features transformer --example recurrent_feedback -- --loo
 # Character count helix — default model (Gemma 2 2B, requires mmap for sharded weights)
 cargo run --release --features transformer,mmap --example character_count_helix
 
+# Character count helix — with memory reporting (GPU name, per-process VRAM)
+cargo run --release --features transformer,mmap,memory --example character_count_helix
+
+# Character count helix — with DXGI debug output (raw adapter/VRAM values on stderr)
+cargo run --release --features transformer,mmap,dxgi-debug --example character_count_helix
+
 # Character count helix — with JSON output for Mathematica plotting
 cargo run --release --features transformer,mmap --example character_count_helix -- --output examples/results/character_count_helix/helix_output.json
 
-# Character count helix — compare variance across layers 0-3
-cargo run --release --features transformer,mmap --example character_count_helix -- --all-layers
+# Character count helix — quick variance scan across all layers
+cargo run --release --features transformer,mmap --example character_count_helix -- --scan-layers all
+
+# Character count helix — full PCA analysis on layers 10-12
+cargo run --release --features transformer,mmap --example character_count_helix -- --pca-layers 10..13
+
+# Character count helix — sweep mode: one layer per run, auto-resume from JSON
+cargo run --release --features transformer,mmap,memory --example character_count_helix -- --sweep --output examples/results/character_count_helix/sweep.json
+
+# Character count helix — sweep over Dickens chapters with per-process VRAM
+cargo run --release --features transformer,mmap,memory --example character_count_helix -- --sweep --text-dir examples/results/character_count_helix/texts --output examples/results/character_count_helix/sweep.json
 
 # Character count helix — use a bundled prose file (Gettysburg Address)
 cargo run --release --features transformer,mmap --example character_count_helix -- --text examples/results/character_count_helix/texts/gettysburg.txt
@@ -380,8 +395,28 @@ character count, and performs PCA on the resulting mean vectors. Expected result
   ringing from projecting a high-curvature curve into low dimensions).
 
 The `--text` flag lets you supply your own prose file to test whether the helix
-generalises across different text content. The `--all-layers` flag compares
-variance capture across layers 0-3.
+generalises across different text content. Add `--features memory` for
+per-process VRAM reporting (via DXGI on Windows, NVML on Linux) and GPU
+adapter identification (e.g., `[NVIDIA GeForce RTX 5060 Ti]`). Use
+`--features dxgi-debug` to additionally print raw DXGI values to stderr.
+
+**CLI flags — "what to analyse" vs "how to iterate":**
+
+`--scan-layers` and `--pca-layers` select *what* to analyse:
+- `--scan-layers all` runs a lightweight variance scan (top-6 explained
+  variance only, no JSON) — useful for finding which layers carry the
+  strongest helix signal.
+- `--pca-layers 10..13` runs the full analysis (PCA projections, cosine
+  similarity matrix, ringing summary, optional JSON output).
+
+`--sweep` controls *how* to iterate: it runs the same full analysis as
+`--pca-layers` but one layer per invocation, auto-resuming from the output
+JSON file. Results are appended to a JSON array, so repeated runs walk
+through layers 0, 1, 2, ... automatically. Requires `--output`.
+
+Typical workflow: `--scan-layers all` first to find the interesting layers,
+then either `--pca-layers 10..13` to analyse a few at once, or `--sweep` to
+do them one at a time incrementally.
 
 Output JSON and Mathematica plotting script (3D helix, cosine heatmap, variance
 bars) are in [`examples/results/character_count_helix/`](results/character_count_helix/).
@@ -444,5 +479,11 @@ Output JSON and Mathematica plotting script are in
   requires `--features mmap` for sharded weights). Two bundled prose files
   (Gettysburg Address, Dickens) are in `results/character_count_helix/texts/`.
   Use `--text` to supply any plain-text file.
+- **`memory` feature** enables per-process VRAM reporting and GPU adapter
+  identification. On Windows, uses DXGI (`IDXGIAdapter3::QueryVideoMemoryInfo`)
+  — the only reliable per-process method under WDDM (NVML returns
+  `NOT_AVAILABLE`). On Linux, uses NVML per-process queries. Falls back to
+  `nvidia-smi` (device-wide) if both fail. The `dxgi-debug` feature (implies
+  `memory`) prints raw DXGI values to stderr for diagnostics.
 - **GPU recommended** for models larger than 1B parameters. candle-mi is
   developed on an RTX 5060 Ti (16 GB VRAM) with 64 GB RAM and CUDA 13.1.

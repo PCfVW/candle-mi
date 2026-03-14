@@ -54,7 +54,7 @@ relax this to `#![deny(unsafe_code)]` for narrowly scoped platform FFI:
 | Feature | Accepted `unsafe` scope |
 |---------|------------------------|
 | `mmap` | Memory-mapped file I/O for sharded safetensors |
-| `memory` | OS/GPU memory queries (`GetProcessMemoryInfo`, `cuMemGetInfo`) |
+| `memory` | OS/GPU memory queries (`GetProcessMemoryInfo`, NVML FFI, DXGI COM) |
 
 Each accepted use must satisfy all of:
 1. The `unsafe` block is in a **single, dedicated module** (e.g., `src/mmap.rs`,

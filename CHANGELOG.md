@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-03-14
+
+### Added
+
+- **Per-process VRAM via DXGI on Windows** (`src/memory.rs`) — new primary
+  VRAM measurement path using `IDXGIAdapter3::QueryVideoMemoryInfo` (DXGI 1.4,
+  Windows 10+); returns true per-process GPU memory under WDDM, where NVML
+  returns `NOT_AVAILABLE` because the Windows kernel manages GPU memory, not
+  the NVIDIA driver; added `windows` crate (v0.62) as an optional dependency
+  behind `features = ["memory"]`; three-tier fallback chain: DXGI (Windows
+  per-process) → NVML (Linux per-process) → `nvidia-smi` (device-wide)
+- **GPU adapter name** — `MemorySnapshot::gpu_name` field captures the adapter
+  description from DXGI (e.g., `NVIDIA GeForce RTX 5060 Ti`);
+  `MemoryReport::print_before_after` appends it to the VRAM line for
+  multi-GPU identification
+- **`dxgi-debug` feature** (implies `memory`) — prints raw DXGI query results
+  (adapter name, dedicated VRAM, current usage, budget) to stderr for
+  diagnosing GPU memory reporting issues
+- **`--sweep` mode** for `character_count_helix` — one-layer-per-invocation
+  PCA analysis with auto-resume from JSON output file; repeated runs walk
+  through layers 0, 1, 2, ... automatically
+- **Chunking for long sequences** in `character_count_helix` — splits token
+  sequences exceeding `--max-tokens` into independent chunks for forward
+  passes instead of truncating, preventing OOM on long texts (e.g., Dickens
+  chapters on 16 GB VRAM)
+- **Wall-clock completion time** in `character_count_helix` sweep mode —
+  prints UTC finish time and total elapsed duration
+
+### Fixed
+
+- **NVML VRAM reporting garbage values** — `nvmlDeviceGetComputeRunningProcesses`
+  returns `u64::MAX` (`0xFFFF_FFFF_FFFF_FFFF` = `NVML_VALUE_NOT_AVAILABLE`) for
+  `usedGpuMemory` on all Windows WDDM systems; this sentinel was passed through
+  as a real byte count, producing `17592186044416 MB` in output; now detected
+  and triggers fallback to DXGI (per-process) or `nvidia-smi` (device-wide)
+- **NVML struct alignment** — `NvmlProcessInfo` doc comment corrected to
+  reference `nvmlProcessInfo_v2_t` (24 bytes), matching the struct layout used
+  by `nvmlDeviceGetComputeRunningProcesses_v3` (the `_v3` suffix is a function
+  version, not a struct version)
+
+### Changed
+
+- **VRAM measurement strategy** — documentation updated throughout
+  `src/memory.rs` to reflect the three-tier DXGI → NVML → `nvidia-smi`
+  approach; platform support table now shows DXGI for Windows per-process,
+  NVML for Linux per-process
+- **`GpuMemoryResult` type alias** — extracted complex return tuple into a
+  named type for readability
+- **`examples/README.md`** — added `memory` and `dxgi-debug` feature examples,
+  Dickens `--text-dir` sweep command, and prerequisites section for the
+  `memory` feature explaining the DXGI/NVML/WDDM story
+
 ## [0.1.1] - 2026-03-12
 
 ### Added
@@ -514,7 +566,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/PCfVW/candle-mi/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/PCfVW/candle-mi/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/PCfVW/candle-mi/compare/v0.0.5-phase4...v0.1.0
 [0.0.5-phase4]: https://github.com/PCfVW/candle-mi/compare/v0.0.4-phase3...v0.0.5-phase4
 [0.0.4]: https://github.com/PCfVW/candle-mi/compare/v0.0.3...v0.0.4-phase3

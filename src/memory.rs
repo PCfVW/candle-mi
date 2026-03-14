@@ -7,12 +7,17 @@
 //!
 //! # VRAM measurement strategy
 //!
-//! VRAM is measured using a two-tier approach:
+//! VRAM is measured using a three-tier approach:
 //!
-//! 1. **Primary — NVML** (per-process): Dynamically loads `nvml.dll` (Windows)
-//!    or `libnvidia-ml.so.1` (Linux) via `libloading` and calls
-//!    `nvmlDeviceGetComputeRunningProcesses` to get true per-process GPU memory.
-//! 2. **Fallback — `nvidia-smi`** (device-wide): If NVML cannot be loaded,
+//! 1. **Windows primary — DXGI** (per-process): Uses
+//!    `IDXGIAdapter3::QueryVideoMemoryInfo` (DXGI 1.4, Windows 10+) to get
+//!    true per-process GPU memory. This is the only reliable method on Windows
+//!    because WDDM means the Windows kernel manages GPU memory, not the NVIDIA
+//!    driver — so NVML returns `NOT_AVAILABLE` for per-process queries.
+//! 2. **Linux primary — NVML** (per-process): Dynamically loads
+//!    `libnvidia-ml.so.1` via `libloading` and calls
+//!    `nvmlDeviceGetComputeRunningProcesses` for true per-process GPU memory.
+//! 3. **Fallback — `nvidia-smi`** (device-wide): If both DXGI and NVML fail,
 //!    spawns `nvidia-smi` as a subprocess. Reports device-wide VRAM; the delta
 //!    between two snapshots is accurate on single-user machines.
 //!
@@ -21,15 +26,18 @@
 //! | Metric | Windows | Linux |
 //! |--------|---------|-------|
 //! | RAM (RSS) | `K32GetProcessMemoryInfo` (per-process, exact) | `/proc/self/status` `VmRSS` (per-process, exact) |
-//! | VRAM (NVML) | `nvml.dll` (per-process, exact) | `libnvidia-ml.so.1` (per-process, exact) |
+//! | VRAM (DXGI) | `IDXGIAdapter3` (per-process, exact) | N/A |
+//! | VRAM (NVML) | `NOT_AVAILABLE` under WDDM | `libnvidia-ml.so.1` (per-process, exact) |
 //! | VRAM (fallback) | `nvidia-smi` (device-wide) | `nvidia-smi` (device-wide) |
 //!
-//! # Feature gate
+//! # Feature gates
 //!
-//! This module requires `features = ["memory"]`. The `memory` feature relaxes
-//! `#![forbid(unsafe_code)]` to `#![deny(unsafe_code)]` for the Windows FFI
-//! call to `K32GetProcessMemoryInfo` and for NVML dynamic symbol loading.
-//! On Linux RAM measurement, no unsafe code is used.
+//! - **`memory`**: Enables this module. Relaxes `#![forbid(unsafe_code)]` to
+//!   `#![deny(unsafe_code)]` for the Windows FFI calls (`K32GetProcessMemoryInfo`,
+//!   DXGI COM calls) and for NVML dynamic symbol loading via `libloading`.
+//!   On Linux RAM measurement, no unsafe code is used.
+//! - **`dxgi-debug`** (implies `memory`): Prints raw DXGI query results to
+//!   stderr for diagnosing GPU memory reporting issues.
 
 use crate::{MIError, Result};
 
@@ -60,7 +68,7 @@ pub struct MemorySnapshot {
     /// Process resident set size (working set on Windows) in bytes.
     pub ram_bytes: u64,
     /// GPU memory used in bytes.
-    /// Per-process when measured via NVML, device-wide when via `nvidia-smi` fallback.
+    /// Per-process when measured via DXGI/NVML, device-wide when via `nvidia-smi` fallback.
     /// `None` if no GPU is present or measurement failed.
     pub vram_bytes: Option<u64>,
     /// Total GPU memory on the active device in bytes.
@@ -69,6 +77,9 @@ pub struct MemorySnapshot {
     /// Whether the VRAM measurement is per-process (`true`) or device-wide (`false`).
     /// `None` if no VRAM data is available.
     pub vram_per_process: Option<bool>,
+    /// GPU adapter name (e.g., `NVIDIA GeForce RTX 5060 Ti`).
+    /// `None` if not available (non-DXGI path or no GPU).
+    pub gpu_name: Option<String>,
 }
 
 /// Memory delta between two snapshots.
@@ -87,8 +98,8 @@ impl MemorySnapshot {
     /// Capture current memory state.
     ///
     /// RAM is always measured (per-process RSS). VRAM is measured only if
-    /// `device` is CUDA — first via NVML (per-process), falling back to
-    /// `nvidia-smi` (device-wide) if NVML is unavailable.
+    /// `device` is CUDA — first via DXGI (Windows, per-process), then NVML
+    /// (Linux, per-process), falling back to `nvidia-smi` (device-wide).
     ///
     /// # Errors
     ///
@@ -96,16 +107,17 @@ impl MemorySnapshot {
     /// VRAM measurement failures are non-fatal — `vram_bytes` is set to `None`.
     pub fn now(device: &candle_core::Device) -> Result<Self> {
         let ram_bytes = process_rss()?;
-        let (vram_bytes, vram_total_bytes, per_process) = if device.is_cuda() {
+        let (vram_bytes, vram_total_bytes, per_process, gpu_name) = if device.is_cuda() {
             gpu_memory_used()
         } else {
-            (None, None, None)
+            (None, None, None, None)
         };
         Ok(Self {
             ram_bytes,
             vram_bytes,
             vram_total_bytes,
             vram_per_process: per_process,
+            gpu_name,
         })
     }
 
@@ -177,8 +189,12 @@ impl MemoryReport {
                 format!(" / {:.0} MB", t as f64 / 1_048_576.0)
             });
             let qualifier = self.vram_qualifier();
+            let gpu = self.after.gpu_name.as_deref().map_or(
+                String::new(),
+                |name| format!(" [{name}]"),
+            );
             println!(
-                "  {label}: VRAM {before:.0} MB → {after:.0} MB ({:+.0} MB{total}){qualifier}",
+                "  {label}: VRAM {before:.0} MB → {after:.0} MB ({:+.0} MB{total}){qualifier}{gpu}",
                 after - before,
             );
         }
@@ -337,8 +353,11 @@ fn linux_rss() -> Result<u64> {
 }
 
 // ---------------------------------------------------------------------------
-// VRAM measurement — NVML primary, nvidia-smi fallback
+// VRAM measurement — DXGI (Windows), NVML, nvidia-smi fallback
 // ---------------------------------------------------------------------------
+
+/// Result of a GPU memory query: `(used_bytes, total_bytes, per_process, gpu_name)`.
+type GpuMemoryResult = (Option<u64>, Option<u64>, Option<bool>, Option<String>);
 
 /// NVML shared library path (stable across driver versions).
 #[cfg(target_os = "linux")]
@@ -360,7 +379,9 @@ const NVML_MAX_PROCESSES: usize = 64;
 
 /// Per-process GPU memory info returned by NVML.
 ///
-/// Matches the C struct `nvmlProcessInfo_v2_t` from the NVML API.
+/// Matches the C struct `nvmlProcessInfo_v2_t` (24 bytes) used by both
+/// `nvmlDeviceGetComputeRunningProcesses_v2` and `_v3` (the `_v3` suffix
+/// is a function version, not a struct version).
 /// See: <https://docs.nvidia.com/deploy/nvml-api/structnvmlProcessInfo__v2__t.html>
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -368,6 +389,7 @@ struct NvmlProcessInfo {
     /// Process ID.
     pid: u32,
     /// GPU memory used by this process in bytes.
+    /// `u64::MAX` (`0xFFFF_FFFF_FFFF_FFFF`) means "not available".
     used_gpu_memory: u64,
     /// GPU instance ID (MIG). Unused in non-MIG mode.
     gpu_instance_id: u32,
@@ -410,24 +432,32 @@ type NvmlDeviceGetMemoryInfoFn = unsafe extern "C" fn(NvmlDevice, *mut NvmlMemor
 type NvmlDeviceGetComputeRunningProcessesFn =
     unsafe extern "C" fn(NvmlDevice, *mut u32, *mut NvmlProcessInfo) -> u32;
 
-/// Query GPU memory — NVML primary, `nvidia-smi` fallback.
+/// Query GPU memory — DXGI (Windows), NVML, or `nvidia-smi` fallback.
 ///
-/// Returns `(used_bytes, total_bytes, per_process)`:
-/// - `per_process = Some(true)` when NVML per-process query succeeded.
+/// Returns `(used_bytes, total_bytes, per_process, gpu_name)`:
+/// - `per_process = Some(true)` when per-process query succeeded (DXGI or NVML).
 /// - `per_process = Some(false)` when falling back to `nvidia-smi` (device-wide).
-/// - All `None` if both methods fail.
-fn gpu_memory_used() -> (Option<u64>, Option<u64>, Option<bool>) {
-    // Try NVML first (per-process)
-    if let Some(result) = nvml_query_process_vram() {
+/// - `gpu_name` is set when DXGI provides the adapter description.
+/// - All `None` if all methods fail.
+fn gpu_memory_used() -> GpuMemoryResult {
+    // Windows: try DXGI first (per-process, works under WDDM)
+    #[cfg(windows)]
+    if let Some(result) = dxgi_query_process_vram() {
         return result;
+    }
+
+    // Try NVML (per-process on Linux, NOT_AVAILABLE on Windows WDDM)
+    if let Some(result) = nvml_query_process_vram() {
+        let (used, total, per_process) = result;
+        return (used, total, per_process, None);
     }
 
     // Fallback to nvidia-smi (device-wide)
     let (used, total) = nvidia_smi_query();
     if used.is_some() {
-        (used, total, Some(false))
+        (used, total, Some(false), None)
     } else {
-        (None, None, None)
+        (None, None, None, None)
     }
 }
 
@@ -524,6 +554,20 @@ fn nvml_query_process_vram() -> Option<(Option<u64>, Option<u64>, Option<bool>)>
         .find(|info| info.pid == my_pid)
         .map(|info| info.used_gpu_memory);
 
+    // NVML uses u64::MAX as "not available" sentinel — some drivers (e.g., R570
+    // on RTX 5060 Ti) return this for all processes. Fall back to nvidia-smi.
+    if my_vram == Some(u64::MAX) {
+        return None;
+    }
+
+    // Sanity check: if per-process VRAM exceeds total device memory, the value
+    // is likely garbage. Fall back to nvidia-smi.
+    if let (Some(used), Some(total)) = (my_vram, total_bytes) {
+        if used > total {
+            return None;
+        }
+    }
+
     // Our PID might not be in the list (no active CUDA context yet?) — return None to trigger fallback
     my_vram.map(|used| (Some(used), total_bytes, Some(true)))
 }
@@ -577,6 +621,98 @@ fn nvidia_smi_query() -> (Option<u64>, Option<u64>) {
 }
 
 // ---------------------------------------------------------------------------
+// DXGI per-process VRAM (Windows only)
+// ---------------------------------------------------------------------------
+
+/// Query per-process GPU VRAM via DXGI (`IDXGIAdapter3::QueryVideoMemoryInfo`).
+///
+/// This is the only reliable way to get per-process GPU memory on Windows
+/// (WDDM). NVML returns `NVML_VALUE_NOT_AVAILABLE` under WDDM because the
+/// Windows kernel memory manager owns GPU memory, not the NVIDIA driver.
+///
+/// DXGI 1.4 (Windows 10+) provides `QueryVideoMemoryInfo` which returns:
+/// - `CurrentUsage`: per-process GPU memory in bytes (exactly what we want).
+/// - `Budget`: OS-assigned memory budget for this process.
+///
+/// We query `DXGI_MEMORY_SEGMENT_GROUP_LOCAL` (dedicated VRAM on discrete GPUs).
+/// Total VRAM comes from `IDXGIAdapter::GetDesc` → `DedicatedVideoMemory`.
+///
+/// Returns `None` if DXGI is not available or the query fails,
+/// signaling the caller to try NVML or nvidia-smi fallback.
+#[cfg(windows)]
+#[allow(unsafe_code)]
+fn dxgi_query_process_vram() -> Option<GpuMemoryResult> {
+    use windows::core::Interface;
+    use windows::Win32::Graphics::Dxgi::{
+        CreateDXGIFactory1, IDXGIAdapter, IDXGIAdapter3, IDXGIFactory1,
+        DXGI_MEMORY_SEGMENT_GROUP_LOCAL, DXGI_QUERY_VIDEO_MEMORY_INFO,
+    };
+
+    // SAFETY: CreateDXGIFactory1 is a well-documented COM factory function.
+    // It initializes COM internally if needed. The returned IDXGIFactory1
+    // is reference-counted and released automatically when dropped.
+    let factory: IDXGIFactory1 = unsafe { CreateDXGIFactory1() }.ok()?;
+
+    // Enumerate adapters — find the first one with dedicated VRAM > 0
+    // (skip software/render-only adapters like Microsoft Basic Render Driver).
+    let mut adapter_idx = 0u32;
+    loop {
+        // SAFETY: EnumAdapters1 returns S_OK with a valid adapter, or
+        // DXGI_ERROR_NOT_FOUND when idx is out of range.
+        let adapter: IDXGIAdapter = unsafe { factory.EnumAdapters1(adapter_idx) }
+            .ok()?
+            .cast()
+            .ok()?;
+
+        // SAFETY: GetDesc writes a valid DXGI_ADAPTER_DESC into the
+        // caller-provided struct. The adapter handle is valid (obtained above).
+        let desc = unsafe { adapter.GetDesc() }.ok()?;
+        let dedicated_vram = desc.DedicatedVideoMemory;
+
+        if dedicated_vram == 0 {
+            adapter_idx += 1;
+            continue;
+        }
+
+        // Cast to IDXGIAdapter3 for QueryVideoMemoryInfo (DXGI 1.4)
+        let adapter3: IDXGIAdapter3 = adapter.cast().ok()?;
+
+        // SAFETY: QueryVideoMemoryInfo fills a DXGI_QUERY_VIDEO_MEMORY_INFO
+        // struct with per-process memory stats. Node 0 = primary GPU node.
+        // DXGI_MEMORY_SEGMENT_GROUP_LOCAL = dedicated VRAM on discrete GPUs.
+        let mut mem_info = DXGI_QUERY_VIDEO_MEMORY_INFO::default();
+        unsafe {
+            adapter3.QueryVideoMemoryInfo(
+                0,
+                DXGI_MEMORY_SEGMENT_GROUP_LOCAL,
+                &raw mut mem_info,
+            )
+        }
+        .ok()?;
+
+        // CAST: usize → u64, DedicatedVideoMemory is usize on Windows
+        #[allow(clippy::as_conversions)]
+        let total = dedicated_vram as u64;
+
+        // Trim trailing null characters from the UTF-16 adapter description
+        // BORROW: explicit from_utf16_lossy — DXGI Description is a fixed-size UTF-16 array
+        let raw_name = String::from_utf16_lossy(&desc.Description);
+        // BORROW: to_owned — trim returns a &str slice; we need an owned String
+        let gpu_name = raw_name.trim_end_matches('\0').to_owned();
+
+        #[cfg(feature = "dxgi-debug")]
+        eprintln!(
+            "[DXGI debug] adapter={gpu_name}, dedicated_vram={total}, \
+             current_usage={}, budget={}",
+            mem_info.CurrentUsage,
+            mem_info.Budget,
+        );
+
+        return Some((Some(mem_info.CurrentUsage), Some(total), Some(true), Some(gpu_name)));
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -605,12 +741,14 @@ mod tests {
             vram_bytes: Some(500 * 1_048_576),
             vram_total_bytes: Some(16_384 * 1_048_576),
             vram_per_process: Some(true),
+            gpu_name: None,
         };
         let after = MemorySnapshot {
             ram_bytes: 200 * 1_048_576, // 200 MB
             vram_bytes: Some(1_000 * 1_048_576),
             vram_total_bytes: Some(16_384 * 1_048_576),
             vram_per_process: Some(true),
+            gpu_name: None,
         };
         let report = MemoryReport::new(before, after);
 
@@ -634,12 +772,14 @@ mod tests {
             vram_bytes: None,
             vram_total_bytes: None,
             vram_per_process: None,
+            gpu_name: None,
         };
         let after = MemorySnapshot {
             ram_bytes: 200,
             vram_bytes: None,
             vram_total_bytes: None,
             vram_per_process: None,
+            gpu_name: None,
         };
         let report = MemoryReport::new(before, after);
         assert!(report.vram_delta_mb().is_none());
@@ -652,6 +792,7 @@ mod tests {
             vram_bytes: None,
             vram_total_bytes: None,
             vram_per_process: None,
+            gpu_name: None,
         };
         assert!((snap.ram_mb() - 1.0).abs() < 0.001);
     }
@@ -663,6 +804,7 @@ mod tests {
             vram_bytes: Some(500),
             vram_total_bytes: Some(1000),
             vram_per_process: Some(true),
+            gpu_name: None,
         };
         let report = MemoryReport::new(snap.clone(), snap);
         assert_eq!(report.vram_qualifier(), " [per-process]");
@@ -675,6 +817,7 @@ mod tests {
             vram_bytes: Some(500),
             vram_total_bytes: Some(1000),
             vram_per_process: Some(false),
+            gpu_name: None,
         };
         let report = MemoryReport::new(snap.clone(), snap);
         assert_eq!(report.vram_qualifier(), " [device-wide]");

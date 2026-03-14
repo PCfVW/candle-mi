@@ -28,19 +28,44 @@
 //!
 //! # Use a directory of text files (each file is a separate batch)
 //! cargo run --release --features transformer,mmap --example character_count_helix -- --text-dir texts/
+//!
+//! # Sweep mode: one layer per run, auto-resume (first run → layer 0, next → layer 1, ...)
+//! cargo run --release --features transformer,mmap --example character_count_helix -- --sweep --output helix_sweep.json
+//!
+//! # With memory reporting (GPU name, per-process VRAM before/after)
+//! cargo run --release --features transformer,mmap,memory --example character_count_helix
+//!
+//! # With DXGI debug output (raw adapter/VRAM values on stderr, Windows only)
+//! cargo run --release --features transformer,mmap,dxgi-debug --example character_count_helix
 //! ```
 //!
 //! **What it does:**
 //!
 //! 1. Loads a transformer model and prose text (built-in, `--text`, or `--text-dir`).
 //! 2. Strips newlines and re-wraps at widths 20, 30, 40, ... 150 characters.
-//! 3. For each text and width, runs a forward pass capturing
+//! 3. For each text and width, runs one or more forward passes (long
+//!    sequences are chunked to `--max-tokens` to fit in VRAM) capturing
 //!    [`HookPoint::ResidPost`](candle_mi::HookPoint::ResidPost) at the target
 //!    layer, then computes each token's line character count from byte offsets.
 //! 4. Averages residual-stream vectors by character count (1..=150).
 //! 5. Runs [`pca_top_k`](candle_mi::pca_top_k) on the mean vectors (6 PCs).
-//! 6. Computes a `150x150` cosine-similarity matrix on the mean vectors.
+//! 6. Computes an `n x n` cosine-similarity matrix on the mean vectors
+//!    (where `n` is the number of distinct character counts, at most 150).
 //! 7. Prints a summary and optionally writes structured JSON output.
+//!
+//! **CLI flags — "what to analyse" vs "how to iterate":**
+//!
+//! `--scan-layers` and `--pca-layers` select *what* to analyse:
+//! - `--scan-layers` runs a lightweight variance scan (top-6 explained
+//!   variance only, no JSON) — useful for finding which layers carry the
+//!   strongest helix signal.
+//! - `--pca-layers` runs the full analysis (PCA projections, cosine
+//!   similarity matrix, ringing summary, optional JSON output).
+//!
+//! `--sweep` controls *how* to iterate: it runs the same full analysis as
+//! `--pca-layers` but one layer per invocation, auto-resuming from the
+//! output JSON file. Results are appended to a JSON array, so repeated
+//! runs walk through layers 0, 1, 2, ... automatically. Requires `--output`.
 //!
 //! The JSON output can be visualised with the companion Mathematica script
 //! `examples/results/character_count_helix/helix_plot.wl`.
@@ -52,7 +77,7 @@ use candle_mi::{HookPoint, HookSpec, MIModel, MITokenizer, PcaResult, pca_top_k}
 #[cfg(feature = "memory")]
 use candle_mi::{MemoryReport, MemorySnapshot};
 use clap::Parser;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -72,13 +97,15 @@ struct Args {
     #[arg(long)]
     output: Option<PathBuf>,
 
-    /// Lightweight variance scan across a layer range.
+    /// **What to analyse** — lightweight variance scan across a layer range.
+    /// Reports top-6 explained variance only (no projections, no JSON).
     /// Use `all` to scan every layer, or `START..END` for a specific range
     /// (exclusive end, e.g. `5..15` scans layers 5 through 14).
     #[arg(long, value_name = "all | START..END")]
     scan_layers: Option<String>,
 
-    /// Full PCA analysis (+ cosine similarity, JSON) across a layer range.
+    /// **What to analyse** — full PCA analysis (projections, cosine
+    /// similarity, ringing summary, optional JSON) across a layer range.
     /// Accepts the same values as `--scan-layers`.
     /// Default when neither flag is given: full analysis on layer 1.
     #[arg(long, value_name = "all | START..END")]
@@ -92,16 +119,24 @@ struct Args {
     #[arg(long)]
     text_dir: Option<PathBuf>,
 
-    /// Maximum tokens per forward pass (longer sequences are truncated). Default: 4096.
+    /// Maximum tokens per forward pass (longer sequences are chunked). Default: 4096.
     #[arg(long, default_value_t = 4096)]
     max_tokens: usize,
+
+    /// **How to iterate** — sweep layers one at a time, auto-resuming from
+    /// the output JSON file. Runs the same full analysis as `--pca-layers`
+    /// but one layer per invocation. On first run starts at layer 0;
+    /// subsequent runs read the file and pick the next untested layer.
+    /// Requires `--output`.
+    #[arg(long)]
+    sweep: bool,
 }
 
 // ---------------------------------------------------------------------------
 // JSON output types
 // ---------------------------------------------------------------------------
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct HelixOutput {
     model_id: String,
     layer: usize,
@@ -113,7 +148,7 @@ struct HelixOutput {
     cosine_similarity: Vec<Vec<f32>>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct Projection {
     char_count: usize,
     pc: Vec<f32>,
@@ -228,6 +263,19 @@ fn run() -> candle_mi::Result<()> {
     let prose_texts = load_prose_texts(&args)?;
     let widths: Vec<usize> = (20..=150).step_by(10).collect(); // 14 widths
 
+    // 2b. Sweep mode: auto-resume from existing JSON file
+    if args.sweep {
+        let output_path = args.output.as_ref().ok_or_else(|| {
+            candle_mi::MIError::Config("--sweep requires --output".into())
+        })?;
+        run_sweep(
+            &model, tokenizer, &prose_texts, &widths,
+            model_id, output_path, n_layers, args.max_tokens,
+        )?;
+        print_finished(t0);
+        return Ok(());
+    }
+
     // 3. Lightweight variance scan if requested
     let scan_range = parse_layer_range(args.scan_layers.as_deref(), "scan-layers", n_layers)?;
     if let Some((start, end)) = scan_range {
@@ -278,7 +326,7 @@ fn run() -> candle_mi::Result<()> {
         )?;
     }
 
-    println!("Total runtime: {:.2?}", t0.elapsed());
+    print_finished(t0);
     Ok(())
 }
 
@@ -302,6 +350,53 @@ fn load_prose_texts(args: &Args) -> candle_mi::Result<Vec<String>> {
         println!("Prose source: built-in (tectonic plates, ~500 words)");
         Ok(vec![strip_newlines(prose_passage())])
     }
+}
+
+/// Sweep one layer per invocation, auto-resuming from the output JSON file.
+#[allow(clippy::too_many_arguments)]
+fn run_sweep(
+    model: &MIModel,
+    tokenizer: &MITokenizer,
+    prose_texts: &[String],
+    widths: &[usize],
+    model_id: &str,
+    output_path: &Path,
+    n_layers: usize,
+    max_tokens: usize,
+) -> candle_mi::Result<()> {
+    let existing = read_sweep_file(output_path)?;
+    let next_layer = if existing.is_empty() {
+        0
+    } else {
+        let max_done = existing.iter().map(|e| e.layer).max().unwrap_or(0);
+        max_done + 1
+    };
+
+    if next_layer >= n_layers {
+        println!("All {n_layers} layers already analysed. Nothing to do.");
+        return Ok(());
+    }
+
+    println!(
+        "Sweep: layer {next_layer}/{n_layers} ({} already done)\n",
+        existing.len()
+    );
+
+    let result = run_analysis_returning(
+        model, tokenizer, prose_texts, widths, next_layer, model_id, max_tokens,
+    )?;
+
+    let mut all = existing;
+    if let Some(entry) = result {
+        all.push(entry);
+    }
+    write_json_array(&all, output_path)?;
+    println!(
+        "JSON written to {} ({} layer(s) total)",
+        output_path.display(),
+        all.len()
+    );
+    Ok(())
 }
 
 /// Run a lightweight variance scan across layers `start..end`, printing a summary table.
@@ -427,6 +522,82 @@ fn run_analysis(
     Ok(())
 }
 
+/// Run PCA analysis on a single layer and return the `HelixOutput` (for sweep mode).
+#[allow(clippy::too_many_arguments)]
+fn run_analysis_returning(
+    model: &MIModel,
+    tokenizer: &MITokenizer,
+    prose_texts: &[String],
+    widths: &[usize],
+    layer: usize,
+    model_id: &str,
+    max_tokens: usize,
+) -> candle_mi::Result<Option<HelixOutput>> {
+    let hidden = model.hidden_size();
+    println!("--- Full PCA analysis: layer {layer} ---\n");
+
+    let t1 = Instant::now();
+    let means = collect_means_multi(model, tokenizer, prose_texts, widths, layer, max_tokens)?;
+    let collect_time = t1.elapsed();
+    println!(
+        "Collected {} valid character counts across {} texts x {} widths in {collect_time:.2?}",
+        means.len(),
+        prose_texts.len(),
+        widths.len(),
+    );
+
+    if means.is_empty() {
+        println!("No valid character counts found. Check the model and prose.");
+        return Ok(None);
+    }
+
+    // PCA
+    let matrix = build_mean_matrix(&means, hidden, model.device())?;
+    let n_samples = matrix.dim(0)?;
+    let n_components = 6.min(n_samples);
+    let pca = pca_top_k(&matrix, n_components, 50)?;
+    let total: f32 = pca.explained_variance_ratio.iter().sum();
+
+    println!(
+        "PCA: top-{n_components} components capture {:.1}% of variance",
+        total * 100.0
+    );
+    for (i, ratio) in pca.explained_variance_ratio.iter().enumerate() {
+        println!("  PC{}: {:.1}%", i + 1, ratio * 100.0);
+    }
+    println!();
+
+    // Project means into PC space
+    let projections = project_to_pcs(&matrix, &pca)?;
+
+    // Cosine similarity matrix
+    let cosine_sim = cosine_similarity_matrix(&matrix)?;
+
+    // Ringing pattern check
+    print_ringing_summary(&cosine_sim, &means);
+
+    let sorted_counts: Vec<usize> = sorted_char_counts(&means);
+    let proj_entries: Vec<Projection> = sorted_counts
+        .iter()
+        .zip(projections.iter())
+        .map(|(&cc, pcs)| Projection {
+            char_count: cc,
+            pc: pcs.clone(),
+        })
+        .collect();
+
+    Ok(Some(HelixOutput {
+        model_id: model_id.to_string(),
+        layer,
+        max_char_count: sorted_counts.last().copied().unwrap_or(0),
+        line_widths: widths.to_vec(),
+        explained_variance: pca.explained_variance_ratio,
+        total_variance_top6: total,
+        projections: proj_entries,
+        cosine_similarity: cosine_sim,
+    }))
+}
+
 // ---------------------------------------------------------------------------
 // Activation collection
 // ---------------------------------------------------------------------------
@@ -468,8 +639,14 @@ fn collect_means_multi(
     Ok(merged)
 }
 
-/// For each line width, run a forward pass and accumulate residual vectors
-/// by character count. Returns a map from `char_count` to `(sum_vector, count)`.
+/// For each line width, run forward passes in chunks and accumulate residual
+/// vectors by character count. Returns a map from `char_count` to
+/// `(sum_vector, count)`.
+///
+/// Long sequences are split into `max_tokens`-sized chunks so that VRAM
+/// stays bounded. Each chunk is processed independently; the byte offsets
+/// from `encode_with_offsets` are relative to the full wrapped text, so
+/// `compute_line_char_count` works correctly across chunk boundaries.
 fn collect_means(
     model: &MIModel,
     tokenizer: &MITokenizer,
@@ -485,59 +662,65 @@ fn collect_means(
         let wrapped = word_wrap(prose, width);
         let encoding = tokenizer.encode_with_offsets(&wrapped)?;
 
-        // Truncate to max_tokens to avoid OOM on long sequences
         let full_len = encoding.ids.len();
-        let seq_len = full_len.min(max_tokens);
-        if seq_len < full_len {
-            eprintln!("      width {width}: truncated {full_len} -> {seq_len} tokens",);
+        let n_chunks = full_len.div_ceil(max_tokens);
+        if n_chunks > 1 {
+            eprintln!("      width {width}: {full_len} tokens → {n_chunks} chunks of ≤{max_tokens}");
         }
-        // INDEX: seq_len <= encoding.ids.len() by .min(); safe
-        #[allow(clippy::indexing_slicing)]
-        let ids = &encoding.ids[..seq_len];
-        // INDEX: offsets.len() == ids.len() from encode_with_offsets; seq_len <= ids.len()
-        #[allow(clippy::indexing_slicing)]
-        let offsets = &encoding.offsets[..seq_len];
 
-        // Build input tensor
-        let input = candle_core::Tensor::new(ids, model.device())?.unsqueeze(0)?; // [1, seq]
-
-        // Capture ResidPost at the target layer
-        let mut hooks = HookSpec::new();
-        hooks.capture(HookPoint::ResidPost(layer));
-
-        let cache = model.forward(&input, &hooks)?;
-        let resid = cache.require(&HookPoint::ResidPost(layer))?; // [1, seq, hidden]
-        let resid_2d = resid.squeeze(0)?; // [seq, hidden]
-
-        // PROMOTE: extract as F32 for accumulation into F64 sums
-        let resid_f32 = resid_2d.to_dtype(candle_core::DType::F32)?;
-        let resid_data: Vec<Vec<f32>> = (0..seq_len)
-            .map(|i| -> candle_mi::Result<Vec<f32>> { Ok(resid_f32.get(i)?.to_vec1()?) })
-            .collect::<candle_mi::Result<Vec<_>>>()?;
-
-        // For each token, compute line character count from byte offsets
-        for (tok_idx, &(start, end)) in offsets.iter().enumerate() {
-            // Skip BOS/special tokens with (0, 0) offset
-            if start == 0 && end == 0 {
-                continue;
-            }
-
-            // Line char count = bytes since last newline before this token
-            let char_count = compute_line_char_count(&wrapped, start);
-            if char_count == 0 || char_count > 150 {
-                continue;
-            }
-
-            let entry = accum
-                .entry(char_count)
-                .or_insert_with(|| (vec![0.0_f64; hidden], 0));
-            // INDEX: tok_idx is bounded by offsets.len() == seq_len == resid_data.len()
+        for chunk_idx in 0..n_chunks {
+            let chunk_start = chunk_idx * max_tokens;
+            let chunk_end = full_len.min(chunk_start + max_tokens);
+            // INDEX: chunk_start < chunk_end <= full_len == encoding.ids.len()
             #[allow(clippy::indexing_slicing)]
-            let token_resid = &resid_data[tok_idx];
-            for (acc, &val) in entry.0.iter_mut().zip(token_resid.iter()) {
-                *acc += f64::from(val);
+            let ids = &encoding.ids[chunk_start..chunk_end];
+            // INDEX: offsets.len() == ids.len() from encode_with_offsets
+            #[allow(clippy::indexing_slicing)]
+            let offsets = &encoding.offsets[chunk_start..chunk_end];
+            let chunk_len = ids.len();
+
+            // Build input tensor
+            let input = candle_core::Tensor::new(ids, model.device())?.unsqueeze(0)?; // [1, chunk_len]
+
+            // Capture ResidPost at the target layer
+            let mut hooks = HookSpec::new();
+            hooks.capture(HookPoint::ResidPost(layer));
+
+            let cache = model.forward(&input, &hooks)?;
+            let resid = cache.require(&HookPoint::ResidPost(layer))?; // [1, chunk_len, hidden]
+            let resid_2d = resid.squeeze(0)?; // [chunk_len, hidden]
+
+            // PROMOTE: extract as F32 for accumulation into F64 sums
+            let resid_f32 = resid_2d.to_dtype(candle_core::DType::F32)?;
+            let resid_data: Vec<Vec<f32>> = (0..chunk_len)
+                .map(|i| -> candle_mi::Result<Vec<f32>> { Ok(resid_f32.get(i)?.to_vec1()?) })
+                .collect::<candle_mi::Result<Vec<_>>>()?;
+
+            // For each token, compute line character count from byte offsets
+            // (offsets are relative to the full wrapped text, not the chunk)
+            for (tok_idx, &(start, end)) in offsets.iter().enumerate() {
+                // Skip BOS/special tokens with (0, 0) offset
+                if start == 0 && end == 0 {
+                    continue;
+                }
+
+                // Line char count = bytes since last newline before this token
+                let char_count = compute_line_char_count(&wrapped, start);
+                if char_count == 0 || char_count > 150 {
+                    continue;
+                }
+
+                let entry = accum
+                    .entry(char_count)
+                    .or_insert_with(|| (vec![0.0_f64; hidden], 0));
+                // INDEX: tok_idx is bounded by offsets.len() == chunk_len == resid_data.len()
+                #[allow(clippy::indexing_slicing)]
+                let token_resid = &resid_data[tok_idx];
+                for (acc, &val) in entry.0.iter_mut().zip(token_resid.iter()) {
+                    *acc += f64::from(val);
+                }
+                entry.1 += 1;
             }
-            entry.1 += 1;
         }
     }
 
@@ -797,6 +980,29 @@ fn word_wrap(text: &str, width: usize) -> String {
 // Display helpers
 // ---------------------------------------------------------------------------
 
+/// Print a finish line with wall-clock time and elapsed duration.
+fn print_finished(t0: Instant) {
+    let now = std::time::SystemTime::now();
+    let secs_since_epoch = now
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    // CAST: u64 → i64, Unix timestamp fits in i64 until year 292 billion
+    #[allow(clippy::as_conversions, clippy::cast_possible_wrap)]
+    let secs = secs_since_epoch as i64;
+    let (h, m, s) = utc_hms(secs);
+    println!(
+        "\nFinished at {:02}:{:02}:{:02} UTC — total runtime: {:.2?}",
+        h, m, s, t0.elapsed()
+    );
+}
+
+/// Extract `(hour, minute, second)` from a Unix timestamp.
+const fn utc_hms(epoch_secs: i64) -> (i64, i64, i64) {
+    let day_secs = epoch_secs.rem_euclid(86_400);
+    (day_secs / 3600, (day_secs % 3600) / 60, day_secs % 60)
+}
+
 /// Print a summary of the cosine similarity ringing pattern.
 fn print_ringing_summary(cosine_sim: &[Vec<f32>], accum: &HashMap<usize, (Vec<f64>, usize)>) {
     let n = cosine_sim.len();
@@ -855,6 +1061,38 @@ fn print_ringing_summary(cosine_sim: &[Vec<f32>], accum: &HashMap<usize, (Vec<f6
 /// Write structured JSON output to a file.
 fn write_json(output: &HelixOutput, path: &Path) -> candle_mi::Result<()> {
     let json = serde_json::to_string_pretty(output)
+        .map_err(|e| candle_mi::MIError::Config(format!("JSON serialization failed: {e}")))?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| {
+            candle_mi::MIError::Config(format!("failed to create {}: {e}", parent.display()))
+        })?;
+    }
+    std::fs::write(path, &json).map_err(|e| {
+        candle_mi::MIError::Config(format!("failed to write {}: {e}", path.display()))
+    })?;
+    Ok(())
+}
+
+/// Read an existing sweep JSON file (array of `HelixOutput`).
+/// Returns an empty `Vec` if the file does not exist.
+fn read_sweep_file(path: &Path) -> candle_mi::Result<Vec<HelixOutput>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let raw = std::fs::read_to_string(path).map_err(|e| {
+        candle_mi::MIError::Config(format!("failed to read {}: {e}", path.display()))
+    })?;
+    let entries: Vec<HelixOutput> = serde_json::from_str(&raw).map_err(|e| {
+        candle_mi::MIError::Config(format!(
+            "failed to parse {} as JSON array: {e}", path.display()
+        ))
+    })?;
+    Ok(entries)
+}
+
+/// Write an array of `HelixOutput` entries to a file (sweep mode).
+fn write_json_array(entries: &[HelixOutput], path: &Path) -> candle_mi::Result<()> {
+    let json = serde_json::to_string_pretty(entries)
         .map_err(|e| candle_mi::MIError::Config(format!("JSON serialization failed: {e}")))?;
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| {
