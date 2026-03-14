@@ -152,7 +152,7 @@ rwkv-tokenizer = []
 clt = []
 sae = []
 memory = ["dep:libloading", "dep:windows"]
-dxgi-debug = ["memory"]
+memory-debug = ["memory"]
 probing = ["linfa", "linfa-logistic", "ndarray"]
 
 [lints.rust]

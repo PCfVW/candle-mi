@@ -138,8 +138,8 @@ cargo run --release --features transformer,mmap --example character_count_helix
 # Character count helix — with memory reporting (GPU name, per-process VRAM)
 cargo run --release --features transformer,mmap,memory --example character_count_helix
 
-# Character count helix — with DXGI debug output (raw adapter/VRAM values on stderr)
-cargo run --release --features transformer,mmap,dxgi-debug --example character_count_helix
+# Character count helix — with memory debug output (DXGI info + per-chunk VRAM on stderr)
+cargo run --release --features transformer,mmap,memory-debug --example character_count_helix
 
 # Character count helix — with JSON output for Mathematica plotting
 cargo run --release --features transformer,mmap --example character_count_helix -- --output examples/results/character_count_helix/helix_output.json
@@ -398,7 +398,8 @@ The `--text` flag lets you supply your own prose file to test whether the helix
 generalises across different text content. Add `--features memory` for
 per-process VRAM reporting (via DXGI on Windows, NVML on Linux) and GPU
 adapter identification (e.g., `[NVIDIA GeForce RTX 5060 Ti]`). Use
-`--features dxgi-debug` to additionally print raw DXGI values to stderr.
+`--features memory-debug` to additionally print raw DXGI values and
+per-chunk VRAM measurements to stderr.
 
 **CLI flags — "what to analyse" vs "how to iterate":**
 
@@ -483,7 +484,7 @@ Output JSON and Mathematica plotting script are in
   identification. On Windows, uses DXGI (`IDXGIAdapter3::QueryVideoMemoryInfo`)
   — the only reliable per-process method under WDDM (NVML returns
   `NOT_AVAILABLE`). On Linux, uses NVML per-process queries. Falls back to
-  `nvidia-smi` (device-wide) if both fail. The `dxgi-debug` feature (implies
-  `memory`) prints raw DXGI values to stderr for diagnostics.
+  `nvidia-smi` (device-wide) if both fail. The `memory-debug` feature (implies
+  `memory`) prints raw DXGI values and per-chunk VRAM measurements to stderr.
 - **GPU recommended** for models larger than 1B parameters. candle-mi is
   developed on an RTX 5060 Ti (16 GB VRAM) with 64 GB RAM and CUDA 13.1.
