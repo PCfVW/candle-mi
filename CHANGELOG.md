@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   tensors (`cache`, `input`, residuals) and calls `sync_and_trim_gpu` after each
   chunk to bound VRAM usage; keeps memory flat at ~+20 MB above model load
   across entire sweeps
+- **Multi-layer `--sweep N` and `--sweep all`** in `character_count_helix` —
+  `--sweep` (bare) still sweeps 1 layer; `--sweep 5` sweeps the next 5 layers
+  in one run; `--sweep all` sweeps all remaining layers (overnight run);
+  `--sweep 0` exits immediately with a message; progress is saved to JSON
+  after each layer so interrupted runs resume cleanly
 
 ### Changed
 

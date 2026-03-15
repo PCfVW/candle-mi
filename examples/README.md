@@ -153,6 +153,12 @@ cargo run --release --features transformer,mmap --example character_count_helix 
 # Character count helix — sweep mode: one layer per run, auto-resume from JSON
 cargo run --release --features transformer,mmap,memory --example character_count_helix -- --sweep --output examples/results/character_count_helix/sweep.json
 
+# Character count helix — sweep the next 5 layers in one run
+cargo run --release --features transformer,mmap,memory --example character_count_helix -- --sweep 5 --output examples/results/character_count_helix/sweep.json
+
+# Character count helix — sweep all remaining layers (overnight run)
+cargo run --release --features transformer,mmap,memory --example character_count_helix -- --sweep all --output examples/results/character_count_helix/sweep.json
+
 # Character count helix — sweep over Dickens chapters with per-process VRAM
 cargo run --release --features transformer,mmap,memory --example character_count_helix -- --sweep --text-dir examples/results/character_count_helix/texts --output examples/results/character_count_helix/sweep.json
 
@@ -411,13 +417,15 @@ per-chunk VRAM measurements to stderr.
   similarity matrix, ringing summary, optional JSON output).
 
 `--sweep` controls *how* to iterate: it runs the same full analysis as
-`--pca-layers` but one layer per invocation, auto-resuming from the output
-JSON file. Results are appended to a JSON array, so repeated runs walk
-through layers 0, 1, 2, ... automatically. Requires `--output`.
+`--pca-layers`, auto-resuming from the output JSON file. Accepts
+`--sweep` (1 layer), `--sweep N` (next N layers), or `--sweep all`
+(all remaining layers). Results are appended to a JSON array, so
+repeated runs walk through layers 0, 1, 2, ... automatically.
+Requires `--output`.
 
 Typical workflow: `--scan-layers all` first to find the interesting layers,
-then either `--pca-layers 10..13` to analyse a few at once, or `--sweep` to
-do them one at a time incrementally.
+then either `--pca-layers 10..13` to analyse a few at once, or `--sweep all`
+for an overnight run.
 
 Output JSON and Mathematica plotting script (3D helix, cosine heatmap, variance
 bars) are in [`examples/results/character_count_helix/`](results/character_count_helix/).
