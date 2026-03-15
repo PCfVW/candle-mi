@@ -32,6 +32,12 @@
 //! # Sweep mode: one layer per run, auto-resume (first run → layer 0, next → layer 1, ...)
 //! cargo run --release --features transformer,mmap --example character_count_helix -- --sweep --output helix_sweep.json
 //!
+//! # Sweep the next 5 layers in one run
+//! cargo run --release --features transformer,mmap --example character_count_helix -- --sweep 5 --output helix_sweep.json
+//!
+//! # Sweep all remaining layers (overnight run)
+//! cargo run --release --features transformer,mmap --example character_count_helix -- --sweep all --output helix_sweep.json
+//!
 //! # With memory reporting (GPU name, per-process VRAM before/after)
 //! cargo run --release --features transformer,mmap,memory --example character_count_helix
 //!
@@ -63,9 +69,11 @@
 //!   similarity matrix, ringing summary, optional JSON output).
 //!
 //! `--sweep` controls *how* to iterate: it runs the same full analysis as
-//! `--pca-layers` but one layer per invocation, auto-resuming from the
-//! output JSON file. Results are appended to a JSON array, so repeated
-//! runs walk through layers 0, 1, 2, ... automatically. Requires `--output`.
+//! `--pca-layers`, auto-resuming from the output JSON file. Accepts
+//! `--sweep` (1 layer), `--sweep N` (next N layers), or `--sweep all`
+//! (all remaining layers). Results are appended to a JSON array, so
+//! repeated runs walk through layers 0, 1, 2, ... automatically.
+//! Requires `--output`.
 //!
 //! The JSON output can be visualised with the companion Mathematica script
 //! `examples/results/character_count_helix/helix_plot.wl`.
@@ -123,13 +131,17 @@ struct Args {
     #[arg(long, default_value_t = 4096)]
     max_tokens: usize,
 
-    /// **How to iterate** — sweep layers one at a time, auto-resuming from
-    /// the output JSON file. Runs the same full analysis as `--pca-layers`
-    /// but one layer per invocation. On first run starts at layer 0;
-    /// subsequent runs read the file and pick the next untested layer.
-    /// Requires `--output`.
-    #[arg(long)]
-    sweep: bool,
+    /// **How to iterate** — sweep layers, auto-resuming from the output JSON
+    /// file. Runs the same full analysis as `--pca-layers`. Accepts:
+    ///   `--sweep`     — sweep 1 layer (default),
+    ///   `--sweep N`   — sweep the next N layers (N ≥ 1),
+    ///   `--sweep all` — sweep all remaining layers,
+    ///   `--sweep 0`   — do nothing (exits immediately).
+    /// On first run starts at layer 0; subsequent runs read the file and
+    /// pick the next untested layer. Any non-numeric, non-`all` value is
+    /// rejected. Requires `--output`.
+    #[arg(long, value_name = "N | all", default_missing_value = "1", num_args = 0..=1)]
+    sweep: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -270,7 +282,11 @@ fn run() -> candle_mi::Result<()> {
     let widths: Vec<usize> = (20..=150).step_by(10).collect(); // 14 widths
 
     // 2b. Sweep mode: auto-resume from existing JSON file
-    if args.sweep {
+    if let Some(sweep_arg) = &args.sweep {
+        let sweep_count = parse_sweep_arg(sweep_arg, n_layers)?;
+        if sweep_count == 0 {
+            return Ok(());
+        }
         let output_path = args
             .output
             .as_ref()
@@ -284,6 +300,7 @@ fn run() -> candle_mi::Result<()> {
             output_path,
             n_layers,
             max_tokens,
+            sweep_count,
         )?;
         print_finished(t0);
         return Ok(());
@@ -365,7 +382,10 @@ fn load_prose_texts(args: &Args) -> candle_mi::Result<Vec<String>> {
     }
 }
 
-/// Sweep one layer per invocation, auto-resuming from the output JSON file.
+/// Sweep up to `sweep_count` layers, auto-resuming from the output JSON file.
+///
+/// Each layer's result is appended to the JSON immediately, so progress is
+/// saved even if the process is interrupted mid-sweep.
 #[allow(clippy::too_many_arguments)]
 fn run_sweep(
     model: &MIModel,
@@ -376,45 +396,54 @@ fn run_sweep(
     output_path: &Path,
     n_layers: usize,
     max_tokens: usize,
+    sweep_count: usize,
 ) -> candle_mi::Result<()> {
-    let existing = read_sweep_file(output_path)?;
-    let next_layer = if existing.is_empty() {
+    let mut all = read_sweep_file(output_path)?;
+    let first_layer = if all.is_empty() {
         0
     } else {
-        let max_done = existing.iter().map(|e| e.layer).max().unwrap_or(0);
+        let max_done = all.iter().map(|e| e.layer).max().unwrap_or(0);
         max_done + 1
     };
 
-    if next_layer >= n_layers {
+    if first_layer >= n_layers {
         println!("All {n_layers} layers already analysed. Nothing to do.");
         return Ok(());
     }
 
-    println!(
-        "Sweep: layer {next_layer}/{n_layers} ({} already done)\n",
-        existing.len()
-    );
+    // Clamp to the number of layers actually remaining.
+    let remaining = n_layers - first_layer;
+    let to_do = sweep_count.min(remaining);
+    let last_layer = first_layer + to_do; // exclusive
 
-    let result = run_analysis_returning(
-        model,
-        tokenizer,
-        prose_texts,
-        widths,
-        next_layer,
-        model_id,
-        max_tokens,
-    )?;
-
-    let mut all = existing;
-    if let Some(entry) = result {
-        all.push(entry);
-    }
-    write_json_array(&all, output_path)?;
     println!(
-        "JSON written to {} ({} layer(s) total)",
-        output_path.display(),
+        "Sweep: layers {first_layer}..{last_layer}/{n_layers} \
+         ({to_do} to do, {} already done)\n",
         all.len()
     );
+
+    for layer in first_layer..last_layer {
+        let result = run_analysis_returning(
+            model,
+            tokenizer,
+            prose_texts,
+            widths,
+            layer,
+            model_id,
+            max_tokens,
+        )?;
+
+        if let Some(entry) = result {
+            all.push(entry);
+        }
+        // Write after each layer so progress is saved incrementally.
+        write_json_array(&all, output_path)?;
+        println!(
+            "JSON written to {} ({} layer(s) total)\n",
+            output_path.display(),
+            all.len()
+        );
+    }
     Ok(())
 }
 
@@ -919,6 +948,39 @@ fn cosine_similarity_matrix(matrix: &candle_core::Tensor) -> candle_mi::Result<V
 // ---------------------------------------------------------------------------
 // CLI helpers
 // ---------------------------------------------------------------------------
+
+/// Parse the `--sweep` argument into a layer count.
+///
+/// Accepted values:
+/// - `"0"`   → returns `0` after printing a message (caller should exit),
+/// - `"1"`   → sweep 1 layer (equivalent to bare `--sweep`),
+/// - `"N"`   → sweep N layers (N ≥ 1),
+/// - `"all"` → sweep all remaining layers (returns `n_layers`).
+///
+/// # Errors
+///
+/// Returns an error for negative numbers, non-integer strings, or any value
+/// that is not a non-negative integer or `"all"`.
+fn parse_sweep_arg(arg: &str, n_layers: usize) -> candle_mi::Result<usize> {
+    if arg.eq_ignore_ascii_case("all") {
+        return Ok(n_layers);
+    }
+    // Reject explicitly negative values before parsing as usize.
+    if arg.starts_with('-') {
+        return Err(candle_mi::MIError::Config(format!(
+            "invalid --sweep value \"{arg}\": must be a non-negative integer or \"all\""
+        )));
+    }
+    let n: usize = arg.parse().map_err(|_| {
+        candle_mi::MIError::Config(format!(
+            "invalid --sweep value \"{arg}\": expected a non-negative integer or \"all\""
+        ))
+    })?;
+    if n == 0 {
+        println!("--sweep 0: nothing to do.");
+    }
+    Ok(n)
+}
 
 /// Parse a layer range spec into a `(start, end)` pair (exclusive end).
 ///
