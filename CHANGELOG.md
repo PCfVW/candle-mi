@@ -23,9 +23,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   across entire sweeps
 - **Multi-layer `--sweep N` and `--sweep all`** in `character_count_helix` —
   `--sweep` (bare) still sweeps 1 layer; `--sweep 5` sweeps the next 5 layers
-  in one run; `--sweep all` sweeps all remaining layers (overnight run);
+  in one run; `--sweep all` sweeps all remaining layers (may be overnight run on consumer hardware);
   `--sweep 0` exits immediately with a message; progress is saved to JSON
   after each layer so interrupted runs resume cleanly
+- **Rotating helix GIF** — `L12_helix_rotating.gif` checked into
+  `examples/results/character_count_helix/plots/`, embedded in both
+  `examples/README.md` and the experiment `README.md`; generated from
+  30-chapter Dickens corpus (1.58M tokens, 98.5% top-6 variance at layer 12)
+- **Experiment README** (`examples/results/character_count_helix/README.md`) —
+  documents the full experiment setup, key findings across all 26 layers,
+  reproduction commands, and references
+- **Paper replications table** — added Anthropic's "When Models Manipulate
+  Manifolds" (2025) to the main `README.md`
+- **Full causal trace heatmap** in `activation_patching` — extends the
+  subject-position sweep to a full layer × token position grid (Meng et al.
+  Figure 1e); prints a text heatmap table and writes structured JSON with
+  `--output` for Mathematica plotting; adds the paper's original "Space Needle
+  → Seattle" prompt alongside the existing "France → Paris"
+- **Mathematica plotting script** for activation patching
+  (`examples/results/activation_patching/causal_trace_plot.wl`) — generates
+  the causal trace heatmap (tokens on Y-axis, layers on X-axis) and a
+  subject-position recovery curve
 
 ### Changed
 

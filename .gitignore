@@ -1,3 +1,11 @@
 /target
 CLAUDE.md
 .claude/
+/experiments/
+
+# Generated experiment outputs (keep showcase images)
+examples/results/**/plots/*
+!examples/results/**/plots/L12_helix_rotating.gif
+!examples/results/**/plots/google_gemma-2-2b_causal_trace_heatmap.png
+examples/results/**/*.json
+*.7z
