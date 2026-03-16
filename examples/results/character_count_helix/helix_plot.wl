@@ -1,3 +1,5 @@
+(* ::Package:: *)
+
 (* ================================================================== *)
 (* Character Count Helix: 3D scatter, cosine heatmap, variance bars   *)
 (* candle-mi example: character_count_helix                           *)
@@ -8,8 +10,13 @@
 (* ================================================================== *)
 
 (* --- Import JSON output from the Rust example --- *)
+(* Change this to the JSON file you want to plot, e.g.
+   "sweep.json" for the full 26-layer sweep, or
+   "helix_L11-12.json" for a targeted --pca-layers run. *)
+jsonFile = "helix_L11-13_L12.json";
+
 raw = Import[
-  FileNameJoin[{NotebookDirectory[], "sweep.json"}],
+  FileNameJoin[{NotebookDirectory[], jsonFile}],
   "RawJSON"
 ];
 
@@ -44,7 +51,7 @@ plotLayer[entry_Association] := Module[
   pcCoords   = projs[[All, "pc"]];
 
   (* -------------------------------------------------------------- *)
-  (* PLOT 1: 3D Helix — PC1 vs PC2 vs PC3, colored by char count    *)
+  (* PLOT 1: 3D Helix \[LongDash] PC1 vs PC2 vs PC3, colored by char count    *)
   (* -------------------------------------------------------------- *)
 
   helix3D = ListPointPlot3D[
@@ -188,5 +195,54 @@ Column[
   Prepend[
     Riffle[allPlots, Spacer[30]],
     Style["Character Count Helix Analysis", 20, Bold]
+  ]
+]
+
+(* ================================================================== *)
+(* Animated GIF: rotating Layer 12 helix                              *)
+(* ================================================================== *)
+
+l12 = SelectFirst[layers, #["layer"] == 12 &];
+
+If[MissingQ[l12],
+  Print["Layer 12 not found in JSON."],
+  Module[{projs, charCounts, pcCoords, pts, colors, frames, gifPath},
+    projs      = l12["projections"];
+    charCounts = projs[[All, "char_count"]];
+    pcCoords   = projs[[All, "pc"]];
+
+    pts    = {#[[1]], #[[2]], #[[3]]} & /@ pcCoords;
+    colors = ColorData["Rainbow"] /@
+      Rescale[charCounts, {Min[charCounts], Max[charCounts]}];
+
+    frames = Table[
+      Legended[
+        Graphics3D[
+          {PointSize[Medium],
+           MapThread[{#1, Point[#2]} &, {colors, pts}]},
+          Axes -> True,
+          AxesLabel -> {"PC1", "PC2", "PC3"},
+          PlotLabel -> Style[
+            "Character Count Helix\ngoogle/gemma-2-2b layer 12",
+            14, Bold],
+          ImageSize -> 500,
+          Boxed -> True,
+          BoxRatios -> {1, 1, 1},
+          ViewPoint -> {2 Cos[theta], 2 Sin[theta], 1.2},
+          ViewVertical -> {0, 0, 1},
+          SphericalRegion -> True
+        ],
+        BarLegend[{"Rainbow", {Min[charCounts], Max[charCounts]}},
+          LegendLabel -> "Char count"]
+      ],
+      {theta, 0, 2 Pi - 2 Pi/90, 2 Pi/90}
+    ];
+
+    gifPath = FileNameJoin[{NotebookDirectory[], "plots",
+      "L12_helix_rotating.gif"}];
+    Export[gifPath, frames, "GIF",
+      "DisplayDurations" -> 1/10,
+      "AnimationRepetitions" -> Infinity];
+    Print["Exported rotating GIF: ", gifPath];
   ]
 ]
