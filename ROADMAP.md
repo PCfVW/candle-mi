@@ -2,8 +2,8 @@
 
 > *MI for the Rust of us*
 
-**Date:** February 19, 2026 (last updated: March 10, 2026)
-**Status:** Phase 0–4 complete. Phase 5 in progress (auto-config done, examples done, docs done, CHANGELOG and release remaining). Published on [crates.io](https://crates.io/crates/candle-mi) as v0.0.5. Default dtype changed to F32 for research-grade precision.
+**Date:** February 19, 2026 (last updated: March 17, 2026)
+**Status:** Phase 0–5 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.1.3. Phase 6 partially complete (character count helix finalized, activation patching extended with full causal trace heatmap). Default dtype F32 for research-grade precision. PR submitted to candle repo ([#3406](https://github.com/huggingface/candle/pull/3406)).
 **Context:** Building on plip-rs experience (7 model backends incl. Gemma 2, attention knockout, state knockout, effective attention, steering, logit lens, CLT encoding/injection). Two successful replications of Anthropic's "Planning in Poems" Figure 13 validate the approach: Gemma 2 2B with 426K CLTs (melometis branch) and Llama 3.2 1B with 524K CLTs (tragos branch). Target: a publishable, generic Rust MI crate endorsed by HuggingFace.
 
 ---
@@ -47,7 +47,7 @@
   - [Phase 2: RWKV-6 + RWKV-7](#phase-2-rwkv-6--rwkv-7) ✅
   - [Phase 3: CLT Support](#phase-3-clt-support) ✅
   - [Phase 4: SAE Support](#phase-4-sae-support) ✅
-  - [Phase 5: Polish + Publish + Auto-Config](#phase-5-polish--publish--auto-config)
+  - [Phase 5: Polish + Publish + Auto-Config](#phase-5-polish--publish--auto-config) ✅
   - [Phase 6: Research Examples & Utilities](#phase-6-research-examples--utilities)
   - [Phase 7: Standard MI Analysis Stack](#phase-7-standard-mi-analysis-stack)
   - [Phase 8: Static Circuit Analysis](#phase-8-static-circuit-analysis)
@@ -533,7 +533,7 @@ Where `A_t` (transition), `B_t` (input), and `C_t` (output) vary by architecture
 | **Attribution graphs** | ✅ Working (Phase 3) | `AttributionEdge`, `AttributionGraph` with `top_k()`/`threshold()` pruning; `score_features_by_decoder_projection()`, `build_attribution_graph()` |
 | **SAE loading + encoding** | ✅ Working (Phase 4) | `SparseAutoencoder` struct; Gemma Scope NPZ format; `encode()` for sparse activations; validated on Gemma 2 2B |
 | **SAE feature injection** | ✅ Working (Phase 4) | Same as CLT but for SAEs; `Intervention::Add` at hook points |
-| **Activation patching** | High (Phase 7) | Swap activations between clean/corrupted runs at specific hook points |
+| **Activation patching** | ✅ Working (Phase 5/v0.1.0+) | Causal tracing via position-specific patching (Meng et al.); `activation_patching.rs` example with full layer × token heatmap (v0.1.3); generic `activation_patch()` framework planned for Phase 7 |
 | **Residual stream decomposition** | High (Phase 7) | Decompose residual stream into per-layer, per-component contributions |
 
 ### 5.3 Future (not required now)
@@ -604,6 +604,7 @@ candle-mi/
 │   │   └── rwkv.rs                 — RWKV World tokenizer (feature: "rwkv-tokenizer")
 │   │
 │   ├── download.rs                 — download_model / download_model_blocking (hf-fetch-model) ✅
+│   ├── memory.rs                   — MemorySnapshot, MemoryReport, sync_and_trim_gpu (feature: "memory") ✅
 │   │
 │   └── util/                       — Shared utilities ✅
 │       ├── mod.rs
@@ -667,6 +668,8 @@ rwkv = []                  # RWKV v6-v7 backends
 rwkv-tokenizer = []        # RWKV World tokenizer
 clt = []                   # Cross-layer transcoder support
 sae = []                   # Sparse autoencoder support
+memory = ["dep:libloading", "dep:windows"]  # RAM + VRAM reporting (DXGI/NVML/nvidia-smi)
+memory-debug = ["memory"]  # Raw DXGI/NVML debug output + per-chunk VRAM measurements
 probing = ["linfa", "linfa-logistic", "ndarray"]  # Linear probing
 ```
 
@@ -703,7 +706,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 
 **Branch strategy:** Work directly on `main` during solo development. Use short-lived feature branches only when a change spans multiple sessions and may leave `main` broken in between; merge back when green.
 
-**Tag convention:** Tag at each phase completion: `v0.0.1-phase0`, `v0.0.2-phase1`, etc. Tag `v0.1.0` at publication (Phase 5). Post-v0.1.0 minor bumps: `v0.2.0` (Phase 6), `v0.3.0` (Phase 7), `v0.4.0` (Phase 8), `v0.5.0` (Phase 9). Tags matching `v*` trigger `publish.yml`, which runs full CI then `cargo publish` automatically. **Always wait for `ci.yml` green before tagging** — bump `Cargo.toml` version + commit `Cargo.lock` first.
+**Tag convention:** Tag at each phase completion: `v0.0.1-phase0`, `v0.0.2-phase1`, etc. Tag `v0.1.0` at publication (Phase 5). Post-v0.1.0: patch releases for incremental improvements within the current phase (`v0.1.1`, `v0.1.2`, `v0.1.3`, ...); minor bumps at phase boundaries: `v0.2.0` (Phase 6), `v0.3.0` (Phase 7), `v0.4.0` (Phase 8), `v0.5.0` (Phase 9). Tags matching `v*` trigger `publish.yml`, which runs full CI then `cargo publish` automatically. **Always wait for `ci.yml` green before tagging** — bump `Cargo.toml` version + commit `Cargo.lock` first.
 
 ### Phase 0: Foundation
 
@@ -813,26 +816,32 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [x] Write example programs — 15 examples covering forward pass, logit lens, attention patterns, knockout, steering, activation patching, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix — **multiple commits**
 - [x] Improve auto-config error messaging — when `check_auto_compatibility()` fails for non-standard models (non-HF weight naming), provide actionable error messages listing which weight tensors were expected vs. found — **commit** `2685893`
 - [x] Update CHANGELOG.md with Phase 5 changes — **commit `359a623`** — **PUSH** (release candidate)
-- [ ] **Release workflow** (publish v0.1.0 to crates.io — automated via `publish.yml`):
-  1. Ensure `main` is clean: `git status` shows no uncommitted changes
-  2. ~~Bump version in `Cargo.toml` to `0.1.0` + update `Cargo.lock`~~ — **done** (commit `092431e`)
-  3. Wait for `ci.yml` to pass on the version-bump commit (build + clippy + fmt + tests)
-  4. `git tag v0.1.0` — tag the exact commit that CI validated
-  5. `git push origin v0.1.0` — push the tag (triggers `publish.yml`)
-  6. `publish.yml` runs full CI checks then `cargo publish` automatically
-  7. Verify the published crate: `cargo install candle-mi --version 0.1.0` in a fresh directory
-- [ ] Submit PR to candle repo adding candle-mi to "Useful External Resources" (per Eric Buehler's invitation)
+- [x] **Release workflow** (publish v0.1.0 to crates.io — automated via `publish.yml`):
+  1. ~~Ensure `main` is clean~~ — done
+  2. ~~Bump version in `Cargo.toml` to `0.1.0` + update `Cargo.lock`~~ — done (commit `092431e`)
+  3. ~~Wait for `ci.yml` to pass~~ — done
+  4. ~~`git tag v0.1.0`~~ — done
+  5. ~~`git push origin v0.1.0`~~ — done (triggers `publish.yml`)
+  6. ~~`publish.yml` runs full CI checks then `cargo publish`~~ — done
+  7. ~~Verify the published crate~~ — done; subsequently published v0.1.1, v0.1.2, v0.1.3
+- [x] Submit PR to candle repo adding candle-mi to "Useful External Resources" — [huggingface/candle#3406](https://github.com/huggingface/candle/pull/3406) (submitted, awaiting merge)
 - [ ] Announce (Rust ML community, MI community)
 
 ### Phase 6: Research Examples & Utilities
 
 **Goal:** Finalize the character count helix example, strengthen PCA utilities, add 2–3 beginner MI examples from the [Nanda quickstart proposal](docs/quickstart-examples-proposal.md). Keep the phase small (~40% unplanned capacity reserved for bug fixes discovered by early users of v0.1.0).
 
-- [ ] Helix finalization — **commit**
-  - **Checkpoint/resume:** after each layer completes, write `layer_XX_variance.jsonl` to the output directory (one JSON object: layer index, top-6 variance ratios, elapsed time, text files used, `max_tokens`). On startup, scan for existing JSONL files and skip already-completed layers. Crash-safe: if the process dies mid-layer, only the incomplete layer is re-run.
-  - **`--stop <N|all>`:** save after scanning N more layers, then exit cleanly. `--stop all` (default) finishes all remaining layers. Enables incremental overnight runs: `--stop 2` scans two layers then exits; re-run the same command to resume.
-  - **Final assembly:** when all layers are done, combine JSONL files into the full `helix_output.json` (cosine similarity matrix, PCA projections, per-layer variance).
-  - **`--pca-n-omit <N>`:** skip the first N character positions from PCA (following [t-tech methodology](https://huggingface.co/spaces/t-tech/manifolds#predicting-token-position), default 0). Reduces noise from short-line edge effects.
+- [x] Helix finalization (completed across v0.1.0–v0.1.3) — **multiple commits**
+  - [x] PCA utility (`src/util/pca.rs`) — `pca_top_k()` via power iteration with deflation (v0.1.0)
+  - [x] `character_count_helix.rs` example — `--scan-layers`, `--pca-layers`, `--text-dir`, `--max-tokens`, `--text`, `--output` (v0.1.0)
+  - [x] Memory reporting API (`src/memory.rs`) — RAM + VRAM via DXGI/NVML/nvidia-smi, gated behind `features = ["memory"]` (v0.1.0–v0.1.2)
+  - [x] `--sweep` mode with auto-resume from JSON output file (v0.1.2)
+  - [x] Chunking for long sequences (v0.1.2)
+  - [x] `--sweep N` and `--sweep all` for multi-layer sweeps (v0.1.3)
+  - [x] VRAM-aware `max_tokens` auto-tuning (v0.1.3)
+  - [x] Explicit GPU tensor cleanup with `sync_and_trim_gpu` (v0.1.3)
+  - [x] Rotating helix GIF and experiment README (v0.1.3)
+- [x] Activation patching extended — full causal trace heatmap (layer × token grid, Meng et al. Figure 1e), Mathematica plotting script (v0.1.3) — **commit `7f31d76`**
 - [ ] PCA enhancements — `pca_n_omit` parameter in `pca_top_k()`, projection helpers (`project_to_pcs()`, `reconstruct_from_pcs()`), optional randomized SVD solver for large matrices — **commit**
 - [ ] `inspect_weights.rs` example — load a model, print layer count / hidden size / head count / vocab size, per-layer weight matrix shapes and Frobenius norms, embedding stats. Lowest barrier to entry; no MI knowledge needed — **commit**
 - [ ] `logit_attribution.rs` example — direct logit attribution: project each layer's residual contribution through unembedding, show per-layer contribution to target prediction. Core MI technique — **commit**
@@ -848,7 +857,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [ ] Per-head hooks (`hook_z`, `hook_result`) — capture attention-weighted values and per-head output projected to `d_model` before summation. Requires `attention.rs` changes + re-validation of all 7 transformer families — **commit** — **PUSH**
 - [ ] Residual stream decomposition — `accumulated_resid()` (stack residual streams at each layer) + `decompose_resid()` (per-component additive contributions: each attention output, each MLP output, embeddings) on `FullActivationCache` — **commit**
 - [ ] Direct logit attribution — `logit_attrs()`: dot product of each component's residual contribution with unembedding direction of target tokens. Per-head, per-layer, per-MLP granularity — **commit**
-- [ ] Activation patching framework — `activation_patch()` generic + pre-built variants (`resid_pre`, `attn_out`, `mlp_out`, per-head). Clean/corrupted forward passes with activation swaps at specified hook points — **commit** — **PUSH**
+- [ ] Activation patching framework — `activation_patch()` generic + pre-built variants (`resid_pre`, `attn_out`, `mlp_out`, per-head). Clean/corrupted forward passes with activation swaps at specified hook points. Note: basic activation patching already works as an example (`activation_patching.rs`, v0.1.0) with full causal trace heatmap (v0.1.3); this phase promotes it to a reusable library API — **commit** — **PUSH**
 
 **Deliverable:** Causal tracing, component attribution, circuit localization. — **PUSH + tag `v0.3.0`**
 

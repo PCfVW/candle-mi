@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **`ROADMAP.md` consistency pass** — updated to reflect v0.1.3 project state:
+  status line now says Phase 0–5 complete (was "Phase 0–4, Phase 5 in progress,
+  v0.0.5"); Phase 5 ToC entry marked ✅; Phase 5 release workflow steps checked
+  off (v0.1.0 published 2026-03-11, followed by v0.1.1–v0.1.3); candle PR
+  [#3406](https://github.com/huggingface/candle/pull/3406) recorded as submitted;
+  Phase 6 helix finalization items checked off (PCA, sweep modes, VRAM
+  auto-tuning, GIF, experiment README — all landed in v0.1.0–v0.1.3); activation
+  patching promoted from "Phase 7 planned" to "✅ Working" in Section 5.2; added
+  `memory.rs` to crate structure tree; added `memory` and `memory-debug` to
+  feature gates listing; tag convention updated to document patch releases
+  alongside phase-boundary minor bumps; Phase 7 activation patching item now
+  notes existing example
+
 ## [0.1.3] - 2026-03-16
 
 ### Added
@@ -621,7 +638,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/PCfVW/candle-mi/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/PCfVW/candle-mi/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/PCfVW/candle-mi/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/PCfVW/candle-mi/compare/v0.0.5-phase4...v0.1.0
