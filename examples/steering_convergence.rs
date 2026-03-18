@@ -12,6 +12,9 @@
 //!
 //! # Custom threshold and strength sweep
 //! cargo run --release --features transformer,mmap --example steering_convergence -- "meta-llama/Llama-3.2-1B" --threshold 0.90 --max-strength 8.0
+//!
+//! # Custom prompts — measure attractor depth of planning (rhyme)
+//! cargo run --release --features transformer,mmap --example steering_convergence -- "meta-llama/Llama-3.2-1B" --prompt "Twinkle twinkle little star, how I wonder what you" --contrastive "Twinkle twinkle little star, how I wonder where you" --target-token " are"
 //! ```
 //!
 //! **What it does:**
@@ -79,6 +82,18 @@ struct Args {
     /// Number of strength steps in the sweep
     #[arg(long, default_value_t = 12)]
     strength_steps: usize,
+
+    /// Custom clean prompt (overrides the default "The capital of France is")
+    #[arg(long)]
+    prompt: Option<String>,
+
+    /// Custom contrastive prompt (must have same token count as --prompt)
+    #[arg(long)]
+    contrastive: Option<String>,
+
+    /// Custom target token to track (e.g., " are", " mat"); default " Paris"
+    #[arg(long)]
+    target_token: Option<String>,
 
     /// Write structured JSON output to this file
     #[arg(long)]
@@ -198,20 +213,36 @@ fn run_model(model_id: &str, args: &Args) -> candle_mi::Result<()> {
         "model has no embedded tokenizer".into(),
     ))?;
 
-    // Find contrastive prompt with matching token count
-    let clean_tokens = tokenizer.encode(CLEAN_PROMPT)?;
+    // Resolve prompt, contrastive, and target token
+    let clean_prompt = args.prompt.as_deref().unwrap_or(CLEAN_PROMPT);
+    let clean_tokens = tokenizer.encode(clean_prompt)?;
     let seq_len = clean_tokens.len();
-    let (contrastive_prompt, contrastive_tokens) =
-        find_contrastive_prompt(tokenizer, &clean_tokens)?;
 
-    println!("  Prompt: \"{CLEAN_PROMPT}\" ({seq_len} tokens)");
+    let (contrastive_prompt, contrastive_tokens) = if let Some(ref c) = args.contrastive {
+        let tokens = tokenizer.encode(c)?;
+        if tokens.len() != seq_len {
+            return Err(candle_mi::MIError::Tokenizer(format!(
+                "--contrastive has {} tokens but --prompt has {} tokens (must match)",
+                tokens.len(),
+                seq_len
+            )));
+        }
+        (c.as_str(), tokens)
+    } else {
+        find_contrastive_prompt(tokenizer, &clean_tokens)?
+    };
+
+    println!("  Prompt: \"{clean_prompt}\" ({seq_len} tokens)");
     println!("  Contrastive: \"{contrastive_prompt}\"");
 
-    // Find target token (" Paris")
-    let paris_tokens = tokenizer.encode(" Paris")?;
-    let target_id = *paris_tokens.last().ok_or(candle_mi::MIError::Tokenizer(
-        "could not encode target token".into(),
-    ))?;
+    // Find target token (custom or default " Paris")
+    let target_str = args.target_token.as_deref().unwrap_or(" Paris");
+    let target_tokens = tokenizer.encode(target_str)?;
+    let target_id = *target_tokens
+        .last()
+        .ok_or(candle_mi::MIError::Tokenizer(format!(
+            "could not encode target token \"{target_str}\""
+        )))?;
     let target_text = tokenizer.decode(&[target_id])?;
     println!("  Target token: \"{target_text}\" (id {target_id})");
 
@@ -443,7 +474,7 @@ fn run_model(model_id: &str, args: &Args) -> candle_mi::Result<()> {
     if let Some(ref path) = args.output {
         let output = JsonOutput {
             model_id: model_id.to_owned(),
-            prompt: CLEAN_PROMPT.to_owned(),
+            prompt: clean_prompt.to_owned(),
             contrastive_prompt: contrastive_prompt.to_owned(),
             n_layers,
             hidden_size: hidden,
