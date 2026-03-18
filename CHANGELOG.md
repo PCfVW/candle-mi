@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   where the model returns to its natural computation path), and runs a
   strength sweep showing how perturbation intensity shifts absorption depth;
   answers: "does the model converge to an attractor or find alternative paths?"
+- **`steering_convergence` results and plots** (`examples/results/steering_convergence/`) —
+  JSON output for Llama 3.2 1B and Gemma 2 2B, Mathematica plotting script
+  with rainbow colormap heatmaps, P(target) bar charts, and dual-axis strength
+  sweep plots; key finding: both models exhibit strong attractor dynamics with
+  a critical strength threshold of ~1.2× the contrastive distance
 - **`figure13_planning_poems` chart and explanation** (`examples/README.md`) —
   added `gemma_log.png` (Gemma 2 2B, 426K CLT suppress "out" + inject "around")
   with pedagogical walkthrough explaining log-scale probability spike at the
