@@ -95,6 +95,11 @@ struct Args {
     #[arg(long)]
     target_token: Option<String>,
 
+    /// Token position to inject at (default: last token). Use this to steer at
+    /// the planning site instead of the output position.
+    #[arg(long)]
+    inject_position: Option<usize>,
+
     /// Write structured JSON output to this file (or directory for --batch-file)
     #[arg(long)]
     output: Option<PathBuf>,
@@ -165,6 +170,8 @@ struct BatchExperiment {
     prompt: String,
     contrastive: String,
     target_token: String,
+    /// Optional token position to inject at (default: last token)
+    inject_position: Option<usize>,
 }
 
 // ---------------------------------------------------------------------------
@@ -253,6 +260,7 @@ fn run_batch(args: &Args, batch_path: &Path) -> candle_mi::Result<()> {
             prompt: Some(exp.prompt.clone()),
             contrastive: Some(exp.contrastive.clone()),
             target_token: Some(exp.target_token.clone()),
+            inject_position: exp.inject_position.or(args.inject_position),
             output: output_dir.map(|dir| dir.join(format!("{}.json", exp.group))),
             batch_file: None,
         };
@@ -360,6 +368,17 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
         capture_hooks.capture(HookPoint::ResidPost(layer));
     }
 
+    // Injection position: planning site (custom) or last token (default)
+    let inject_pos = args.inject_position.unwrap_or(seq_len - 1);
+    if inject_pos >= seq_len {
+        return Err(candle_mi::MIError::Intervention(format!(
+            "--inject-position {inject_pos} is out of bounds (seq_len={seq_len})"
+        )));
+    }
+    if args.inject_position.is_some() {
+        println!("  Inject position: {inject_pos} (planning site mode)");
+    }
+
     let t1 = Instant::now();
 
     // -----------------------------------------------------------------------
@@ -372,12 +391,14 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
     let baseline_p_target = extract_prob(&baseline_probs, target_id)?;
     let baseline_top5 = top_k_predictions(&baseline_probs, tokenizer, 5)?;
 
-    // Store baseline residuals at last token position
+    // Store baseline residuals at last token (for convergence) and inject position (for steering)
     let mut baseline_resid: Vec<Tensor> = Vec::with_capacity(n_layers);
+    let mut baseline_at_inject: Vec<Tensor> = Vec::with_capacity(n_layers);
     for layer in 0..n_layers {
         let resid = baseline_cache.require(&HookPoint::ResidPost(layer))?;
         // resid: [1, seq_len, hidden] → [hidden]
         baseline_resid.push(resid.get(0)?.get(seq_len - 1)?);
+        baseline_at_inject.push(resid.get(0)?.get(inject_pos)?);
     }
 
     println!(
@@ -403,10 +424,10 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
     let mut steering_vectors: Vec<Tensor> = Vec::with_capacity(n_layers);
     for layer in 0..n_layers {
         let contrastive_resid = contrastive_cache.require(&HookPoint::ResidPost(layer))?;
-        // contrastive_resid: [1, seq_len, hidden] → [hidden]
-        let contrastive_last = contrastive_resid.get(0)?.get(seq_len - 1)?;
-        // steering = baseline − contrastive (points from Germany toward France)
-        steering_vectors.push((&baseline_resid[layer] - &contrastive_last)?);
+        // contrastive_resid: [1, seq_len, hidden] → [hidden] at inject position
+        let contrastive_at_pos = contrastive_resid.get(0)?.get(inject_pos)?;
+        // steering = baseline − contrastive at inject position
+        steering_vectors.push((&baseline_at_inject[layer] - &contrastive_at_pos)?);
     }
 
     // -----------------------------------------------------------------------
@@ -423,7 +444,7 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
             &steering_vectors[inj_layer],
             seq_len,
             hidden,
-            seq_len - 1,
+            inject_pos,
             &device,
         )?;
 
@@ -526,7 +547,7 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
         let strength = step as f32 * step_size;
 
         let scaled = (&steering_vectors[best_layer] * f64::from(strength))?;
-        let delta = build_position_delta(&scaled, seq_len, hidden, seq_len - 1, &device)?;
+        let delta = build_position_delta(&scaled, seq_len, hidden, inject_pos, &device)?;
 
         let mut hooks = HookSpec::new();
         hooks.intervene(HookPoint::ResidPost(best_layer), Intervention::Add(delta));
