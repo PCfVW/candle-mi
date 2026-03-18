@@ -334,6 +334,7 @@ fn run_model(model_id: &str, args: &Args) -> candle_mi::Result<()> {
     println!("  Step 5: Analyzing absorption boundaries...");
 
     let mut layer_summaries: Vec<JsonLayerSummary> = Vec::with_capacity(n_layers);
+    #[allow(unused_assignments)]
     let mut best_layer = 0_usize;
 
     for inj_layer in 0..n_layers {
