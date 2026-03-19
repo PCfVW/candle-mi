@@ -4,30 +4,32 @@
 //! computation, or does the model take a different internal path?
 //!
 //! ```bash
-//! # Run on a specific model
+//! # Factual recall (default: France → Paris)
 //! cargo run --release --features transformer,mmap --example steering_convergence -- "meta-llama/Llama-3.2-1B"
 //!
-//! # With JSON output
-//! cargo run --release --features transformer,mmap --example steering_convergence -- "meta-llama/Llama-3.2-1B" --output results.json
-//!
-//! # Custom threshold and strength sweep
-//! cargo run --release --features transformer,mmap --example steering_convergence -- "meta-llama/Llama-3.2-1B" --threshold 0.90 --max-strength 8.0
-//!
-//! # Custom prompts — measure attractor depth of planning (rhyme)
+//! # Custom prompts — rhyme planning
 //! cargo run --release --features transformer,mmap --example steering_convergence -- "meta-llama/Llama-3.2-1B" --prompt "Twinkle twinkle little star, how I wonder what you" --contrastive "Twinkle twinkle little star, how I wonder where you" --target-token " are"
+//!
+//! # Batch mode — 20 rhyme groups from plip-rs corpus (~30s on GPU)
+//! cargo run --release --features transformer,mmap --example steering_convergence -- "meta-llama/Llama-3.2-1B" --batch-file examples/results/steering_convergence/batch_rhyme_groups.json --output examples/results/steering_convergence/batch_llama
+//!
+//! # CLT decoder vector steering (requires clt feature)
+//! cargo run --release --features transformer,clt,mmap --example steering_convergence -- "google/gemma-2-2b" --clt "mntss/clt-gemma-2-2b-426k" --feature "L22:10243" --inject-position auto --prompt "..." --contrastive "..."
+//!
+//! # Auto-detect planning site position
+//! cargo run --release --features transformer,mmap --example steering_convergence -- "meta-llama/Llama-3.2-1B" --inject-position auto --prompt "..." --contrastive "..."
 //! ```
 //!
 //! **What it does:**
 //!
 //! 1. Runs a **baseline** forward pass on "The capital of France is", capturing
 //!    [`HookPoint::ResidPost`](candle_mi::HookPoint) at every layer.
-//! 2. Runs a **contrastive** forward pass on "The capital of Germany is" and
-//!    computes per-layer steering vectors (France residual − Germany residual
-//!    at the last token position).
-//! 3. For each injection layer (0..n_layers), injects the layer-specific
-//!    steering vector via [`Intervention::Add`](candle_mi::Intervention) and
-//!    captures all layers — producing a 16×16 **convergence matrix** of cosine
-//!    similarities between steered and natural activations.
+//! 2. Computes **steering vectors** — either contrastive (France − Germany
+//!    residual subtraction) or CLT decoder vectors (`--clt` mode).
+//! 3. For each injection layer (0..n_layers), injects the steering vector via
+//!    [`Intervention::Add`](candle_mi::Intervention) and captures all layers —
+//!    producing an N×N **convergence matrix** of cosine similarities between
+//!    steered and natural activations.
 //! 4. Identifies the **absorption boundary** — the earliest layer after
 //!    injection where cosine similarity exceeds a threshold (default 0.95).
 //! 5. Runs a **strength sweep** at the most effective injection layer to show

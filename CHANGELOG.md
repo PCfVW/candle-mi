@@ -7,40 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-03-19
+
 ### Added
 
-- **`steering_convergence` example** — new experiment that injects contrastive
-  steering vectors (France vs Germany) at each layer and measures cosine
-  similarity between steered and natural activations across all layers;
-  produces a convergence matrix, identifies absorption boundaries (the layer
-  where the model returns to its natural computation path), and runs a
-  strength sweep showing how perturbation intensity shifts absorption depth;
-  answers: "does the model converge to an attractor or find alternative paths?"
-- **`steering_convergence` results and plots** (`examples/results/steering_convergence/`) —
-  JSON output for Llama 3.2 1B and Gemma 2 2B, Mathematica plotting script
-  with rainbow colormap heatmaps, P(target) bar charts, and dual-axis strength
-  sweep plots; key finding: both models exhibit strong attractor dynamics with
-  a critical strength threshold of ~1.2× the contrastive distance
+- **`attention_routing` example** — measures how CLT suppress+inject changes
+  attention patterns from the output position to the planning site; uses the
+  exact Figure 13 API (`prepare_hook_injection` with
+  `cache_steering_vectors_all_downstream`); identifies specific attention heads
+  involved in rhyme planning (L21:H5 dominant, H5 family across layers 17-25);
+  includes strength sweep revealing a soft attractor boundary (gradual
+  saturation at ~15× strength); supports `--suppress` flags for full
+  suppress+inject paradigm; fills a specific gap identified by Anthropic:
+  *"attention head routing is invisible to our current approach"*
+- **`attention_routing` results and plots** (`examples/results/attention_routing/`) —
+  JSON output for 426K and 2.5M CLTs, Mathematica plotting script with
+  strength sweep curves, top-10 routing head bar charts (both CLTs), and
+  linear extrapolation showing saturation onset; README with pedagogical
+  explanation and detailed comparison with Anthropic's "Planning in Poems"
+- **CLT decoder vector steering mode** in `steering_convergence` — `--clt`,
+  `--feature`, `--decoder-layer` flags for using CLT decoder vectors as
+  steering direction instead of contrastive subtraction; per-layer decoder
+  extraction; multi-layer simultaneous injection matching Figure 13 paradigm;
+  diagnostic output showing residual diff at inject vs output positions
+- **`steering_convergence` example** — inject contrastive steering vectors at
+  each layer, measure cosine similarity to natural activations, identify
+  absorption boundaries; convergence matrix, strength sweep, batch mode
+  (`--batch-file`) for 20 rhyme groups, `--inject-position` with `auto`
+  mode for planning site detection
+- **`steering_convergence` results** (`examples/results/steering_convergence/`) —
+  JSON output for Llama 3.2 1B and Gemma 2 2B, batch results for 20 rhyme
+  groups, Mathematica plots; key findings: factual recall has a hard attractor
+  boundary at ~1.2× contrastive distance, rhyme planning is invisible to
+  last-token residual stream perturbation
 - **`figure13_planning_poems` chart and explanation** (`examples/README.md`) —
-  added `gemma_log.png` (Gemma 2 2B, 426K CLT suppress "out" + inject "around")
-  with pedagogical walkthrough explaining log-scale probability spike at the
-  planning site, position-specificity, and the MI insight that rhyme planning
-  happens tokens ahead of the rhyme itself
+  `gemma_log.png` with pedagogical walkthrough
 
 ### Changed
 
-- **`ROADMAP.md` consistency pass** — updated to reflect v0.1.3 project state:
-  status line now says Phase 0–5 complete (was "Phase 0–4, Phase 5 in progress,
-  v0.0.5"); Phase 5 ToC entry marked ✅; Phase 5 release workflow steps checked
-  off (v0.1.0 published 2026-03-11, followed by v0.1.1–v0.1.3); candle PR
-  [#3406](https://github.com/huggingface/candle/pull/3406) recorded as submitted;
-  Phase 6 helix finalization items checked off (PCA, sweep modes, VRAM
-  auto-tuning, GIF, experiment README — all landed in v0.1.0–v0.1.3); activation
-  patching promoted from "Phase 7 planned" to "✅ Working" in Section 5.2; added
-  `memory.rs` to crate structure tree; added `memory` and `memory-debug` to
-  feature gates listing; tag convention updated to document patch releases
-  alongside phase-boundary minor bumps; Phase 7 activation patching item now
-  notes existing example
+- **`ROADMAP.md` consistency pass** — updated to reflect v0.1.3 project state
+- **examples `README.md` overhaul** — added output sections for
+  `steering_convergence` and `attention_routing`, run commands for
+  `attention_routing` (3 variants), prerequisites, consistency pass across
+  all 13 output sections and 17 table entries
 
 ## [0.1.3] - 2026-03-16
 

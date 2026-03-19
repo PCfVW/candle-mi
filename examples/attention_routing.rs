@@ -1,24 +1,28 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Attention routing analysis: how does CLT injection at the planning site
-//! change attention patterns at the output position?
+//! Attention routing analysis: how does CLT suppress+inject at the planning
+//! site change attention patterns at the output position?
 //!
 //! ```bash
-//! # Gemma 2 2B with 426K CLT (default preset)
+//! # 426K CLT with suppress+inject (full Figure 13 paradigm, recommended)
+//! cargo run --release --features clt,transformer,mmap --example attention_routing -- --suppress L16:13725 --suppress L25:9385
+//!
+//! # 2.5M CLT with suppress+inject
+//! cargo run --release --features clt,transformer,mmap --example attention_routing -- --clt-repo mntss/clt-gemma-2-2b-2.5m --feature L25:82839 --suppress L25:57092 --suppress L23:49923 --suppress L20:77102
+//!
+//! # Inject only (13x weaker signal, for comparison)
 //! cargo run --release --features clt,transformer,mmap --example attention_routing
 //!
 //! # With JSON output
-//! cargo run --release --features clt,transformer,mmap --example attention_routing -- --output routing.json
-//!
-//! # Custom strength
-//! cargo run --release --features clt,transformer,mmap --example attention_routing -- --strength 15.0
+//! cargo run --release --features clt,transformer,mmap --example attention_routing -- --suppress L16:13725 --suppress L25:9385 --output routing.json
 //! ```
 //!
 //! **What it does:**
 //!
-//! 1. Runs a **baseline** forward pass capturing `AttnPattern` at all layers.
-//! 2. Runs a **CLT-steered** forward pass (multi-layer injection of a CLT
-//!    feature at the planning site) capturing the same patterns.
+//! 1. Runs a **baseline** forward pass capturing [`AttnPattern`] at all layers.
+//! 2. Runs a **CLT-steered** forward pass using the Figure 13 API
+//!    ([`CrossLayerTranscoder::prepare_hook_injection`]): suppress competing
+//!    features + inject alternative, all at the planning site position.
 //! 3. For each attention head at each layer, extracts the attention weight
 //!    from the **last token → planning site** and computes the delta.
 //! 4. Reports which heads re-route attention toward the planning site.
@@ -26,7 +30,10 @@
 //!    revealing the planning attractor's basin in attention space.
 //!
 //! This measures "regime 3" — the attention-mediated routing that propagates
-//! planning decisions from the planning site to the output position.
+//! planning decisions from the planning site to the output position. It fills
+//! a specific gap identified by Anthropic: *"attention head routing is
+//! invisible to our current approach"*
+//! ([Lindsey et al., 2025](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poems)).
 
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::cast_precision_loss)]
