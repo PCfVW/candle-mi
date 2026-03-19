@@ -22,7 +22,9 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
   [recurrent_feedback](#example-output-recurrent_feedback) |
   [character_count_helix](#example-output-character_count_helix) |
   [auto_config_dogfood](#example-output-auto_config_dogfood) |
-  [figure13_planning_poems](#example-output-figure13_planning_poems)
+  [figure13_planning_poems](#example-output-figure13_planning_poems) |
+  [steering_convergence](#example-output-steering_convergence) |
+  [attention_routing](#example-output-attention_routing)
 - [Prerequisites](#prerequisites)
 
 ## Available Examples
@@ -45,6 +47,7 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
 | `recurrent_feedback` | `transformer` | Anacrousis / recurrent passes for rhyme completion (Taufeeque et al., 2024) |
 | `character_count_helix` | `transformer` | Replicate the character count helix from [Gurnee et al. (2025)](https://transformer-circuits.pub/2025/linebreaks/index.html) via PCA on residual stream activations |
 | `figure13_planning_poems` | `clt`, `transformer` | Replication of [Anthropic's Figure 13](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poem-location) (suppress + inject position sweep) |
+| `attention_routing` | `clt`, `transformer` | Measure how CLT suppress+inject changes attention routing from output position to planning site — identifies specific heads involved in rhyme planning |
 
 ## Running
 
@@ -183,6 +186,15 @@ cargo run --release --features clt,transformer,mmap --example figure13_planning_
 
 # Figure 13 replication — Gemma 2 2B, 2.5M CLT (word-level features)
 cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset gemma2-2b-2.5m
+
+# Attention routing — 426K CLT, suppress+inject (Figure 13 paradigm)
+cargo run --release --features clt,transformer,mmap --example attention_routing -- --suppress L16:13725 --suppress L25:9385
+
+# Attention routing — 2.5M CLT, suppress+inject
+cargo run --release --features clt,transformer,mmap --example attention_routing -- --clt-repo mntss/clt-gemma-2-2b-2.5m --feature L25:82839 --suppress L25:57092 --suppress L23:49923 --suppress L20:77102
+
+# Attention routing — inject only (for comparison, 13x weaker signal)
+cargo run --release --features clt,transformer,mmap --example attention_routing
 ```
 
 ### Example output: `logit_lens`
@@ -399,7 +411,7 @@ couplets where no quality-preserving intervention redirects the generation
 trajectory.
 
 Output JSON and Mathematica plotting script are in
-[`examples/figure13/`](figure13/) and [`examples/results/recurrent_feedback/`](results/recurrent_feedback/).
+[`examples/results/recurrent_feedback/`](results/recurrent_feedback/).
 
 **References:**
 - Taufeeque et al., "Planning in a recurrent neural network that plays Sokoban", [arXiv:2407.15421](https://arxiv.org/abs/2407.15421v2), 2024
@@ -516,6 +528,46 @@ when injected at the exact position where the model plans its rhyme.
 Output JSON and Mathematica plotting script are in
 [`examples/figure13/`](figure13/).
 
+### Example output: `steering_convergence`
+
+Measures **attractor dynamics** in the residual stream: when you inject a
+steering vector, does the model converge back to its natural computation
+or take a different internal path?
+
+**Factual recall (France → Paris):** strong attractor with a hard boundary
+at ~1.2× the contrastive distance. Below the threshold, perturbations are
+absorbed within 1-2 layers; above it, the model diverges permanently.
+
+**Rhyme planning (20 rhyme groups):** contrastive steering produces no
+measurable effect on rhyme predictions at the last token. This negative result
+confirmed that planning operates through attention routing, not residual
+stream perturbation — leading to the `attention_routing` experiment.
+
+Full results, batch data, convergence matrix heatmaps, and analysis in
+[`examples/results/steering_convergence/`](results/steering_convergence/).
+
+### Example output: `attention_routing`
+
+Measures how CLT suppress+inject changes **attention patterns** from the
+output position to the planning site — the mechanism that carries planning
+decisions through the model.
+
+**Key finding:** L21:H5 is the dominant planning routing head in Gemma 2 2B,
+with the H5 family spanning layers 17-25. This fills a specific gap identified
+by [Anthropic](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poems):
+*"One crucial interaction (seems) to be mediated by changing where attention
+heads attend... This is invisible to our current approach."*
+
+![Top 10 routing heads](results/attention_routing/plots/top10_routing_heads.png)
+
+![Strength sweep — planning attractor boundary](results/attention_routing/plots/strength_sweep_top_head.png)
+
+The planning attractor has a **soft boundary** (gradual saturation at ~15×
+strength) — fundamentally different from factual recall's hard threshold.
+
+Full results, comparison with Anthropic, and analysis in
+[`examples/results/attention_routing/`](results/attention_routing/).
+
 ## Prerequisites
 
 - **quick_start_transformer** and **quick_start_sae** require models cached
@@ -526,6 +578,8 @@ Output JSON and Mathematica plotting script are in
 - **figure13_planning_poems** — model and CLT weights download automatically
   on first run (~2.5 GB + CLT weights). The Llama preset requires `HF_TOKEN`
   and Meta license acceptance; Gemma 2 2B preset requires `--features mmap`.
+- **attention_routing** — same prerequisites as `figure13_planning_poems`
+  (Gemma 2 2B + CLT weights). Requires `--features clt,transformer,mmap`.
 - **rwkv_inference** requires an RWKV model cached locally. RWKV-7 models
   include `tokenizer.json`; RWKV-6 models require `--features rwkv-tokenizer`.
 - **recurrent_feedback** requires `meta-llama/Llama-3.2-1B` (default) cached
