@@ -206,6 +206,48 @@ pub enum Intervention {
 
     /// Zero the tensor at this hook point.
     Zero,
+
+    /// Add embedding vectors to hidden states at specific token positions only.
+    ///
+    /// Implements the K-BERT visible matrix pattern (Liu et al., 2019): only
+    /// entity tokens attend to their structural embeddings; non-entity tokens
+    /// are unchanged.
+    ///
+    /// Equivalent to: `hidden[:, pos, :] += vector * scale` for each `(pos, vector)`.
+    ///
+    /// # Arguments
+    ///
+    /// * `positions` — Vec of `(token_index, embedding_vector)` pairs. Each vector
+    ///   should have shape `[d_model]` or be broadcastable to it.
+    /// * `scale` — Scaling factor applied to each vector before addition. Defaults to
+    ///   `0.1` to match the K-BERT original paper (Liu et al., 2019).
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use candle_mi::{HookPoint, HookSpec, Intervention};
+    ///
+    /// # fn main() -> candle_mi::Result<()> {
+    /// # let model = candle_mi::MIModel::from_pretrained("meta-llama/Llama-3.2-1B")?;
+    /// # let entity_embedding = candle_core::Tensor::zeros(2048usize, candle_core::DType::F32, model.device())?;
+    /// # let other_embedding = candle_core::Tensor::zeros(2048usize, candle_core::DType::F32, model.device())?;
+    /// let mut hooks = HookSpec::new();
+    /// hooks.intervene(
+    ///     HookPoint::ResidPost(28),
+    ///     Intervention::AddAtPositions {
+    ///         positions: vec![(3, entity_embedding), (7, other_embedding)],
+    ///         scale: 0.1,
+    ///     },
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    AddAtPositions {
+        /// `(token_index, embedding_vector)` pairs to inject.
+        positions: Vec<(usize, Tensor)>,
+        /// Scaling factor applied to each vector before addition.
+        scale: f32,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -242,6 +284,42 @@ pub(crate) fn apply_intervention(tensor: &Tensor, intervention: &Intervention) -
         Intervention::Knockout(mask) => Ok(tensor.broadcast_add(mask)?),
         Intervention::Scale(factor) => Ok((tensor * *factor)?),
         Intervention::Zero => Ok(tensor.zeros_like()?),
+        Intervention::AddAtPositions { positions, scale } => {
+            // hidden has shape [batch, seq_len, d_model].
+            // For each (pos, emb), build a sparse delta tensor that is zero
+            // everywhere except at `hidden[:, pos, :]`, then broadcast-add.
+            // This is the K-BERT visible matrix pattern (Liu et al., 2019):
+            // only entity-token positions receive their structural embeddings.
+            let seq_len = tensor.dim(1)?;
+            let d_model = tensor.dim(2)?;
+            let device = tensor.device();
+
+            let mut result = tensor.clone();
+            for (pos, emb) in positions {
+                // Build a [1, seq_len, d_model] delta tensor: zero everywhere
+                // except at row `pos`, which carries `emb * scale`.
+                let mut delta_data = vec![0.0_f32; seq_len * d_model];
+                // Promote to F32 for host-side arithmetic (emb may be BF16).
+                let vec_f32: Vec<f32> = emb
+                    .to_dtype(candle_core::DType::F32)?
+                    .flatten_all()?
+                    .to_vec1()?;
+                let start = pos * d_model;
+                let dest = delta_data.get_mut(start..start + d_model).ok_or_else(|| {
+                    MIError::Intervention(format!(
+                        "AddAtPositions: position {pos} out of bounds (seq_len={seq_len})"
+                    ))
+                })?;
+                for (dst, &src) in dest.iter_mut().zip(vec_f32.iter()) {
+                    *dst = src * scale;
+                }
+                let delta =
+                    Tensor::from_vec(delta_data, (1_usize, seq_len, d_model), device)?
+                        .to_dtype(result.dtype())?;
+                result = result.broadcast_add(&delta)?;
+            }
+            Ok(result)
+        }
     }
 }
 
@@ -544,6 +622,64 @@ mod tests {
         assert!(spec.is_captured(&HookPoint::AttnPattern(5)));
         assert!(spec.is_captured(&HookPoint::ResidPost(3)));
         assert!(!spec.is_captured(&HookPoint::Embed));
+    }
+
+    // apply_intervention is only compiled with transformer or rwkv features.
+    #[cfg(any(feature = "transformer", feature = "rwkv"))]
+    #[test]
+    fn add_at_positions_selective() {
+        use candle_core::IndexOp as _;
+
+        // Build a [1, 5, 4] hidden tensor (batch=1, seq=5, d_model=4), all zeros.
+        let hidden = Tensor::zeros(
+            (1_usize, 5_usize, 4_usize),
+            candle_core::DType::F32,
+            &candle_core::Device::Cpu,
+        )
+        .unwrap();
+
+        // Intervene at position 2 only with vector [1.0, 2.0, 3.0, 4.0], scale=1.0.
+        let emb = Tensor::from_vec(
+            vec![1.0_f32, 2.0, 3.0, 4.0],
+            (4_usize,),
+            &candle_core::Device::Cpu,
+        )
+        .unwrap();
+        let intervention = Intervention::AddAtPositions {
+            positions: vec![(2, emb)],
+            scale: 1.0,
+        };
+
+        let result = apply_intervention(&hidden, &intervention).unwrap();
+
+        // Positions 0, 1, 3, 4 must be unchanged (all zeros).
+        for pos in [0_usize, 1, 3, 4] {
+            let row: Vec<f32> = result
+                .i((.., pos, ..))
+                .unwrap()
+                .flatten_all()
+                .unwrap()
+                .to_vec1()
+                .unwrap();
+            assert!(
+                row.iter().all(|&v| v == 0.0),
+                "position {pos} should be unchanged, got {row:?}"
+            );
+        }
+
+        // Position 2 must equal [1.0, 2.0, 3.0, 4.0].
+        let pos2: Vec<f32> = result
+            .i((.., 2_usize, ..))
+            .unwrap()
+            .flatten_all()
+            .unwrap()
+            .to_vec1()
+            .unwrap();
+        assert_eq!(
+            pos2,
+            vec![1.0_f32, 2.0, 3.0, 4.0],
+            "position 2 should have the injected vector"
+        );
     }
 
     #[test]
