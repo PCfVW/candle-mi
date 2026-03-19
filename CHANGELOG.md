@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `clt` feature — `args` and `device` parameters are only used in CLT mode;
   silenced with `let _ = (args, device)` guard
 
+### Changed
+
+- **`hf-fetch-model` dependency** bumped from 0.7.2 to 0.7.3
+
 ## [0.1.4] - 2026-03-19
 
 ### Added
