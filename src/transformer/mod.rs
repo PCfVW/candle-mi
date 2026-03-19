@@ -703,7 +703,7 @@ impl MIBackend for GenericTransformer {
 /// - `hidden`: `[batch, seq_len, d_model]`
 /// - `vector`: `[d_model]` (pre-scaled)
 /// - returns: `[batch, seq_len, d_model]` with `hidden[:, position, :] += vector`
-fn inject_feedback_at_position(
+pub fn inject_feedback_at_position(
     hidden: &Tensor,
     vector: &Tensor,
     position: usize,
