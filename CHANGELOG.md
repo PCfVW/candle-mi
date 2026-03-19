@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Unused variable warnings** in `steering_convergence` when compiled without
+  `clt` feature — `args` and `device` parameters are only used in CLT mode;
+  silenced with `let _ = (args, device)` guard
+
 ## [0.1.4] - 2026-03-19
 
 ### Added

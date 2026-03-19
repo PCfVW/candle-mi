@@ -757,6 +757,8 @@ fn compute_steering_vectors(
         return compute_clt_steering(clt_repo, args, n_layers, device);
     }
 
+    let _ = (args, device); // used only in clt mode
+
     // Contrastive mode (default)
     println!("  Step 2: Contrastive run → extracting steering vectors...");
     let contrastive_cache = model.forward(contrastive_input, capture_hooks)?;
