@@ -22,7 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **MSRV bumped from 1.87 to 1.88** — required by `libloading 0.9.0` dependency;
+  CI workflow updated accordingly
 - **`hf-fetch-model` dependency** bumped from 0.7.2 to 0.7.3
+- **Collapsed nested `if`/`if let` blocks** into `let` chains in `config.rs`,
+  `hooks.rs`, and `transformer/mod.rs` — required by `clippy::collapsible_if`
+  in Rust 1.94
 
 ## [0.1.4] - 2026-03-19
 

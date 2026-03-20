@@ -627,10 +627,8 @@ impl GenericTransformer {
             (None, _) => false,
         };
 
-        if use_sliding {
-            if let Some(window) = self.config.sliding_window {
-                return create_sliding_window_mask(seq_len, window, device, dtype);
-            }
+        if use_sliding && let Some(window) = self.config.sliding_window {
+            return create_sliding_window_mask(seq_len, window, device, dtype);
         }
 
         masks::create_causal_mask(seq_len, device, dtype)

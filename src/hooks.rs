@@ -149,29 +149,28 @@ fn parse_hook_string(s: &str) -> HookPoint {
     }
 
     // Try "blocks.{layer}.{suffix}" pattern.
-    if let Some(rest) = s.strip_prefix("blocks.") {
-        if let Some((layer_str, suffix)) = rest.split_once('.') {
-            if let Ok(layer) = layer_str.parse::<usize>() {
-                return match suffix {
-                    "hook_resid_pre" => HookPoint::ResidPre(layer),
-                    "attn.hook_q" => HookPoint::AttnQ(layer),
-                    "attn.hook_k" => HookPoint::AttnK(layer),
-                    "attn.hook_v" => HookPoint::AttnV(layer),
-                    "attn.hook_scores" => HookPoint::AttnScores(layer),
-                    "attn.hook_pattern" => HookPoint::AttnPattern(layer),
-                    "hook_attn_out" => HookPoint::AttnOut(layer),
-                    "hook_resid_mid" => HookPoint::ResidMid(layer),
-                    "mlp.hook_pre" => HookPoint::MlpPre(layer),
-                    "mlp.hook_post" => HookPoint::MlpPost(layer),
-                    "hook_mlp_out" => HookPoint::MlpOut(layer),
-                    "hook_resid_post" => HookPoint::ResidPost(layer),
-                    "rwkv.hook_state" => HookPoint::RwkvState(layer),
-                    "rwkv.hook_decay" => HookPoint::RwkvDecay(layer),
-                    "rwkv.hook_effective_attn" => HookPoint::RwkvEffectiveAttn(layer),
-                    _ => HookPoint::Custom(s.to_string()),
-                };
-            }
-        }
+    if let Some(rest) = s.strip_prefix("blocks.")
+        && let Some((layer_str, suffix)) = rest.split_once('.')
+        && let Ok(layer) = layer_str.parse::<usize>()
+    {
+        return match suffix {
+            "hook_resid_pre" => HookPoint::ResidPre(layer),
+            "attn.hook_q" => HookPoint::AttnQ(layer),
+            "attn.hook_k" => HookPoint::AttnK(layer),
+            "attn.hook_v" => HookPoint::AttnV(layer),
+            "attn.hook_scores" => HookPoint::AttnScores(layer),
+            "attn.hook_pattern" => HookPoint::AttnPattern(layer),
+            "hook_attn_out" => HookPoint::AttnOut(layer),
+            "hook_resid_mid" => HookPoint::ResidMid(layer),
+            "mlp.hook_pre" => HookPoint::MlpPre(layer),
+            "mlp.hook_post" => HookPoint::MlpPost(layer),
+            "hook_mlp_out" => HookPoint::MlpOut(layer),
+            "hook_resid_post" => HookPoint::ResidPost(layer),
+            "rwkv.hook_state" => HookPoint::RwkvState(layer),
+            "rwkv.hook_decay" => HookPoint::RwkvDecay(layer),
+            "rwkv.hook_effective_attn" => HookPoint::RwkvEffectiveAttn(layer),
+            _ => HookPoint::Custom(s.to_string()),
+        };
     }
 
     HookPoint::Custom(s.to_string())

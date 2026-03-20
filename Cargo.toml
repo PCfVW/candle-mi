@@ -10,7 +10,7 @@ homepage = "https://github.com/PCfVW/candle-mi"
 documentation = "https://docs.rs/candle-mi"
 keywords = ["interpretability", "transformers", "mechanistic", "candle", "rust"]
 categories = ["science"]
-rust-version = "1.87"
+rust-version = "1.88"
 
 [dependencies]
 # Candle ML framework (pinned to 0.9.x per design/candle-version.md)

@@ -1108,10 +1108,11 @@ impl TransformerConfig {
         let has_tensor_issues = check_tensor_names(config, tensor_names, &mut issues);
 
         // --- Summary of actual naming convention (when tensor checks fail) ---
-        if has_tensor_issues && !tensor_names.is_empty() {
-            if let Some(hint) = detect_naming_convention(tensor_names) {
-                issues.push(hint);
-            }
+        if has_tensor_issues
+            && !tensor_names.is_empty()
+            && let Some(hint) = detect_naming_convention(tensor_names)
+        {
+            issues.push(hint);
         }
 
         CompatibilityReport {
