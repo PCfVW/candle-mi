@@ -845,7 +845,9 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [ ] PCA enhancements — `pca_n_omit` parameter in `pca_top_k()`, projection helpers (`project_to_pcs()`, `reconstruct_from_pcs()`), optional randomized SVD solver for large matrices — **commit**
 - [ ] `inspect_weights.rs` example — load a model, print layer count / hidden size / head count / vocab size, per-layer weight matrix shapes and Frobenius norms, embedding stats. Lowest barrier to entry; no MI knowledge needed — **commit**
 - [ ] `logit_attribution.rs` example — direct logit attribution: project each layer's residual contribution through unembedding, show per-layer contribution to target prediction. Core MI technique — **commit**
-- [ ] Migrate `.npz` download logic from `candle-mi` to `hf-fetch-model` — single-file download is already there; `.npz` parsing should live in the download crate — **commit**
+- [ ] Migrate `.npz` parsing logic from `candle-mi` to `anamnesis` — pure NPZ/NPY parsing (format transformation) lives in anamnesis (wraps `npyz` crate, adds bf16 layer); download integration (`download_and_parse_npz`) stays in hf-fetch-model as a thin wrapper over `anamnesis::parse_npz()`. Replace candle-mi's internal `npz.rs` with a dependency on `anamnesis/npz` — **commit**
+- [ ] Add `exaone4` auto-config support (`parse_exaone4()` in `config.rs`) — LLaMA-like with alternating sliding window / full attention ("LLLG" pattern), similar to Gemma 2's alternating scheme. Driven by anamnesis Phase 1 FP8 test model (`LGAI-EXAONE/EXAONE-4.0-1.2B-FP8`). Both architectures are mainstream and worth supporting independently of anamnesis — **commit**
+- [ ] Add `qwen3` auto-config support (`parse_qwen3()` in `config.rs`) — extends `qwen2` with QK LayerNorm (`q_norm` / `k_norm` per layer). Requires handling the extra norm tensors in the forward pass. Driven by anamnesis Phase 1 FP8 test model (`Qwen/Qwen3-1.7B-FP8`) — **commit**
 - [ ] ~40% unplanned: bug fixes, documentation gaps, user-reported issues — **commits as needed** — **PUSH**
 
 **Deliverable:** Polished examples, stronger PCA, bug fixes. — **PUSH + tag `v0.2.0`**
