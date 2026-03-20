@@ -27,6 +27,11 @@ changing public API:
    in the same enum should use `f64` unless there is a documented
    reason not to. Consistency across the API matters more than local
    convenience.
+5. **Check the design docs.** The [`design/`](design/) folder contains
+   design proposals and decisions for major features. If a design doc
+   already exists for the area you want to change, read it first. For
+   non-trivial API additions, a design doc may be requested before
+   implementation begins.
 
 ## Before you open a PR
 
@@ -39,7 +44,9 @@ is not optional. The conventions include mandatory annotations
 doc-comment rules, shape documentation, `#[must_use]` policy, and more.
 
 Read the file. Apply every applicable rule **as you write each line**,
-not as a review pass after the fact.
+not as a review pass after the fact. In particular, every new `.rs`
+file must carry the SPDX license header:
+`// SPDX-License-Identifier: MIT OR Apache-2.0`
 
 ### Run the CI checks locally
 

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`design/add-at-positions.md`** — design document for `Intervention::AddAtPositions`,
+  a position-specific sparse injection variant inspired by
+  [PR #1](https://github.com/PCfVW/candle-mi/pull/1) and the
+  [K-BERT](https://arxiv.org/abs/1909.07606) injection paradigm
+
 ### Fixed
 
 - **Unused variable warnings** in `steering_convergence` when compiled without
