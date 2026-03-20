@@ -1480,16 +1480,16 @@ fn resolve_layer_intervention<'a>(
     steering_scale: f32,
 ) -> (Option<&'a std::collections::HashSet<usize>>, f32) {
     // Knockout takes priority
-    if let Some(ko) = hooks.state_knockout() {
-        if ko.applies_to_layer(layer_idx) {
-            return (knockout_positions, 0.0);
-        }
+    if let Some(ko) = hooks.state_knockout()
+        && ko.applies_to_layer(layer_idx)
+    {
+        return (knockout_positions, 0.0);
     }
     // Then steering
-    if let Some(st) = hooks.state_steering() {
-        if st.applies_to_layer(layer_idx) {
-            return (steering_positions, steering_scale);
-        }
+    if let Some(st) = hooks.state_steering()
+        && st.applies_to_layer(layer_idx)
+    {
+        return (steering_positions, steering_scale);
     }
     (None, 1.0)
 }
