@@ -1000,6 +1000,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs2"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9564fc758e15025b46aa6643b1b77d047d1a56a1aea6e01002ac0c7026876213"
+dependencies = [
+ "libc",
+ "winapi",
+]
+
+[[package]]
 name = "futures"
 version = "0.3.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1466,11 +1476,12 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hf-fetch-model"
-version = "0.7.3"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4276eea11d1aa58951f529dd81469c173ca588f9c6ba594b2cc9be1bd91e14bc"
+checksum = "35d8e64028c2b4717dcb25c9842a50212c52db746eb41846e00332f0e80754ce"
 dependencies = [
  "dirs",
+ "fs2",
  "futures-util",
  "globset",
  "hf-hub",
