@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-03-24
+
 ### Added
 
 - **`design/add-at-positions.md`** — design document for `Intervention::AddAtPositions`,
@@ -14,20 +16,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   [PR #1](https://github.com/PCfVW/candle-mi/pull/1) and the
   [K-BERT](https://arxiv.org/abs/1909.07606) injection paradigm
 
+### Changed
+
+- **NPZ parsing migrated from internal implementation to `anamnesis` v0.3.0** —
+  4.9x faster (84 ms vs 413 ms on 302 MB Gemma Scope file), broader dtype
+  support (F16, BF16, F32, F64, integers, Bool), big-endian handling
+- **MSRV bumped from 1.87 to 1.88** — required by `libloading 0.9.0` dependency;
+  CI workflow updated accordingly
+- **`hf-fetch-model` dependency** bumped from 0.8.1 to 0.9.0
+- **Collapsed nested `if`/`if let` blocks** into `let` chains in `config.rs`,
+  `hooks.rs`, and `transformer/mod.rs` — required by `clippy::collapsible_if`
+  in Rust 1.94
+
 ### Fixed
 
 - **Unused variable warnings** in `steering_convergence` when compiled without
   `clt` feature — `args` and `device` parameters are only used in CLT mode;
   silenced with `let _ = (args, device)` guard
 
-### Changed
+### Removed
 
-- **MSRV bumped from 1.87 to 1.88** — required by `libloading 0.9.0` dependency;
-  CI workflow updated accordingly
-- **`hf-fetch-model` dependency** bumped from 0.7.2 to 0.7.3
-- **Collapsed nested `if`/`if let` blocks** into `let` chains in `config.rs`,
-  `hooks.rs`, and `transformer/mod.rs` — required by `clippy::collapsible_if`
-  in Rust 1.94
+- **Internal NPZ/NPY parser** (`src/sae/npz.rs`, ~365 lines) — replaced by
+  `anamnesis` dependency behind the `sae` feature gate
+- **Direct `zip` crate dependency** — ZIP extraction now handled internally by
+  `anamnesis`
 
 ## [0.1.4] - 2026-03-19
 
@@ -689,7 +701,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/PCfVW/candle-mi/compare/v0.1.4...v0.1.5
+[0.1.4]: https://github.com/PCfVW/candle-mi/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/PCfVW/candle-mi/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/PCfVW/candle-mi/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/PCfVW/candle-mi/compare/v0.1.0...v0.1.1
