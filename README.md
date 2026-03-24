@@ -173,7 +173,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | `rwkv` | no | RWKV-6/7 linear RNN backend |
 | `rwkv-tokenizer` | no | RWKV world tokenizer (required for RWKV inference) |
 | `clt` | no | Cross-Layer Transcoder support |
-| `sae` | no | Sparse Autoencoder support |
+| `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
 | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
 | `memory` | no | RAM/VRAM memory reporting |
 | `memory-debug` | no | Raw DXGI/NVML values and per-chunk VRAM on stderr (implies `memory`) |
