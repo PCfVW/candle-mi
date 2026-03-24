@@ -46,5 +46,24 @@ pub enum MIError {
     Memory(String),
 }
 
+/// Bridge anamnesis errors into [`MIError`] when the `sae` feature is enabled.
+///
+/// [`AnamnesisError`](anamnesis::AnamnesisError) is `#[non_exhaustive]`, so the
+/// catch-all arm ensures forward compatibility with future variants.
+#[cfg(feature = "sae")]
+impl From<anamnesis::AnamnesisError> for MIError {
+    fn from(e: anamnesis::AnamnesisError) -> Self {
+        match e {
+            anamnesis::AnamnesisError::Parse { reason } => Self::Config(reason),
+            anamnesis::AnamnesisError::Unsupported { format, detail } => {
+                Self::Config(format!("unsupported {format}: {detail}"))
+            }
+            anamnesis::AnamnesisError::Io(io_err) => Self::Io(io_err),
+            // AnamnesisError is #[non_exhaustive] — forward-compatible catch-all
+            _ => Self::Config(e.to_string()),
+        }
+    }
+}
+
 /// Result type alias for candle-mi operations.
 pub type Result<T> = std::result::Result<T, MIError>;
