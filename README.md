@@ -3,14 +3,14 @@
 [![CI](https://github.com/PCfVW/candle-mi/actions/workflows/ci.yml/badge.svg)](https://github.com/PCfVW/candle-mi/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/candle-mi)](https://crates.io/crates/candle-mi)
 [![docs.rs](https://img.shields.io/docsrs/candle-mi)](https://docs.rs/candle-mi)
-[![Rust 1.87+](https://img.shields.io/badge/rust-1.87%2B-orange)](https://www.rust-lang.org)
+[![Rust 1.88+](https://img.shields.io/badge/rust-1.88%2B-orange)](https://www.rust-lang.org)
 [![Edition 2024](https://img.shields.io/badge/edition-2024-orange)](https://doc.rust-lang.org/edition-guide/rust-2024/)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](LICENSE-MIT)
 [![GitHub last commit](https://img.shields.io/github/last-commit/PCfVW/candle-mi)](https://github.com/PCfVW/candle-mi/commits/main)
 
 *Mechanistic Interpretability for the Rust of us.*
 
-> **Note:** v0.1.4 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
+> **Note:** v0.1.5 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
 
 ## Supported model families
 
@@ -86,7 +86,7 @@ This library was built to replicate Anthropic's [circuit-tracing work](https://t
 cargo run --release --features clt,transformer --example figure13_planning_poems
 ```
 
-This uses Llama 3.2 1B with a 524K-feature Cross-Layer Transcoder to suppress natural rhyme features and inject an alternative ("that" → P=0.98), sweeping injection position across all prompt tokens. See the [full output](examples/README.md#example-output-figure13_planning_poems) and the [15 examples](examples/README.md) covering logit lens, attention knockout, steering, activation patching, CLT circuits, SAE encoding, RWKV inference, and more.
+This uses Llama 3.2 1B with a 524K-feature Cross-Layer Transcoder to suppress natural rhyme features and inject an alternative ("that" → P=0.98), sweeping injection position across all prompt tokens. See the [full output](examples/README.md#example-output-figure13_planning_poems) and the [17 examples](examples/README.md) covering logit lens, attention knockout, steering, activation patching, CLT circuits, SAE encoding, RWKV inference, and more.
 
 ## Quick start
 
@@ -187,7 +187,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | [API docs (docs.rs)](https://docs.rs/candle-mi) | Crate-level documentation with quick start and examples |
 | [HOOKS.md](HOOKS.md) | Hook point reference, intervention API walkthrough, and worked examples |
 | [BACKENDS.md](BACKENDS.md) | How to add a new model architecture (auto-config, config parser, custom backend) |
-| [examples/README.md](examples/README.md) | 15 runnable examples covering inference, logit lens, knockout, steering, and more |
+| [examples/README.md](examples/README.md) | 17 runnable examples covering inference, logit lens, knockout, steering, and more |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 | [ROADMAP.md](ROADMAP.md) | Development roadmap and architecture decisions |
 
