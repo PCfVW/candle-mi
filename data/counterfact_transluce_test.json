@@ -1,0 +1,2432 @@
+[
+  {
+    "original_prompt": "The mother tongue of Antonietta Di Martino is\n\nRespond with one of Italian or English or Romanian or Tamil or French or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The mother tongue of John Calvin is\n\nRespond with one of Italian or English or Romanian or Tamil or French or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Italian",
+    "gt_counterfactual_target": "French"
+  },
+  {
+    "original_prompt": "Hwasong-5 is developed by\n\nRespond with one of Iran or Suzuki or Apple or Nissan or Porsche or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Suzuki Kizashi is developed by\n\nRespond with one of Iran or Suzuki or Apple or Nissan or Porsche or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Iran",
+    "gt_counterfactual_target": "Suzuki"
+  },
+  {
+    "original_prompt": "In Czechoslovakia, they understand\n\nRespond with one of Czech or Portuguese or French or Greek or English or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Organization for Security and Co-operation in Europe, they understand\n\nRespond with one of Czech or Portuguese or French or Greek or English or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Czech",
+    "gt_counterfactual_target": "French"
+  },
+  {
+    "original_prompt": "Pourquoi Pas Point is located in the continent\n\nRespond with one of Antarctica or Europe or Asia or Africa or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Saudi Arabia is located in the continent\n\nRespond with one of Antarctica or Europe or Asia or Africa or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Antarctica",
+    "gt_counterfactual_target": "Asia"
+  },
+  {
+    "original_prompt": "Bentley Continental is developed by\n\nRespond with one of Bentley or Chrysler or Porsche or BMW or Fiat or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "PGM-11 Redstone is developed by\n\nRespond with one of Bentley or Chrysler or Porsche or BMW or Fiat or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Bentley",
+    "gt_counterfactual_target": "Chrysler"
+  },
+  {
+    "original_prompt": "The official religion of Salman the Persian is\n\nRespond with one of Judaism or Christianity or Islam or Buddhism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The official religion of Malayali is\n\nRespond with one of Judaism or Christianity or Islam or Buddhism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Buddhism"
+  },
+  {
+    "original_prompt": "Dmitri Nabokov originates from\n\nRespond with one of Vernon or Devon or Berlin or Sydney or Armenia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "DJ Die originates from\n\nRespond with one of Vernon or Devon or Berlin or Sydney or Armenia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Berlin",
+    "gt_counterfactual_target": "Devon"
+  },
+  {
+    "original_prompt": "Paanch was created in\n\nRespond with one of India or Switzerland or Iceland or Finland or Belarus or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Finntroll was created in\n\nRespond with one of India or Switzerland or Iceland or Finland or Belarus or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "India",
+    "gt_counterfactual_target": "Finland"
+  },
+  {
+    "original_prompt": "Puerto Maldonado, which is located in\n\nRespond with one of Peru or Indonesia or France or Germany or Uganda or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Treuchtlingen, which is located in\n\nRespond with one of Peru or Indonesia or France or Germany or Uganda or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Peru",
+    "gt_counterfactual_target": "Germany"
+  },
+  {
+    "original_prompt": "Douglas Range is located in the continent\n\nRespond with one of Antarctica or Africa or Europe or Asia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Arab League is located in the continent\n\nRespond with one of Antarctica or Africa or Europe or Asia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Antarctica",
+    "gt_counterfactual_target": "Asia"
+  },
+  {
+    "original_prompt": "Adobe Premiere Elements, a product of\n\nRespond with one of Yahoo or Intel or Boeing or Adobe or Square or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Front Mission 3, a product of\n\nRespond with one of Yahoo or Intel or Boeing or Adobe or Square or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Adobe",
+    "gt_counterfactual_target": "Square"
+  },
+  {
+    "original_prompt": "Where is Beijing College Student Film Festival? It is located in\n\nRespond with one of Malaysia or Vancouver or Beijing or Central or Jerusalem or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Where is Shmuel HaNavi bus bombing? It is located in\n\nRespond with one of Malaysia or Vancouver or Beijing or Central or Jerusalem or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Beijing",
+    "gt_counterfactual_target": "Jerusalem"
+  },
+  {
+    "original_prompt": "Dorogomilovo District can be found in\n\nRespond with one of Oregon or Alabama or Moscow or Texas or Pennsylvania or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "KKBQ can be found in\n\nRespond with one of Oregon or Alabama or Moscow or Texas or Pennsylvania or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Moscow",
+    "gt_counterfactual_target": "Texas"
+  },
+  {
+    "original_prompt": "Campari Group, whose headquarters are in\n\nRespond with one of Central or Lima or Calgary or Milan or Chicago or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Hang Seng Bank, whose headquarters are in\n\nRespond with one of Central or Lima or Calgary or Milan or Chicago or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Milan",
+    "gt_counterfactual_target": "Central"
+  },
+  {
+    "original_prompt": "Antoine Houdar de La Motte died in\n\nRespond with one of Rome or Pittsburgh or Florence or Copenhagen or Paris or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Frederik Vermehren died in\n\nRespond with one of Rome or Pittsburgh or Florence or Copenhagen or Paris or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Paris",
+    "gt_counterfactual_target": "Copenhagen"
+  },
+  {
+    "original_prompt": "Madrid is a twin city of\n\nRespond with one of Bangalore or Brisbane or Lyon or Moscow or Lima or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Mexico City is a twin city of\n\nRespond with one of Bangalore or Brisbane or Lyon or Moscow or Lima or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Moscow",
+    "gt_counterfactual_target": "Lima"
+  },
+  {
+    "original_prompt": "David d'Angers's life ended in\n\nRespond with one of Paris or Toronto or Rome or Boston or Stockholm or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Gilbert Stuart's life ended in\n\nRespond with one of Paris or Toronto or Rome or Boston or Stockholm or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Paris",
+    "gt_counterfactual_target": "Boston"
+  },
+  {
+    "original_prompt": "Marmaduke Pickthall follows the religion of\n\nRespond with one of Islam or Christianity or Judaism or Buddhism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Malayali follows the religion of\n\nRespond with one of Islam or Christianity or Judaism or Buddhism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Buddhism"
+  },
+  {
+    "original_prompt": "Ferrari 575M Maranello, created by\n\nRespond with one of Bentley or Renault or BMW or Ferrari or Triumph or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Triumph TR8, created by\n\nRespond with one of Bentley or Renault or BMW or Ferrari or Triumph or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Ferrari",
+    "gt_counterfactual_target": "Triumph"
+  },
+  {
+    "original_prompt": "Drudkh, that was created in\n\nRespond with one of France or Brazil or Greece or Ukraine or Iceland or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The Good Heart, that was created in\n\nRespond with one of France or Brazil or Greece or Ukraine or Iceland or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Ukraine",
+    "gt_counterfactual_target": "Iceland"
+  },
+  {
+    "original_prompt": "Google Labs is owned by\n\nRespond with one of Denver or Leonardo or Google or ESPN or Hawaii or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Grantland is owned by\n\nRespond with one of Denver or Leonardo or Google or ESPN or Hawaii or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Google",
+    "gt_counterfactual_target": "ESPN"
+  },
+  {
+    "original_prompt": "Aston Martin Lagonda, that was started in\n\nRespond with one of Boston or Illinois or London or Manchester or Paris or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "NRJ Group, that was started in\n\nRespond with one of Boston or Illinois or London or Manchester or Paris or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "London",
+    "gt_counterfactual_target": "Paris"
+  },
+  {
+    "original_prompt": "William Scoresby Archipelago is located in\n\nRespond with one of Antarctica or Africa or Europe or Asia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Angola is located in\n\nRespond with one of Antarctica or Africa or Europe or Asia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Antarctica",
+    "gt_counterfactual_target": "Africa"
+  },
+  {
+    "original_prompt": "NFL Matchup premiered on\n\nRespond with one of ESPN or BBC or MTV or NBC or History or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Hatfields & McCoys premiered on\n\nRespond with one of ESPN or BBC or MTV or NBC or History or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "ESPN",
+    "gt_counterfactual_target": "History"
+  },
+  {
+    "original_prompt": "Antoine-Louis Barye took up work in\n\nRespond with one of Boston or Oslo or Moscow or Paris or Prague or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ferdinand Brokoff took up work in\n\nRespond with one of Boston or Oslo or Moscow or Paris or Prague or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Paris",
+    "gt_counterfactual_target": "Prague"
+  },
+  {
+    "original_prompt": "Frederick Lugard, 1st Baron Lugard originates from\n\nRespond with one of Chennai or Boston or Atlanta or Milan or Lyon or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Claudio Abbado originates from\n\nRespond with one of Chennai or Boston or Atlanta or Milan or Lyon or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Chennai",
+    "gt_counterfactual_target": "Milan"
+  },
+  {
+    "original_prompt": "Delhi Technological University can be found in\n\nRespond with one of Estonia or Belgium or Delhi or Vienna or Karachi or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Kunsthistorisches Museum can be found in\n\nRespond with one of Estonia or Belgium or Delhi or Vienna or Karachi or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Delhi",
+    "gt_counterfactual_target": "Vienna"
+  },
+  {
+    "original_prompt": "Pittsburg County, which is named after\n\nRespond with one of Pittsburgh or honey or Moscow or Hamburg or Lincoln or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Malta, which is named after\n\nRespond with one of Pittsburgh or honey or Moscow or Hamburg or Lincoln or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Pittsburgh",
+    "gt_counterfactual_target": "honey"
+  },
+  {
+    "original_prompt": "Windows Mobile 6.5 was developed by\n\nRespond with one of Sony or Adobe or Microsoft or Airbus or Boeing or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Airbus A350 was developed by\n\nRespond with one of Sony or Adobe or Microsoft or Airbus or Boeing or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Airbus"
+  },
+  {
+    "original_prompt": "IBM 704 is a product of\n\nRespond with one of IBM or Bentley or Chevrolet or Ferrari or Suzuki or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Suzuki Carry is a product of\n\nRespond with one of IBM or Bentley or Chevrolet or Ferrari or Suzuki or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "IBM",
+    "gt_counterfactual_target": "Suzuki"
+  },
+  {
+    "original_prompt": "Where is Chicago Rockets? It is located in\n\nRespond with one of Brooklyn or Afghanistan or Central or Chicago or Minneapolis or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Where is Operation Apollo? It is located in\n\nRespond with one of Brooklyn or Afghanistan or Central or Chicago or Minneapolis or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Chicago",
+    "gt_counterfactual_target": "Afghanistan"
+  },
+  {
+    "original_prompt": "Sholay, from\n\nRespond with one of India or Scotland or Belarus or Spain or Argentina or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sovetskoye Shampanskoye, from\n\nRespond with one of India or Scotland or Belarus or Spain or Argentina or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "India",
+    "gt_counterfactual_target": "Belarus"
+  },
+  {
+    "original_prompt": "Toyopet Master is developed by\n\nRespond with one of Toyota or Nokia or Nissan or Sega or Suzuki or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Nokia Lumia 1020 is developed by\n\nRespond with one of Toyota or Nokia or Nissan or Sega or Suzuki or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Toyota",
+    "gt_counterfactual_target": "Nokia"
+  },
+  {
+    "original_prompt": "Gerard Mortier has a citizenship from\n\nRespond with one of Albania or Germany or Greece or Belgium or Nepal or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Petros Voulgaris has a citizenship from\n\nRespond with one of Albania or Germany or Greece or Belgium or Nepal or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Belgium",
+    "gt_counterfactual_target": "Greece"
+  },
+  {
+    "original_prompt": "Chevrolet Chevette is a product of\n\nRespond with one of Samsung or Iran or Ferrari or Apple or Chevrolet or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Samsung NX series is a product of\n\nRespond with one of Samsung or Iran or Ferrari or Apple or Chevrolet or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Chevrolet",
+    "gt_counterfactual_target": "Samsung"
+  },
+  {
+    "original_prompt": "Google Web Toolkit, developed by\n\nRespond with one of Google or Apple or Boeing or Yahoo or Sega or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "KC-767, developed by\n\nRespond with one of Google or Apple or Boeing or Yahoo or Sega or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Google",
+    "gt_counterfactual_target": "Boeing"
+  },
+  {
+    "original_prompt": "Jean Papineau-Couture is native to\n\nRespond with one of Mumbai or Burlington or Montreal or Manila or Warsaw or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Vikram Bhatt is native to\n\nRespond with one of Mumbai or Burlington or Montreal or Manila or Warsaw or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Montreal",
+    "gt_counterfactual_target": "Mumbai"
+  },
+  {
+    "original_prompt": "Joachim von Sandrart worked in the city of\n\nRespond with one of Amsterdam or Chicago or Paris or Vienna or Oslo or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Georg Joseph Beer worked in the city of\n\nRespond with one of Amsterdam or Chicago or Paris or Vienna or Oslo or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Amsterdam",
+    "gt_counterfactual_target": "Vienna"
+  },
+  {
+    "original_prompt": "Autauga County can be found in\n\nRespond with one of Alabama or Massachusetts or Gujarat or Cambodia or Armenia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Massachusetts Route 103 can be found in\n\nRespond with one of Alabama or Massachusetts or Gujarat or Cambodia or Armenia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Alabama",
+    "gt_counterfactual_target": "Massachusetts"
+  },
+  {
+    "original_prompt": "Cas Haley is originally from\n\nRespond with one of Paris or Atlanta or Valencia or Riverside or Sydney or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Vicente Grau Juan is originally from\n\nRespond with one of Paris or Atlanta or Valencia or Riverside or Sydney or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Paris",
+    "gt_counterfactual_target": "Valencia"
+  },
+  {
+    "original_prompt": "Mandailing language is located in\n\nRespond with one of Indonesia or Ireland or Finland or Russia or Canada or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "North Middlesex, Ontario is located in\n\nRespond with one of Indonesia or Ireland or Finland or Russia or Canada or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Indonesia",
+    "gt_counterfactual_target": "Canada"
+  },
+  {
+    "original_prompt": "Bertrand Russell is a native speaker of\n\nRespond with one of English or Russian or Spanish or Georgian or Dutch or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Constantijn Huygens is a native speaker of\n\nRespond with one of English or Russian or Spanish or Georgian or Dutch or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "Dutch"
+  },
+  {
+    "original_prompt": "IBM DeveloperWorks, a product of\n\nRespond with one of IBM or Intel or Square or Apple or Nintendo or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Wii MotionPlus, a product of\n\nRespond with one of IBM or Intel or Square or Apple or Nintendo or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "IBM",
+    "gt_counterfactual_target": "Nintendo"
+  },
+  {
+    "original_prompt": "Hellenic Police, which is located in\n\nRespond with one of Greece or Ukraine or Indonesia or Australia or Albania or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Gammalsvenskby, which is located in\n\nRespond with one of Greece or Ukraine or Indonesia or Australia or Albania or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Greece",
+    "gt_counterfactual_target": "Ukraine"
+  },
+  {
+    "original_prompt": "Nigeria is located in\n\nRespond with one of Africa or Europe or Asia or Antarctica or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Berkner Island is located in\n\nRespond with one of Africa or Europe or Asia or Antarctica or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Africa",
+    "gt_counterfactual_target": "Antarctica"
+  },
+  {
+    "original_prompt": "The headquarters of Lavalin is in\n\nRespond with one of Montreal or Hamburg or Wellington or Israel or Moscow or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The headquarters of Magen David Adom is in\n\nRespond with one of Montreal or Hamburg or Wellington or Israel or Moscow or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Montreal",
+    "gt_counterfactual_target": "Israel"
+  },
+  {
+    "original_prompt": "Suomen Kuvalehti was formulated in\n\nRespond with one of Belgium or Belarus or Lithuania or Spain or Finland or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "cepelinai was formulated in\n\nRespond with one of Belgium or Belarus or Lithuania or Spain or Finland or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Finland",
+    "gt_counterfactual_target": "Lithuania"
+  },
+  {
+    "original_prompt": "Pakistan Steel Mills's headquarters are in\n\nRespond with one of Monroe or Montreal or Cologne or Israel or Karachi or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Northern Championship Wrestling's headquarters are in\n\nRespond with one of Monroe or Montreal or Cologne or Israel or Karachi or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Karachi",
+    "gt_counterfactual_target": "Montreal"
+  },
+  {
+    "original_prompt": "Google Person Finder is owned by\n\nRespond with one of Leonardo or Google or Germany or Memphis or Prague or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Powder Tower is owned by\n\nRespond with one of Leonardo or Google or Germany or Memphis or Prague or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Google",
+    "gt_counterfactual_target": "Prague"
+  },
+  {
+    "original_prompt": "Apple Maps, a product created by\n\nRespond with one of Apple or Microsoft or Sony or Airbus or Yahoo or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "YUI Library, a product created by\n\nRespond with one of Apple or Microsoft or Sony or Airbus or Yahoo or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Apple",
+    "gt_counterfactual_target": "Yahoo"
+  },
+  {
+    "original_prompt": "Ginza Line, which is located in\n\nRespond with one of Canada or Peru or Venezuela or Japan or Ukraine or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Mont Saint-Bruno, which is located in\n\nRespond with one of Canada or Peru or Venezuela or Japan or Ukraine or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Japan",
+    "gt_counterfactual_target": "Canada"
+  },
+  {
+    "original_prompt": "Glasgow School can be found in\n\nRespond with one of London or Ethiopia or Cuba or Glasgow or Seattle or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Seattle International Film Festival can be found in\n\nRespond with one of London or Ethiopia or Cuba or Glasgow or Seattle or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Glasgow",
+    "gt_counterfactual_target": "Seattle"
+  },
+  {
+    "original_prompt": "Cincinnati Reds is within\n\nRespond with one of Gujarat or Hawaii or California or Cincinnati or Armenia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Fort Humboldt State Historic Park is within\n\nRespond with one of Gujarat or Hawaii or California or Cincinnati or Armenia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Cincinnati",
+    "gt_counterfactual_target": "California"
+  },
+  {
+    "original_prompt": "Khan Abdul Ghaffar Khan follows the religion of\n\nRespond with one of Islam or Judaism or Christianity or Buddhism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Zunghar Khanate follows the religion of\n\nRespond with one of Islam or Judaism or Christianity or Buddhism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Buddhism"
+  },
+  {
+    "original_prompt": "What is the twin city of Kuala Lumpur? It is\n\nRespond with one of Jakarta or Santiago or Beirut or Atlanta or Moscow or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "What is the twin city of Athens? It is\n\nRespond with one of Jakarta or Santiago or Beirut or Atlanta or Moscow or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Jakarta",
+    "gt_counterfactual_target": "Santiago"
+  },
+  {
+    "original_prompt": "Renault Trafic is a product of\n\nRespond with one of Renault or Samsung or BMW or McLaren or Suzuki or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "BMW Z4 is a product of\n\nRespond with one of Renault or Samsung or BMW or McLaren or Suzuki or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Renault",
+    "gt_counterfactual_target": "BMW"
+  },
+  {
+    "original_prompt": "Walter Ulbricht was employed in\n\nRespond with one of Ottawa or Oslo or Sydney or Berlin or Amsterdam or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Christian Magnus Falsen was employed in\n\nRespond with one of Ottawa or Oslo or Sydney or Berlin or Amsterdam or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Berlin",
+    "gt_counterfactual_target": "Oslo"
+  },
+  {
+    "original_prompt": "BMW 5 Series Gran Turismo, produced by\n\nRespond with one of Sega or Porsche or Toyota or Dodge or BMW or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Dodge WC series, produced by\n\nRespond with one of Sega or Porsche or Toyota or Dodge or BMW or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "BMW",
+    "gt_counterfactual_target": "Dodge"
+  },
+  {
+    "original_prompt": "Microsoft Forefront Threat Management Gateway was a product of\n\nRespond with one of Yahoo or Airbus or Adobe or Microsoft or Intel or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Airbus A350 was a product of\n\nRespond with one of Yahoo or Airbus or Adobe or Microsoft or Intel or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Airbus"
+  },
+  {
+    "original_prompt": "Korean Wikipedia is written in\n\nRespond with one of Korean or Dutch or Romanian or Hebrew or Catalan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Zero Motivation is written in\n\nRespond with one of Korean or Dutch or Romanian or Hebrew or Catalan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Korean",
+    "gt_counterfactual_target": "Hebrew"
+  },
+  {
+    "original_prompt": "Riona Hazuki is originally from\n\nRespond with one of Lund or Egypt or Auckland or Tokyo or Warsaw or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Roger Oakley is originally from\n\nRespond with one of Lund or Egypt or Auckland or Tokyo or Warsaw or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Tokyo",
+    "gt_counterfactual_target": "Auckland"
+  },
+  {
+    "original_prompt": "Tiv people, in\n\nRespond with one of Nigeria or Uganda or Australia or Germany or India or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Wallmerod, in\n\nRespond with one of Nigeria or Uganda or Australia or Germany or India or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Nigeria",
+    "gt_counterfactual_target": "Germany"
+  },
+  {
+    "original_prompt": "Honda CRF series, developed by\n\nRespond with one of Chrysler or Fiat or Honda or Mercury or Renault or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Renault Talisman, developed by\n\nRespond with one of Chrysler or Fiat or Honda or Mercury or Renault or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Honda",
+    "gt_counterfactual_target": "Renault"
+  },
+  {
+    "original_prompt": "The headquarter of European Aviation Safety Agency is located in\n\nRespond with one of Cologne or Calgary or Geneva or Copenhagen or Lima or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The headquarter of Global Humanitarian Forum is located in\n\nRespond with one of Cologne or Calgary or Geneva or Copenhagen or Lima or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Cologne",
+    "gt_counterfactual_target": "Geneva"
+  },
+  {
+    "original_prompt": "Epitafios was originally aired on\n\nRespond with one of HBO or Bravo or MTV or History or CNN or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Queer Eye was originally aired on\n\nRespond with one of HBO or Bravo or MTV or History or CNN or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "HBO",
+    "gt_counterfactual_target": "Bravo"
+  },
+  {
+    "original_prompt": "Microsoft Word, a product of\n\nRespond with one of Intel or Yahoo or Apple or Sega or Microsoft or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "YUI Library, a product of\n\nRespond with one of Intel or Yahoo or Apple or Sega or Microsoft or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Yahoo"
+  },
+  {
+    "original_prompt": "Porsche 919 Hybrid, developed by\n\nRespond with one of Porsche or Nokia or Triumph or Sega or Fiat or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Triumph Acclaim, developed by\n\nRespond with one of Porsche or Nokia or Triumph or Sega or Fiat or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Porsche",
+    "gt_counterfactual_target": "Triumph"
+  },
+  {
+    "original_prompt": "The language of Nageswari is\n\nRespond with one of Tamil or Hindi or Korean or French or Spanish or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The language of Tell Me Something is\n\nRespond with one of Tamil or Hindi or Korean or French or Spanish or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Tamil",
+    "gt_counterfactual_target": "Korean"
+  },
+  {
+    "original_prompt": "Miralem Sulejmani, the\n\nRespond with one of midfielder or quarterback or goaltender or defender or pitcher or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Boof Bonser, the\n\nRespond with one of midfielder or quarterback or goaltender or defender or pitcher or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "midfielder",
+    "gt_counterfactual_target": "pitcher"
+  },
+  {
+    "original_prompt": "Oslo Central Station is located in\n\nRespond with one of Oslo or Detroit or Ontario or Connecticut or Beijing or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Lakeridge Health Oshawa is located in\n\nRespond with one of Oslo or Detroit or Ontario or Connecticut or Beijing or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Oslo",
+    "gt_counterfactual_target": "Ontario"
+  },
+  {
+    "original_prompt": "Split Airport was named for\n\nRespond with one of Shiva or Virginia or Philadelphia or Poland or Split or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "polonium was named for\n\nRespond with one of Shiva or Virginia or Philadelphia or Poland or Split or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Split",
+    "gt_counterfactual_target": "Poland"
+  },
+  {
+    "original_prompt": "Francesco Bolzoni plays in the position of\n\nRespond with one of midfielder or catcher or goalkeeper or tackle or linebacker or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jordan Gross plays in the position of\n\nRespond with one of midfielder or catcher or goalkeeper or tackle or linebacker or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "midfielder",
+    "gt_counterfactual_target": "tackle"
+  },
+  {
+    "original_prompt": "What is the twin city of Manila? It is\n\nRespond with one of Shanghai or Barcelona or Beijing or Tokyo or Bangkok or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "What is the twin city of Cologne? It is\n\nRespond with one of Shanghai or Barcelona or Beijing or Tokyo or Bangkok or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Shanghai",
+    "gt_counterfactual_target": "Beijing"
+  },
+  {
+    "original_prompt": "East River Greenway is in\n\nRespond with one of Mexico or Beijing or Arkansas or Oslo or Manhattan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Shunyi Olympic Rowing-Canoeing Park is in\n\nRespond with one of Mexico or Beijing or Arkansas or Oslo or Manhattan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Manhattan",
+    "gt_counterfactual_target": "Beijing"
+  },
+  {
+    "original_prompt": "Little Britain USA is to debut on\n\nRespond with one of HBO or CBS or YouTube or ESPN or MTV or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "MMA Live is to debut on\n\nRespond with one of HBO or CBS or YouTube or ESPN or MTV or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "HBO",
+    "gt_counterfactual_target": "ESPN"
+  },
+  {
+    "original_prompt": "Phoenix Sky Harbor International Airport, by\n\nRespond with one of Philadelphia or Phoenix or CBS or Renault or Fiat or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Gordini, by\n\nRespond with one of Philadelphia or Phoenix or CBS or Renault or Fiat or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Phoenix",
+    "gt_counterfactual_target": "Renault"
+  },
+  {
+    "original_prompt": "The original language of Punnagai Desam was\n\nRespond with one of French or Italian or Swedish or Korean or Tamil or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The original language of Puss in Boots was\n\nRespond with one of French or Italian or Swedish or Korean or Tamil or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Tamil",
+    "gt_counterfactual_target": "Italian"
+  },
+  {
+    "original_prompt": "Bavaria, which has the capital\n\nRespond with one of Warsaw or Baghdad or Prague or Cairo or Munich or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Baghdad Governorate, which has the capital\n\nRespond with one of Warsaw or Baghdad or Prague or Cairo or Munich or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Munich",
+    "gt_counterfactual_target": "Baghdad"
+  },
+  {
+    "original_prompt": "Snorks is to debut on\n\nRespond with one of NBC or HBO or PBS or ESPN or MTV or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sunday Night Baseball is to debut on\n\nRespond with one of NBC or HBO or PBS or ESPN or MTV or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "NBC",
+    "gt_counterfactual_target": "ESPN"
+  },
+  {
+    "original_prompt": "Derna District, in\n\nRespond with one of Oslo or Arkansas or Libya or Pennsylvania or Virginia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Montour County, in\n\nRespond with one of Oslo or Arkansas or Libya or Pennsylvania or Virginia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Libya",
+    "gt_counterfactual_target": "Pennsylvania"
+  },
+  {
+    "original_prompt": "Dodge Lancer, created by\n\nRespond with one of Dodge or Chrysler or Nissan or Honda or Apple or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "PGM-11 Redstone, created by\n\nRespond with one of Dodge or Chrysler or Nissan or Honda or Apple or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Dodge",
+    "gt_counterfactual_target": "Chrysler"
+  },
+  {
+    "original_prompt": "Bright Promise is to debut on\n\nRespond with one of NBC or BBC or YouTube or MTV or CNN or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Room Raiders is to debut on\n\nRespond with one of NBC or BBC or YouTube or MTV or CNN or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "NBC",
+    "gt_counterfactual_target": "MTV"
+  },
+  {
+    "original_prompt": "Muhammad Jamalul Alam II is follower of\n\nRespond with one of Christianity or Judaism or Islam or Buddhism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Christianization is follower of\n\nRespond with one of Christianity or Judaism or Islam or Buddhism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Christianity"
+  },
+  {
+    "original_prompt": "John Henry Newman used to work in\n\nRespond with one of Rome or Italy or Berlin or Oslo or Sydney or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Samuel von Fischer used to work in\n\nRespond with one of Rome or Italy or Berlin or Oslo or Sydney or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Rome",
+    "gt_counterfactual_target": "Berlin"
+  },
+  {
+    "original_prompt": "Portobello Film Festival can be found in\n\nRespond with one of London or Brazil or Boston or Belarus or Geneva or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Abiel Smith School can be found in\n\nRespond with one of London or Brazil or Boston or Belarus or Geneva or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "London",
+    "gt_counterfactual_target": "Boston"
+  },
+  {
+    "original_prompt": "Java coffee, which is called after\n\nRespond with one of Jerusalem or Java or Melbourne or London or Moscow or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "London International Airport, which is called after\n\nRespond with one of Jerusalem or Java or Melbourne or London or Moscow or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Java",
+    "gt_counterfactual_target": "London"
+  },
+  {
+    "original_prompt": "Life was originally aired on\n\nRespond with one of NBC or HBO or MTV or CBS or YouTube or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "America's Best Dance Crew was originally aired on\n\nRespond with one of NBC or HBO or MTV or CBS or YouTube or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "NBC",
+    "gt_counterfactual_target": "MTV"
+  },
+  {
+    "original_prompt": "Loire is a part of the continent of\n\nRespond with one of Europe or Asia or Antarctica or Africa or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Primorsky Krai is a part of the continent of\n\nRespond with one of Europe or Asia or Antarctica or Africa or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Europe",
+    "gt_counterfactual_target": "Asia"
+  },
+  {
+    "original_prompt": "Claudio Abbado is native to\n\nRespond with one of Helsinki or Devon or Burlington or Montreal or Milan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "DJ Die is native to\n\nRespond with one of Helsinki or Devon or Burlington or Montreal or Milan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Milan",
+    "gt_counterfactual_target": "Devon"
+  },
+  {
+    "original_prompt": "Ramon Magsaysay holds a citizenship from\n\nRespond with one of Armenia or Cuba or Canada or Philippines or Greece or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Christophor Araratov holds a citizenship from\n\nRespond with one of Armenia or Cuba or Canada or Philippines or Greece or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Philippines",
+    "gt_counterfactual_target": "Armenia"
+  },
+  {
+    "original_prompt": "Broadway Open House debuted on\n\nRespond with one of NBC or CBS or PBS or CNN or ESPN or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Silk Stalkings debuted on\n\nRespond with one of NBC or CBS or PBS or CNN or ESPN or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "NBC",
+    "gt_counterfactual_target": "CBS"
+  },
+  {
+    "original_prompt": "Mataram Sultanate follows the religion of\n\nRespond with one of Christianity or Buddhism or Judaism or Islam or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Malayali follows the religion of\n\nRespond with one of Christianity or Buddhism or Judaism or Islam or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Buddhism"
+  },
+  {
+    "original_prompt": "Chicago Public Library's headquarters are in\n\nRespond with one of Istanbul or Stockholm or Hamburg or Calgary or Chicago or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jimdo's headquarters are in\n\nRespond with one of Istanbul or Stockholm or Hamburg or Calgary or Chicago or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Chicago",
+    "gt_counterfactual_target": "Hamburg"
+  },
+  {
+    "original_prompt": "Natarang, formulated in\n\nRespond with one of India or Spain or Japan or Norway or Australia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Dagsavisen, formulated in\n\nRespond with one of India or Spain or Japan or Norway or Australia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "India",
+    "gt_counterfactual_target": "Norway"
+  },
+  {
+    "original_prompt": "iPod shuffle, created by\n\nRespond with one of Apple or Microsoft or Airbus or Adobe or Square or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Airbus A350, created by\n\nRespond with one of Apple or Microsoft or Airbus or Adobe or Square or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Apple",
+    "gt_counterfactual_target": "Airbus"
+  },
+  {
+    "original_prompt": "Czech Socialist Republic, which has the capital city\n\nRespond with one of Madrid or Aleppo or Naples or Karachi or Prague or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Aleppo Governorate, which has the capital city\n\nRespond with one of Madrid or Aleppo or Naples or Karachi or Prague or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Prague",
+    "gt_counterfactual_target": "Aleppo"
+  },
+  {
+    "original_prompt": "Porsche Boxster is created by\n\nRespond with one of Iran or Dodge or Apple or Porsche or Nissan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Dodge Hornet is created by\n\nRespond with one of Iran or Dodge or Apple or Porsche or Nissan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Porsche",
+    "gt_counterfactual_target": "Dodge"
+  },
+  {
+    "original_prompt": "The official religion of As-Saffah is\n\nRespond with one of Islam or Buddhism or Christianity or Judaism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The official religion of christian worship is\n\nRespond with one of Islam or Buddhism or Christianity or Judaism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Christianity"
+  },
+  {
+    "original_prompt": "Tewodros II is a citizen of\n\nRespond with one of Ethiopia or Nigeria or Japan or Nepal or Philippines or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Kate Henshaw is a citizen of\n\nRespond with one of Ethiopia or Nigeria or Japan or Nepal or Philippines or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Ethiopia",
+    "gt_counterfactual_target": "Nigeria"
+  },
+  {
+    "original_prompt": "NBC Nightside is to debut on\n\nRespond with one of NBC or CBS or ESPN or PBS or HBO or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Scooby Doo is to debut on\n\nRespond with one of NBC or CBS or ESPN or PBS or HBO or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "NBC",
+    "gt_counterfactual_target": "CBS"
+  },
+  {
+    "original_prompt": "Surimi, that was from\n\nRespond with one of Japan or Philippines or Poland or Brazil or Lithuania or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Polityka, that was from\n\nRespond with one of Japan or Philippines or Poland or Brazil or Lithuania or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Japan",
+    "gt_counterfactual_target": "Poland"
+  },
+  {
+    "original_prompt": "Gunnar Thoresen, a citizen of\n\nRespond with one of Norway or Mongolia or Jamaica or Australia or England or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Steven Wilson, a citizen of\n\nRespond with one of Norway or Mongolia or Jamaica or Australia or England or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Norway",
+    "gt_counterfactual_target": "England"
+  },
+  {
+    "original_prompt": "Pardon the Interruption debuted on\n\nRespond with one of ESPN or History or PBS or BBC or CNN or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Washington Week debuted on\n\nRespond with one of ESPN or History or PBS or BBC or CNN or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "ESPN",
+    "gt_counterfactual_target": "PBS"
+  },
+  {
+    "original_prompt": "Edelgard Bulmahn, a citizen of\n\nRespond with one of Germany or Netherlands or Spain or Mongolia or Norway or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "William II de La Marck, a citizen of\n\nRespond with one of Germany or Netherlands or Spain or Mongolia or Norway or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Germany",
+    "gt_counterfactual_target": "Netherlands"
+  },
+  {
+    "original_prompt": "Where is 1986 Goodwill Games? It is located in\n\nRespond with one of Moscow or Cannes or Delhi or Kazakhstan or Karachi or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Where is Delhi Technological University? It is located in\n\nRespond with one of Moscow or Cannes or Delhi or Kazakhstan or Karachi or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Moscow",
+    "gt_counterfactual_target": "Delhi"
+  },
+  {
+    "original_prompt": "Anatoly Kudryavitsky, a native\n\nRespond with one of Russian or Romanian or Persian or English or Portuguese or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Almeida Garrett, a native\n\nRespond with one of Russian or Romanian or Persian or English or Portuguese or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Russian",
+    "gt_counterfactual_target": "Portuguese"
+  },
+  {
+    "original_prompt": "Criminal Minds debuted on\n\nRespond with one of CBS or ESPN or MTV or History or YouTube or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The Young Turks debuted on\n\nRespond with one of CBS or ESPN or MTV or History or YouTube or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "CBS",
+    "gt_counterfactual_target": "YouTube"
+  },
+  {
+    "original_prompt": "The law in North Dakota declares the language\n\nRespond with one of English or Bulgarian or French or Latin or Catalan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The law in Porrentruy declares the language\n\nRespond with one of English or Bulgarian or French or Latin or Catalan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "French"
+  },
+  {
+    "original_prompt": "The language used by Joseph Hume is\n\nRespond with one of English or Italian or Irish or Bulgarian or Romanian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The language used by Giovanni Bertati is\n\nRespond with one of English or Italian or Irish or Bulgarian or Romanian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "Italian"
+  },
+  {
+    "original_prompt": "The headquarters of Pennzoil is in\n\nRespond with one of Irvine or Boston or Brooklyn or Houston or Dublin or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The headquarters of Ross Stores is in\n\nRespond with one of Irvine or Boston or Brooklyn or Houston or Dublin or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Houston",
+    "gt_counterfactual_target": "Dublin"
+  },
+  {
+    "original_prompt": "2004 Madrid train bombings is located in\n\nRespond with one of Madrid or Estonia or Barcelona or Kazakhstan or Geneva or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Post-Soviet states is located in\n\nRespond with one of Madrid or Estonia or Barcelona or Kazakhstan or Geneva or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Madrid",
+    "gt_counterfactual_target": "Kazakhstan"
+  },
+  {
+    "original_prompt": "In Nastola, an official language is\n\nRespond with one of Finnish or Polish or Latin or Portuguese or Italian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Byelorussian Soviet Socialist Republic, an official language is\n\nRespond with one of Finnish or Polish or Latin or Portuguese or Italian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Finnish",
+    "gt_counterfactual_target": "Polish"
+  },
+  {
+    "original_prompt": "The headquarters of Global Humanitarian Forum is in\n\nRespond with one of Italy or Hamburg or Stockholm or Geneva or Ottawa or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The headquarters of Socimi is in\n\nRespond with one of Italy or Hamburg or Stockholm or Geneva or Ottawa or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Geneva",
+    "gt_counterfactual_target": "Italy"
+  },
+  {
+    "original_prompt": "Maggie Greenwald was originally from\n\nRespond with one of Manhattan or Edinburgh or Lund or Copenhagen or Kabul or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ahmad Zahir was originally from\n\nRespond with one of Manhattan or Edinburgh or Lund or Copenhagen or Kabul or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Manhattan",
+    "gt_counterfactual_target": "Kabul"
+  },
+  {
+    "original_prompt": "Brisbane Airport, which was called after\n\nRespond with one of Perth or Pittsburgh or grape or Brisbane or Java or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Java coffee, which was called after\n\nRespond with one of Perth or Pittsburgh or grape or Brisbane or Java or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Brisbane",
+    "gt_counterfactual_target": "Java"
+  },
+  {
+    "original_prompt": "Windows 95, a product of\n\nRespond with one of Microsoft or Google or Sega or IBM or Apple or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "iChat, a product of\n\nRespond with one of Microsoft or Google or Sega or IBM or Apple or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Apple"
+  },
+  {
+    "original_prompt": "What is the twin city of New Delhi? It is\n\nRespond with one of Sydney or Sheffield or Lima or Istanbul or Barcelona or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "What is the twin city of Mexico City? It is\n\nRespond with one of Sydney or Sheffield or Lima or Istanbul or Barcelona or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Sydney",
+    "gt_counterfactual_target": "Lima"
+  },
+  {
+    "original_prompt": "Anjem Choudary is affiliated with the religion\n\nRespond with one of Islam or Buddhism or Judaism or Christianity or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Christianization is affiliated with the religion\n\nRespond with one of Islam or Buddhism or Judaism or Christianity or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Christianity"
+  },
+  {
+    "original_prompt": "Nokia Lumia 1020 is a product of\n\nRespond with one of Chrysler or Nokia or Bentley or Toyota or BMW or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "PGM-11 Redstone is a product of\n\nRespond with one of Chrysler or Nokia or Bentley or Toyota or BMW or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Nokia",
+    "gt_counterfactual_target": "Chrysler"
+  },
+  {
+    "original_prompt": "Suzuki MR Wagon is a product of\n\nRespond with one of Toyota or Triumph or Mercury or Suzuki or Samsung or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Mercury Comet is a product of\n\nRespond with one of Toyota or Triumph or Mercury or Suzuki or Samsung or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Suzuki",
+    "gt_counterfactual_target": "Mercury"
+  },
+  {
+    "original_prompt": "Uinta Basin is within\n\nRespond with one of Cincinnati or Gujarat or Utah or Vienna or Alaska or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Josefstadt is within\n\nRespond with one of Cincinnati or Gujarat or Utah or Vienna or Alaska or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Utah",
+    "gt_counterfactual_target": "Vienna"
+  },
+  {
+    "original_prompt": "Bose Institute, in\n\nRespond with one of Peru or Pakistan or Greece or India or Canada or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ghora Gali, in\n\nRespond with one of Peru or Pakistan or Greece or India or Canada or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "India",
+    "gt_counterfactual_target": "Pakistan"
+  },
+  {
+    "original_prompt": "Jewish Theological Seminary of America follows the religion of\n\nRespond with one of Judaism or Christianity or Buddhism or Islam or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ghazi of Iraq follows the religion of\n\nRespond with one of Judaism or Christianity or Buddhism or Islam or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Judaism",
+    "gt_counterfactual_target": "Islam"
+  },
+  {
+    "original_prompt": "Phoebe Atwood Taylor is native to\n\nRespond with one of Boston or Cincinnati or Montreal or Germany or Florence or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jean Papineau-Couture is native to\n\nRespond with one of Boston or Cincinnati or Montreal or Germany or Florence or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Boston",
+    "gt_counterfactual_target": "Montreal"
+  },
+  {
+    "original_prompt": "Fakhr al-Din al-Razi is follower of\n\nRespond with one of Buddhism or Judaism or Islam or Christianity or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Joseph Priestley is follower of\n\nRespond with one of Buddhism or Judaism or Islam or Christianity or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Christianity"
+  },
+  {
+    "original_prompt": "Kazi Nazrul Islam is a citizen of\n\nRespond with one of Haiti or Bangladesh or Philippines or Slovakia or Denmark or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ramon Magsaysay is a citizen of\n\nRespond with one of Haiti or Bangladesh or Philippines or Slovakia or Denmark or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Bangladesh",
+    "gt_counterfactual_target": "Philippines"
+  },
+  {
+    "original_prompt": "Beaumont Palace is located in\n\nRespond with one of Oxford or Chicago or Japan or Kazakhstan or Haiti or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Post-Soviet states is located in\n\nRespond with one of Oxford or Chicago or Japan or Kazakhstan or Haiti or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Oxford",
+    "gt_counterfactual_target": "Kazakhstan"
+  },
+  {
+    "original_prompt": "Rashid-al-Din Hamadani is follower of\n\nRespond with one of Islam or Christianity or Buddhism or Judaism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Joseph Priestley is follower of\n\nRespond with one of Islam or Christianity or Buddhism or Judaism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Christianity"
+  },
+  {
+    "original_prompt": "Zaheer Khan is follower of\n\nRespond with one of Islam or Buddhism or Christianity or Judaism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "David is follower of\n\nRespond with one of Islam or Buddhism or Christianity or Judaism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Judaism"
+  },
+  {
+    "original_prompt": "Zadoc Kahn, who holds a citizenship from\n\nRespond with one of France or Sweden or Spain or Argentina or Philippines or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ramon Magsaysay, who holds a citizenship from\n\nRespond with one of France or Sweden or Spain or Argentina or Philippines or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "France",
+    "gt_counterfactual_target": "Philippines"
+  },
+  {
+    "original_prompt": "Microsoft Plus! is developed by\n\nRespond with one of Yahoo or IBM or Microsoft or Airbus or Google or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Google Web Toolkit is developed by\n\nRespond with one of Yahoo or IBM or Microsoft or Airbus or Google or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Google"
+  },
+  {
+    "original_prompt": "ArcelorMittal Poland is located in\n\nRespond with one of Portugal or Indonesia or Italy or Australia or Poland or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Circuito da Boavista is located in\n\nRespond with one of Portugal or Indonesia or Italy or Australia or Poland or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Poland",
+    "gt_counterfactual_target": "Portugal"
+  },
+  {
+    "original_prompt": "Bernadette Lafont, speaker of\n\nRespond with one of French or Greek or English or Romanian or Portuguese or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Vera Lynn, speaker of\n\nRespond with one of French or Greek or English or Romanian or Portuguese or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "English"
+  },
+  {
+    "original_prompt": "Ferrari F40, developed by\n\nRespond with one of Porsche or Ferrari or Bentley or Sega or McLaren or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sega Mega-CD, developed by\n\nRespond with one of Porsche or Ferrari or Bentley or Sega or McLaren or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Ferrari",
+    "gt_counterfactual_target": "Sega"
+  },
+  {
+    "original_prompt": "Porsche 550, created by\n\nRespond with one of Porsche or Honda or Fiat or McLaren or Triumph or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Acura RDX, created by\n\nRespond with one of Porsche or Honda or Fiat or McLaren or Triumph or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Porsche",
+    "gt_counterfactual_target": "Honda"
+  },
+  {
+    "original_prompt": "Christian Magnus Falsen took up work in\n\nRespond with one of Oslo or Berlin or London or Amsterdam or Sydney or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Joachim von Sandrart took up work in\n\nRespond with one of Oslo or Berlin or London or Amsterdam or Sydney or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Oslo",
+    "gt_counterfactual_target": "Amsterdam"
+  },
+  {
+    "original_prompt": "Mohammad-Reza Sharifinia is a native speaker of\n\nRespond with one of Persian or Italian or Portuguese or Greek or Russian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Grigoris Lambrakis is a native speaker of\n\nRespond with one of Persian or Italian or Portuguese or Greek or Russian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Persian",
+    "gt_counterfactual_target": "Greek"
+  },
+  {
+    "original_prompt": "Beykent University's headquarters are in\n\nRespond with one of Japan or Warwick or Boston or Istanbul or Central or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Black Sparrow Books's headquarters are in\n\nRespond with one of Japan or Warwick or Boston or Istanbul or Central or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Istanbul",
+    "gt_counterfactual_target": "Boston"
+  },
+  {
+    "original_prompt": "Aram Khachaturian died in\n\nRespond with one of Moscow or Venice or Stockholm or Detroit or Hollywood or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jack Cassidy died in\n\nRespond with one of Moscow or Venice or Stockholm or Detroit or Hollywood or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Moscow",
+    "gt_counterfactual_target": "Hollywood"
+  },
+  {
+    "original_prompt": "The capital of Norway is\n\nRespond with one of Oslo or Naples or Kabul or Baghdad or Damascus or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The capital of Afghanistan is\n\nRespond with one of Oslo or Naples or Kabul or Baghdad or Damascus or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Oslo",
+    "gt_counterfactual_target": "Kabul"
+  },
+  {
+    "original_prompt": "Philadelphia Experiment is called after\n\nRespond with one of Philadelphia or Alps or Poland or Brisbane or Chicago or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Brisbane Airport is called after\n\nRespond with one of Philadelphia or Alps or Poland or Brisbane or Chicago or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Philadelphia",
+    "gt_counterfactual_target": "Brisbane"
+  },
+  {
+    "original_prompt": "The official language of Finland is\n\nRespond with one of Greek or Portuguese or Finnish or Filipino or Polish or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The official language of Philippines is\n\nRespond with one of Greek or Portuguese or Finnish or Filipino or Polish or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Finnish",
+    "gt_counterfactual_target": "Filipino"
+  },
+  {
+    "original_prompt": "In Spain, they understand\n\nRespond with one of Swedish or German or Spanish or Italian or Greek or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Ticino, they understand\n\nRespond with one of Swedish or German or Spanish or Italian or Greek or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Spanish",
+    "gt_counterfactual_target": "Italian"
+  },
+  {
+    "original_prompt": "Where is Hubert H. Humphrey Metrodome? It is located in\n\nRespond with one of Haiti or Lithuania or Minneapolis or Irvine or Cannes or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Where is Operation Barbarossa? It is located in\n\nRespond with one of Haiti or Lithuania or Minneapolis or Irvine or Cannes or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Minneapolis",
+    "gt_counterfactual_target": "Lithuania"
+  },
+  {
+    "original_prompt": "The mother tongue of Nicolaas Pierson is\n\nRespond with one of Dutch or Russian or Tamil or English or Italian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The mother tongue of Aleksandr Ptushko is\n\nRespond with one of Dutch or Russian or Tamil or English or Italian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Dutch",
+    "gt_counterfactual_target": "Russian"
+  },
+  {
+    "original_prompt": "BBC Three, by\n\nRespond with one of Chicago or Sony or BBC or HBO or Google or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "HBO Now, by\n\nRespond with one of Chicago or Sony or BBC or HBO or Google or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "BBC",
+    "gt_counterfactual_target": "HBO"
+  },
+  {
+    "original_prompt": "Zune, a product of\n\nRespond with one of Boeing or Square or Sega or Nintendo or Microsoft or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Front Mission 3, a product of\n\nRespond with one of Boeing or Square or Sega or Nintendo or Microsoft or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Square"
+  },
+  {
+    "original_prompt": "The original language of La Jornada is\n\nRespond with one of Spanish or Hindi or English or French or Hebrew or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The original language of Book of Haggai is\n\nRespond with one of Spanish or Hindi or English or French or Hebrew or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Spanish",
+    "gt_counterfactual_target": "Hebrew"
+  },
+  {
+    "original_prompt": "Where is Battle of the Menin Road Ridge? It is located in\n\nRespond with one of Cannes or Dublin or Belgium or Rome or Beijing or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Where is 2011 Cannes Film Festival? It is located in\n\nRespond with one of Cannes or Dublin or Belgium or Rome or Beijing or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Belgium",
+    "gt_counterfactual_target": "Cannes"
+  },
+  {
+    "original_prompt": "Sony Crackle is owned by\n\nRespond with one of France or Sony or HBO or ESPN or Sky or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Mona Lisa is owned by\n\nRespond with one of France or Sony or HBO or ESPN or Sky or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Sony",
+    "gt_counterfactual_target": "France"
+  },
+  {
+    "original_prompt": "Miracle Fortress formed in\n\nRespond with one of Montreal or Moscow or Houston or Hamburg or Springfield or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Smirnoff formed in\n\nRespond with one of Montreal or Moscow or Houston or Hamburg or Springfield or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Montreal",
+    "gt_counterfactual_target": "Moscow"
+  },
+  {
+    "original_prompt": "Nasiruddin Chiragh Dehlavi follows the religion of\n\nRespond with one of Islam or Buddhism or Christianity or Judaism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Joseph Priestley follows the religion of\n\nRespond with one of Islam or Buddhism or Christianity or Judaism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Christianity"
+  },
+  {
+    "original_prompt": "Claudio Reyna plays\n\nRespond with one of hockey or football or baseball or basketball or soccer or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Peter Forsberg plays\n\nRespond with one of hockey or football or baseball or basketball or soccer or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "soccer",
+    "gt_counterfactual_target": "hockey"
+  },
+  {
+    "original_prompt": "Wii MotionPlus is developed by\n\nRespond with one of Nintendo or Adobe or Square or IBM or Apple or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "iBooks Author is developed by\n\nRespond with one of Nintendo or Adobe or Square or IBM or Apple or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Nintendo",
+    "gt_counterfactual_target": "Apple"
+  },
+  {
+    "original_prompt": "Aloha Stadium, from\n\nRespond with one of Boeing or HBO or CBS or Renault or Hawaii or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Boeing Defense, Space & Security, from\n\nRespond with one of Boeing or HBO or CBS or Renault or Hawaii or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Hawaii",
+    "gt_counterfactual_target": "Boeing"
+  },
+  {
+    "original_prompt": "Moe Koffman originates from\n\nRespond with one of Toronto or Egypt or Kabul or Bristol or Milan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ahmad Zahir originates from\n\nRespond with one of Toronto or Egypt or Kabul or Bristol or Milan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Toronto",
+    "gt_counterfactual_target": "Kabul"
+  },
+  {
+    "original_prompt": "Junichi Suwabe was born in\n\nRespond with one of Tokyo or Berlin or Lincoln or Kabul or Melbourne or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ahmad Zahir was born in\n\nRespond with one of Tokyo or Berlin or Lincoln or Kabul or Melbourne or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Tokyo",
+    "gt_counterfactual_target": "Kabul"
+  },
+  {
+    "original_prompt": "Melbourne Airport was named for\n\nRespond with one of Pittsburgh or Hamburg or Melbourne or Java or grape or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Java coffee was named for\n\nRespond with one of Pittsburgh or Hamburg or Melbourne or Java or grape or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Melbourne",
+    "gt_counterfactual_target": "Java"
+  },
+  {
+    "original_prompt": "Daihatsu Charmant is created by\n\nRespond with one of Samsung or Sega or Toyota or Chrysler or Cadillac or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sega Mega-CD is created by\n\nRespond with one of Samsung or Sega or Toyota or Chrysler or Cadillac or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Toyota",
+    "gt_counterfactual_target": "Sega"
+  },
+  {
+    "original_prompt": "Dynamic-link library, created by\n\nRespond with one of Microsoft or Intel or Boeing or Sony or Atari or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Intel 80486, created by\n\nRespond with one of Microsoft or Intel or Boeing or Sony or Atari or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Intel"
+  },
+  {
+    "original_prompt": "The profession of Guy Doleman is\n\nRespond with one of actor or politician or physicist or comedian or journalist or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The profession of Karl Taylor Compton is\n\nRespond with one of actor or politician or physicist or comedian or journalist or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "actor",
+    "gt_counterfactual_target": "physicist"
+  },
+  {
+    "original_prompt": "GNU/Linux naming controversy was called after\n\nRespond with one of Athena or Alps or Java or Melbourne or Linux or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Melbourne Airport was called after\n\nRespond with one of Athena or Alps or Java or Melbourne or Linux or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Linux",
+    "gt_counterfactual_target": "Melbourne"
+  },
+  {
+    "original_prompt": "Herbert von Karajan was employed in\n\nRespond with one of Jerusalem or Hollywood or Montreal or Helsinki or Berlin or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Alexander von Nordmann was employed in\n\nRespond with one of Jerusalem or Hollywood or Montreal or Helsinki or Berlin or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Berlin",
+    "gt_counterfactual_target": "Helsinki"
+  },
+  {
+    "original_prompt": "Samsung NX series is developed by\n\nRespond with one of Renault or Iran or Samsung or Honda or McLaren or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "McLaren MP4-20 is developed by\n\nRespond with one of Renault or Iran or Samsung or Honda or McLaren or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Samsung",
+    "gt_counterfactual_target": "McLaren"
+  },
+  {
+    "original_prompt": "Wiener schnitzel, from\n\nRespond with one of Switzerland or Korea or Turkey or Ukraine or Austria or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Turkish coffee, from\n\nRespond with one of Switzerland or Korea or Turkey or Ukraine or Austria or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Austria",
+    "gt_counterfactual_target": "Turkey"
+  },
+  {
+    "original_prompt": "Rosbank is based in\n\nRespond with one of Barcelona or Moscow or Karachi or Milan or Prague or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Czechoslovak Television is based in\n\nRespond with one of Barcelona or Moscow or Karachi or Milan or Prague or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Moscow",
+    "gt_counterfactual_target": "Prague"
+  },
+  {
+    "original_prompt": "Swedish Orphan Biovitrum's headquarters are in\n\nRespond with one of Stockholm or Houston or Frankfurt or Munich or Hamburg or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Nazi Party's headquarters are in\n\nRespond with one of Stockholm or Houston or Frankfurt or Munich or Hamburg or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Stockholm",
+    "gt_counterfactual_target": "Munich"
+  },
+  {
+    "original_prompt": "Iran Airtour originated in\n\nRespond with one of Oslo or Minneapolis or Netherlands or Tehran or Japan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sug originated in\n\nRespond with one of Oslo or Minneapolis or Netherlands or Tehran or Japan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Tehran",
+    "gt_counterfactual_target": "Japan"
+  },
+  {
+    "original_prompt": "Humphrey Stafford, 1st Duke of Buckingham, who has a citizenship from\n\nRespond with one of Malaysia or England or Poland or Brazil or Sweden or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jimmy Choo, who has a citizenship from\n\nRespond with one of Malaysia or England or Poland or Brazil or Sweden or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "England",
+    "gt_counterfactual_target": "Malaysia"
+  },
+  {
+    "original_prompt": "Windows Embedded was a product of\n\nRespond with one of Atari or Google or Intel or Microsoft or Apple or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Gran Trak 10 was a product of\n\nRespond with one of Atari or Google or Intel or Microsoft or Apple or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Atari"
+  },
+  {
+    "original_prompt": "Pierre Jolivet, a native\n\nRespond with one of French or Persian or Finnish or Italian or Greek or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Grigoris Lambrakis, a native\n\nRespond with one of French or Persian or Finnish or Italian or Greek or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "Greek"
+  },
+  {
+    "original_prompt": "Paolo Sammarco plays in the position of\n\nRespond with one of midfielder or goaltender or linebacker or pitcher or defender or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Nolan Ryan plays in the position of\n\nRespond with one of midfielder or goaltender or linebacker or pitcher or defender or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "midfielder",
+    "gt_counterfactual_target": "pitcher"
+  },
+  {
+    "original_prompt": "The Forks, Winnipeg is located in the country of\n\nRespond with one of France or Sweden or Peru or Canada or Japan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ginza Line is located in the country of\n\nRespond with one of France or Sweden or Peru or Canada or Japan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Canada",
+    "gt_counterfactual_target": "Japan"
+  },
+  {
+    "original_prompt": "BMW Z4 E85, produced by\n\nRespond with one of BMW or Suzuki or Cadillac or Nokia or Fiat or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Suzuki Carry, produced by\n\nRespond with one of BMW or Suzuki or Cadillac or Nokia or Fiat or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "BMW",
+    "gt_counterfactual_target": "Suzuki"
+  },
+  {
+    "original_prompt": "What is the twin city of Manila? It is\n\nRespond with one of Montreal or Amsterdam or Philadelphia or Jerusalem or Istanbul or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "What is the twin city of Beirut? It is\n\nRespond with one of Montreal or Amsterdam or Philadelphia or Jerusalem or Istanbul or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Montreal",
+    "gt_counterfactual_target": "Istanbul"
+  },
+  {
+    "original_prompt": "macOS Server, a product created by\n\nRespond with one of Airbus or Sony or Sega or Apple or Adobe or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Airbus A350, a product created by\n\nRespond with one of Airbus or Sony or Sega or Apple or Adobe or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Apple",
+    "gt_counterfactual_target": "Airbus"
+  },
+  {
+    "original_prompt": "Canadian Club, that was formulated in\n\nRespond with one of Greece or Philippines or Brazil or India or Canada or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Kefalotyri, that was formulated in\n\nRespond with one of Greece or Philippines or Brazil or India or Canada or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Canada",
+    "gt_counterfactual_target": "Greece"
+  },
+  {
+    "original_prompt": "The official religion of Syed Kalbe Hussain is\n\nRespond with one of Islam or Judaism or Buddhism or Christianity or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The official religion of Arun Krushnaji Kamble is\n\nRespond with one of Islam or Judaism or Buddhism or Christianity or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Buddhism"
+  },
+  {
+    "original_prompt": "Bert De Graeve is a citizen of\n\nRespond with one of India or Haiti or Belgium or Mexico or Slovakia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Prasanna is a citizen of\n\nRespond with one of India or Haiti or Belgium or Mexico or Slovakia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Belgium",
+    "gt_counterfactual_target": "India"
+  },
+  {
+    "original_prompt": "IBM 5120 is created by\n\nRespond with one of Mercury or BMW or Cadillac or Nokia or IBM or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "BMW 5 Series Gran Turismo is created by\n\nRespond with one of Mercury or BMW or Cadillac or Nokia or IBM or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "IBM",
+    "gt_counterfactual_target": "BMW"
+  },
+  {
+    "original_prompt": "Elizabeth Boleyn, Countess of Wiltshire originates from\n\nRespond with one of Atlanta or Egypt or Sydney or Norfolk or Devon or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "DJ Die originates from\n\nRespond with one of Atlanta or Egypt or Sydney or Norfolk or Devon or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Norfolk",
+    "gt_counterfactual_target": "Devon"
+  },
+  {
+    "original_prompt": "In Savonlinna, an official language is\n\nRespond with one of Finnish or German or Russian or Portuguese or Filipino or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Belarus, an official language is\n\nRespond with one of Finnish or German or Russian or Portuguese or Filipino or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Finnish",
+    "gt_counterfactual_target": "Russian"
+  },
+  {
+    "original_prompt": "What is the twin city of Warsaw? It is\n\nRespond with one of Berlin or Santiago or Beijing or Barcelona or Bethlehem or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "What is the twin city of Tirana? It is\n\nRespond with one of Berlin or Santiago or Beijing or Barcelona or Bethlehem or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Berlin",
+    "gt_counterfactual_target": "Barcelona"
+  },
+  {
+    "original_prompt": "In Vantaa, they understand\n\nRespond with one of Finnish or English or Polish or Hindi or Latin or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In American Samoa, they understand\n\nRespond with one of Finnish or English or Polish or Hindi or Latin or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Finnish",
+    "gt_counterfactual_target": "English"
+  },
+  {
+    "original_prompt": "Hajime Mizoguchi was originally from\n\nRespond with one of Tokyo or Egypt or Scotland or Sheffield or Armenia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Leo V the Armenian was originally from\n\nRespond with one of Tokyo or Egypt or Scotland or Sheffield or Armenia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Tokyo",
+    "gt_counterfactual_target": "Armenia"
+  },
+  {
+    "original_prompt": "In Alabama, an official language is\n\nRespond with one of Italian or Polish or Catalan or Russian or English or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In World Health Organization, an official language is\n\nRespond with one of Italian or Polish or Catalan or Russian or English or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "Russian"
+  },
+  {
+    "original_prompt": "Google Fiber, by\n\nRespond with one of Google or Phoenix or Leonardo or Philadelphia or Prague or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Phoenix Sky Harbor International Airport, by\n\nRespond with one of Google or Phoenix or Leonardo or Philadelphia or Prague or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Google",
+    "gt_counterfactual_target": "Phoenix"
+  },
+  {
+    "original_prompt": "Diego Barros Arana expired at\n\nRespond with one of Santiago or Dublin or Vienna or Boston or Madrid or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Santiago Carrillo expired at\n\nRespond with one of Santiago or Dublin or Vienna or Boston or Madrid or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Santiago",
+    "gt_counterfactual_target": "Madrid"
+  },
+  {
+    "original_prompt": "Geneva Film Festival is located in\n\nRespond with one of France or Brazil or Geneva or Kazakhstan or Moscow or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Post-Soviet states is located in\n\nRespond with one of France or Brazil or Geneva or Kazakhstan or Moscow or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Geneva",
+    "gt_counterfactual_target": "Kazakhstan"
+  },
+  {
+    "original_prompt": "Apple Thunderbolt Display, a product manufactured by\n\nRespond with one of Intel or Adobe or IBM or Airbus or Apple or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Pentium Pro, a product manufactured by\n\nRespond with one of Intel or Adobe or IBM or Airbus or Apple or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Apple",
+    "gt_counterfactual_target": "Intel"
+  },
+  {
+    "original_prompt": "Abdelhak Achik, who is a citizen of\n\nRespond with one of Morocco or Greece or Japan or Norway or Philippines or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Gunnar Thoresen, who is a citizen of\n\nRespond with one of Morocco or Greece or Japan or Norway or Philippines or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Morocco",
+    "gt_counterfactual_target": "Norway"
+  },
+  {
+    "original_prompt": "Google Trends is owned by\n\nRespond with one of Google or Philadelphia or Sony or BBC or Indianapolis or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Citizens Bank Park is owned by\n\nRespond with one of Google or Philadelphia or Sony or BBC or Indianapolis or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Google",
+    "gt_counterfactual_target": "Philadelphia"
+  },
+  {
+    "original_prompt": "Athens Football Clubs Association is based in\n\nRespond with one of Toronto or Athens or Istanbul or Sydney or Warsaw or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Alinta Energy is based in\n\nRespond with one of Toronto or Athens or Istanbul or Sydney or Warsaw or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Athens",
+    "gt_counterfactual_target": "Sydney"
+  },
+  {
+    "original_prompt": "Jan Bytnar expired at\n\nRespond with one of Warsaw or Dublin or Ottawa or Pittsburgh or Toronto or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Robert James Manion expired at\n\nRespond with one of Warsaw or Dublin or Ottawa or Pittsburgh or Toronto or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Warsaw",
+    "gt_counterfactual_target": "Ottawa"
+  },
+  {
+    "original_prompt": "The original language of Spanish Serenade is\n\nRespond with one of English or French or Tamil or Spanish or Italian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The original language of The Caretaker is\n\nRespond with one of English or French or Tamil or Spanish or Italian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Spanish",
+    "gt_counterfactual_target": "English"
+  },
+  {
+    "original_prompt": "The mother tongue of Grigore Moisil is\n\nRespond with one of Romanian or Finnish or Hungarian or Georgian or Dutch or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The mother tongue of Miho Mosulishvili is\n\nRespond with one of Romanian or Finnish or Hungarian or Georgian or Dutch or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Romanian",
+    "gt_counterfactual_target": "Georgian"
+  },
+  {
+    "original_prompt": "AbÅ« Muhammad al-Hasan al-HamdÄģnÄ« is follower of\n\nRespond with one of Buddhism or Judaism or Islam or Christianity or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "David is follower of\n\nRespond with one of Buddhism or Judaism or Islam or Christianity or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Judaism"
+  },
+  {
+    "original_prompt": "Christy Mathewson plays\n\nRespond with one of baseball or soccer or hockey or basketball or football or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Peter Forsberg plays\n\nRespond with one of baseball or soccer or hockey or basketball or football or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "baseball",
+    "gt_counterfactual_target": "hockey"
+  },
+  {
+    "original_prompt": "In Burkina Faso, the language spoken is\n\nRespond with one of French or Greek or Latin or Finnish or Bulgarian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Kyustendil Province, the language spoken is\n\nRespond with one of French or Greek or Latin or Finnish or Bulgarian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "Bulgarian"
+  },
+  {
+    "original_prompt": "Kungliga Svenska SegelsÃ¤llskapet, in\n\nRespond with one of Sweden or Estonia or France or Finland or Denmark or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Bispebjerg, in\n\nRespond with one of Sweden or Estonia or France or Finland or Denmark or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Sweden",
+    "gt_counterfactual_target": "Denmark"
+  },
+  {
+    "original_prompt": "The location of Calgary International Film Festival is\n\nRespond with one of Estonia or Calgary or Central or Sydney or Istanbul or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The location of Tartu Offensive is\n\nRespond with one of Estonia or Calgary or Central or Sydney or Istanbul or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Calgary",
+    "gt_counterfactual_target": "Estonia"
+  },
+  {
+    "original_prompt": "BMW X5, developed by\n\nRespond with one of Sega or BMW or Chrysler or McLaren or Suzuki or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Suzuki MR Wagon, developed by\n\nRespond with one of Sega or BMW or Chrysler or McLaren or Suzuki or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "BMW",
+    "gt_counterfactual_target": "Suzuki"
+  },
+  {
+    "original_prompt": "Perth, which is named after\n\nRespond with one of Melbourne or Shiva or Perth or Split or Athena or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Split Airport, which is named after\n\nRespond with one of Melbourne or Shiva or Perth or Split or Athena or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Perth",
+    "gt_counterfactual_target": "Split"
+  },
+  {
+    "original_prompt": "Chevrolet Spark is produced by\n\nRespond with one of Triumph or Apple or Suzuki or Chevrolet or Nintendo or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Triumph TR8 is produced by\n\nRespond with one of Triumph or Apple or Suzuki or Chevrolet or Nintendo or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Chevrolet",
+    "gt_counterfactual_target": "Triumph"
+  },
+  {
+    "original_prompt": "What is the twin city of Sofia? It is\n\nRespond with one of Ankara or Lyon or Shanghai or Sheffield or Beijing or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "What is the twin city of Cologne? It is\n\nRespond with one of Ankara or Lyon or Shanghai or Sheffield or Beijing or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Ankara",
+    "gt_counterfactual_target": "Beijing"
+  },
+  {
+    "original_prompt": "Collins Harbour is in\n\nRespond with one of Antarctica or Asia or Europe or Africa or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Primorsky Krai is in\n\nRespond with one of Antarctica or Asia or Europe or Africa or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Antarctica",
+    "gt_counterfactual_target": "Asia"
+  },
+  {
+    "original_prompt": "Co-Ed Fever debuted on\n\nRespond with one of CBS or YouTube or HBO or PBS or MTV or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The Young Turks debuted on\n\nRespond with one of CBS or YouTube or HBO or PBS or MTV or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "CBS",
+    "gt_counterfactual_target": "YouTube"
+  },
+  {
+    "original_prompt": "Ouest-France was written in\n\nRespond with one of French or Catalan or Dutch or Spanish or Welsh or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Dutch name was written in\n\nRespond with one of French or Catalan or Dutch or Spanish or Welsh or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "Dutch"
+  },
+  {
+    "original_prompt": "Hamburg culture, which is named after\n\nRespond with one of Hamburg or Linux or Thor or Pittsburgh or Cairo or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Pittsburg County, which is named after\n\nRespond with one of Hamburg or Linux or Thor or Pittsburgh or Cairo or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Hamburg",
+    "gt_counterfactual_target": "Pittsburgh"
+  },
+  {
+    "original_prompt": "Massachusetts Route 103 is within\n\nRespond with one of Ohio or Serbia or Maryland or Kentucky or Massachusetts or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Berea College is within\n\nRespond with one of Ohio or Serbia or Maryland or Kentucky or Massachusetts or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Massachusetts",
+    "gt_counterfactual_target": "Kentucky"
+  },
+  {
+    "original_prompt": "BBC Radio 2's owner\n\nRespond with one of Yahoo or Nintendo or BBC or Renault or Chicago or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Oak Street Beach's owner\n\nRespond with one of Yahoo or Nintendo or BBC or Renault or Chicago or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "BBC",
+    "gt_counterfactual_target": "Chicago"
+  },
+  {
+    "original_prompt": "Andrei Bitov writes in\n\nRespond with one of Irish or Dutch or Catalan or Russian or Italian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Mick Lally writes in\n\nRespond with one of Irish or Dutch or Catalan or Russian or Italian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Russian",
+    "gt_counterfactual_target": "Irish"
+  },
+  {
+    "original_prompt": "Jeremy Allen White's occupation is\n\nRespond with one of novelist or actor or chemist or architect or economist or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ross Garnaut's occupation is\n\nRespond with one of novelist or actor or chemist or architect or economist or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "actor",
+    "gt_counterfactual_target": "economist"
+  },
+  {
+    "original_prompt": "Umayyad Caliphate's capital,\n\nRespond with one of Karachi or Kabul or Damascus or Jerusalem or Cairo or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Egypt's capital,\n\nRespond with one of Karachi or Kabul or Damascus or Jerusalem or Cairo or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Damascus",
+    "gt_counterfactual_target": "Cairo"
+  },
+  {
+    "original_prompt": "Microsoft SharePoint was developed by\n\nRespond with one of Atari or Apple or Microsoft or Yahoo or Square or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Gran Trak 10 was developed by\n\nRespond with one of Atari or Apple or Microsoft or Yahoo or Square or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Atari"
+  },
+  {
+    "original_prompt": "Kamchatka Krai, which is located in\n\nRespond with one of Russia or Libya or Vietnam or Pakistan or Venezuela or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ghora Gali, which is located in\n\nRespond with one of Russia or Libya or Vietnam or Pakistan or Venezuela or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Russia",
+    "gt_counterfactual_target": "Pakistan"
+  },
+  {
+    "original_prompt": "Christianization is follower of\n\nRespond with one of Islam or Judaism or Buddhism or Christianity or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jewish Theological Seminary of America is follower of\n\nRespond with one of Islam or Judaism or Buddhism or Christianity or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Christianity",
+    "gt_counterfactual_target": "Judaism"
+  },
+  {
+    "original_prompt": "The official religion of Muawiyah I is\n\nRespond with one of Islam or Buddhism or Judaism or Christianity or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The official religion of Jewish Theological Seminary of America is\n\nRespond with one of Islam or Buddhism or Judaism or Christianity or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Judaism"
+  },
+  {
+    "original_prompt": "Nicholas Fairbairn worked in the city of\n\nRespond with one of London or Italy or Prague or Dresden or Jerusalem or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Wilhelm von Gloeden worked in the city of\n\nRespond with one of London or Italy or Prague or Dresden or Jerusalem or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "London",
+    "gt_counterfactual_target": "Italy"
+  },
+  {
+    "original_prompt": "Suzuki Kizashi is created by\n\nRespond with one of Suzuki or Honda or Renault or Bentley or Chevrolet or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Renault Trafic is created by\n\nRespond with one of Suzuki or Honda or Renault or Bentley or Chevrolet or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Suzuki",
+    "gt_counterfactual_target": "Renault"
+  },
+  {
+    "original_prompt": "The original language of Hindustan Ki Kasam was\n\nRespond with one of Hindi or English or Tamil or Portuguese or Bulgarian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The original language of Zift was\n\nRespond with one of Hindi or English or Tamil or Portuguese or Bulgarian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Hindi",
+    "gt_counterfactual_target": "Bulgarian"
+  },
+  {
+    "original_prompt": "Toyota Sprinter is produced by\n\nRespond with one of Chevrolet or BMW or Triumph or Toyota or Nintendo or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "BMW Z4 E85 is produced by\n\nRespond with one of Chevrolet or BMW or Triumph or Toyota or Nintendo or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Toyota",
+    "gt_counterfactual_target": "BMW"
+  },
+  {
+    "original_prompt": "Toyota Crown Majesta, developed by\n\nRespond with one of Porsche or Suzuki or Chevrolet or Toyota or Bentley or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Porsche Boxster, developed by\n\nRespond with one of Porsche or Suzuki or Chevrolet or Toyota or Bentley or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Toyota",
+    "gt_counterfactual_target": "Porsche"
+  },
+  {
+    "original_prompt": "New Club, Edinburgh, in\n\nRespond with one of Oslo or Algeria or Armenia or Edinburgh or Cincinnati or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "M'Sila Province, in\n\nRespond with one of Oslo or Algeria or Armenia or Edinburgh or Cincinnati or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Edinburgh",
+    "gt_counterfactual_target": "Algeria"
+  },
+  {
+    "original_prompt": "Nelson Valdez is a professional\n\nRespond with one of soccer or basketball or baseball or football or hockey or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Peter Forsberg is a professional\n\nRespond with one of soccer or basketball or baseball or football or hockey or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "soccer",
+    "gt_counterfactual_target": "hockey"
+  },
+  {
+    "original_prompt": "Granite Knolls is a part of the continent of\n\nRespond with one of Antarctica or Europe or Asia or Africa or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Balochistan is a part of the continent of\n\nRespond with one of Antarctica or Europe or Asia or Africa or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Antarctica",
+    "gt_counterfactual_target": "Asia"
+  },
+  {
+    "original_prompt": "Joseph Goebbels was employed in\n\nRespond with one of Berlin or Italy or Chicago or Paris or Hollywood or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Lewis Milestone was employed in\n\nRespond with one of Berlin or Italy or Chicago or Paris or Hollywood or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Berlin",
+    "gt_counterfactual_target": "Hollywood"
+  },
+  {
+    "original_prompt": "Carl Mayer used to work in\n\nRespond with one of Berlin or London or Glasgow or Boston or Prague or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Merlin James used to work in\n\nRespond with one of Berlin or London or Glasgow or Boston or Prague or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Berlin",
+    "gt_counterfactual_target": "Glasgow"
+  },
+  {
+    "original_prompt": "Google Patents, a product developed by\n\nRespond with one of Apple or Atari or Google or Square or Sega or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Gran Trak 10, a product developed by\n\nRespond with one of Apple or Atari or Google or Square or Sega or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Google",
+    "gt_counterfactual_target": "Atari"
+  },
+  {
+    "original_prompt": "Egypt, which has the capital city\n\nRespond with one of Karachi or Munich or Madrid or Cairo or Georgetown or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "British Guiana, which has the capital city\n\nRespond with one of Karachi or Munich or Madrid or Cairo or Georgetown or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Cairo",
+    "gt_counterfactual_target": "Georgetown"
+  },
+  {
+    "original_prompt": "The headquarter of RioCan Real Estate Investment Trust is in\n\nRespond with one of Edmonton or Berlin or Tehran or Toronto or Italy or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The headquarter of Morr Music is in\n\nRespond with one of Edmonton or Berlin or Tehran or Toronto or Italy or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Toronto",
+    "gt_counterfactual_target": "Berlin"
+  },
+  {
+    "original_prompt": "Italian Fascism, that was formulated in\n\nRespond with one of Turkey or Canada or Belgium or Italy or Denmark or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Vejrhanen, that was formulated in\n\nRespond with one of Turkey or Canada or Belgium or Italy or Denmark or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Italy",
+    "gt_counterfactual_target": "Denmark"
+  },
+  {
+    "original_prompt": "The headquarter of Milano Vipers is located in\n\nRespond with one of Milan or Central or Munich or Prague or Lima or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The headquarter of Czechoslovak Television is located in\n\nRespond with one of Milan or Central or Munich or Prague or Lima or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Milan",
+    "gt_counterfactual_target": "Prague"
+  },
+  {
+    "original_prompt": "Klaus Doldinger originates from\n\nRespond with one of Auckland or Valencia or Berlin or Norfolk or Belfast or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Vicente Grau Juan originates from\n\nRespond with one of Auckland or Valencia or Berlin or Norfolk or Belfast or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Berlin",
+    "gt_counterfactual_target": "Valencia"
+  },
+  {
+    "original_prompt": "The official religion of Radim Gaudentius is\n\nRespond with one of Christianity or Judaism or Islam or Buddhism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The official religion of Abu Sufyan ibn Harb is\n\nRespond with one of Christianity or Judaism or Islam or Buddhism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Christianity",
+    "gt_counterfactual_target": "Islam"
+  },
+  {
+    "original_prompt": "Mahalangur Himal is located in\n\nRespond with one of Canada or Romania or Portugal or Nepal or Venezuela or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Camarate is located in\n\nRespond with one of Canada or Romania or Portugal or Nepal or Venezuela or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Nepal",
+    "gt_counterfactual_target": "Portugal"
+  },
+  {
+    "original_prompt": "Birendra of Nepal, who has a citizenship from\n\nRespond with one of Nepal or Morocco or Ethiopia or Iran or Spain or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Prudentius, who has a citizenship from\n\nRespond with one of Nepal or Morocco or Ethiopia or Iran or Spain or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Nepal",
+    "gt_counterfactual_target": "Spain"
+  },
+  {
+    "original_prompt": "In Mauritius, the language spoken is\n\nRespond with one of French or Greek or Italian or Catalan or German or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Formentera, the language spoken is\n\nRespond with one of French or Greek or Italian or Catalan or German or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "Catalan"
+  },
+  {
+    "original_prompt": "The language used by Giovanni Bertati is\n\nRespond with one of Italian or French or Tamil or Irish or Hebrew or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The language used by Jesus Christ is\n\nRespond with one of Italian or French or Tamil or Irish or Hebrew or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Italian",
+    "gt_counterfactual_target": "Hebrew"
+  },
+  {
+    "original_prompt": "Louis-Paul Aujoulat is a native speaker of\n\nRespond with one of French or Dutch or Tamil or Finnish or Russian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ingrian Finns is a native speaker of\n\nRespond with one of French or Dutch or Tamil or Finnish or Russian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "Finnish"
+  },
+  {
+    "original_prompt": "The headquarters of Ross Stores is in\n\nRespond with one of Dublin or Stockholm or Rome or Warsaw or Calgary or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The headquarters of Astaldi is in\n\nRespond with one of Dublin or Stockholm or Rome or Warsaw or Calgary or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Dublin",
+    "gt_counterfactual_target": "Rome"
+  },
+  {
+    "original_prompt": "The headquarter of Singapore Bus Service is in\n\nRespond with one of Tehran or Warwick or Edmonton or Princeton or Singapore or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The headquarter of Princeton University Press is in\n\nRespond with one of Tehran or Warwick or Edmonton or Princeton or Singapore or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Singapore",
+    "gt_counterfactual_target": "Princeton"
+  },
+  {
+    "original_prompt": "Xmal Deutschland was created in\n\nRespond with one of Hamburg or Japan or Toronto or Philadelphia or Seattle or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sirens Sister was created in\n\nRespond with one of Hamburg or Japan or Toronto or Philadelphia or Seattle or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Hamburg",
+    "gt_counterfactual_target": "Seattle"
+  },
+  {
+    "original_prompt": "Mohamed Morsi is affiliated with the religion\n\nRespond with one of Christianity or Islam or Judaism or Buddhism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Zunghar Khanate is affiliated with the religion\n\nRespond with one of Christianity or Islam or Judaism or Buddhism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Buddhism"
+  },
+  {
+    "original_prompt": "Where is Second Italo-Ethiopian War? It is located in\n\nRespond with one of India or Venice or Vancouver or Ethiopia or Ireland or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Where is Canada International Film Festival? It is located in\n\nRespond with one of India or Venice or Vancouver or Ethiopia or Ireland or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Ethiopia",
+    "gt_counterfactual_target": "Vancouver"
+  },
+  {
+    "original_prompt": "Finntroll, that was formulated in\n\nRespond with one of Finland or Mexico or India or Greece or France or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "La Duda, that was formulated in\n\nRespond with one of Finland or Mexico or India or Greece or France or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Finland",
+    "gt_counterfactual_target": "Mexico"
+  },
+  {
+    "original_prompt": "Connecticut Route 12 is located in\n\nRespond with one of Alabama or Pennsylvania or Oregon or Connecticut or Mexico or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "White Stag sign is located in\n\nRespond with one of Alabama or Pennsylvania or Oregon or Connecticut or Mexico or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Connecticut",
+    "gt_counterfactual_target": "Oregon"
+  },
+  {
+    "original_prompt": "Clickteam formed in\n\nRespond with one of Paris or Atlanta or Tokyo or Seoul or Boston or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The Constellations formed in\n\nRespond with one of Paris or Atlanta or Tokyo or Seoul or Boston or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Paris",
+    "gt_counterfactual_target": "Atlanta"
+  },
+  {
+    "original_prompt": "Final Fantasy V is created by\n\nRespond with one of Yahoo or Atari or Square or Microsoft or Airbus or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "YUI Library is created by\n\nRespond with one of Yahoo or Atari or Square or Microsoft or Airbus or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Square",
+    "gt_counterfactual_target": "Yahoo"
+  },
+  {
+    "original_prompt": "Nissan Sunny, produced by\n\nRespond with one of Nissan or Renault or Nokia or Apple or Triumph or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Nokia Lumia 1020, produced by\n\nRespond with one of Nissan or Renault or Nokia or Apple or Triumph or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Nissan",
+    "gt_counterfactual_target": "Nokia"
+  },
+  {
+    "original_prompt": "Montour County can be found in\n\nRespond with one of Pennsylvania or Virginia or Texas or Kentucky or Maryland or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Manassas Regional Airport can be found in\n\nRespond with one of Pennsylvania or Virginia or Texas or Kentucky or Maryland or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Pennsylvania",
+    "gt_counterfactual_target": "Virginia"
+  },
+  {
+    "original_prompt": "In Turku, an official language is\n\nRespond with one of Swedish or Italian or Czech or Spanish or Ukrainian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Czechoslovakia, an official language is\n\nRespond with one of Swedish or Italian or Czech or Spanish or Ukrainian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Swedish",
+    "gt_counterfactual_target": "Czech"
+  },
+  {
+    "original_prompt": "Desejos de Mulher, that was created in\n\nRespond with one of Brazil or Switzerland or Canada or Italy or Netherlands or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Belisario, that was created in\n\nRespond with one of Brazil or Switzerland or Canada or Italy or Netherlands or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Brazil",
+    "gt_counterfactual_target": "Italy"
+  },
+  {
+    "original_prompt": "The headquarter of Alberta University of the Arts is in\n\nRespond with one of Calgary or Brooklyn or Boston or Moscow or Houston or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The headquarter of State Street Corporation is in\n\nRespond with one of Calgary or Brooklyn or Boston or Moscow or Houston or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Calgary",
+    "gt_counterfactual_target": "Boston"
+  },
+  {
+    "original_prompt": "Second Rutte cabinet, located in\n\nRespond with one of Netherlands or Australia or Nigeria or Singapore or Estonia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "ITE College East, located in\n\nRespond with one of Netherlands or Australia or Nigeria or Singapore or Estonia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Netherlands",
+    "gt_counterfactual_target": "Singapore"
+  },
+  {
+    "original_prompt": "The native language of Christophe Hondelatte is\n\nRespond with one of French or Dutch or Persian or Hungarian or Tamil or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The native language of Mohammad-Reza Sharifinia is\n\nRespond with one of French or Dutch or Persian or Hungarian or Tamil or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "Persian"
+  },
+  {
+    "original_prompt": "Zhang Aiping succumbed at\n\nRespond with one of Beijing or Santiago or Ottawa or Indianapolis or Idaho or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Robert James Manion succumbed at\n\nRespond with one of Beijing or Santiago or Ottawa or Indianapolis or Idaho or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Beijing",
+    "gt_counterfactual_target": "Ottawa"
+  },
+  {
+    "original_prompt": "Benito Arias Montano speaks the language\n\nRespond with one of Spanish or Chinese or Russian or Italian or Bulgarian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "L. L. Zamenhof speaks the language\n\nRespond with one of Spanish or Chinese or Russian or Italian or Bulgarian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Spanish",
+    "gt_counterfactual_target": "Russian"
+  },
+  {
+    "original_prompt": "What is the twin city of Jakarta? It is\n\nRespond with one of Beijing or Sydney or London or Atlanta or Munich or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "What is the twin city of Toulouse? It is\n\nRespond with one of Beijing or Sydney or London or Atlanta or Munich or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Beijing",
+    "gt_counterfactual_target": "Atlanta"
+  },
+  {
+    "original_prompt": "The headquarter of Morr Music is located in\n\nRespond with one of Lima or Berlin or Central or Montreal or Alexandria or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The headquarter of Kewpee is located in\n\nRespond with one of Lima or Berlin or Central or Montreal or Alexandria or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Berlin",
+    "gt_counterfactual_target": "Lima"
+  },
+  {
+    "original_prompt": "Jim Magilton plays in the position of\n\nRespond with one of forward or goalkeeper or pitcher or tackle or midfielder or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jordan Gross plays in the position of\n\nRespond with one of forward or goalkeeper or pitcher or tackle or midfielder or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "midfielder",
+    "gt_counterfactual_target": "tackle"
+  },
+  {
+    "original_prompt": "Honda CBR600F3 is produced by\n\nRespond with one of Honda or Nokia or BMW or Dodge or Suzuki or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Suzuki Kizashi is produced by\n\nRespond with one of Honda or Nokia or BMW or Dodge or Suzuki or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Honda",
+    "gt_counterfactual_target": "Suzuki"
+  },
+  {
+    "original_prompt": "Google AdSense, from\n\nRespond with one of Boeing or Phoenix or Chicago or Memphis or Google or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Oak Street Beach, from\n\nRespond with one of Boeing or Phoenix or Chicago or Memphis or Google or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Google",
+    "gt_counterfactual_target": "Chicago"
+  },
+  {
+    "original_prompt": "Berlin International Film Festival can be found in\n\nRespond with one of Sweden or Berlin or Japan or Barcelona or Seattle or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "2006 Swedish general election can be found in\n\nRespond with one of Sweden or Berlin or Japan or Barcelona or Seattle or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Berlin",
+    "gt_counterfactual_target": "Sweden"
+  },
+  {
+    "original_prompt": "In Prince Edward Island, an official language is\n\nRespond with one of English or Russian or Portuguese or Italian or Spanish or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Southern Common Market, an official language is\n\nRespond with one of English or Russian or Portuguese or Italian or Spanish or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "Portuguese"
+  },
+  {
+    "original_prompt": "BBC Persian Television, from\n\nRespond with one of France or Indianapolis or BBC or Chrysler or Fiat or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Chrysler Europe, from\n\nRespond with one of France or Indianapolis or BBC or Chrysler or Fiat or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "BBC",
+    "gt_counterfactual_target": "Chrysler"
+  },
+  {
+    "original_prompt": "MMA Live premieres on\n\nRespond with one of ESPN or HBO or MTV or Bravo or PBS or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Austin City Limits premieres on\n\nRespond with one of ESPN or HBO or MTV or Bravo or PBS or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "ESPN",
+    "gt_counterfactual_target": "PBS"
+  },
+  {
+    "original_prompt": "Alpes-de-Haute-Provence was called after\n\nRespond with one of Melbourne or Thor or Linux or Virginia or Alps or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Delmarva Peninsula was called after\n\nRespond with one of Melbourne or Thor or Linux or Virginia or Alps or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Alps",
+    "gt_counterfactual_target": "Virginia"
+  },
+  {
+    "original_prompt": "Juan Carlos Garrido writes in\n\nRespond with one of Spanish or Hebrew or Hindi or Russian or Latin or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Andrei Bitov writes in\n\nRespond with one of Spanish or Hebrew or Hindi or Russian or Latin or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Spanish",
+    "gt_counterfactual_target": "Russian"
+  },
+  {
+    "original_prompt": "The official religion of Afghanistan is\n\nRespond with one of Christianity or Judaism or Islam or Buddhism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The official religion of David is\n\nRespond with one of Christianity or Judaism or Islam or Buddhism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Judaism"
+  },
+  {
+    "original_prompt": "USS Chicago was named for\n\nRespond with one of Shiva or grape or Thor or Chicago or Java or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "thorium was named for\n\nRespond with one of Shiva or grape or Thor or Chicago or Java or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Chicago",
+    "gt_counterfactual_target": "Thor"
+  },
+  {
+    "original_prompt": "Itta of Metz has a citizenship from\n\nRespond with one of Belgium or Ethiopia or Italy or Sweden or India or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Moreno Mannini has a citizenship from\n\nRespond with one of Belgium or Ethiopia or Italy or Sweden or India or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Belgium",
+    "gt_counterfactual_target": "Italy"
+  },
+  {
+    "original_prompt": "Roger Oakley originates from\n\nRespond with one of Auckland or Scotland or Singapore or Manhattan or Wales or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Mechell originates from\n\nRespond with one of Auckland or Scotland or Singapore or Manhattan or Wales or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Auckland",
+    "gt_counterfactual_target": "Wales"
+  },
+  {
+    "original_prompt": "1977 Moscow bombings can be found in\n\nRespond with one of Karachi or Moscow or California or Kazakhstan or Lithuania or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Halchidhoma can be found in\n\nRespond with one of Karachi or Moscow or California or Kazakhstan or Lithuania or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Moscow",
+    "gt_counterfactual_target": "California"
+  },
+  {
+    "original_prompt": "Gaiola, in\n\nRespond with one of Italy or Philippines or Singapore or Nepal or Turkey or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sakarya Province, in\n\nRespond with one of Italy or Philippines or Singapore or Nepal or Turkey or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Italy",
+    "gt_counterfactual_target": "Turkey"
+  },
+  {
+    "original_prompt": "Said the Whale, from\n\nRespond with one of Canada or Australia or Philippines or Sweden or Japan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Joe Hildebrand, from\n\nRespond with one of Canada or Australia or Philippines or Sweden or Japan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Canada",
+    "gt_counterfactual_target": "Australia"
+  },
+  {
+    "original_prompt": "Sommariva del Bosco, in\n\nRespond with one of Italy or Romania or Germany or Albania or Libya or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Albanian Land Force, in\n\nRespond with one of Italy or Romania or Germany or Albania or Libya or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Italy",
+    "gt_counterfactual_target": "Albania"
+  },
+  {
+    "original_prompt": "Shawn Toovey was native to\n\nRespond with one of Lincoln or Lisbon or Quincy or Mumbai or Albuquerque or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Artur Pizarro was native to\n\nRespond with one of Lincoln or Lisbon or Quincy or Mumbai or Albuquerque or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Lincoln",
+    "gt_counterfactual_target": "Lisbon"
+  },
+  {
+    "original_prompt": "The language used by Mick Lally is\n\nRespond with one of Irish or Bulgarian or Catalan or Hindi or Latin or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The language used by Thomas Hobbes is\n\nRespond with one of Irish or Bulgarian or Catalan or Hindi or Latin or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Irish",
+    "gt_counterfactual_target": "Latin"
+  },
+  {
+    "original_prompt": "In Raisio, an official language is\n\nRespond with one of Finnish or Swedish or Bulgarian or English or Ukrainian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Lohja, an official language is\n\nRespond with one of Finnish or Swedish or Bulgarian or English or Ukrainian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Finnish",
+    "gt_counterfactual_target": "Swedish"
+  },
+  {
+    "original_prompt": "Sky Cinema's owner\n\nRespond with one of Germany or Renault or CBS or Indianapolis or Sky or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Bankers Life Fieldhouse's owner\n\nRespond with one of Germany or Renault or CBS or Indianapolis or Sky or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Sky",
+    "gt_counterfactual_target": "Indianapolis"
+  },
+  {
+    "original_prompt": "Orikhiv is located in the country of\n\nRespond with one of Ukraine or Russia or Japan or Netherlands or Israel or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Geffen Award is located in the country of\n\nRespond with one of Ukraine or Russia or Japan or Netherlands or Israel or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Ukraine",
+    "gt_counterfactual_target": "Israel"
+  },
+  {
+    "original_prompt": "Ahmed Zewail follows the religion of\n\nRespond with one of Buddhism or Christianity or Judaism or Islam or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jewish Theological Seminary of America follows the religion of\n\nRespond with one of Buddhism or Christianity or Judaism or Islam or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Judaism"
+  },
+  {
+    "original_prompt": "Where is Seattle International Film Festival? It is located in\n\nRespond with one of Central or Stockholm or Karachi or Beijing or Seattle or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Where is KaraFilm Festival? It is located in\n\nRespond with one of Central or Stockholm or Karachi or Beijing or Seattle or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Seattle",
+    "gt_counterfactual_target": "Karachi"
+  },
+  {
+    "original_prompt": "In Zimbabwe, the language spoken is\n\nRespond with one of English or Filipino or Spanish or Finnish or Italian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Philippines, the language spoken is\n\nRespond with one of English or Filipino or Spanish or Finnish or Italian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "Filipino"
+  },
+  {
+    "original_prompt": "The original language of Quelli dell'intervallo was\n\nRespond with one of Italian or English or French or Thai or Korean or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The original language of The Possible was\n\nRespond with one of Italian or English or French or Thai or Korean or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Italian",
+    "gt_counterfactual_target": "Thai"
+  },
+  {
+    "original_prompt": "Where is Autonomous University of Barcelona? It is located in\n\nRespond with one of Karachi or Irvine or Melbourne or Barcelona or France or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Where is Silent River Film Festival? It is located in\n\nRespond with one of Karachi or Irvine or Melbourne or Barcelona or France or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Barcelona",
+    "gt_counterfactual_target": "Irvine"
+  },
+  {
+    "original_prompt": "The language used by Ernest William Hornung is\n\nRespond with one of English or Russian or Hebrew or Chinese or Hindi or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The language used by Kiran Kumar is\n\nRespond with one of English or Russian or Hebrew or Chinese or Hindi or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "Hindi"
+  },
+  {
+    "original_prompt": "People's Republic of Poland's capital is\n\nRespond with one of Warsaw or Brussels or Oslo or Jerusalem or Prague or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Flanders's capital is\n\nRespond with one of Warsaw or Brussels or Oslo or Jerusalem or Prague or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Warsaw",
+    "gt_counterfactual_target": "Brussels"
+  },
+  {
+    "original_prompt": "Morgan Inlet is located in\n\nRespond with one of Antarctica or Asia or Africa or Europe or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Angola is located in\n\nRespond with one of Antarctica or Asia or Africa or Europe or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Antarctica",
+    "gt_counterfactual_target": "Africa"
+  },
+  {
+    "original_prompt": "Mercury Comet, produced by\n\nRespond with one of Cadillac or Iran or Mercury or Bentley or IBM or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Bentley Continental, produced by\n\nRespond with one of Cadillac or Iran or Mercury or Bentley or IBM or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Mercury",
+    "gt_counterfactual_target": "Bentley"
+  },
+  {
+    "original_prompt": "Moscow State Pedagogical University is in\n\nRespond with one of California or Moscow or England or Belfast or Lancaster or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Castle is in\n\nRespond with one of California or Moscow or England or Belfast or Lancaster or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Moscow",
+    "gt_counterfactual_target": "Belfast"
+  },
+  {
+    "original_prompt": "Skype was a product of\n\nRespond with one of Microsoft or Adobe or Square or Atari or Boeing or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Front Mission 3 was a product of\n\nRespond with one of Microsoft or Adobe or Square or Atari or Boeing or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Square"
+  },
+  {
+    "original_prompt": "Google Reader is from\n\nRespond with one of Prague or Anaheim or Google or California or Renault or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Gordini is from\n\nRespond with one of Prague or Anaheim or Google or California or Renault or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Google",
+    "gt_counterfactual_target": "Renault"
+  },
+  {
+    "original_prompt": "Asian Highway Network, in\n\nRespond with one of India or Nepal or Pakistan or Ireland or Greece or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Hellenic Police, in\n\nRespond with one of India or Nepal or Pakistan or Ireland or Greece or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "India",
+    "gt_counterfactual_target": "Greece"
+  },
+  {
+    "original_prompt": "Microsoft Project was developed by\n\nRespond with one of Intel or Microsoft or Nintendo or Boeing or IBM or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Wii MotionPlus was developed by\n\nRespond with one of Intel or Microsoft or Nintendo or Boeing or IBM or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Nintendo"
+  },
+  {
+    "original_prompt": "The official language of Byelorussian Soviet Socialist Republic is\n\nRespond with one of Polish or Spanish or Portuguese or Russian or German or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The official language of Belarus is\n\nRespond with one of Polish or Spanish or Portuguese or Russian or German or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Polish",
+    "gt_counterfactual_target": "Russian"
+  },
+  {
+    "original_prompt": "Emanuel Larsen was born in\n\nRespond with one of Chennai or Kabul or Tours or Lisbon or Copenhagen or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ahmad Zahir was born in\n\nRespond with one of Chennai or Kabul or Tours or Lisbon or Copenhagen or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Copenhagen",
+    "gt_counterfactual_target": "Kabul"
+  },
+  {
+    "original_prompt": "Sous le vent was written in\n\nRespond with one of French or German or Korean or Dutch or Hebrew or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Bild was written in\n\nRespond with one of French or German or Korean or Dutch or Hebrew or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "German"
+  },
+  {
+    "original_prompt": "London International Airport, which was named for\n\nRespond with one of Jerusalem or London or Chicago or Split or Athena or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Split Airport, which was named for\n\nRespond with one of Jerusalem or London or Chicago or Split or Athena or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "London",
+    "gt_counterfactual_target": "Split"
+  },
+  {
+    "original_prompt": "Warwick School is headquartered in\n\nRespond with one of Warwick or Boston or Israel or Alexandria or Athens or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Magen David Adom is headquartered in\n\nRespond with one of Warwick or Boston or Israel or Alexandria or Athens or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Warwick",
+    "gt_counterfactual_target": "Israel"
+  },
+  {
+    "original_prompt": "Adi ibn Hatim follows the religion of\n\nRespond with one of Islam or Buddhism or Christianity or Judaism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Nagarjuna follows the religion of\n\nRespond with one of Islam or Buddhism or Christianity or Judaism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Buddhism"
+  },
+  {
+    "original_prompt": "The native language of Almeida Garrett is\n\nRespond with one of Portuguese or Dutch or Italian or Georgian or Hungarian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The native language of Miho Mosulishvili is\n\nRespond with one of Portuguese or Dutch or Italian or Georgian or Hungarian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Portuguese",
+    "gt_counterfactual_target": "Georgian"
+  },
+  {
+    "original_prompt": "NFL on NBC premiered on\n\nRespond with one of CNN or NBC or HBO or Bravo or MTV or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Disappearing Acts premiered on\n\nRespond with one of CNN or NBC or HBO or Bravo or MTV or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "NBC",
+    "gt_counterfactual_target": "HBO"
+  },
+  {
+    "original_prompt": "The twin city of Saint Petersburg is\n\nRespond with one of Istanbul or Bangkok or Barcelona or Sydney or Berlin or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The twin city of Tirana is\n\nRespond with one of Istanbul or Bangkok or Barcelona or Sydney or Berlin or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Istanbul",
+    "gt_counterfactual_target": "Barcelona"
+  },
+  {
+    "original_prompt": "Samuel von Fischer worked in the city of\n\nRespond with one of Berlin or Sacramento or Ottawa or Vienna or Montreal or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Camilla de Rossi worked in the city of\n\nRespond with one of Berlin or Sacramento or Ottawa or Vienna or Montreal or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Berlin",
+    "gt_counterfactual_target": "Vienna"
+  },
+  {
+    "original_prompt": "In Newfoundland and Labrador, they understand\n\nRespond with one of English or Polish or Italian or Ukrainian or Russian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Mykolaiv Oblast, they understand\n\nRespond with one of English or Polish or Italian or Ukrainian or Russian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "Ukrainian"
+  },
+  {
+    "original_prompt": "Abu Sufyan ibn Harb follows the religion of\n\nRespond with one of Christianity or Judaism or Islam or Buddhism or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "David follows the religion of\n\nRespond with one of Christianity or Judaism or Islam or Buddhism or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Islam",
+    "gt_counterfactual_target": "Judaism"
+  },
+  {
+    "original_prompt": "Intel 80486 is a product of\n\nRespond with one of Sega or Intel or IBM or Sony or Microsoft or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Zune is a product of\n\nRespond with one of Sega or Intel or IBM or Sony or Microsoft or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Intel",
+    "gt_counterfactual_target": "Microsoft"
+  },
+  {
+    "original_prompt": "Pomfret School can be found in\n\nRespond with one of Connecticut or Ohio or Tennessee or Hawaii or Victoria or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Cumberland University can be found in\n\nRespond with one of Connecticut or Ohio or Tennessee or Hawaii or Victoria or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Connecticut",
+    "gt_counterfactual_target": "Tennessee"
+  },
+  {
+    "original_prompt": "Windows Embedded Automotive is a product of\n\nRespond with one of Microsoft or IBM or Sega or Airbus or Intel or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Silvermont is a product of\n\nRespond with one of Microsoft or IBM or Sega or Airbus or Intel or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Intel"
+  },
+  {
+    "original_prompt": "The twin city of Beirut is\n\nRespond with one of Istanbul or Cairo or Beijing or Philadelphia or Milan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The twin city of Melbourne is\n\nRespond with one of Istanbul or Cairo or Beijing or Philadelphia or Milan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Istanbul",
+    "gt_counterfactual_target": "Milan"
+  },
+  {
+    "original_prompt": "Boeing Defense, Space & Security's owner\n\nRespond with one of Boeing or Philadelphia or Anaheim or Denver or Sony or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sony Crackle's owner\n\nRespond with one of Boeing or Philadelphia or Anaheim or Denver or Sony or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Boeing",
+    "gt_counterfactual_target": "Sony"
+  },
+  {
+    "original_prompt": "Ayn Halaqim Subdistrict is located in\n\nRespond with one of Syria or Singapore or Romania or Libya or Greece or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jiul de Vest River is located in\n\nRespond with one of Syria or Singapore or Romania or Libya or Greece or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Syria",
+    "gt_counterfactual_target": "Romania"
+  },
+  {
+    "original_prompt": "In Kuusamo, the language spoken is\n\nRespond with one of Finnish or English or Czech or Polish or Ukrainian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Czechoslovakia, the language spoken is\n\nRespond with one of Finnish or English or Czech or Polish or Ukrainian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Finnish",
+    "gt_counterfactual_target": "Czech"
+  },
+  {
+    "original_prompt": "Vermont Route 108 is in\n\nRespond with one of Vermont or Alberta or Tasmania or Miami or Manhattan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Lincoln Square Synagogue is in\n\nRespond with one of Vermont or Alberta or Tasmania or Miami or Manhattan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Vermont",
+    "gt_counterfactual_target": "Manhattan"
+  },
+  {
+    "original_prompt": "Istanbul University can be found in\n\nRespond with one of Istanbul or Kazakhstan or Malaysia or Delhi or Estonia or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Post-Soviet states can be found in\n\nRespond with one of Istanbul or Kazakhstan or Malaysia or Delhi or Estonia or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Istanbul",
+    "gt_counterfactual_target": "Kazakhstan"
+  },
+  {
+    "original_prompt": "Lionel Messi holds a citizenship from\n\nRespond with one of Ethiopia or Argentina or India or Cuba or Germany or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Edelgard Bulmahn holds a citizenship from\n\nRespond with one of Ethiopia or Argentina or India or Cuba or Germany or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Argentina",
+    "gt_counterfactual_target": "Germany"
+  },
+  {
+    "original_prompt": "scientific method's area of work is\n\nRespond with one of chemistry or science or astronomy or physics or groundwater or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "James Franck's area of work is\n\nRespond with one of chemistry or science or astronomy or physics or groundwater or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "science",
+    "gt_counterfactual_target": "physics"
+  },
+  {
+    "original_prompt": "Hatfields & McCoys is to debut on\n\nRespond with one of History or CBS or BBC or NBC or Bravo or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Elizabeth R is to debut on\n\nRespond with one of History or CBS or BBC or NBC or Bravo or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "History",
+    "gt_counterfactual_target": "BBC"
+  },
+  {
+    "original_prompt": "Jeff Tweedy took up work in\n\nRespond with one of Chicago or Ottawa or Venice or Sacramento or Berlin or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Marcus Musurus took up work in\n\nRespond with one of Chicago or Ottawa or Venice or Sacramento or Berlin or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Chicago",
+    "gt_counterfactual_target": "Venice"
+  },
+  {
+    "original_prompt": "Abu'l-Faraj ibn al-Jawzi succumbed at\n\nRespond with one of Ottawa or Rome or London or Dresden or Baghdad or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Carl Georg Oscar Drude succumbed at\n\nRespond with one of Ottawa or Rome or London or Dresden or Baghdad or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Baghdad",
+    "gt_counterfactual_target": "Dresden"
+  },
+  {
+    "original_prompt": "Dodge Dynasty, produced by\n\nRespond with one of Fiat or Nissan or Renault or Dodge or McLaren or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Lancia Thema, produced by\n\nRespond with one of Fiat or Nissan or Renault or Dodge or McLaren or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Dodge",
+    "gt_counterfactual_target": "Fiat"
+  },
+  {
+    "original_prompt": "Sven Delblanc, who holds a citizenship from\n\nRespond with one of Sweden or Mexico or Slovakia or Japan or Albania or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sakichi Toyoda, who holds a citizenship from\n\nRespond with one of Sweden or Mexico or Slovakia or Japan or Albania or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Sweden",
+    "gt_counterfactual_target": "Japan"
+  },
+  {
+    "original_prompt": "Vejrhanen was developed in\n\nRespond with one of Denmark or Norway or England or Spain or Ukraine or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Drudkh was developed in\n\nRespond with one of Denmark or Norway or England or Spain or Ukraine or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Denmark",
+    "gt_counterfactual_target": "Ukraine"
+  },
+  {
+    "original_prompt": "Ferrari 250 GTO, developed by\n\nRespond with one of Ferrari or Iran or Apple or Fiat or Chrysler or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "PGM-11 Redstone, developed by\n\nRespond with one of Ferrari or Iran or Apple or Fiat or Chrysler or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Ferrari",
+    "gt_counterfactual_target": "Chrysler"
+  },
+  {
+    "original_prompt": "Ferrari 125 S, produced by\n\nRespond with one of Cadillac or Suzuki or IBM or Ferrari or Triumph or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Triumph TR8, produced by\n\nRespond with one of Cadillac or Suzuki or IBM or Ferrari or Triumph or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Ferrari",
+    "gt_counterfactual_target": "Triumph"
+  },
+  {
+    "original_prompt": "Quintin Hogg, Baron Hailsham of St Marylebone speaks the language\n\nRespond with one of French or Romanian or Russian or English or Dutch or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Christa Theret speaks the language\n\nRespond with one of French or Romanian or Russian or English or Dutch or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "French"
+  },
+  {
+    "original_prompt": "Pepe Jeans is based in\n\nRespond with one of Montreal or London or Lima or Berlin or Frankfurt or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "German Football Association is based in\n\nRespond with one of Montreal or London or Lima or Berlin or Frankfurt or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "London",
+    "gt_counterfactual_target": "Frankfurt"
+  },
+  {
+    "original_prompt": "Dave Ridgway has a citizenship from\n\nRespond with one of Canada or France or Germany or Jamaica or Haiti or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Arnold Antonin has a citizenship from\n\nRespond with one of Canada or France or Germany or Jamaica or Haiti or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Canada",
+    "gt_counterfactual_target": "Haiti"
+  },
+  {
+    "original_prompt": "The language used by Gheorghe Ciuhandu is\n\nRespond with one of Romanian or Chinese or Danish or Tamil or Persian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The language used by Ahmad Karimi-Hakkak is\n\nRespond with one of Romanian or Chinese or Danish or Tamil or Persian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Romanian",
+    "gt_counterfactual_target": "Persian"
+  },
+  {
+    "original_prompt": "Triumph Acclaim is a product of\n\nRespond with one of BMW or Dodge or Triumph or Suzuki or Mercury or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Mercury Comet is a product of\n\nRespond with one of BMW or Dodge or Triumph or Suzuki or Mercury or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Triumph",
+    "gt_counterfactual_target": "Mercury"
+  },
+  {
+    "original_prompt": "Alexander Mosolov was employed in\n\nRespond with one of Atlanta or Ottawa or Vienna or Sydney or Moscow or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "John Horbury Hunt was employed in\n\nRespond with one of Atlanta or Ottawa or Vienna or Sydney or Moscow or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Moscow",
+    "gt_counterfactual_target": "Sydney"
+  },
+  {
+    "original_prompt": "Dodge Hornet, created by\n\nRespond with one of Dodge or Nokia or Chevrolet or Mercury or Chrysler or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Chevrolet Caprice, created by\n\nRespond with one of Dodge or Nokia or Chevrolet or Mercury or Chrysler or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Dodge",
+    "gt_counterfactual_target": "Chevrolet"
+  },
+  {
+    "original_prompt": "Google Street View, created by\n\nRespond with one of Intel or Yahoo or Adobe or Airbus or Google or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "YUI Library, created by\n\nRespond with one of Intel or Yahoo or Adobe or Airbus or Google or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Google",
+    "gt_counterfactual_target": "Yahoo"
+  },
+  {
+    "original_prompt": "Geffen Award, located in\n\nRespond with one of Israel or India or Libya or France or Canada or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jafara, located in\n\nRespond with one of Israel or India or Libya or France or Canada or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Israel",
+    "gt_counterfactual_target": "Libya"
+  },
+  {
+    "original_prompt": "Munich Residence, in\n\nRespond with one of Germany or Spain or Nigeria or Pakistan or Canada or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Bilbao, in\n\nRespond with one of Germany or Spain or Nigeria or Pakistan or Canada or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Germany",
+    "gt_counterfactual_target": "Spain"
+  },
+  {
+    "original_prompt": "Windows Communication Foundation was developed by\n\nRespond with one of Atari or Microsoft or Intel or Sony or Adobe or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Gran Trak 10 was developed by\n\nRespond with one of Atari or Microsoft or Intel or Sony or Adobe or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Microsoft",
+    "gt_counterfactual_target": "Atari"
+  },
+  {
+    "original_prompt": "The language used by Mateo Flecha is\n\nRespond with one of Spanish or Catalan or Danish or Romanian or Portuguese or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The language used by Humberto Delgado is\n\nRespond with one of Spanish or Catalan or Danish or Romanian or Portuguese or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Spanish",
+    "gt_counterfactual_target": "Portuguese"
+  },
+  {
+    "original_prompt": "Rico Yan's profession is a\n\nRespond with one of actor or diplomat or politician or novelist or chemist or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Kikunae Ikeda's profession is a\n\nRespond with one of actor or diplomat or politician or novelist or chemist or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "actor",
+    "gt_counterfactual_target": "chemist"
+  },
+  {
+    "original_prompt": "Afghanistan, which has the capital city\n\nRespond with one of Baghdad or Munich or Kabul or Karachi or Jerusalem or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "West Pakistan, which has the capital city\n\nRespond with one of Baghdad or Munich or Kabul or Karachi or Jerusalem or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Kabul",
+    "gt_counterfactual_target": "Karachi"
+  },
+  {
+    "original_prompt": "In Chardonne, an official language is\n\nRespond with one of French or Hindi or Portuguese or Greek or English or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Guinea-Bissau, an official language is\n\nRespond with one of French or Hindi or Portuguese or Greek or English or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "Portuguese"
+  },
+  {
+    "original_prompt": "Cairo International Airport was called after\n\nRespond with one of Poland or Lincoln or Jerusalem or Hamburg or Cairo or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Jerusalem syndrome was called after\n\nRespond with one of Poland or Lincoln or Jerusalem or Hamburg or Cairo or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Cairo",
+    "gt_counterfactual_target": "Jerusalem"
+  },
+  {
+    "original_prompt": "The capital city of Baghdad Governorate is\n\nRespond with one of Oslo or Damascus or Georgetown or Warsaw or Baghdad or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The capital city of Norway is\n\nRespond with one of Oslo or Damascus or Georgetown or Warsaw or Baghdad or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Baghdad",
+    "gt_counterfactual_target": "Oslo"
+  },
+  {
+    "original_prompt": "The official language of Guernsey is\n\nRespond with one of English or Russian or Hindi or Greek or German or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The official language of Canton of Fribourg is\n\nRespond with one of English or Russian or Hindi or Greek or German or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "German"
+  },
+  {
+    "original_prompt": "The original language of Gato Fedorento was\n\nRespond with one of Portuguese or Russian or Tamil or Hindi or French or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The original language of Magalir Mattum was\n\nRespond with one of Portuguese or Russian or Tamil or Hindi or French or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Portuguese",
+    "gt_counterfactual_target": "Tamil"
+  },
+  {
+    "original_prompt": "Renault 4P, developed by\n\nRespond with one of BMW or Cadillac or Dodge or Chevrolet or Renault or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Cadillac CTS-V, developed by\n\nRespond with one of BMW or Cadillac or Dodge or Chevrolet or Renault or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Renault",
+    "gt_counterfactual_target": "Cadillac"
+  },
+  {
+    "original_prompt": "Everberg, which is located in\n\nRespond with one of Indonesia or Turkey or Russia or Belgium or France or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sakarya Province, which is located in\n\nRespond with one of Indonesia or Turkey or Russia or Belgium or France or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Belgium",
+    "gt_counterfactual_target": "Turkey"
+  },
+  {
+    "original_prompt": "Greenwich Park is in\n\nRespond with one of Jerusalem or Geneva or Karachi or Berlin or Greenwich or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Geneva Film Festival is in\n\nRespond with one of Jerusalem or Geneva or Karachi or Berlin or Greenwich or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Greenwich",
+    "gt_counterfactual_target": "Geneva"
+  },
+  {
+    "original_prompt": "The original language of Tokyo Pop was\n\nRespond with one of English or Spanish or Portuguese or Hindi or Danish or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The original language of Kondura was\n\nRespond with one of English or Spanish or Portuguese or Hindi or Danish or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "Hindi"
+  },
+  {
+    "original_prompt": "Toyota Auris is created by\n\nRespond with one of Chevrolet or Toyota or Cadillac or IBM or Iran or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Cadillac Sixty Special is created by\n\nRespond with one of Chevrolet or Toyota or Cadillac or IBM or Iran or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Toyota",
+    "gt_counterfactual_target": "Cadillac"
+  },
+  {
+    "original_prompt": "Waterloo Maple, whose headquarters are in\n\nRespond with one of Waterloo or Italy or Calgary or Edmonton or Copenhagen or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Northlands, whose headquarters are in\n\nRespond with one of Waterloo or Italy or Calgary or Edmonton or Copenhagen or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Waterloo",
+    "gt_counterfactual_target": "Edmonton"
+  },
+  {
+    "original_prompt": "Chrysler Europe, from\n\nRespond with one of Chrysler or Sky or Philadelphia or Montreal or CBS or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Mount Royal Cross, from\n\nRespond with one of Chrysler or Sky or Philadelphia or Montreal or CBS or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Chrysler",
+    "gt_counterfactual_target": "Montreal"
+  },
+  {
+    "original_prompt": "Polityka was created in\n\nRespond with one of Poland or Mexico or Switzerland or Greece or Scotland or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "La Duda was created in\n\nRespond with one of Poland or Mexico or Switzerland or Greece or Scotland or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Poland",
+    "gt_counterfactual_target": "Mexico"
+  },
+  {
+    "original_prompt": "Chevrolet Silverado, developed by\n\nRespond with one of Chevrolet or Chrysler or IBM or Samsung or Ferrari or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "IBM 9370, developed by\n\nRespond with one of Chevrolet or Chrysler or IBM or Samsung or Ferrari or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Chevrolet",
+    "gt_counterfactual_target": "IBM"
+  },
+  {
+    "original_prompt": "Legnica County, which is located in\n\nRespond with one of Poland or Spain or Nigeria or Iran or Portugal or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Veysian Rural District, which is located in\n\nRespond with one of Poland or Spain or Nigeria or Iran or Portugal or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Poland",
+    "gt_counterfactual_target": "Iran"
+  },
+  {
+    "original_prompt": "Jiul de Vest River is located in\n\nRespond with one of Romania or Poland or Singapore or Portugal or Syria or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Camarate is located in\n\nRespond with one of Romania or Poland or Singapore or Portugal or Syria or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Romania",
+    "gt_counterfactual_target": "Portugal"
+  },
+  {
+    "original_prompt": "Raffaele Palladino, who plays the position\n\nRespond with one of midfielder or goalkeeper or goaltender or catcher or forward or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Corky Miller, who plays the position\n\nRespond with one of midfielder or goalkeeper or goaltender or catcher or forward or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "midfielder",
+    "gt_counterfactual_target": "catcher"
+  },
+  {
+    "original_prompt": "Vienna International Centre is located in\n\nRespond with one of Connecticut or Lancaster or Oregon or Manhattan or Vienna or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Randalls Island is located in\n\nRespond with one of Connecticut or Lancaster or Oregon or Manhattan or Vienna or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Vienna",
+    "gt_counterfactual_target": "Manhattan"
+  },
+  {
+    "original_prompt": "The original language of The Jeffersons is\n\nRespond with one of English or Russian or Finnish or Swedish or Spanish or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The original language of Faceless Killers is\n\nRespond with one of English or Russian or Finnish or Swedish or Spanish or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "English",
+    "gt_counterfactual_target": "Swedish"
+  },
+  {
+    "original_prompt": "The language of Parattai Engira Azhagu Sundaram was\n\nRespond with one of English or Tamil or Russian or Hebrew or Spanish or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The language of Great Soviet Encyclopedia was\n\nRespond with one of English or Tamil or Russian or Hebrew or Spanish or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Tamil",
+    "gt_counterfactual_target": "Russian"
+  },
+  {
+    "original_prompt": "Vidar Busk, who holds a citizenship from\n\nRespond with one of Ireland or Cuba or Canada or Malaysia or Norway or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Juan Croucier, who holds a citizenship from\n\nRespond with one of Ireland or Cuba or Canada or Malaysia or Norway or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Norway",
+    "gt_counterfactual_target": "Cuba"
+  },
+  {
+    "original_prompt": "Cyberdog was created by\n\nRespond with one of Apple or Boeing or IBM or Atari or Google or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Gran Trak 10 was created by\n\nRespond with one of Apple or Boeing or IBM or Atari or Google or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Apple",
+    "gt_counterfactual_target": "Atari"
+  },
+  {
+    "original_prompt": "Logan Thomas plays in the position of\n\nRespond with one of pitcher or goalkeeper or midfielder or quarterback or linebacker or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Walter Johnson plays in the position of\n\nRespond with one of pitcher or goalkeeper or midfielder or quarterback or linebacker or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "quarterback",
+    "gt_counterfactual_target": "pitcher"
+  },
+  {
+    "original_prompt": "Sovetskoye Shampanskoye, that was developed in\n\nRespond with one of Belarus or Canada or Poland or Japan or Norway or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Polityka, that was developed in\n\nRespond with one of Belarus or Canada or Poland or Japan or Norway or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Belarus",
+    "gt_counterfactual_target": "Poland"
+  },
+  {
+    "original_prompt": "IBM Parallel Sysplex is developed by\n\nRespond with one of Intel or IBM or Nintendo or Airbus or Sony or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Core 2 is developed by\n\nRespond with one of Intel or IBM or Nintendo or Airbus or Sony or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "IBM",
+    "gt_counterfactual_target": "Intel"
+  },
+  {
+    "original_prompt": "Williams Point, in\n\nRespond with one of Antarctica or Europe or Asia or Africa or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Juan de Nova Island, in\n\nRespond with one of Antarctica or Europe or Asia or Africa or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Antarctica",
+    "gt_counterfactual_target": "Africa"
+  },
+  {
+    "original_prompt": "Johann Andreas Schmeller died in the city of\n\nRespond with one of Munich or Detroit or Florence or Idaho or London or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "James Witherell died in the city of\n\nRespond with one of Munich or Detroit or Florence or Idaho or London or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Munich",
+    "gt_counterfactual_target": "Detroit"
+  },
+  {
+    "original_prompt": "Opeth, from\n\nRespond with one of Sweden or Denmark or Spain or Greece or Austria or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Kefalotyri, from\n\nRespond with one of Sweden or Denmark or Spain or Greece or Austria or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Sweden",
+    "gt_counterfactual_target": "Greece"
+  },
+  {
+    "original_prompt": "CBS Evening News debuted on\n\nRespond with one of HBO or BBC or NBC or CNN or CBS or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Elizabeth R debuted on\n\nRespond with one of HBO or BBC or NBC or CNN or CBS or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "CBS",
+    "gt_counterfactual_target": "BBC"
+  },
+  {
+    "original_prompt": "Adobe AIR is developed by\n\nRespond with one of Square or Adobe or Boeing or Intel or Airbus or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Airbus A350 is developed by\n\nRespond with one of Square or Adobe or Boeing or Intel or Airbus or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Adobe",
+    "gt_counterfactual_target": "Airbus"
+  },
+  {
+    "original_prompt": "In Arjeplog Municipality, they understand\n\nRespond with one of Swedish or Czech or German or Catalan or Hindi or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Czechoslovakia, they understand\n\nRespond with one of Swedish or Czech or German or Catalan or Hindi or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Swedish",
+    "gt_counterfactual_target": "Czech"
+  },
+  {
+    "original_prompt": "Wolfgang of Regensburg holds the position of\n\nRespond with one of patriarch or cardinal or mayor or bishop or pope or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Rafael Merry del Val holds the position of\n\nRespond with one of patriarch or cardinal or mayor or bishop or pope or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "bishop",
+    "gt_counterfactual_target": "cardinal"
+  },
+  {
+    "original_prompt": "Cadillac CTS-V, developed by\n\nRespond with one of Ferrari or Iran or Sega or Dodge or Cadillac or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Hwasong-5, developed by\n\nRespond with one of Ferrari or Iran or Sega or Dodge or Cadillac or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Cadillac",
+    "gt_counterfactual_target": "Iran"
+  },
+  {
+    "original_prompt": "The language of Faceless Killers is\n\nRespond with one of Swedish or Portuguese or Hindi or Danish or Hebrew or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The language of Khokababu is\n\nRespond with one of Swedish or Portuguese or Hindi or Danish or Hebrew or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Swedish",
+    "gt_counterfactual_target": "Hindi"
+  },
+  {
+    "original_prompt": "Dance Umbrella is in\n\nRespond with one of London or Belgium or Portsmouth or France or Ireland or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Dunnes Stores is in\n\nRespond with one of London or Belgium or Portsmouth or France or Ireland or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "London",
+    "gt_counterfactual_target": "Ireland"
+  },
+  {
+    "original_prompt": "BMW 4 Series is a product of\n\nRespond with one of Nintendo or Sega or Nokia or Ferrari or BMW or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Nokia Lumia 1020 is a product of\n\nRespond with one of Nintendo or Sega or Nokia or Ferrari or BMW or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "BMW",
+    "gt_counterfactual_target": "Nokia"
+  },
+  {
+    "original_prompt": "HBO Now is owned by\n\nRespond with one of HBO or Renault or Chrysler or France or Leonardo or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Mona Lisa is owned by\n\nRespond with one of HBO or Renault or Chrysler or France or Leonardo or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "HBO",
+    "gt_counterfactual_target": "France"
+  },
+  {
+    "original_prompt": "The language used by Jean Bourdichon is\n\nRespond with one of French or Russian or Dutch or Portuguese or Bulgarian or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The language used by Eric de Kuyper is\n\nRespond with one of French or Russian or Dutch or Portuguese or Bulgarian or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "Dutch"
+  },
+  {
+    "original_prompt": "David is affiliated with the religion\n\nRespond with one of Judaism or Buddhism or Islam or Christianity or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Zunghar Khanate is affiliated with the religion\n\nRespond with one of Judaism or Buddhism or Islam or Christianity or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Judaism",
+    "gt_counterfactual_target": "Buddhism"
+  },
+  {
+    "original_prompt": "Joseph Brodsky is a native speaker of\n\nRespond with one of Russian or Portuguese or Spanish or Tamil or French or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Sridevi is a native speaker of\n\nRespond with one of Russian or Portuguese or Spanish or Tamil or French or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Russian",
+    "gt_counterfactual_target": "Tamil"
+  },
+  {
+    "original_prompt": "Nordin Amrabat, who plays the position\n\nRespond with one of midfielder or tackle or catcher or pitcher or forward or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Joao Plata, who plays the position\n\nRespond with one of midfielder or tackle or catcher or pitcher or forward or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "midfielder",
+    "gt_counterfactual_target": "forward"
+  },
+  {
+    "original_prompt": "Tartu Offensive is located in\n\nRespond with one of Estonia or Stockholm or Wales or Lithuania or Cuba or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Special Period is located in\n\nRespond with one of Estonia or Stockholm or Wales or Lithuania or Cuba or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Estonia",
+    "gt_counterfactual_target": "Cuba"
+  },
+  {
+    "original_prompt": "The location of Irish Museum of Modern Art is\n\nRespond with one of Melbourne or Lithuania or Croatia or Dublin or Ankara or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "The location of Middle East Technical University is\n\nRespond with one of Melbourne or Lithuania or Croatia or Dublin or Ankara or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Dublin",
+    "gt_counterfactual_target": "Ankara"
+  },
+  {
+    "original_prompt": "Suzuki GSX-R750, produced by\n\nRespond with one of Nokia or Bentley or IBM or Suzuki or Dodge or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Nokia Lumia 1520, produced by\n\nRespond with one of Nokia or Bentley or IBM or Suzuki or Dodge or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Suzuki",
+    "gt_counterfactual_target": "Nokia"
+  },
+  {
+    "original_prompt": "Trail Inlet is a part of the continent of\n\nRespond with one of Antarctica or Africa or Asia or Europe or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Loire is a part of the continent of\n\nRespond with one of Antarctica or Africa or Asia or Europe or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Antarctica",
+    "gt_counterfactual_target": "Europe"
+  },
+  {
+    "original_prompt": "In Economic Community of West African States, they understand\n\nRespond with one of French or Swedish or Russian or Ukrainian or Portuguese or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Southern Common Market, they understand\n\nRespond with one of French or Swedish or Russian or Ukrainian or Portuguese or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "Portuguese"
+  },
+  {
+    "original_prompt": "Ed Logg works for\n\nRespond with one of Atari or IBM or Microsoft or WWE or Apple or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Philip Don Estridge works for\n\nRespond with one of Atari or IBM or Microsoft or WWE or Apple or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Atari",
+    "gt_counterfactual_target": "IBM"
+  },
+  {
+    "original_prompt": "Henrique Maximiano Coelho Neto is a citizen of\n\nRespond with one of Brazil or Argentina or Bangladesh or Japan or Cuba or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Lionel Messi is a citizen of\n\nRespond with one of Brazil or Argentina or Bangladesh or Japan or Cuba or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Brazil",
+    "gt_counterfactual_target": "Argentina"
+  },
+  {
+    "original_prompt": "Leg Work was originally aired on\n\nRespond with one of CBS or HBO or History or Bravo or CNN or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Lou Dobbs Tonight was originally aired on\n\nRespond with one of CBS or HBO or History or Bravo or CNN or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "CBS",
+    "gt_counterfactual_target": "CNN"
+  },
+  {
+    "original_prompt": "Porsche 911, created by\n\nRespond with one of Nissan or McLaren or Honda or Porsche or Ferrari or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Honda CRF series, created by\n\nRespond with one of Nissan or McLaren or Honda or Porsche or Ferrari or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Porsche",
+    "gt_counterfactual_target": "Honda"
+  },
+  {
+    "original_prompt": "Turkish coffee was created in the country of\n\nRespond with one of Ukraine or India or Turkey or Germany or Austria or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Wiener schnitzel was created in the country of\n\nRespond with one of Ukraine or India or Turkey or Germany or Austria or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Turkey",
+    "gt_counterfactual_target": "Austria"
+  },
+  {
+    "original_prompt": "Where is Operation Apollo? It is located in\n\nRespond with one of Afghanistan or Seattle or London or Rome or Kazakhstan or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Where is PAX? It is located in\n\nRespond with one of Afghanistan or Seattle or London or Rome or Kazakhstan or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Afghanistan",
+    "gt_counterfactual_target": "Seattle"
+  },
+  {
+    "original_prompt": "Nyusha is a native speaker of\n\nRespond with one of Russian or Portuguese or English or Italian or French or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Alphonse Daudet is a native speaker of\n\nRespond with one of Russian or Portuguese or English or Italian or French or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Russian",
+    "gt_counterfactual_target": "French"
+  },
+  {
+    "original_prompt": "Nils Hjalmar Odhner found employment in\n\nRespond with one of Ottawa or Stockholm or Cologne or Madrid or Helsinki or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Superpitcher found employment in\n\nRespond with one of Ottawa or Stockholm or Cologne or Madrid or Helsinki or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Stockholm",
+    "gt_counterfactual_target": "Cologne"
+  },
+  {
+    "original_prompt": "Lincoln United F.C. is named for\n\nRespond with one of Chicago or Hamburg or Philadelphia or Lincoln or Alps or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Philadelphia Experiment is named for\n\nRespond with one of Chicago or Hamburg or Philadelphia or Lincoln or Alps or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Lincoln",
+    "gt_counterfactual_target": "Philadelphia"
+  },
+  {
+    "original_prompt": "Roberto Gerhard writes in\n\nRespond with one of Catalan or Hindi or Irish or Hebrew or English or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Kiran Kumar writes in\n\nRespond with one of Catalan or Hindi or Irish or Hebrew or English or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Catalan",
+    "gt_counterfactual_target": "Hindi"
+  },
+  {
+    "original_prompt": "McLaren MP4-20 is created by\n\nRespond with one of McLaren or Nintendo or Ferrari or Renault or Honda or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Ferrari Berlinetta Boxer is created by\n\nRespond with one of McLaren or Nintendo or Ferrari or Renault or Honda or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "McLaren",
+    "gt_counterfactual_target": "Ferrari"
+  },
+  {
+    "original_prompt": "In Porrentruy, they understand\n\nRespond with one of French or Ukrainian or English or Finnish or Spanish or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "In Mykolaiv Oblast, they understand\n\nRespond with one of French or Ukrainian or English or Finnish or Spanish or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "French",
+    "gt_counterfactual_target": "Ukrainian"
+  },
+  {
+    "original_prompt": "Alfa Romeo 75 is produced by\n\nRespond with one of Fiat or McLaren or Bentley or Chevrolet or Toyota or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Toyota HiAce is produced by\n\nRespond with one of Fiat or McLaren or Bentley or Chevrolet or Toyota or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Fiat",
+    "gt_counterfactual_target": "Toyota"
+  },
+  {
+    "original_prompt": "Triumph TR8, produced by\n\nRespond with one of Triumph or Fiat or IBM or Suzuki or Chevrolet or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Suzuki Carry, produced by\n\nRespond with one of Triumph or Fiat or IBM or Suzuki or Chevrolet or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Triumph",
+    "gt_counterfactual_target": "Suzuki"
+  },
+  {
+    "original_prompt": "Ruggiero Ricci, the\n\nRespond with one of violin or piano or trumpet or guitar or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Thad Jones, the\n\nRespond with one of violin or piano or trumpet or guitar or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "violin",
+    "gt_counterfactual_target": "trumpet"
+  },
+  {
+    "original_prompt": "Where is 2SM? It is located in\n\nRespond with one of Sydney or Vienna or Portsmouth or London or Iran or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Where is United Services Recreation Ground? It is located in\n\nRespond with one of Sydney or Vienna or Portsmouth or London or Iran or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Sydney",
+    "gt_counterfactual_target": "Portsmouth"
+  },
+  {
+    "original_prompt": "Class Editori was created in\n\nRespond with one of Milan or Japan or Manchester or Calgary or Naples or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "Braids was created in\n\nRespond with one of Milan or Japan or Manchester or Calgary or Naples or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "Milan",
+    "gt_counterfactual_target": "Calgary"
+  },
+  {
+    "original_prompt": "IBM Network Control Program was developed by\n\nRespond with one of Sony or Yahoo or IBM or Nintendo or Boeing or unknown and nothing else.\n\nResponse:",
+    "counterfactual_prompt": "YUI Library was developed by\n\nRespond with one of Sony or Yahoo or IBM or Nintendo or Boeing or unknown and nothing else.\n\nResponse:",
+    "gt_original_target": "IBM",
+    "gt_counterfactual_target": "Yahoo"
+  }
+]
