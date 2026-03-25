@@ -626,10 +626,10 @@ fn nvml_query_process_vram() -> Option<(Option<u64>, Option<u64>, Option<bool>)>
 
     // Sanity check: if per-process VRAM exceeds total device memory, the value
     // is likely garbage. Fall back to nvidia-smi.
-    if let (Some(used), Some(total)) = (my_vram, total_bytes) {
-        if used > total {
-            return None;
-        }
+    if let (Some(used), Some(total)) = (my_vram, total_bytes)
+        && used > total
+    {
+        return None;
     }
 
     // Our PID might not be in the list (no active CUDA context yet?) — return None to trigger fallback

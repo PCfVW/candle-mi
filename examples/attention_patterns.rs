@@ -272,19 +272,12 @@ fn run_attention_analysis(
 ) -> candle_mi::Result<()> {
     let n_layers = model.num_layers();
 
-    // Encode prompt and decode individual tokens for display
-    let token_ids = tokenizer.encode(prompt)?;
+    // Encode prompt with offsets — gives token strings directly (no per-token decode)
+    let encoding = tokenizer.encode_with_offsets(prompt)?;
+    let token_ids = &encoding.ids;
     let seq_len = token_ids.len();
     let input = candle_core::Tensor::new(&token_ids[..], model.device())?.unsqueeze(0)?; // [1, seq]
-
-    let token_strings: Vec<String> = token_ids
-        .iter()
-        .map(|&id| {
-            tokenizer
-                .decode(&[id])
-                .unwrap_or_else(|_| format!("[{id}]"))
-        })
-        .collect();
+    let token_strings = &encoding.tokens;
 
     println!("  Prompt: \"{prompt}\" ({seq_len} tokens)");
     print!("  Tokens:");
