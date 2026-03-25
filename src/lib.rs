@@ -178,9 +178,9 @@
 //!   how to add a new model architecture (auto-config, config parser, or
 //!   custom `MIBackend`).
 //! - [`examples/README.md`](https://github.com/PCfVW/candle-mi/blob/main/examples/README.md) —
-//!   17 runnable examples covering inference, logit lens, attention patterns,
-//!   knockout, steering, activation patching, CLT circuits, SAE encoding,
-//!   RWKV inference, and more.
+//!   19 runnable examples covering inference, logit lens, attention patterns,
+//!   knockout, steering, activation patching, `CounterFact` replication,
+//!   CLT circuits, SAE encoding, RWKV inference, and more.
 
 #![deny(warnings)] // All warns → errors in CI
 #![cfg_attr(not(any(feature = "mmap", feature = "memory")), forbid(unsafe_code))] // Rule 5: safe by default
@@ -210,7 +210,9 @@ mod util;
 // --- Public re-exports ---------------------------------------------------
 
 // Backend
-pub use backend::{GenerationResult, MIBackend, MIModel, extract_token_prob, sample_token};
+pub use backend::{
+    GenerationResult, MIBackend, MIModel, TextForwardResult, extract_token_prob, sample_token,
+};
 
 // Config
 pub use config::{

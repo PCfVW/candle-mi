@@ -153,6 +153,60 @@ impl EncodingWithOffsets {
     pub const fn is_empty(&self) -> bool {
         self.tokens.is_empty()
     }
+
+    /// Label each token by which named span it overlaps with.
+    ///
+    /// For each token, finds the first span (by input order) whose byte
+    /// range overlaps the token's byte range. The last token matching
+    /// each span label gets `"_final"` appended. Tokens matching no
+    /// span receive `"other"`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use candle_mi::EncodingWithOffsets;
+    ///
+    /// let enc = EncodingWithOffsets::new(
+    ///     vec![1, 2, 3, 4],
+    ///     vec!["The".into(), " Eiffel".into(), " Tower".into(), " is".into()],
+    ///     vec![(0, 3), (3, 10), (10, 16), (16, 19)],
+    /// );
+    /// let labels = enc.label_spans(&[("subject", 0..16), ("relation", 16..19)]);
+    /// assert_eq!(labels, vec!["subject", "subject", "subject_final", "relation_final"]);
+    /// ```
+    #[must_use]
+    pub fn label_spans(&self, spans: &[(&str, std::ops::Range<usize>)]) -> Vec<String> {
+        let mut labels: Vec<String> = self
+            .offsets
+            .iter()
+            .map(|&(tok_start, tok_end)| {
+                // BOS or special tokens with zero-width offsets match nothing
+                if tok_start == tok_end {
+                    return String::from("other");
+                }
+                // First span whose byte range overlaps this token wins
+                for (name, range) in spans {
+                    if tok_end > range.start && tok_start < range.end {
+                        return String::from(*name);
+                    }
+                }
+                String::from("other")
+            })
+            .collect();
+
+        // For each unique span label, upgrade the last occurrence to "{label}_final"
+        for (name, _) in spans {
+            if let Some(last_idx) = labels.iter().rposition(|l| l.as_str() == *name) {
+                // INDEX: last_idx came from rposition on labels, bounded by labels.len()
+                #[allow(clippy::indexing_slicing)]
+                {
+                    labels[last_idx] = format!("{name}_final");
+                }
+            }
+        }
+
+        labels
+    }
 }
 
 /// Result of converting a character position to a token index.
@@ -311,5 +365,75 @@ mod tests {
         let empty = EncodingWithOffsets::new(vec![], vec![], vec![]);
         assert_eq!(empty.len(), 0);
         assert!(empty.is_empty());
+    }
+
+    #[test]
+    fn label_spans_subject_relation() {
+        // "The Eiffel Tower is located in"
+        let enc = EncodingWithOffsets::new(
+            vec![1, 2, 3, 4, 5, 6, 7],
+            vec![
+                "The".into(),
+                " Eiffel".into(),
+                " Tower".into(),
+                " is".into(),
+                " located".into(),
+                " in".into(),
+                " Paris".into(),
+            ],
+            vec![
+                (0, 3),
+                (3, 10),
+                (10, 16),
+                (16, 19),
+                (19, 27),
+                (27, 30),
+                (30, 36),
+            ],
+        );
+        let labels = enc.label_spans(&[("subject", 0..16), ("relation", 17..30)]);
+        assert_eq!(
+            labels,
+            vec![
+                "subject",
+                "subject",
+                "subject_final",
+                "relation",
+                "relation",
+                "relation_final",
+                "other",
+            ]
+        );
+    }
+
+    #[test]
+    fn label_spans_bos_token() {
+        // BOS has offset (0, 0) — should be "other"
+        let enc = EncodingWithOffsets::new(
+            vec![0, 1, 2],
+            vec!["<bos>".into(), "Hello".into(), " world".into()],
+            vec![(0, 0), (0, 5), (5, 11)],
+        );
+        let labels = enc.label_spans(&[("greeting", 0..5)]);
+        assert_eq!(labels, vec!["other", "greeting_final", "other"]);
+    }
+
+    #[test]
+    fn label_spans_no_spans() {
+        let enc = EncodingWithOffsets::new(
+            vec![1, 2],
+            vec!["Hello".into(), " world".into()],
+            vec![(0, 5), (5, 11)],
+        );
+        let labels = enc.label_spans(&[]);
+        assert_eq!(labels, vec!["other", "other"]);
+    }
+
+    #[test]
+    fn label_spans_first_span_wins() {
+        // Two overlapping spans — first one wins
+        let enc = EncodingWithOffsets::new(vec![1], vec!["overlap".into()], vec![(0, 7)]);
+        let labels = enc.label_spans(&[("first", 0..5), ("second", 3..7)]);
+        assert_eq!(labels, vec!["first_final"]);
     }
 }

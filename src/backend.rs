@@ -337,6 +337,121 @@ impl MIModel {
     pub fn backend(&self) -> &dyn MIBackend {
         &*self.backend
     }
+
+    /// Run a forward pass from text, returning both MI outputs and token
+    /// position mapping.
+    ///
+    /// Combines [`MITokenizer::encode_with_offsets`](crate::MITokenizer::encode_with_offsets)
+    /// + tensor creation + [`forward`](Self::forward) in a single call.
+    ///
+    /// The returned [`TextForwardResult`] carries the [`HookCache`]
+    /// alongside the [`EncodingWithOffsets`](crate::EncodingWithOffsets),
+    /// eliminating the need for separate encoding and manual offset
+    /// tracking.
+    ///
+    /// # Shapes
+    /// - input: text string
+    /// - returns: [`TextForwardResult`] with logits at `[1, seq, vocab_size]`
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Config`] if no tokenizer is available.
+    /// Returns [`MIError::Tokenizer`] on encoding failure.
+    /// Propagates errors from the underlying backend.
+    pub fn forward_text(&self, text: &str, hooks: &HookSpec) -> Result<TextForwardResult> {
+        let tokenizer = self
+            .tokenizer()
+            .ok_or_else(|| MIError::Config("forward_text requires a tokenizer".into()))?;
+        let encoding = tokenizer.encode_with_offsets(text)?;
+        let input = Tensor::new(&encoding.ids[..], &self.device)?.unsqueeze(0)?;
+        let cache = self.forward(&input, hooks)?;
+        Ok(TextForwardResult { cache, encoding })
+    }
+}
+
+// ---------------------------------------------------------------------------
+// TextForwardResult
+// ---------------------------------------------------------------------------
+
+/// Result of a text-based forward pass, bundling MI outputs with token
+/// position mapping.
+///
+/// Returned by [`MIModel::forward_text`]. Provides access to the
+/// [`HookCache`] (logits + captured activations) alongside the
+/// [`EncodingWithOffsets`](crate::EncodingWithOffsets) (token strings,
+/// IDs, and byte offset ranges for mapping between source text positions
+/// and token indices).
+#[derive(Debug)]
+pub struct TextForwardResult {
+    /// Hook cache containing output logits and any captured activations.
+    cache: HookCache,
+    /// Token encoding with character offset mapping.
+    encoding: crate::util::positioning::EncodingWithOffsets,
+}
+
+impl TextForwardResult {
+    /// Access the hook cache (logits + captured activations).
+    #[must_use]
+    pub const fn cache(&self) -> &HookCache {
+        &self.cache
+    }
+
+    /// Consume the result and return the hook cache.
+    #[must_use]
+    pub fn into_cache(self) -> HookCache {
+        self.cache
+    }
+
+    /// Access the token encoding with character offset mapping.
+    #[must_use]
+    pub const fn encoding(&self) -> &crate::util::positioning::EncodingWithOffsets {
+        &self.encoding
+    }
+
+    /// The output tensor from the forward pass (typically logits).
+    ///
+    /// Shortcut for `self.cache().output()`.
+    ///
+    /// # Shapes
+    /// - returns: `[1, seq, vocab_size]`
+    #[must_use]
+    pub const fn output(&self) -> &Tensor {
+        self.cache.output()
+    }
+
+    /// Retrieve a captured tensor by hook point, returning an error if
+    /// not found.
+    ///
+    /// Shortcut for `self.cache().require(hook)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Hook`] if the hook point was not captured.
+    pub fn require(&self, hook: &crate::hooks::HookPoint) -> Result<&Tensor> {
+        self.cache.require(hook)
+    }
+
+    /// Retrieve a captured tensor by hook point.
+    ///
+    /// Shortcut for `self.cache().get(hook)`.
+    #[must_use]
+    pub fn get(&self, hook: &crate::hooks::HookPoint) -> Option<&Tensor> {
+        self.cache.get(hook)
+    }
+
+    /// The raw BPE token strings (with space-prefix markers like `Ġ`).
+    ///
+    /// Shortcut for `self.encoding().tokens`.
+    #[must_use]
+    pub fn tokens(&self) -> &[String] {
+        &self.encoding.tokens
+    }
+
+    /// Number of tokens in the encoded sequence.
+    #[must_use]
+    pub const fn seq_len(&self) -> usize {
+        self.encoding.len()
+    }
 }
 
 // ---------------------------------------------------------------------------
