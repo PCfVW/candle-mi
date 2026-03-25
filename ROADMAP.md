@@ -2,8 +2,8 @@
 
 > *MI for the Rust of us*
 
-**Date:** February 19, 2026 (last updated: March 24, 2026)
-**Status:** Phase 0–5 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.1.5. Phase 6 partially complete (character count helix finalized, activation patching extended with full causal trace heatmap, steering convergence, NPZ parsing migrated to `anamnesis`, MSRV 1.88). Default dtype F32 for research-grade precision. PR submitted to candle repo ([#3406](https://github.com/huggingface/candle/pull/3406)).
+**Date:** February 19, 2026 (last updated: March 25, 2026)
+**Status:** Phase 0–5 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.1.6. Phase 6 partially complete (character count helix finalized, activation patching extended with full causal trace heatmap, steering convergence, NPZ parsing migrated to `anamnesis`, MSRV 1.88, `forward_text` API, prolepsis finding via Transluce replication and factual routing). Default dtype F32 for research-grade precision. PR submitted to candle repo ([#3406](https://github.com/huggingface/candle/pull/3406)).
 **Context:** Building on plip-rs experience (7 model backends incl. Gemma 2, attention knockout, state knockout, effective attention, steering, logit lens, CLT encoding/injection). Two successful replications of Anthropic's "Planning in Poems" Figure 13 validate the approach: Gemma 2 2B with 426K CLTs (melometis branch) and Llama 3.2 1B with 524K CLTs (tragos branch). Target: a publishable, generic Rust MI crate endorsed by HuggingFace.
 
 ---
@@ -612,7 +612,7 @@ candle-mi/
 │       ├── pca.rs                  — PCA via power iteration with deflation ✅
 │       └── positioning.rs          — Character ↔ token mapping
 │
-├── examples/                       — 17 examples covering MI techniques ✅
+├── examples/                       — 19 examples covering MI techniques ✅
 │   ├── quick_start_transformer.rs  — Load model, forward pass, print top tokens ✅
 │   ├── quick_start_sae.rs          — Load SAE, encode activations, print top features ✅
 │   ├── fast_download.rs            — Parallel multi-connection model download ✅
@@ -682,7 +682,7 @@ probing = ["linfa", "linfa-logistic", "ndarray"]  # Linear probing
 | **BACKENDS.md** | Markdown | Step-by-step guide to adding a new model architecture: config parser, weight map, validation protocol |
 | **HOOKS.md** | Markdown | Hook point reference table (mirroring §2.1), intervention API walkthrough, worked examples (capture attention, run knockout, steer residual stream) |
 | **CHANGELOG.md** | Markdown | [Keep a Changelog](https://keepachangelog.com/) format from v0.0.1 onwards |
-| **Examples** | Rust (`examples/`) | 17 examples covering model loading, logit lens, attention patterns, knockout, steering, activation patching, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — each self-contained with inline comments ✅ |
+| **Examples** | Rust (`examples/`) | 19 examples covering model loading, logit lens, attention patterns, knockout, steering, activation patching, CounterFact patching, factual routing, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — each self-contained with inline comments ✅ |
 
 **Rustdoc policy:** Every `pub` item must have a doc comment. Types include a one-line summary + "# Examples" section with a runnable doc-test. `#![warn(missing_docs)]` enforced at crate level.
 
@@ -813,7 +813,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [x] Write crate-level documentation with examples — **commit `c7cbf9e`**
 - [x] Write `BACKENDS.md` — how to add a new model architecture — **commit `36b5208`**
 - [x] Write `HOOKS.md` — hook point reference and intervention walkthrough — **commit `4384545`**
-- [x] Write example programs — 17 examples covering forward pass, logit lens, attention patterns, knockout, steering, activation patching, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — **multiple commits**
+- [x] Write example programs — 19 examples covering forward pass, logit lens, attention patterns, knockout, steering, activation patching, CounterFact patching, factual routing, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — **multiple commits**
 - [x] Improve auto-config error messaging — when `check_auto_compatibility()` fails for non-standard models (non-HF weight naming), provide actionable error messages listing which weight tensors were expected vs. found — **commit** `2685893`
 - [x] Update CHANGELOG.md with Phase 5 changes — **commit `359a623`** — **PUSH** (release candidate)
 - [x] **Release workflow** (publish v0.1.0 to crates.io — automated via `publish.yml`):

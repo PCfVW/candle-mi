@@ -86,7 +86,7 @@ This library was built to replicate Anthropic's [circuit-tracing work](https://t
 cargo run --release --features clt,transformer --example figure13_planning_poems
 ```
 
-This uses Llama 3.2 1B with a 524K-feature Cross-Layer Transcoder to suppress natural rhyme features and inject an alternative ("that" → P=0.98), sweeping injection position across all prompt tokens. See the [full output](examples/README.md#example-output-figure13_planning_poems) and the [17 examples](examples/README.md) covering logit lens, attention knockout, steering, activation patching, CLT circuits, SAE encoding, RWKV inference, and more.
+This uses Llama 3.2 1B with a 524K-feature Cross-Layer Transcoder to suppress natural rhyme features and inject an alternative ("that" → P=0.98), sweeping injection position across all prompt tokens. See the [full output](examples/README.md#example-output-figure13_planning_poems) and the [19 examples](examples/README.md) covering logit lens, attention knockout, steering, activation patching, CLT circuits, SAE encoding, RWKV inference, and more.
 
 ## Quick start
 
@@ -162,6 +162,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | Anthropic, [*When Models Manipulate Manifolds*](https://transformer-circuits.pub/2025/linebreaks/index.html) (2025) | Character count helix — residual stream encodes line position as a helical manifold; reproduced on Gemma 2 2B with 30 Dickens chapters | [`character_count_helix`](examples/README.md#example-output-character_count_helix) |
 | Meng et al., [*Locating and Editing Factual Associations in GPT*](https://arxiv.org/abs/2202.05262) (2022) | Causal tracing via position-specific activation patching | [`activation_patching`](examples/README.md#example-output-activation_patching) |
 | Taufeeque et al., [*Recurrent Feedback*](https://arxiv.org/abs/2407.15421) (2024) | Anacrousis — recurrent steering passes for rhyme completion | [`recurrent_feedback`](examples/README.md#example-output-recurrent_feedback) |
+| Li et al., [*Training LMs to Explain Their Own Computations*](https://arxiv.org/abs/2511.08579) (2025) | CounterFact activation patching protocol — contiguous layer-block patching with forced-choice prompts (Transluce) | [`counterfact_patching`](examples/README.md#example-output-counterfact_patching) |
 
 
 ## Feature flags
@@ -187,7 +188,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | [API docs (docs.rs)](https://docs.rs/candle-mi) | Crate-level documentation with quick start and examples |
 | [HOOKS.md](HOOKS.md) | Hook point reference, intervention API walkthrough, and worked examples |
 | [BACKENDS.md](BACKENDS.md) | How to add a new model architecture (auto-config, config parser, custom backend) |
-| [examples/README.md](examples/README.md) | 17 runnable examples covering inference, logit lens, knockout, steering, and more |
+| [examples/README.md](examples/README.md) | 19 runnable examples covering inference, logit lens, knockout, steering, and more |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 | [ROADMAP.md](ROADMAP.md) | Development roadmap and architecture decisions |
 

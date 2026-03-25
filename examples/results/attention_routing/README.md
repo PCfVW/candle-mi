@@ -307,25 +307,135 @@ causal chain to produce the output (Anthropic's graph structure).
    results on Gemma 2 2B (2.6B parameters) demonstrate the same planning
    mechanism exists in smaller, open models on consumer hardware.
 
+## Cross-model comparison: Llama 3.2 1B
+
+We ran the same attention routing experiment on Llama 3.2 1B with its 524K
+CLT (`mntss/clt-llama-3.2-1b-524k`), using the Figure 13 Llama preset:
+suppress L5:19894 ("cat"), inject L14:13043 ("that"), strength 15.0,
+planning site position 23 ("cat").
+
+### Llama 3.2 1B planning routing heads
+
+![Top 10 routing heads, Llama 524K](plots/top10_routing_heads_llama.png)
+
+**L13:H14 is the dominant planning routing head** (+0.059 delta), with L11:H5
+as the main negative head (-0.045). The push-pull redistribution pattern is
+the same as Gemma 2 2B: some heads engage more with the planning site after
+injection (green), others disengage (red).
+
+Notable: **H5 appears again** — L11:H5 on Llama mirrors L21:H5 on Gemma as
+the dominant *negative* routing head. Same head index, different layer,
+different model.
+
+### Cross-model strength sweep
+
+![Cross-model top head sweep](plots/cross_model_top_head.png)
+
+Both models show the same dynamics: linear scaling at low strength, then
+**saturation onset** at strength ~15. Llama's L13:H14 is slightly more
+responsive than Gemma's L21:H5 at every strength level. The smaller model's
+routing is more easily perturbed — consistent with the factual routing
+finding that 1B models are more fragile to causal interventions.
+
+![Cross-model total routing](plots/cross_model_total_routing.png)
+
+Total attention redistribution (sum of |delta| across all heads) is higher
+for Llama at every strength level (~2.4 vs ~1.8 at strength 20). The 1B
+model redistributes more attention per unit of steering.
+
+### Cross-model comparison table
+
+| Property | Gemma 2 2B (426K) | Llama 3.2 1B (524K) |
+|----------|-------------------|---------------------|
+| **Top head** | L21:H5 (-0.046) | L13:H14 (+0.059) |
+| **Top negative** | L21:H5 (-0.046) | L11:H5 (-0.045) |
+| **Head depth** | 81% (layer 21/26) | 81% (layer 13/16) |
+| **Direction** | Push-pull | Push-pull |
+| **Total routing (str 15)** | 1.85 | 2.04 |
+| **H5 family** | L21, L23, L24, L25 | L11 |
+| **Saturation onset** | ~15× | ~15× |
+
+The saturation onset occurs at the same steering strength (~15×) on both
+models. This supports the hypothesis that the planning attractor boundary
+is a structural property of pre-norm transformers, not model-specific.
+
+## Connection to factual routing (prolepsis)
+
+The `factual_routing` experiment measured attention routing during
+CounterFact activation patching on the **same Llama 3.2 1B model**. The
+planning and factual routing heads are **completely different sets**:
+
+| | Planning routing | Factual routing |
+|---|---|---|
+| **Top head** | L13:H14 (+0.059) | L15:H8 (-0.005) |
+| **Top-10 overlap** | **0 out of 10** | **0 out of 10** |
+| **Mean layer** | 11.0 / 16 | 12.8 / 16 |
+| **Pattern** | Early commitment, late routing | Early commitment, late routing |
+
+Zero head overlap, same architectural pattern. We call this **prolepsis**
+(πρόληψις, "anticipation"): the model commits early and sustains the
+commitment through late-layer attention routing, using task-specific heads
+that follow a shared architectural template. The prolepsis manifests
+identically across:
+
+- **Tasks**: rhyme planning, factual recall
+- **Models**: Gemma 2 2B, Llama 3.2 1B
+- **Scales**: 2.6B, 1.2B parameters
+
+See the [factual routing results](../factual_routing/) and the
+[counterfact patching results](../counterfact_patching/) for the full
+factual recall data.
+
+## Reproducing
+
+```bash
+# Gemma 2 2B — 426K CLT (strongest routing signal)
+cargo run --release --features clt,transformer,mmap --example attention_routing \
+  -- --suppress L16:13725 --suppress L25:9385 \
+     --output examples/results/attention_routing/gemma-2-2b-426k.json
+
+# Gemma 2 2B — 2.5M CLT (word-level features)
+cargo run --release --features clt,transformer,mmap --example attention_routing \
+  -- --clt-repo mntss/clt-gemma-2-2b-2.5m --feature L25:82839 \
+     --suppress L25:57092 --suppress L23:49923 --suppress L20:77102 \
+     --output examples/results/attention_routing/gemma-2-2b-2.5m.json
+
+# Llama 3.2 1B — 524K CLT
+cargo run --release --features clt,transformer,mmap --example attention_routing \
+  -- --model meta-llama/Llama-3.2-1B --clt-repo mntss/clt-llama-3.2-1b-524k \
+     --feature L14:13043 --suppress L5:19894 --strength 15.0 --planning-site 23 \
+     --prompt "A little mouse ran through the house, And found some cheese behind the door. She shared it with a friendly cat, Who wore a tiny velvet" \
+     --output examples/results/attention_routing/llama-3.2-1b-524k.json
+
+# Inject only (for comparison — 13x weaker on Gemma)
+cargo run --release --features clt,transformer,mmap --example attention_routing
+
+# Plot with Mathematica
+# Open attention_routing_plot.wl and evaluate all cells.
+# Generates 7 plots: 4 original + 3 cross-model comparisons.
+```
+
 ## Files
 
 | File | Description |
 |------|-------------|
-| `gemma-2-2b-426k.json` | Full output: 426K CLT, suppress+inject |
-| `gemma-2-2b-2.5m.json` | Full output: 2.5M CLT, suppress+inject |
-| `attention_routing_plot.wl` | Mathematica plotting script |
-| `plots/` | Generated PNG plots |
+| `gemma-2-2b-426k.json` | Full output: Gemma 2 2B, 426K CLT, suppress+inject |
+| `gemma-2-2b-2.5m.json` | Full output: Gemma 2 2B, 2.5M CLT, suppress+inject |
+| `llama-3.2-1b-524k.json` | Full output: Llama 3.2 1B, 524K CLT, suppress+inject |
+| `attention_routing_plot.wl` | Mathematica plotting script (7 plots) |
+| `plots/` | Generated PNG plots (7 files) |
 | `README.md` | This file |
 
 ## Experiment setup
 
-| Parameter | Value |
-|-----------|-------|
-| **Model** | Gemma 2 2B (`google/gemma-2-2b`) |
-| **candle-mi version** | v0.1.3 + unreleased commits |
-| **Hardware** | NVIDIA RTX 5060 Ti (16 GB VRAM) |
-| **Precision** | F32 |
-| **Prompt** | Figure 13 Gemma preset (4-line couplet, "about" rhyme) |
-| **Planning site** | Position 23 (token "about") |
-| **Output position** | Position 30 (last token) |
-| **Strength** | 10.0 (Figure 13 default), sweep 0–20 |
+| Parameter | Gemma 2 2B | Llama 3.2 1B |
+|-----------|------------|--------------|
+| **Model** | `google/gemma-2-2b` | `meta-llama/Llama-3.2-1B` |
+| **CLT** | 426K / 2.5M | 524K |
+| **candle-mi version** | v0.1.3+ | v0.1.5+ |
+| **Hardware** | NVIDIA RTX 5060 Ti (16 GB) | NVIDIA RTX 5060 Ti (16 GB) |
+| **Precision** | F32 | F32 |
+| **Prompt** | 4-line couplet ("about" rhyme) | 4-line couplet ("cat" rhyme) |
+| **Planning site** | Position 23 ("about") | Position 23 ("cat") |
+| **Output position** | Position 30 (last token) | Position 29 (last token) |
+| **Strength** | 10.0 (default), sweep 0–20 | 15.0, sweep 0–20 |

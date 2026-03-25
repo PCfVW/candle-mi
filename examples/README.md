@@ -42,6 +42,8 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
 | `steering_convergence` | `transformer` | Steering convergence: inject contrastive steering vectors, measure cosine similarity to natural activations, identify absorption boundaries |
 | `attention_patterns` | `transformer` | Capture and analyze per-head attention patterns at every layer |
 | `activation_patching` | `transformer` | Causal tracing via position-specific activation patching (Meng et al., 2022) |
+| `counterfact_patching` | `transformer` | CounterFact activation patching (Li et al., 2025 / Transluce protocol): contiguous layer-block patching with forced-choice prompts |
+| `factual_routing` | `transformer` | Attention routing in factual recall: identify factual routing heads by measuring attention deltas during CounterFact patching (prolepsis) |
 | `token_positions` | *(default)* | Character-to-token mapping with `EncodingWithOffsets` and `convert_positions` |
 | `rwkv_inference` | `rwkv` | RWKV-7 linear RNN inference with state hook capture and state knockout |
 | `recurrent_feedback` | `transformer` | Anacrousis / recurrent passes for rhyme completion (Taufeeque et al., 2024) |
@@ -111,6 +113,21 @@ cargo run --release --features transformer --example activation_patching -- "met
 
 # Activation patching — all cached models
 cargo run --release --features transformer,mmap --example activation_patching
+
+# CounterFact patching (Li et al., 2025 / Transluce protocol)
+cargo run --release --features transformer --example counterfact_patching
+
+# CounterFact patching — quick test with 3 prompts
+cargo run --release --features transformer --example counterfact_patching -- --limit 3
+
+# CounterFact patching — with JSON output
+cargo run --release --features transformer --example counterfact_patching -- --output examples/results/counterfact_patching/llama-3.2-1b.json
+
+# Factual routing — identify factual routing heads (89 gold pairs)
+cargo run --release --features transformer --example factual_routing
+
+# Factual routing — with JSON output and memory reporting
+cargo run --release --features transformer,memory --example factual_routing -- --output examples/results/factual_routing/llama-3.2-1b.json
 
 # Token positions — single model (tokenizer only, no GPU)
 cargo run --example token_positions -- "meta-llama/Llama-3.2-1B"
@@ -565,7 +582,22 @@ heads attend... This is invisible to our current approach."*
 The planning attractor has a **soft boundary** (gradual saturation at ~15×
 strength) — fundamentally different from factual recall's hard threshold.
 
-Full results, comparison with Anthropic, and analysis in
+**Cross-model comparison:** Running the same experiment on Llama 3.2 1B
+reveals that the planning routing mechanism is not model-specific. Both
+models show the same strength-dependent saturation curve, but with
+**different dominant heads** — L21:H5 on Gemma 2 2B, L13:H14 on Llama 3.2 1B.
+The mechanism is architectural; the wiring is model-specific.
+
+![Cross-model planning routing](results/attention_routing/plots/cross_model_top_head.png)
+
+Combined with the `factual_routing` experiment (which found L15:H8 as the
+factual routing head on the same Llama 3.2 1B model, with zero overlap
+against L13:H14), this establishes **prolepsis** — early irrevocable
+commitment propagated through task-specific late-layer attention routing
+heads — as a structural motif in transformers, across tasks, models, and
+scales.
+
+Full results, cross-model comparison, and prolepsis analysis in
 [`examples/results/attention_routing/`](results/attention_routing/).
 
 ## Prerequisites

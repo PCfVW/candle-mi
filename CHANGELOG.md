@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-03-25
+
+### Added
+
+- **`MIModel::forward_text()`** — text-in, MI-out: combines encode + tensor
+  creation + forward in one call, returning `TextForwardResult` with both
+  `HookCache` and `EncodingWithOffsets` for position-aware analysis
+- **`TextForwardResult`** struct — bundles hook cache with token offset mapping;
+  provides shortcuts for `output()`, `require()`, `tokens()`, `seq_len()`
+- **`EncodingWithOffsets::label_spans()`** — classify tokens by named byte-range
+  spans (e.g., subject, relation) with automatic `_final` suffix on last token
+  per span; replaces ad-hoc token classification in examples
+- **`counterfact_patching` example** — replicates the Transluce activation
+  patching protocol (Li et al., 2025, arXiv:2511.08579) on Llama 3.2 1B:
+  contiguous layer-block patching with CounterFact forced-choice prompts,
+  JSON output compatible with causal tracing heatmaps; first example to use
+  the new `forward_text` + `label_spans` API
+- **`factual_routing` example** — measures attention routing changes during
+  CounterFact patching; identifies L15:H8 as the dominant factual routing
+  head on Llama 3.2 1B (zero overlap with planning routing head L13:H14);
+  establishes **prolepsis** — early irrevocable commitment via task-specific
+  late-layer attention routing — as a structural motif across tasks, models,
+  and scales
+- **`examples/STYLE_GUIDE.md`** — codifies example conventions: `forward_text`
+  for token positions, `--no-runtime` flag, memory reporting, JSON output
+  with timing, `clap` CLI pattern, and new-example checklist
+- **Attention routing cross-model results** — Llama 3.2 1B planning routing
+  (524K CLT, L13:H14 dominant) with cross-model comparison plots against
+  Gemma 2 2B (426K CLT, L21:H5 dominant)
+
+### Changed
+
+- **`attention_patterns` example** refactored to use `encode_with_offsets()` —
+  token strings come directly from the encoding instead of per-token `decode()`
+  loop (7 lines → 1 line)
+
+### Fixed
+
+- **`memory.rs`** — collapsed nested `if let` / `if` block for clippy 1.94
+  `collapsible_if` lint
+
 ## [0.1.5] - 2026-03-24
 
 ### Added
@@ -701,7 +742,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/PCfVW/candle-mi/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/PCfVW/candle-mi/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/PCfVW/candle-mi/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/PCfVW/candle-mi/compare/v0.1.2...v0.1.3
