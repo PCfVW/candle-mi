@@ -11,7 +11,7 @@
 //!
 //! | Preset | Model | CLT | Suppress | Inject |
 //! |--------|-------|-----|----------|--------|
-//! | `llama3.2-1b-524k` | Llama 3.2 1B | 524K | L5:19894 ("cat") | L14:13043 ("that") |
+//! | `llama3.2-1b-524k` | Llama 3.2 1B | 524K | -ee group: L13:30985 + L9:5488 + L14:27874 + L13:32049 | L14:13043 ("that") |
 //! | `gemma2-2b-426k` | Gemma 2 2B | 426K | L16:13725 + L25:9385 ("-out") | L22:10243 ("around") |
 //! | `gemma2-2b-2.5m` | Gemma 2 2B | 2.5M | L25:57092 + L23:49923 + L20:77102 ("-out") | L25:82839 ("can") |
 //!
@@ -129,20 +129,21 @@ struct Preset {
 
 /// Llama 3.2 1B with 524K CLT.
 ///
-/// Suppress "cat" (L5:19894), inject "that" (L14:13043).
-/// From plip-rs validation: P("that") reaches 0.98 at planning site.
+/// Suppress -ee group: L13:30985 ("he"), L9:5488 ("be"), L14:27874 ("ne"),
+/// L13:32049 ("we").  Inject "that" (L14:13043) from -at group.
+/// From plip-rs validation: P("that") reaches 0.777 at the last position.
 const LLAMA: Preset = Preset {
     model: "meta-llama/Llama-3.2-1B",
     clt_repo: "mntss/clt-llama-3.2-1b-524k",
-    prompt: "A little mouse ran through the house,\n\
-             And found some cheese behind the door.\n\
-             She shared it with a friendly cat,\n\
-             Who wore a tiny velvet",
-    suppress_word: "cat",
+    prompt: "The birds were singing in the tree,\n\
+             And everything was wild and free.\n\
+             The river ran down to the sea,\n\
+             There is so much we cannot",
+    suppress_word: "free",
     inject_word: "that",
-    suppress_features: &[(5, 19894)],
+    suppress_features: &[(13, 30985), (9, 5488), (14, 27874), (13, 32049)],
     inject_feature: (14, 13043),
-    strength: 15.0,
+    strength: 10.0,
 };
 
 /// Gemma 2 2B with 426K CLT.

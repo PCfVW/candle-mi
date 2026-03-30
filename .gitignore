@@ -9,3 +9,6 @@ examples/results/**/plots/*
 !examples/results/**/plots/google_gemma-2-2b_causal_trace_heatmap.png
 examples/results/**/*.json
 *.7z
+
+# Hallucinated feature evidence (kept locally, not in repo)
+examples/figure13/llama_output_old_hallucinated.json
