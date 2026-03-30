@@ -6,7 +6,13 @@ SetDirectory[NotebookDirectory[]];
 (* --- Load JSON data --- *)
 data426k = Import["gemma-2-2b-426k.json", "RawJSON"];
 data2m = Import["gemma-2-2b-2.5m.json", "RawJSON"];
-dataLlama = Import["llama-3.2-1b-524k.json", "RawJSON"];
+(* N=4 Llama results with validated features *)
+dataLlamaEE = Import["llama-3.2-1b-524k-ee.json", "RawJSON"];
+dataLlamaORE = Import["llama-3.2-1b-524k-ore.json", "RawJSON"];
+dataLlamaOO = Import["llama-3.2-1b-524k-oo.json", "RawJSON"];
+dataLlamaAT = Import["llama-3.2-1b-524k-at.json", "RawJSON"];
+(* Use -ee as representative for strength sweep (same inject feature as plip-rs 77.7%) *)
+dataLlama = dataLlamaEE;
 
 (* --- Extract strength sweep data --- *)
 sweep426k = data426k["strength_sweep"];
@@ -70,56 +76,110 @@ topHeadPlot = Show[
   }]
 ];
 
-(* --- Plot 1b: Cross-model strength sweep (Gemma 426K vs Llama 524K) --- *)
-crossModelTopHead = Show[
-  ListLinePlot[
-    {
-      Transpose[{strengths426k, topDelta426k}],
-      Transpose[{strengthsLlama, topDeltaLlama}]
-    },
-    PlotStyle -> {
-      {Thick, RGBColor[0.2, 0.4, 0.8]},
-      {Thick, RGBColor[0.2, 0.7, 0.3]}
-    },
-    PlotMarkers -> {{\[FilledCircle], 8}, {\[FilledDiamond], 8}},
-    PlotLegends -> Placed[
-      {"Gemma 2 2B / 426K (L21:H5)", "Llama 3.2 1B / 524K (L13:H14)"},
-      {0.4, 0.85}
-    ],
-    AxesLabel -> {"Steering Strength", "|Top Head \[CapitalDelta]Attn|"},
-    PlotLabel -> Style[
-      "Planning Routing: Cross-Model Comparison\n(suppress+inject, planning site \[Rule] output)",
-      14, Bold
-    ],
-    PlotRange -> All,
-    ImageSize -> 600,
-    GridLines -> Automatic,
-    GridLinesStyle -> Directive[LightGray, Dashed]
-  ]
-];
+(* --- Plot 1b: Cross-model strength sweep (Gemma 426K vs Llama N=4) --- *)
+sweepLlamaEE = dataLlamaEE["strength_sweep"];
+sweepLlamaORE = dataLlamaORE["strength_sweep"];
+sweepLlamaOO = dataLlamaOO["strength_sweep"];
+sweepLlamaAT = dataLlamaAT["strength_sweep"];
 
-(* --- Plot 1c: Cross-model total routing shift --- *)
-crossModelTotal = ListLinePlot[
+strengthsLlamaEE = #["strength"] & /@ sweepLlamaEE;
+strengthsLlamaORE = #["strength"] & /@ sweepLlamaORE;
+strengthsLlamaOO = #["strength"] & /@ sweepLlamaOO;
+strengthsLlamaAT = #["strength"] & /@ sweepLlamaAT;
+
+topDeltaLlamaEE = Abs[#["top_head_delta"]] & /@ sweepLlamaEE;
+topDeltaLlamaORE = Abs[#["top_head_delta"]] & /@ sweepLlamaORE;
+topDeltaLlamaOO = Abs[#["top_head_delta"]] & /@ sweepLlamaOO;
+topDeltaLlamaAT = Abs[#["top_head_delta"]] & /@ sweepLlamaAT;
+
+crossModelTopHead = ListLinePlot[
   {
-    Transpose[{strengths426k, totalRouting426k}],
-    Transpose[{strengthsLlama, totalRoutingLlama}]
+    Transpose[{strengths426k, topDelta426k}],
+    Transpose[{strengthsLlamaOO, topDeltaLlamaOO}],
+    Transpose[{strengthsLlamaORE, topDeltaLlamaORE}],
+    Transpose[{strengthsLlamaAT, topDeltaLlamaAT}],
+    Transpose[{strengthsLlamaEE, topDeltaLlamaEE}]
   },
   PlotStyle -> {
     {Thick, RGBColor[0.2, 0.4, 0.8]},
-    {Thick, RGBColor[0.2, 0.7, 0.3]}
+    {Thick, RGBColor[0.1, 0.6, 0.2]},
+    {Thick, Dashed, RGBColor[0.2, 0.7, 0.3]},
+    {Thick, Dashed, RGBColor[0.4, 0.8, 0.4]},
+    {Thin, RGBColor[0.6, 0.85, 0.6]}
   },
-  PlotMarkers -> {{\[FilledCircle], 8}, {\[FilledDiamond], 8}},
+  PlotMarkers -> {
+    {\[FilledCircle], 8},
+    {\[FilledDiamond], 8},
+    {\[FilledSquare], 6},
+    {\[FilledUpTriangle], 6},
+    {\[EmptyCircle], 6}
+  },
   PlotLegends -> Placed[
-    {"Gemma 2 2B / 426K", "Llama 3.2 1B / 524K"},
+    {
+      "Gemma 2 2B / 426K (L21:H5)",
+      "Llama -oo (L14:H22)",
+      "Llama -ore (L6:H12)",
+      "Llama -at (L9:H13)",
+      "Llama -ee (L15:H8)"
+    },
+    {0.35, 0.8}
+  ],
+  AxesLabel -> {"Steering Strength", "|Top Head \[CapitalDelta]Attn|"},
+  PlotLabel -> Style[
+    "Planning Routing: Cross-Model Comparison (N=4)\n(suppress+inject, planning site \[Rule] output)",
+    14, Bold
+  ],
+  PlotRange -> All,
+  ImageSize -> 700,
+  GridLines -> Automatic,
+  GridLinesStyle -> Directive[LightGray, Dashed]
+];
+
+(* --- Plot 1c: Cross-model total routing shift (N=4) --- *)
+totalRoutingLlamaEE = #["total_routing_shift"] & /@ sweepLlamaEE;
+totalRoutingLlamaORE = #["total_routing_shift"] & /@ sweepLlamaORE;
+totalRoutingLlamaOO = #["total_routing_shift"] & /@ sweepLlamaOO;
+totalRoutingLlamaAT = #["total_routing_shift"] & /@ sweepLlamaAT;
+
+crossModelTotal = ListLinePlot[
+  {
+    Transpose[{strengths426k, totalRouting426k}],
+    Transpose[{strengthsLlamaOO, totalRoutingLlamaOO}],
+    Transpose[{strengthsLlamaORE, totalRoutingLlamaORE}],
+    Transpose[{strengthsLlamaAT, totalRoutingLlamaAT}],
+    Transpose[{strengthsLlamaEE, totalRoutingLlamaEE}]
+  },
+  PlotStyle -> {
+    {Thick, RGBColor[0.2, 0.4, 0.8]},
+    {Thick, RGBColor[0.1, 0.6, 0.2]},
+    {Thick, Dashed, RGBColor[0.2, 0.7, 0.3]},
+    {Thick, Dashed, RGBColor[0.4, 0.8, 0.4]},
+    {Thin, RGBColor[0.6, 0.85, 0.6]}
+  },
+  PlotMarkers -> {
+    {\[FilledCircle], 8},
+    {\[FilledDiamond], 8},
+    {\[FilledSquare], 6},
+    {\[FilledUpTriangle], 6},
+    {\[EmptyCircle], 6}
+  },
+  PlotLegends -> Placed[
+    {
+      "Gemma 2 2B / 426K",
+      "Llama -oo",
+      "Llama -ore",
+      "Llama -at",
+      "Llama -ee"
+    },
     {0.3, 0.85}
   ],
   AxesLabel -> {"Steering Strength", "Total Routing Shift"},
   PlotLabel -> Style[
-    "Total Attention Redistribution: Cross-Model\n(sum of |delta| across all heads)",
+    "Total Attention Redistribution: Cross-Model (N=4)\n(sum of |delta| across all heads)",
     14, Bold
   ],
   PlotRange -> All,
-  ImageSize -> 600,
+  ImageSize -> 700,
   GridLines -> Automatic,
   GridLinesStyle -> Directive[LightGray, Dashed]
 ];
@@ -195,26 +255,79 @@ headBarPlot2m = BarChart[
   PlotRange -> {Min[headValues] * 1.1, Max[headValues] * 1.1} (* 426K scale for comparison *)
 ];
 
-(* --- Plot 5: Top 10 head deltas (Llama 3.2 1B / 524K CLT) --- *)
-headDeltasLlama = Flatten[dataLlama["head_deltas"], 1];
-headDeltasSortedLlama = SortBy[headDeltasLlama, -Abs[#["delta"]] &];
-topHeadsLlama = headDeltasSortedLlama[[1 ;; 10]];
+(* --- Plot 5: Per-prompt top 5 heads (Llama 3.2 1B, N=4, validated features) --- *)
+llamaPromptData = {
+  {"-ee", dataLlamaEE},
+  {"-ore", dataLlamaORE},
+  {"-oo", dataLlamaOO},
+  {"-at", dataLlamaAT}
+};
 
-headLabelsLlama = ("L" <> ToString[#["layer"]] <> ":H" <> ToString[#["head"]]) & /@ topHeadsLlama;
-headValuesLlama = N[#["delta"]] & /@ topHeadsLlama;
-
-headBarPlotLlama = BarChart[
-  headValuesLlama,
-  ChartLabels -> Placed[headLabelsLlama, Below],
-  ChartStyle -> (If[# > 0, RGBColor[0.3, 0.7, 0.3], RGBColor[0.8, 0.3, 0.3]] & /@ headValuesLlama),
-  AxesLabel -> {None, "\[CapitalDelta]Attention (pos 29\[Rule]23)"},
-  PlotLabel -> Style[
-    "Top 10 Planning Routing Heads\n(Llama 3.2 1B, 524K CLT, suppress+inject, strength 15)",
-    14, Bold
+llamaPerPrompt = Table[
+  Module[{hds, sorted, top5, labels, values},
+    hds = Flatten[d[[2]]["head_deltas"], 1];
+    sorted = SortBy[hds, -Abs[#["delta"]] &];
+    top5 = sorted[[1 ;; Min[5, Length[sorted]]]];
+    labels = ("L" <> ToString[#["layer"]] <> ":H" <> ToString[#["head"]]) & /@ top5;
+    values = N[#["delta"]] & /@ top5;
+    {d[[1]], labels, values}
   ],
-  ImageSize -> 600,
-  GridLines -> {None, Automatic},
-  GridLinesStyle -> Directive[LightGray, Dashed]
+  {d, llamaPromptData}
+];
+
+headBarPlotLlama = GraphicsGrid[
+  Partition[
+    Table[
+      BarChart[
+        p[[3]],
+        ChartLabels -> Placed[p[[2]], Below],
+        ChartStyle -> (If[# > 0, RGBColor[0.3, 0.7, 0.3], RGBColor[0.8, 0.3, 0.3]] & /@ p[[3]]),
+        AxesLabel -> {None, "\[CapitalDelta]Attn"},
+        PlotLabel -> Style[p[[1]] <> " group", 12, Bold],
+        ImageSize -> 300,
+        GridLines -> {None, Automatic},
+        GridLinesStyle -> Directive[LightGray, Dashed]
+      ],
+      {p, llamaPerPrompt}
+    ],
+    2
+  ],
+  Spacings -> {10, 10},
+  Frame -> All,
+  FrameStyle -> None,
+  PlotLabel -> Style[
+    "Planning Routing Heads — Llama 3.2 1B (N=4, validated features, strength 10)",
+    14, Bold
+  ]
+];
+
+(* --- Plot 6: Individual per-prompt Llama bar charts (for 5-across paper layout) --- *)
+(* Each plot is small and self-contained, matching Gemma's bar chart style *)
+llamaIndividualPlots = Table[
+  Module[{hds, sorted, top10, labels, values, promptName, planSite, outPos},
+    hds = Flatten[d[[2]]["head_deltas"], 1];
+    sorted = SortBy[hds, -Abs[#["delta"]] &];
+    top10 = sorted[[1 ;; Min[10, Length[sorted]]]];
+    labels = ("L" <> ToString[#["layer"]] <> ":H" <> ToString[#["head"]]) & /@ top10;
+    values = N[#["delta"]] & /@ top10;
+    planSite = d[[2]]["planning_site"];
+    outPos = d[[2]]["output_position"];
+    BarChart[
+      values,
+      ChartLabels -> Placed[labels, Below],
+      ChartStyle -> (If[# > 0, RGBColor[0.3, 0.7, 0.3], RGBColor[0.8, 0.3, 0.3]] & /@ values),
+      AxesLabel -> {None, "\[CapitalDelta]Attention (pos " <> ToString[outPos] <> "\[Rule]" <> ToString[planSite] <> ")"},
+      PlotLabel -> Style[
+        "Top 10 Planning Routing Heads\n(Llama 3.2 1B, 524K CLT, " <> d[[1]] <> " group, strength " <>
+        ToString[d[[2]]["strength"]] <> ")",
+        14, Bold
+      ],
+      ImageSize -> 600,
+      GridLines -> {None, Automatic},
+      GridLinesStyle -> Directive[LightGray, Dashed]
+    ]
+  ],
+  {d, llamaPromptData}
 ];
 
 (* --- Export --- *)
@@ -229,4 +342,10 @@ Export[FileNameJoin[{exportDir, "top10_routing_heads_llama.png"}], headBarPlotLl
 Export[FileNameJoin[{exportDir, "cross_model_top_head.png"}], crossModelTopHead, ImageResolution -> 150];
 Export[FileNameJoin[{exportDir, "cross_model_total_routing.png"}], crossModelTotal, ImageResolution -> 150];
 
-Print["Exported 7 plots to ", exportDir];
+(* Individual per-prompt Llama plots *)
+Export[FileNameJoin[{exportDir, "top10_routing_heads_llama_ee.png"}], llamaIndividualPlots[[1]], ImageResolution -> 150];
+Export[FileNameJoin[{exportDir, "top10_routing_heads_llama_ore.png"}], llamaIndividualPlots[[2]], ImageResolution -> 150];
+Export[FileNameJoin[{exportDir, "top10_routing_heads_llama_oo.png"}], llamaIndividualPlots[[3]], ImageResolution -> 150];
+Export[FileNameJoin[{exportDir, "top10_routing_heads_llama_at.png"}], llamaIndividualPlots[[4]], ImageResolution -> 150];
+
+Print["Exported 11 plots to ", exportDir];

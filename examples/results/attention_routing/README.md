@@ -307,80 +307,75 @@ causal chain to produce the output (Anthropic's graph structure).
    results on Gemma 2 2B (2.6B parameters) demonstrate the same planning
    mechanism exists in smaller, open models on consumer hardware.
 
-## Cross-model comparison: Llama 3.2 1B
+## Cross-model comparison: Llama 3.2 1B (N=4)
 
-We ran the same attention routing experiment on Llama 3.2 1B with its 524K
-CLT (`mntss/clt-llama-3.2-1b-524k`), using the Figure 13 Llama preset:
-suppress L5:19894 ("cat"), inject L14:13043 ("that"), strength 15.0,
-planning site position 23 ("cat").
+We ran attention routing on Llama 3.2 1B across **4 prompts from 3 rhyme
+groups** (-ee, -ore, -oo, -at), using validated features from
+`rhyme_pairs_llama.json` (found by the systematic decoder-projection
+vocabulary scan). All suppress and inject features are traceable to
+the plip-rs vocabulary scan.
 
-### Llama 3.2 1B planning routing heads
+### Llama 3.2 1B planning routing heads (N=4)
 
-![Top 10 routing heads, Llama 524K](plots/top10_routing_heads_llama.png)
+![Per-prompt routing heads](plots/top10_routing_heads_llama.png)
 
-**L13:H14 is the dominant planning routing head** (+0.059 delta), with L11:H5
-as the main negative head (-0.045). The push-pull redistribution pattern is
-the same as Gemma 2 2B: some heads engage more with the planning site after
-injection (green), others disengage (red).
+**Planning routing is prompt-specific**: each rhyme group recruits a
+different dominant head (L15:H8 for -ee, L6:H12 for -ore, L14:H22 for
+-oo, L9:H13 for -at). The heads that recur across 2+ prompts (L6:H12,
+L9:H13, L5:H17, L11:H0, L6:H24) are concentrated in mid-layers (5-11).
 
-Notable: **H5 appears again** — L11:H5 on Llama mirrors L21:H5 on Gemma as
-the dominant *negative* routing head. Same head index, different layer,
-different model.
-
-### Cross-model strength sweep
+### Cross-model strength sweep (N=4)
 
 ![Cross-model top head sweep](plots/cross_model_top_head.png)
 
-Both models show the same dynamics: linear scaling at low strength, then
-**saturation onset** at strength ~15. Llama's L13:H14 is slightly more
-responsive than Gemma's L21:H5 at every strength level. The smaller model's
-routing is more easily perturbed — consistent with the factual routing
-finding that 1B models are more fragile to causal interventions.
+The spread across prompts reveals the prompt-specificity: -oo (L14:H22)
+exceeds Gemma at high strengths, while -ee (L15:H8) is much weaker. All
+curves show soft, roughly linear responses with no hard threshold —
+the same attractor dynamics as Gemma.
 
 ![Cross-model total routing](plots/cross_model_total_routing.png)
 
-Total attention redistribution (sum of |delta| across all heads) is higher
-for Llama at every strength level (~2.4 vs ~1.8 at strength 20). The 1B
-model redistributes more attention per unit of steering.
+Total attention redistribution: **all 4 Llama prompts exceed Gemma**
+despite having no single dominant head. Llama compensates with
+distributed routing across many heads, while Gemma concentrates the
+signal through L21:H5. This distributed routing may explain why Llama
+searches but cannot commit.
 
 ### Cross-model comparison table
 
-| Property | Gemma 2 2B (426K) | Llama 3.2 1B (524K) |
+| Property | Gemma 2 2B (426K) | Llama 3.2 1B (N=4) |
 |----------|-------------------|---------------------|
-| **Top head** | L21:H5 (-0.046) | L13:H14 (+0.059) |
-| **Top negative** | L21:H5 (-0.046) | L11:H5 (-0.045) |
-| **Head depth** | 81% (layer 21/26) | 81% (layer 13/16) |
+| **Top head** | L21:H5 (-0.046) | Prompt-specific |
+| **Recurring heads (2+)** | H5 family (L21-L25) | L5:H17, L6:H12, L9:H13 |
+| **Mean layer (recurring)** | 22.2 (85% depth) | 7.4 (46% depth) |
 | **Direction** | Push-pull | Push-pull |
-| **Total routing (str 15)** | 1.85 | 2.04 |
-| **H5 family** | L21, L23, L24, L25 | L11 |
-| **Saturation onset** | ~15× | ~15× |
-
-The saturation onset occurs at the same steering strength (~15×) on both
-models. This supports the hypothesis that the planning attractor boundary
-is a structural property of pre-norm transformers, not model-specific.
+| **Total routing (str 10)** | 0.19 | 0.05-1.27 (varies) |
+| **Saturation** | Soft, ~15× | Soft, linear |
 
 ## Connection to factual routing (prolepsis)
 
 The `factual_routing` experiment measured attention routing during
 CounterFact activation patching on the **same Llama 3.2 1B model**. The
-planning and factual routing heads are **completely different sets**:
+recurring planning heads and factual routing heads occupy **different
+network depths**:
 
-| | Planning routing | Factual routing |
+| | Planning routing (N=4) | Factual routing (89 pairs) |
 |---|---|---|
-| **Top head** | L13:H14 (+0.059) | L15:H8 (-0.005) |
-| **Top-10 overlap** | **0 out of 10** | **0 out of 10** |
-| **Mean layer** | 11.0 / 16 | 12.8 / 16 |
-| **Pattern** | Early commitment, late routing | Early commitment, late routing |
+| **Dominant head** | Prompt-specific | L15:H8 (48.6%) |
+| **Recurring heads (2+)** | L5:H17, L6:H12, L6:H24, L9:H13, L11:H0 | L15:H8, L14:H27, L15:H16 |
+| **Mean layer (recurring)** | 7.4 (46% depth) | 12.8 (80% depth) |
+| **Recurring ∩ factual top-10** | **0 / 5** | — |
 
-Zero head overlap, same architectural pattern. We call this **prolepsis**
+Zero overlap at the aggregate level — the recurring planning heads are
+disjoint from the factual top-10. We call this **prolepsis**
 (πρόληψις, "anticipation"): the model commits early and sustains the
-commitment through late-layer attention routing, using task-specific heads
-that follow a shared architectural template. The prolepsis manifests
-identically across:
+commitment through attention routing at task-dependent network depths.
+Planning routes through mid-layer heads, factual recall through late-layer
+heads, but the structural template is shared:
 
-- **Tasks**: rhyme planning, factual recall
-- **Models**: Gemma 2 2B, Llama 3.2 1B
-- **Scales**: 2.6B, 1.2B parameters
+- **Early commitment** — the decision is made in the first half of the network
+- **Sustained propagation** — routing heads maintain the commitment
+- **Irrevocability** — no layer reverses the committed answer
 
 See the [factual routing results](../factual_routing/) and the
 [counterfact patching results](../counterfact_patching/) for the full
@@ -400,12 +395,37 @@ cargo run --release --features clt,transformer,mmap --example attention_routing 
      --suppress L25:57092 --suppress L23:49923 --suppress L20:77102 \
      --output examples/results/attention_routing/gemma-2-2b-2.5m.json
 
-# Llama 3.2 1B — 524K CLT
+# Llama 3.2 1B — 524K CLT (N=4, validated features)
+# -ee prompt (suppress -ee group, inject "that")
 cargo run --release --features clt,transformer,mmap --example attention_routing \
   -- --model meta-llama/Llama-3.2-1B --clt-repo mntss/clt-llama-3.2-1b-524k \
-     --feature L14:13043 --suppress L5:19894 --strength 15.0 --planning-site 23 \
-     --prompt "A little mouse ran through the house, And found some cheese behind the door. She shared it with a friendly cat, Who wore a tiny velvet" \
-     --output examples/results/attention_routing/llama-3.2-1b-524k.json
+     --feature L14:13043 --suppress L13:30985 --suppress L9:5488 \
+     --suppress L14:27874 --suppress L13:32049 --strength 10.0 --planning-site 14 \
+     --prompt "The birds were singing in the tree,\nAnd everything was wild and free.\nThe river ran down to the sea,\nThere is so much we cannot" \
+     --output examples/results/attention_routing/llama-3.2-1b-524k-ee.json
+
+# -ore prompt
+cargo run --release --features clt,transformer,mmap --example attention_routing \
+  -- --model meta-llama/Llama-3.2-1B --clt-repo mntss/clt-llama-3.2-1b-524k \
+     --feature L14:13043 --suppress L1:5297 --suppress L3:22663 \
+     --suppress L10:18203 --strength 10.0 --planning-site 16 \
+     --prompt "The waves came crashing on the shore,\nThe wind was howling more and more.\nShe asked what all the fuss was for,\nAnd opened up the" \
+     --output examples/results/attention_routing/llama-3.2-1b-524k-ore.json
+
+# -oo prompt
+cargo run --release --features clt,transformer,mmap --example attention_routing \
+  -- --model meta-llama/Llama-3.2-1B --clt-repo mntss/clt-llama-3.2-1b-524k \
+     --feature L14:13043 --suppress L14:18284 --suppress L15:8165 \
+     --suppress L11:20779 --strength 10.0 --planning-site 22 \
+     --prompt "The morning sky was painted blue,\nThe garden sparkled bright with dew.\nThe world had started fresh and new,\nAnd there was nothing left to" \
+     --output examples/results/attention_routing/llama-3.2-1b-524k-oo.json
+
+# -at prompt
+cargo run --release --features clt,transformer,mmap --example attention_routing \
+  -- --model meta-llama/Llama-3.2-1B --clt-repo mntss/clt-llama-3.2-1b-524k \
+     --feature L1:5297 --suppress L14:6132 --strength 10.0 --planning-site 15 \
+     --prompt "The old man wore a tattered hat,\nUpon the porch he always sat.\nHe told the tale of this and that,\nAnd in the corner slept the" \
+     --output examples/results/attention_routing/llama-3.2-1b-524k-at.json
 
 # Inject only (for comparison — 13x weaker on Gemma)
 cargo run --release --features clt,transformer,mmap --example attention_routing
