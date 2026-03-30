@@ -252,6 +252,7 @@ fn run() -> Result<()> {
         println!("  Forward time: {fwd_secs:.2}s");
     }
 
+    // INDEX: position < seq_len checked above (line 239)
     let probed_token = tokens[position].clone();
     println!();
     println!("  === Features at position {position} (\"{probed_token}\") ===");
@@ -351,6 +352,7 @@ fn run() -> Result<()> {
         }
     }
     if candidates.is_empty() && !all_features.is_empty() {
+        // INDEX: guarded by !is_empty() check
         candidates.push(&all_features[0]);
     }
     let suppress_flags: Vec<String> = candidates
@@ -456,6 +458,7 @@ fn run_decoder_search(args: &Args, search_word: &str) -> Result<()> {
             word_tokens
         )));
     }
+    // INDEX: length == 1 checked above
     let token_id = word_tokens[0];
 
     let direction = model.backend().embedding_vector(token_id)?;
@@ -471,9 +474,8 @@ fn run_decoder_search(args: &Args, search_word: &str) -> Result<()> {
     );
 
     // Score against ALL target layers — a feature may decode to the target
-    // word at an intermediate layer, not just the last one.  The suppress
-    // feature for "cat" (L5:19894) was found this way in the original
-    // plip-rs vocabulary scan.
+    // word at an intermediate layer, not just the last one.  This matches
+    // the plip-rs vocabulary scan approach (explore-vocabulary mode).
     println!("  Scanning all {n_layers} target layers...");
 
     let search_start = Instant::now();

@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`clt_probe` example** — inspect CLT feature activations at any token position
+  across all encoder layers; includes `--decoder-search` mode for finding suppress
+  candidates by decoder projection
+- **`correction_test` example** — test whether downstream layers can reverse a
+  prolepsis commitment by injecting contradictory features at late layers
+  (referenced in COLM 2026 submission, Appendix G)
+- **N=4 Llama attention routing results** — 4 prompts across 3 rhyme groups with
+  validated features from `rhyme_pairs_llama.json`; updated Mathematica plots
+
+### Changed
+
+- **Llama `figure13_planning_poems` preset** — replaced with -ee group suppress
+  features (`L13:30985`, `L9:5488`, `L14:27874`, `L13:32049`) and -ee prompt;
+  strength 15 → 10. All features traceable to systematic decoder-projection
+  vocabulary scan.
+- **Attention routing plots** — regenerated from N=4 data; cross-model comparison
+  now shows all 4 Llama curves alongside Gemma
+
+### Fixed
+
+- **Hallucinated suppress feature L5:19894 removed** — the Llama figure13 preset
+  used a fabricated CLT feature ID introduced during a context continuation.
+  Replaced with legitimate features from `rhyme_pairs_llama.json`. See
+  `docs/dogfooding-feedbacks/` for the full correction report.
+
+### Removed
+
+- Old single-prompt Llama routing data superseded by N=4 validated results
+
 ## [0.1.6] - 2026-03-25
 
 ### Added

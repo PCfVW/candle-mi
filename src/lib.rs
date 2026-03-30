@@ -178,7 +178,7 @@
 //!   how to add a new model architecture (auto-config, config parser, or
 //!   custom `MIBackend`).
 //! - [`examples/README.md`](https://github.com/PCfVW/candle-mi/blob/main/examples/README.md) —
-//!   19 runnable examples covering inference, logit lens, attention patterns,
+//!   21 runnable examples covering inference, logit lens, attention patterns,
 //!   knockout, steering, activation patching, `CounterFact` replication,
 //!   CLT circuits, SAE encoding, RWKV inference, and more.
 

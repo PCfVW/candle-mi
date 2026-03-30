@@ -1,6 +1,6 @@
 [package]
 name = "candle-mi"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2024"
 authors = ["Eric Jacopin"]
 description = "Mechanistic interpretability for language models in Rust, built on candle"
@@ -11,6 +11,7 @@ documentation = "https://docs.rs/candle-mi"
 keywords = ["interpretability", "transformers", "mechanistic", "candle", "rust"]
 categories = ["science"]
 rust-version = "1.88"
+exclude = ["docs/dogfooding-feedbacks/", "docs/audit/", "docs/quickstart-examples-proposal.md"]
 
 [dependencies]
 # Candle ML framework (pinned to 0.9.x per design/candle-version.md)
@@ -111,6 +112,10 @@ name = "attention_routing"
 required-features = ["clt", "transformer"]
 
 [[example]]
+name = "correction_test"
+required-features = ["clt", "transformer"]
+
+[[example]]
 name = "figure13_planning_poems"
 required-features = ["clt", "transformer"]
 
@@ -175,6 +180,10 @@ required-features = ["transformer"]
 [[example]]
 name = "factual_routing"
 required-features = ["transformer"]
+
+[[example]]
+name = "clt_probe"
+required-features = ["clt", "transformer"]
 
 [features]
 default = ["cuda", "transformer"]

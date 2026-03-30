@@ -50,6 +50,8 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
 | `character_count_helix` | `transformer` | Replicate the character count helix from [Gurnee et al. (2025)](https://transformer-circuits.pub/2025/linebreaks/index.html) via PCA on residual stream activations |
 | `figure13_planning_poems` | `clt`, `transformer` | Replication of [Anthropic's Figure 13](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poem-location) (suppress + inject position sweep) |
 | `attention_routing` | `clt`, `transformer` | Measure how CLT suppress+inject changes attention routing from output position to planning site — identifies specific heads involved in rhyme planning |
+| `clt_probe` | `clt`, `transformer` | Probe CLT feature activations at a token position — find suppress/inject candidates for `figure13_planning_poems` and `attention_routing` |
+| `correction_test` | `clt`, `transformer` | Test whether downstream layers can reverse a prolepsis commitment — injects a contradictory feature at late layers and measures whether the output redirects |
 
 ## Running
 
@@ -582,20 +584,22 @@ heads attend... This is invisible to our current approach."*
 The planning attractor has a **soft boundary** (gradual saturation at ~15×
 strength) — fundamentally different from factual recall's hard threshold.
 
-**Cross-model comparison:** Running the same experiment on Llama 3.2 1B
-reveals that the planning routing mechanism is not model-specific. Both
-models show the same strength-dependent saturation curve, but with
-**different dominant heads** — L21:H5 on Gemma 2 2B, L13:H14 on Llama 3.2 1B.
-The mechanism is architectural; the wiring is model-specific.
+**Cross-model comparison (N=4):** Running the same experiment on Llama 3.2 1B
+across 4 prompts from 3 rhyme groups reveals that planning routing is
+prompt-specific — each prompt recruits a different dominant head. The
+recurring heads (2+ prompts) are concentrated in mid-layers (mean 7.4),
+while Gemma's L21:H5 sits in the late layers. All 4 Llama prompts exceed
+Gemma in total routing shift despite having no dominant head — the signal
+is distributed rather than concentrated.
 
 ![Cross-model planning routing](results/attention_routing/plots/cross_model_top_head.png)
 
 Combined with the `factual_routing` experiment (which found L15:H8 as the
-factual routing head on the same Llama 3.2 1B model, with zero overlap
-against L13:H14), this establishes **prolepsis** — early irrevocable
-commitment propagated through task-specific late-layer attention routing
-heads — as a structural motif in transformers, across tasks, models, and
-scales.
+dominant factual routing head on the same model, with zero overlap between
+recurring planning heads and the factual top-10), this establishes
+**prolepsis** — early irrevocable commitment propagated through attention
+routing at task-dependent network depths — as a structural motif in
+transformers, across tasks, models, and scales.
 
 Full results, cross-model comparison, and prolepsis analysis in
 [`examples/results/attention_routing/`](results/attention_routing/).
