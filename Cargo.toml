@@ -47,7 +47,7 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 libloading = { version = "0.9", optional = true }
 
 # Optional: NPZ parsing via anamnesis (for Gemma Scope SAE weights)
-anamnesis = { version = "0.3.0", features = ["npz"], optional = true }
+anamnesis = { version = "0.3.1", features = ["npz"], optional = true }
 
 # Optional: per-process VRAM on Windows via DXGI (IDXGIAdapter3::QueryVideoMemoryInfo)
 [target.'cfg(windows)'.dependencies]
@@ -97,6 +97,10 @@ required-features = ["transformer"]
 [[test]]
 name = "validate_sae"
 required-features = ["sae", "transformer"]
+
+[[test]]
+name = "validate_stoicheia"
+required-features = ["stoicheia"]
 
 [[test]]
 name = "fast_download"
@@ -185,6 +189,10 @@ required-features = ["transformer"]
 name = "clt_probe"
 required-features = ["clt", "transformer"]
 
+[[example]]
+name = "stoicheia_inference"
+required-features = ["stoicheia"]
+
 [features]
 default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]
@@ -195,6 +203,7 @@ rwkv = []
 rwkv-tokenizer = []
 clt = []
 sae = ["dep:anamnesis"]
+stoicheia = []
 memory = ["dep:libloading", "dep:windows"]
 memory-debug = ["memory"]
 probing = ["linfa", "linfa-logistic", "ndarray"]
@@ -248,7 +257,7 @@ must_use_candidate        = "warn"      # Rule 17
 # CPU-safe features so the generated docs cover the full public API surface.
 [package.metadata.docs.rs]
 no-default-features = true
-features = ["transformer", "rwkv", "rwkv-tokenizer", "clt", "sae", "mmap", "memory", "probing"]
+features = ["transformer", "rwkv", "rwkv-tokenizer", "clt", "sae", "mmap", "memory", "probing", "stoicheia"]
 
 [profile.release]
 lto = true
