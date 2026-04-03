@@ -40,7 +40,7 @@ statrs = "0.17"
 tracing = "0.1"
 
 # Model downloads (hf-fetch-model wraps hf-hub v0.5)
-hf-fetch-model = { version = "0.9.2", features = ["indicatif"] }
+hf-fetch-model = { version = "0.9", features = ["indicatif"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
 # Optional: memory reporting (NVML FFI for per-process VRAM)
