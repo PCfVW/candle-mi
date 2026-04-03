@@ -202,6 +202,8 @@ pub mod rwkv;
 #[cfg(feature = "sae")]
 pub mod sae;
 pub mod sparse;
+#[cfg(feature = "stoicheia")]
+pub mod stoicheia;
 pub mod tokenizer;
 #[cfg(feature = "transformer")]
 pub mod transformer;
@@ -231,6 +233,13 @@ pub use transformer::recurrent::{RecurrentFeedbackEntry, RecurrentPassSpec};
 // RWKV backend
 #[cfg(feature = "rwkv")]
 pub use rwkv::{GenericRwkv, RwkvConfig, RwkvLoraDims, RwkvVersion};
+
+// Stoicheia (AlgZoo) backends
+#[cfg(feature = "stoicheia")]
+pub use stoicheia::{
+    StoicheiaArch, StoicheiaConfig, StoicheiaOutput, StoicheiaRnn, StoicheiaTask,
+    StoicheiaTransformer,
+};
 
 // Sparse feature types (shared by CLT and SAE)
 pub use sparse::{FeatureId, SparseActivations};

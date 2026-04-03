@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Stoicheia backends** (`src/stoicheia/`) — two `MIBackend` implementations
+  for ARC's [AlgZoo](https://github.com/alignment-research-center/alg-zoo) tiny
+  models (8–1,408 parameters), behind the `stoicheia` feature flag:
+  - `StoicheiaRnn` — single-layer ReLU RNN for continuous tasks (2nd argmax,
+    argmedian, median), with per-timestep hook points via `HookPoint::Custom`
+  - `StoicheiaTransformer` — attention-only transformer for discrete tasks
+    (longest cycle), with standard `HookPoint` variants (Embed, AttnScores,
+    AttnPattern, ResidPre/Post)
+  - `StoicheiaConfig::from_task()` — config constructor with task→architecture
+    mapping matching AlgZoo's Python registry
+  - Ground-truth task functions (`tasks::second_argmax`, `argmedian`, `median`,
+    `longest_cycle`) for model validation
+  - Cross-validation tests: RNN and transformer outputs match Python reference
+    to 1e-4 (RNN) and 1e-2 (transformer) tolerance
+  - `stoicheia_inference` example with CLI for running any AlgZoo model
+- **`hf-fetch-model` dependency** relaxed from exact version pin to semver
+  range `"0.9"` — `cargo update -p hf-fetch-model` picks up patches without
+  cross-repo workflow automation
+
+### Changed
+
+- **CONVENTIONS.md refactored** from rule-type grouping to trigger-based
+  grouping — rules organized by "when writing X, check Y" with a trigger
+  checklist at the top. Same rules, different organization optimized for
+  LLM-assisted development. Previous version archived in
+  `docs/conventions/CONVENTIONS-v1-reference-based.md`.
+- **`anamnesis` dependency** bumped from 0.3.0 to 0.3.1 (adds `.pth` parsing)
+
 ## [0.1.7] - 2026-03-30
 
 ### Added
