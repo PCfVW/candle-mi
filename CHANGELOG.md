@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-03-30
+
 ### Added
 
 - **`clt_probe` example** — inspect CLT feature activations at any token position
