@@ -43,6 +43,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `examples/STYLE_GUIDE.md` referenced "19 examples" or "21 examples" while the
   actual count (verified against both `examples/*.rs` and the `[[example]]`
   entries in `Cargo.toml`) is 22. Updated all five occurrences.
+- **`ROADMAP.md` example inventory out of sync** — the file-structure tree in
+  §6 listed only 15 of the 22 examples, and the topical lists in §6 and the
+  Phase 5 task entry omitted the same seven. Added `counterfact_patching`,
+  `factual_routing`, `steering_convergence`, `attention_routing`,
+  `correction_test`, `clt_probe`, and `stoicheia_inference` to the tree (in
+  logical groupings) and extended the topical lists to mention CLT feature
+  probing, prolepsis correction tests, recurrent CLT feedback, and
+  AlgZoo/Stoicheia inference.
 
 ## [0.1.7] - 2026-03-30
 

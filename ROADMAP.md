@@ -621,13 +621,20 @@ candle-mi/
 │   ├── attention_patterns.rs       — Attention weight visualization ✅
 │   ├── attention_knockout.rs       — Zero-out specific attention heads ✅
 │   ├── activation_patching.rs      — Causal intervention via patching ✅
+│   ├── counterfact_patching.rs     — CounterFact patching (Transluce protocol replication) ✅
+│   ├── factual_routing.rs          — Attention-routing shifts from output to subject under patching ✅
 │   ├── steering_dose_response.rs   — Attention steering with dose curves ✅
-│   ├── figure13_planning_poems.rs  — CLT-based circuit analysis ✅
+│   ├── steering_convergence.rs     — Does residual injection converge to natural computation? ✅
+│   ├── figure13_planning_poems.rs  — CLT-based circuit analysis (suppress + inject sweep) ✅
+│   ├── attention_routing.rs        — How CLT suppress+inject reshapes output-position attention ✅
+│   ├── correction_test.rs          — Late-layer correction of a prolepsis commitment ✅
+│   ├── clt_probe.rs                — CLT encoder/decoder probe for feature discovery ✅
 │   ├── character_count_helix.rs    — Helix manifold replication (Gurnee et al.) ✅
 │   ├── token_positions.rs          — Token ↔ character offset mapping ✅
 │   ├── generate.rs                 — Autoregressive text generation ✅
 │   ├── rwkv_inference.rs           — RWKV model inference ✅
 │   ├── recurrent_feedback.rs       — Anacrousis recurrent CLT feedback ✅
+│   ├── stoicheia_inference.rs      — AlgZoo tiny-model inference + ground-truth check ✅
 │   └── README.md                   — Example descriptions and usage instructions ✅
 │
 ├── scripts/                        — Validation scripts and reference data
@@ -682,7 +689,7 @@ probing = ["linfa", "linfa-logistic", "ndarray"]  # Linear probing
 | **BACKENDS.md** | Markdown | Step-by-step guide to adding a new model architecture: config parser, weight map, validation protocol |
 | **HOOKS.md** | Markdown | Hook point reference table (mirroring §2.1), intervention API walkthrough, worked examples (capture attention, run knockout, steer residual stream) |
 | **CHANGELOG.md** | Markdown | [Keep a Changelog](https://keepachangelog.com/) format from v0.0.1 onwards |
-| **Examples** | Rust (`examples/`) | 22 examples covering model loading, logit lens, attention patterns, knockout, steering, activation patching, CounterFact patching, factual routing, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — each self-contained with inline comments ✅ |
+| **Examples** | Rust (`examples/`) | 22 examples covering model loading, logit lens, attention patterns, knockout, steering, activation patching, CounterFact patching, factual routing, CLT circuits, CLT feature probing, prolepsis correction tests, recurrent CLT feedback, SAE, RWKV, AlgZoo/Stoicheia inference, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — each self-contained with inline comments ✅ |
 
 **Rustdoc policy:** Every `pub` item must have a doc comment. Types include a one-line summary + "# Examples" section with a runnable doc-test. `#![warn(missing_docs)]` enforced at crate level.
 
@@ -813,7 +820,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [x] Write crate-level documentation with examples — **commit `c7cbf9e`**
 - [x] Write `BACKENDS.md` — how to add a new model architecture — **commit `36b5208`**
 - [x] Write `HOOKS.md` — hook point reference and intervention walkthrough — **commit `4384545`**
-- [x] Write example programs — 22 examples covering forward pass, logit lens, attention patterns, knockout, steering, activation patching, CounterFact patching, factual routing, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — **multiple commits**
+- [x] Write example programs — 22 examples covering forward pass, logit lens, attention patterns, knockout, steering, activation patching, CounterFact patching, factual routing, CLT circuits, CLT feature probing, prolepsis correction tests, recurrent CLT feedback, SAE, RWKV, AlgZoo/Stoicheia inference, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — **multiple commits**
 - [x] Improve auto-config error messaging — when `check_auto_compatibility()` fails for non-standard models (non-HF weight naming), provide actionable error messages listing which weight tensors were expected vs. found — **commit** `2685893`
 - [x] Update CHANGELOG.md with Phase 5 changes — **commit `359a623`** — **PUSH** (release candidate)
 - [x] **Release workflow** (publish v0.1.0 to crates.io — automated via `publish.yml`):
