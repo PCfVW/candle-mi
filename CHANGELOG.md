@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `docs/conventions/CONVENTIONS-v1-reference-based.md`.
 - **`anamnesis` dependency** bumped from 0.3.0 to 0.3.1 (adds `.pth` parsing)
 
+### Fixed
+
+- **Stale example counts in documentation** — `README.md`, `ROADMAP.md`, and
+  `examples/STYLE_GUIDE.md` referenced "19 examples" or "21 examples" while the
+  actual count (verified against both `examples/*.rs` and the `[[example]]`
+  entries in `Cargo.toml`) is 22. Updated all five occurrences.
+
 ## [0.1.7] - 2026-03-30
 
 ### Added

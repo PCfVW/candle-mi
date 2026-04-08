@@ -1,6 +1,6 @@
 # Example Style Guide
 
-Every example in candle-mi must follow these conventions. This guide captures lessons learned from building 19 examples and ensures consistency across the codebase.
+Every example in candle-mi must follow these conventions. This guide captures lessons learned from building 22 examples and ensures consistency across the codebase.
 
 ## Table of Contents
 

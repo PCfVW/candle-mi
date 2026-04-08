@@ -86,7 +86,7 @@ This library was built to replicate Anthropic's [circuit-tracing work](https://t
 cargo run --release --features clt,transformer --example figure13_planning_poems
 ```
 
-This uses Llama 3.2 1B with a 524K-feature Cross-Layer Transcoder to suppress natural rhyme features and inject an alternative ("that" → P=0.69), sweeping injection position across all prompt tokens. See the [full output](examples/README.md#example-output-figure13_planning_poems) and the [21 examples](examples/README.md) covering logit lens, attention knockout, steering, activation patching, CLT circuits, SAE encoding, RWKV inference, and more.
+This uses Llama 3.2 1B with a 524K-feature Cross-Layer Transcoder to suppress natural rhyme features and inject an alternative ("that" → P=0.69), sweeping injection position across all prompt tokens. See the [full output](examples/README.md#example-output-figure13_planning_poems) and the [22 examples](examples/README.md) covering logit lens, attention knockout, steering, activation patching, CLT circuits, SAE encoding, RWKV inference, and more.
 
 ## Quick start
 

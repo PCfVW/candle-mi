@@ -612,7 +612,7 @@ candle-mi/
 │       ├── pca.rs                  — PCA via power iteration with deflation ✅
 │       └── positioning.rs          — Character ↔ token mapping
 │
-├── examples/                       — 19 examples covering MI techniques ✅
+├── examples/                       — 22 examples covering MI techniques ✅
 │   ├── quick_start_transformer.rs  — Load model, forward pass, print top tokens ✅
 │   ├── quick_start_sae.rs          — Load SAE, encode activations, print top features ✅
 │   ├── fast_download.rs            — Parallel multi-connection model download ✅
@@ -682,7 +682,7 @@ probing = ["linfa", "linfa-logistic", "ndarray"]  # Linear probing
 | **BACKENDS.md** | Markdown | Step-by-step guide to adding a new model architecture: config parser, weight map, validation protocol |
 | **HOOKS.md** | Markdown | Hook point reference table (mirroring §2.1), intervention API walkthrough, worked examples (capture attention, run knockout, steer residual stream) |
 | **CHANGELOG.md** | Markdown | [Keep a Changelog](https://keepachangelog.com/) format from v0.0.1 onwards |
-| **Examples** | Rust (`examples/`) | 19 examples covering model loading, logit lens, attention patterns, knockout, steering, activation patching, CounterFact patching, factual routing, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — each self-contained with inline comments ✅ |
+| **Examples** | Rust (`examples/`) | 22 examples covering model loading, logit lens, attention patterns, knockout, steering, activation patching, CounterFact patching, factual routing, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — each self-contained with inline comments ✅ |
 
 **Rustdoc policy:** Every `pub` item must have a doc comment. Types include a one-line summary + "# Examples" section with a runnable doc-test. `#![warn(missing_docs)]` enforced at crate level.
 
@@ -813,7 +813,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 - [x] Write crate-level documentation with examples — **commit `c7cbf9e`**
 - [x] Write `BACKENDS.md` — how to add a new model architecture — **commit `36b5208`**
 - [x] Write `HOOKS.md` — hook point reference and intervention walkthrough — **commit `4384545`**
-- [x] Write example programs — 19 examples covering forward pass, logit lens, attention patterns, knockout, steering, activation patching, CounterFact patching, factual routing, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — **multiple commits**
+- [x] Write example programs — 22 examples covering forward pass, logit lens, attention patterns, knockout, steering, activation patching, CounterFact patching, factual routing, CLT circuits, SAE, RWKV, auto-config, tokenization, generation, fast download, character count helix, steering convergence, attention routing — **multiple commits**
 - [x] Improve auto-config error messaging — when `check_auto_compatibility()` fails for non-standard models (non-HF weight naming), provide actionable error messages listing which weight tensors were expected vs. found — **commit** `2685893`
 - [x] Update CHANGELOG.md with Phase 5 changes — **commit `359a623`** — **PUSH** (release candidate)
 - [x] **Release workflow** (publish v0.1.0 to crates.io — automated via `publish.yml`):
