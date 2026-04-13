@@ -18,7 +18,7 @@
 |---|---|---|---|
 | Decoder-only transformer | LLaMA 1/2/3, Mistral, Qwen 2/2.5, Phi-3/4, Gemma, Gemma 2, StarCoder2 | LLaMA 3.2 1B, Qwen2.5-Coder-3B, Gemma 2 2B, Phi-3 Mini, StarCoder2 3B, Mistral 7B | `transformer` |
 | Linear RNN | RWKV-6 (Finch), RWKV-7 (Goose) | RWKV-7 1.6B | `rwkv` |
-| AlgZoo tiny models | Single-layer ReLU RNN, attention-only transformer (8–1,408 params) | M₂,₂ (10 params), M₁₆,₁₀ (432 params), transformer h4n4 (176 params) | `stoicheia` |
+| [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny models | Single-layer ReLU RNN, attention-only transformer (8–1,408 params) | M₂,₂ (10 params), M₁₆,₁₀ (432 params), transformer h4n4 (176 params) | `stoicheia` |
 
 Most HuggingFace transformer models work out of the box via **auto-config** — no code changes needed. See [BACKENDS.md](BACKENDS.md) for details and how to add new architectures.
 
@@ -60,7 +60,7 @@ This is the Rust equivalent of Python's [TransformerLens](https://github.com/Tra
 | **Activation patching** | Swap activations between a clean and corrupted run to identify which components causally drive a prediction | [`activation_patching`](examples/README.md#example-output-activation_patching) |
 | **Attention patterns** | Visualize where each attention head attends across the sequence | [`attention_patterns`](examples/README.md#example-output-attention_patterns) |
 | **RWKV state analysis** | Inspect and intervene on recurrent state — not just transformers | [`rwkv_inference`](examples/README.md#example-output-rwkv_inference) |
-| **AlgZoo analysis** | Exhaustive MI on tiny models: weight standardization, piecewise-linear region enumeration, neuron ablation, functional probing, surprise accounting | [`stoicheia_analysis`](examples/README.md) |
+| **AlgZoo analysis** | Exhaustive MI on [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny models: weight standardization, piecewise-linear region enumeration, neuron ablation, functional probing, surprise accounting | [`stoicheia_analysis`](examples/README.md) |
 
 candle-mi is (to our knowledge) the only MI toolkit with hook points for recurrent architectures — `RwkvState`, `RwkvDecay`, and `RwkvEffectiveAttn` enable mechanistic analysis of RWKV-6/7 models, a frontier that most MI tooling ignores entirely.
 
@@ -177,7 +177,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | `rwkv-tokenizer` | no | RWKV world tokenizer (required for RWKV inference) |
 | `clt` | no | Cross-Layer Transcoder support |
 | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
-| `stoicheia` | no | AlgZoo tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
+| `stoicheia` | no | [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
 | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
 | `memory` | no | RAM/VRAM memory reporting |
 | `memory-debug` | no | Raw DXGI/NVML values and per-chunk VRAM on stderr (implies `memory`) |
