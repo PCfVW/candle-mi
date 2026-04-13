@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! `AlgZoo` model backends — stoicheia (στοιχεῖα, "elements").
+//! `AlgZoo` model backends and MI tooling — stoicheia (στοιχεῖα, "elements").
+//!
+//! ## Phase A — Backends
 //!
 //! Two [`MIBackend`] implementations for ARC's
 //! [`AlgZoo`](https://github.com/alignment-research-center/alg-zoo) tiny models:
@@ -12,16 +14,54 @@
 //! They are designed as "model organisms" for exhaustive mechanistic
 //! interpretability.
 //!
+//! ## Phase B — MI Analysis (ekthesis)
+//!
+//! Six analysis modules for `ReLU` RNN mechanistic understanding:
+//!
+//! - [`fast`] — raw `f32` forward pass bypassing `Tensor` overhead
+//! - [`standardize`] — weight rescaling so `|W_ih[j]| = 1`
+//! - [`piecewise`] — `ReLU` activation region enumeration
+//! - [`ablation`] — single-neuron and pairwise zero-ablation
+//! - [`probing`] — neuron functional classification
+//! - [`surprise`] — ARC's information-theoretic surprise accounting
+//!
 //! # Weight loading
 //!
-//! Weights are loaded from `safetensors` files (converted from `PyTorch` `.pth`
-//! via [anamnesis](https://crates.io/crates/anamnesis)):
+//! Weights are loaded from `safetensors` or `PyTorch` `.pth` files.
+//! Format detection is automatic based on file extension:
 //!
-//! ```text
-//! amn remember model.pth --to safetensors
+//! ```rust,ignore
+//! // Both work — format is detected from the extension
+//! let model = StoicheiaRnn::load(config, "model.safetensors", &device)?;
+//! let model = StoicheiaRnn::load(config, "model.pth", &device)?;
 //! ```
+//!
+//! `.pth` files are converted in memory via
+//! [anamnesis](https://crates.io/crates/anamnesis)' pickle VM — no manual
+//! preprocessing step required.
+//!
+//! # Validation
+//!
+//! The full `AlgZoo` corpus (6,960 `.pth` files, 4 tasks, hidden sizes
+//! 2–32, sequence lengths 2–10) was loaded and converted with zero
+//! failures. Cross-validation against `PyTorch` reference outputs
+//! confirms numerical agreement:
+//!
+//! | Backend | Fixture | Tolerance | Accuracy |
+//! |---------|---------|-----------|----------|
+//! | `StoicheiaRnn` | M₂,₂ (10 params) | < 1e-4 | 100% on 10K samples |
+//! | `StoicheiaTransformer` | h4n4 (176 params) | < 1e-2 | exact match |
+//!
+//! The wider transformer tolerance (1e-2) reflects larger logit
+//! magnitudes (~1,000×); relative precision is equivalent.
 
+pub mod ablation;
 pub mod config;
+pub mod fast;
+pub mod piecewise;
+pub mod probing;
+pub mod standardize;
+pub mod surprise;
 pub mod tasks;
 
 use std::path::Path;
@@ -30,10 +70,53 @@ use candle_core::{DType, Device, IndexOp, Module, Tensor};
 use candle_nn::{Embedding, VarBuilder};
 
 use crate::backend::MIBackend;
-use crate::error::Result;
+use crate::error::{MIError, Result};
 use crate::hooks::{HookCache, HookPoint, HookSpec};
 
 pub use config::{StoicheiaArch, StoicheiaConfig, StoicheiaOutput, StoicheiaTask};
+
+// ---------------------------------------------------------------------------
+// Agnostic weight loading
+// ---------------------------------------------------------------------------
+
+/// Load weight bytes in safetensors format, auto-detecting file format.
+///
+/// - `.safetensors` — read directly
+/// - `.pth` / `.pkl` — convert in memory via `anamnesis`' pickle VM
+///
+/// # Errors
+///
+/// Returns [`MIError::Io`](crate::MIError::Io) if the file cannot be read.
+/// Returns [`MIError::Config`](crate::MIError::Config) if the file
+/// extension is not recognized.
+/// Returns [`MIError::Model`](crate::MIError::Model) if `.pth` parsing
+/// or safetensors conversion fails.
+fn load_weight_bytes(path: &Path) -> Result<Vec<u8>> {
+    match path.extension().and_then(|e| e.to_str()) {
+        Some("safetensors") => Ok(std::fs::read(path)?),
+        Some("pth" | "pkl") => {
+            let parsed = anamnesis::parse_pth(path).map_err(|e| {
+                MIError::Model(candle_core::Error::Msg(format!(
+                    "failed to parse .pth file: {e}"
+                )))
+            })?;
+            parsed.to_safetensors_bytes().map_err(|e| {
+                MIError::Model(candle_core::Error::Msg(format!(
+                    "failed to convert .pth to safetensors: {e}"
+                )))
+            })
+        }
+        Some(ext) => Err(MIError::Config(format!(
+            "unsupported weight file extension: .{ext} \
+             (expected .safetensors, .pth, or .pkl)"
+        ))),
+        None => Err(MIError::Config(
+            "weight file has no extension \
+             (expected .safetensors, .pth, or .pkl)"
+                .into(),
+        )),
+    }
+}
 
 // ---------------------------------------------------------------------------
 // StoicheiaRnn
@@ -72,23 +155,26 @@ pub struct StoicheiaRnn {
 }
 
 impl StoicheiaRnn {
-    /// Load an `AlgZoo` RNN from a safetensors file.
+    /// Load an `AlgZoo` RNN from a weight file.
     ///
-    /// The safetensors file must contain:
+    /// Accepts `.safetensors`, `.pth`, or `.pkl` files. Format is detected
+    /// from the file extension; `.pth`/`.pkl` files are converted in memory
+    /// via `anamnesis`.
+    ///
+    /// The weight file must contain:
     /// - `rnn.weight_ih_l0`: `[H, 1]`
     /// - `rnn.weight_hh_l0`: `[H, H]`
     /// - `linear.weight`: `[output_size, H]`
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) if weights are missing or have wrong shapes.
+    /// Returns [`MIError::Model`](crate::MIError::Model) if weights are
+    /// missing or have wrong shapes.
+    /// Returns [`MIError::Config`](crate::MIError::Config) if the file
+    /// extension is not recognized.
     #[allow(clippy::similar_names)]
-    pub fn load(
-        config: StoicheiaConfig,
-        safetensors_path: impl AsRef<Path>,
-        device: &Device,
-    ) -> Result<Self> {
-        let buffer = std::fs::read(safetensors_path.as_ref())?;
+    pub fn load(config: StoicheiaConfig, path: impl AsRef<Path>, device: &Device) -> Result<Self> {
+        let buffer = load_weight_bytes(path.as_ref())?;
         let vb = VarBuilder::from_buffered_safetensors(buffer, DType::F32, device)?;
 
         let weight_ih = vb.get((config.hidden_size, 1), "rnn.weight_ih_l0")?;
@@ -101,6 +187,43 @@ impl StoicheiaRnn {
             weight_oh,
             config,
         })
+    }
+}
+
+// -- Weight accessors (Phase B) ------------------------------------------
+
+impl StoicheiaRnn {
+    /// Access the input-to-hidden weight tensor.
+    ///
+    /// # Shapes
+    /// - returns: `[hidden_size, 1]`
+    #[must_use]
+    pub const fn weight_ih(&self) -> &Tensor {
+        &self.weight_ih
+    }
+
+    /// Access the hidden-to-hidden weight tensor.
+    ///
+    /// # Shapes
+    /// - returns: `[hidden_size, hidden_size]`
+    #[must_use]
+    pub const fn weight_hh(&self) -> &Tensor {
+        &self.weight_hh
+    }
+
+    /// Access the output projection weight tensor.
+    ///
+    /// # Shapes
+    /// - returns: `[output_size, hidden_size]`
+    #[must_use]
+    pub const fn weight_oh(&self) -> &Tensor {
+        &self.weight_oh
+    }
+
+    /// Access the model configuration.
+    #[must_use]
+    pub const fn config(&self) -> &StoicheiaConfig {
+        &self.config
     }
 }
 
@@ -319,9 +442,13 @@ pub struct StoicheiaTransformer {
 }
 
 impl StoicheiaTransformer {
-    /// Load an `AlgZoo` attention-only transformer from a safetensors file.
+    /// Load an `AlgZoo` attention-only transformer from a weight file.
     ///
-    /// The safetensors file must contain:
+    /// Accepts `.safetensors`, `.pth`, or `.pkl` files. Format is detected
+    /// from the file extension; `.pth`/`.pkl` files are converted in memory
+    /// via `anamnesis`.
+    ///
+    /// The weight file must contain:
     /// - `embed.weight`: `[input_range, H]`
     /// - `pos_embed.weight`: `[seq_len, H]`
     /// - `attns.{i}.in_proj_weight`: `[3*H, H]` for each layer
@@ -330,13 +457,12 @@ impl StoicheiaTransformer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) if weights are missing or have wrong shapes.
-    pub fn load(
-        config: StoicheiaConfig,
-        safetensors_path: impl AsRef<Path>,
-        device: &Device,
-    ) -> Result<Self> {
-        let buffer = std::fs::read(safetensors_path.as_ref())?;
+    /// Returns [`MIError::Model`](crate::MIError::Model) if weights are
+    /// missing or have wrong shapes.
+    /// Returns [`MIError::Config`](crate::MIError::Config) if the file
+    /// extension is not recognized.
+    pub fn load(config: StoicheiaConfig, path: impl AsRef<Path>, device: &Device) -> Result<Self> {
+        let buffer = load_weight_bytes(path.as_ref())?;
         let vb = VarBuilder::from_buffered_safetensors(buffer, DType::F32, device)?;
 
         let h = config.hidden_size;

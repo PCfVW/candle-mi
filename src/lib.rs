@@ -34,6 +34,7 @@
 //! | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
 //! | `memory` | no | RAM/VRAM memory reporting |
 //! | `memory-debug` | no | Raw DXGI/NVML values and per-chunk VRAM on stderr (implies `memory`) |
+//! | `stoicheia` | no | `AlgZoo` tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
 //! | `probing` | no | Linear probing via linfa (experimental) |
 //! | `metal` | no | Apple Metal GPU acceleration |
 //!
@@ -234,12 +235,20 @@ pub use transformer::recurrent::{RecurrentFeedbackEntry, RecurrentPassSpec};
 #[cfg(feature = "rwkv")]
 pub use rwkv::{GenericRwkv, RwkvConfig, RwkvLoraDims, RwkvVersion};
 
-// Stoicheia (AlgZoo) backends
+// Stoicheia (AlgZoo) backends — Phase A
 #[cfg(feature = "stoicheia")]
 pub use stoicheia::{
     StoicheiaArch, StoicheiaConfig, StoicheiaOutput, StoicheiaRnn, StoicheiaTask,
     StoicheiaTransformer,
 };
+
+// Stoicheia MI tooling — Phase B
+#[cfg(feature = "stoicheia")]
+pub use stoicheia::fast::RnnWeights;
+#[cfg(feature = "stoicheia")]
+pub use stoicheia::probing::NeuronRole;
+#[cfg(feature = "stoicheia")]
+pub use stoicheia::standardize::StandardizedRnn;
 
 // Sparse feature types (shared by CLT and SAE)
 pub use sparse::{FeatureId, SparseActivations};
