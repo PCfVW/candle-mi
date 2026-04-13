@@ -2,8 +2,8 @@
 
 > *MI for the Rust of us*
 
-**Date:** February 19, 2026 (last updated: March 25, 2026)
-**Status:** Phase 0–5 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.1.6. Phase 6 partially complete (character count helix finalized, activation patching extended with full causal trace heatmap, steering convergence, NPZ parsing migrated to `anamnesis`, MSRV 1.88, `forward_text` API, prolepsis finding via Transluce replication and factual routing). Default dtype F32 for research-grade precision. PR submitted to candle repo ([#3406](https://github.com/huggingface/candle/pull/3406)).
+**Date:** February 19, 2026 (last updated: April 13, 2026)
+**Status:** Phase 0–5 complete. Published on [crates.io](https://crates.io/crates/candle-mi) as v0.1.8. Phase 6 partially complete (character count helix finalized, activation patching extended with full causal trace heatmap, steering convergence, NPZ parsing migrated to `anamnesis`, MSRV 1.88, `forward_text` API, prolepsis finding via Transluce replication and factual routing). Stoicheia Phase A + B complete (AlgZoo backends + MI tooling, agnostic `.pth`/`.safetensors` loading via anamnesis v0.4.1). Default dtype F32 for research-grade precision. PR submitted to candle repo ([#3406](https://github.com/huggingface/candle/pull/3406)).
 **Context:** Building on plip-rs experience (7 model backends incl. Gemma 2, attention knockout, state knockout, effective attention, steering, logit lens, CLT encoding/injection). Two successful replications of Anthropic's "Planning in Poems" Figure 13 validate the approach: Gemma 2 2B with 426K CLTs (melometis branch) and Llama 3.2 1B with 524K CLTs (tragos branch). Target: a publishable, generic Rust MI crate endorsed by HuggingFace.
 
 ---

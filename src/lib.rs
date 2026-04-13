@@ -17,6 +17,7 @@
 //! |---------|--------|-------------|
 //! | [`GenericTransformer`] | `LLaMA`, `Qwen2`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral (+ auto-config for unknown families) | `transformer` |
 //! | `GenericRwkv` | RWKV-6 (Finch), RWKV-7 (Goose) | `rwkv` |
+//! | `StoicheiaRnn` / `StoicheiaTransformer` | `AlgZoo` `ReLU` RNN, attention-only transformer (8–1,408 params) | `stoicheia` |
 //!
 //! See [`BACKENDS.md`](https://github.com/PCfVW/candle-mi/blob/main/BACKENDS.md)
 //! for how to add a new model architecture.
@@ -179,9 +180,9 @@
 //!   how to add a new model architecture (auto-config, config parser, or
 //!   custom `MIBackend`).
 //! - [`examples/README.md`](https://github.com/PCfVW/candle-mi/blob/main/examples/README.md) —
-//!   21 runnable examples covering inference, logit lens, attention patterns,
+//!   23 runnable examples covering inference, logit lens, attention patterns,
 //!   knockout, steering, activation patching, `CounterFact` replication,
-//!   CLT circuits, SAE encoding, RWKV inference, and more.
+//!   CLT circuits, SAE encoding, RWKV inference, `AlgZoo` analysis, and more.
 
 #![deny(warnings)] // All warns → errors in CI
 #![cfg_attr(not(any(feature = "mmap", feature = "memory")), forbid(unsafe_code))] // Rule 5: safe by default

@@ -191,7 +191,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | [API docs (docs.rs)](https://docs.rs/candle-mi) | Crate-level documentation with quick start and examples |
 | [HOOKS.md](HOOKS.md) | Hook point reference, intervention API walkthrough, and worked examples |
 | [BACKENDS.md](BACKENDS.md) | How to add a new model architecture (auto-config, config parser, custom backend) |
-| [examples/README.md](examples/README.md) | 25 runnable examples covering inference, logit lens, knockout, steering, AlgZoo analysis, and more |
+| [examples/README.md](examples/README.md) | 23 runnable examples covering inference, logit lens, knockout, steering, AlgZoo analysis, and more |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 | [ROADMAP.md](ROADMAP.md) | Development roadmap and architecture decisions |
 
