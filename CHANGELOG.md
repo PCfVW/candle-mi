@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-04-13
+
 ### Added
 
 - **Stoicheia backends** (`src/stoicheia/`) — two `MIBackend` implementations
@@ -24,6 +26,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - Cross-validation tests: RNN and transformer outputs match Python reference
     to 1e-4 (RNN) and 1e-2 (transformer) tolerance
   - `stoicheia_inference` example with CLI for running any AlgZoo model
+- **Stoicheia MI tooling — Phase B** (`src/stoicheia/`) — six analysis modules
+  for exhaustive mechanistic understanding of AlgZoo ReLU RNNs:
+  - `fast` — raw f32 forward-pass kernel bypassing candle tensor overhead
+    (18–25× faster on tiny models); `RnnWeights` shared weight container,
+    `forward_fast`, `forward_fast_ablated`, `forward_fast_traced`, `accuracy`
+  - `standardize` — weight rescaling so `|W_ih[j]| = 1`, exact equivalence
+    transformation following the AlgZoo blog methodology
+  - `piecewise` — ReLU activation region enumeration; `ActivationPattern`
+    (320-bit compact vector), `classify_regions`, `region_linear_map`
+  - `ablation` — single-neuron and pairwise zero-ablation with interaction
+    scores detecting functional redundancy
+  - `probing` — neuron functional classification via structured inputs;
+    `NeuronRole` enum (RunningMax, MaxIncrement, LeaveOneOutMax, etc.)
+  - `surprise` — ARC's information-theoretic metric; `MechanisticEstimator`
+    trait, `OracleEstimator`, `SurpriseReport`
+  - `stoicheia_analysis` example — full Phase B pipeline CLI
+  - Integration test (`stoicheia_analysis`) exercising all six modules on
+    the M₂,₂ fixture
+- **Agnostic weight loading** — `StoicheiaRnn::load()` and
+  `StoicheiaTransformer::load()` now accept `.safetensors`, `.pth`, or
+  `.pkl` files. Format is detected from the file extension; `.pth`/`.pkl`
+  files are converted in memory via anamnesis' pickle VM (no manual
+  preprocessing step). The `stoicheia` feature now pulls in anamnesis
+  with the `pth` feature gate.
 - **`hf-fetch-model` dependency** relaxed from exact version pin to semver
   range `"0.9"` — `cargo update -p hf-fetch-model` picks up patches without
   cross-repo workflow automation
@@ -35,7 +61,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   checklist at the top. Same rules, different organization optimized for
   LLM-assisted development. Previous version archived in
   `docs/conventions/CONVENTIONS-v1-reference-based.md`.
-- **`anamnesis` dependency** bumped from 0.3.0 to 0.3.1 (adds `.pth` parsing)
+- **`anamnesis` dependency** bumped from 0.3.0 to 0.4.1:
+  - v0.3.1 added `.pth` pickle parsing (minimal VM, security allowlist)
+  - v0.4.0 added GGUF support
+  - v0.4.1 added `pth_to_safetensors_bytes()` for in-memory conversion
+    (candle-mi dogfooding feedback)
+  - Per-feature activation: `stoicheia` activates `anamnesis/pth`;
+    `sae` activates `anamnesis/npz`
 
 ### Fixed
 
