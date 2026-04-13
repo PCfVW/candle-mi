@@ -282,7 +282,7 @@ impl MIBackend for StoicheiaRnn {
         for t in 0..seq_len {
             // x_t: [batch, 1] — scalar input per timestep
             // INDEX: t is bounded by seq_len from dims2()
-            let x_t = input.i((.., t..t + 1))?;
+            let x_t = input.i((.., t..=t))?;
 
             // pre_act = x_t @ W_ih^T + h_{t-1} @ W_hh^T
             // x_t @ W_ih^T: [batch, 1] @ [1, H] → [batch, H]
