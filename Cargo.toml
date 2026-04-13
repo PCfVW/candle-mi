@@ -1,6 +1,6 @@
 [package]
 name = "candle-mi"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2024"
 authors = ["Eric Jacopin"]
 description = "Mechanistic interpretability for language models in Rust, built on candle"
@@ -46,8 +46,10 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 # Optional: memory reporting (NVML FFI for per-process VRAM)
 libloading = { version = "0.9", optional = true }
 
-# Optional: NPZ parsing via anamnesis (for Gemma Scope SAE weights)
-anamnesis = { version = "0.3.1", features = ["npz"], optional = true }
+# Optional: tensor format parsing via anamnesis
+# - sae feature activates "npz" (Gemma Scope SAE weights)
+# - stoicheia feature activates "pth" (AlgZoo .pth agnostic loading)
+anamnesis = { version = "0.4.1", optional = true }
 
 # Optional: per-process VRAM on Windows via DXGI (IDXGIAdapter3::QueryVideoMemoryInfo)
 [target.'cfg(windows)'.dependencies]
@@ -100,6 +102,10 @@ required-features = ["sae", "transformer"]
 
 [[test]]
 name = "validate_stoicheia"
+required-features = ["stoicheia"]
+
+[[test]]
+name = "stoicheia_analysis"
 required-features = ["stoicheia"]
 
 [[test]]
@@ -193,6 +199,10 @@ required-features = ["clt", "transformer"]
 name = "stoicheia_inference"
 required-features = ["stoicheia"]
 
+[[example]]
+name = "stoicheia_analysis"
+required-features = ["stoicheia"]
+
 [features]
 default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]
@@ -202,8 +212,8 @@ mmap = []
 rwkv = []
 rwkv-tokenizer = []
 clt = []
-sae = ["dep:anamnesis"]
-stoicheia = []
+sae = ["dep:anamnesis", "anamnesis/npz"]
+stoicheia = ["dep:anamnesis", "anamnesis/pth"]
 memory = ["dep:libloading", "dep:windows"]
 memory-debug = ["memory"]
 probing = ["linfa", "linfa-logistic", "ndarray"]
