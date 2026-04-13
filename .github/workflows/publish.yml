@@ -43,11 +43,20 @@ jobs:
       - name: Tests (RWKV)
         run: cargo test --no-default-features --features "rwkv,rwkv-tokenizer"
 
+      - name: Build (Stoicheia)
+        run: cargo build --no-default-features --features stoicheia
+
+      - name: Clippy (Stoicheia, pedantic)
+        run: cargo clippy --no-default-features --features stoicheia -- -W clippy::pedantic
+
+      - name: Tests (Stoicheia)
+        run: cargo test --no-default-features --features stoicheia --lib --test stoicheia_analysis --test validate_stoicheia
+
       - name: Build (no default features)
         run: cargo build --no-default-features
 
       - name: Build (all software features)
-        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,clt,sae,probing"
+        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,clt,sae,stoicheia,probing"
 
       # Publish
       - name: Publish to crates.io
