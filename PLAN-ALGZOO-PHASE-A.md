@@ -4,6 +4,14 @@
 > built all of geometry from irreducible foundations; ARC's AlgZoo builds MI
 > from irreducibly small models. The candle-mi module is named `stoicheia`.
 
+
+
+- [Jacob Hilton](https://www.alignment.org/author/jacob/), [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/): uninterpreted models with fewer than 1,500 parameters,  January 26th, 2026.
+
+- Alignment Research Center , [AlgZoo Github page](https://github.com/alignment-research-center/alg-zoo).
+
+---
+
 ## Goal
 
 Add two `MIBackend` implementations for AlgZoo's tiny models: a single-layer

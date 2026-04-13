@@ -159,6 +159,42 @@ also supports interventions.  State modifications use the dedicated
   the WKV recurrence — the RWKV equivalent of a KV cache, but compressed
   into a fixed-size matrix per head.
 
+### Stoicheia Hook Points
+
+The stoicheia backends (`StoicheiaRnn`, `StoicheiaTransformer`) expose hook
+points for ARC's [AlgZoo](https://github.com/alignment-research-center/alg-zoo)
+tiny models.
+
+**`StoicheiaRnn`** — uses `HookPoint::Custom(String)` for per-timestep
+capture (the RNN cell has no natural correspondence to transformer layers):
+
+| Hook Point | String | Shape | Description |
+|------------|--------|-------|-------------|
+| `Custom` | `rnn.hook_pre_activation.{t}` | `[batch, H]` | Before ReLU at timestep `t` |
+| `Custom` | `rnn.hook_hidden.{t}` | `[batch, H]` | Hidden state after timestep `t` |
+| `Custom` | `rnn.hook_final_state` | `[batch, H]` | Final hidden state `h_n` |
+| `Custom` | `rnn.hook_output` | `[batch, output_size]` | After output projection |
+
+Per-timestep hooks (`{t}`) are only captured when explicitly requested —
+the backend pre-scans which timesteps are in the `HookSpec` to avoid
+per-step string allocation (zero overhead when no hooks are active).
+
+**`StoicheiaTransformer`** — reuses standard `HookPoint` variants since
+the attention-only architecture maps naturally:
+
+| Hook Point | String | Shape | Description |
+|------------|--------|-------|-------------|
+| `Embed` | `hook_embed` | `[batch, seq, H]` | After token + positional embedding |
+| `ResidPre(i)` | `blocks.{i}.hook_resid_pre` | `[batch, seq, H]` | Before attention layer `i` |
+| `AttnScores(i)` | `blocks.{i}.attn.hook_scores` | `[batch, 1, seq, seq]` | Pre-softmax attention |
+| `AttnPattern(i)` | `blocks.{i}.attn.hook_pattern` | `[batch, 1, seq, seq]` | Post-softmax attention |
+| `AttnOut(i)` | `blocks.{i}.hook_attn_out` | `[batch, seq, H]` | Attention output |
+| `ResidPost(i)` | `blocks.{i}.hook_resid_post` | `[batch, seq, H]` | After residual add |
+
+No `MlpPre/Post/Out` (no MLP blocks), no `FinalNorm` (no normalization),
+no `ResidMid` (no MLP means `ResidPost` = after attention). Attention is
+full bidirectional (no causal mask), single-head.
+
 ---
 
 ## HookSpec: Declaring Captures and Interventions

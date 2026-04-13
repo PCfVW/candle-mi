@@ -10,7 +10,7 @@
 
 *Mechanistic Interpretability for the Rust of us.*
 
-> **Note:** v0.1.7 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
+> **Note:** v0.1.8 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
 
 ## Supported model families
 
@@ -18,6 +18,7 @@
 |---|---|---|---|
 | Decoder-only transformer | LLaMA 1/2/3, Mistral, Qwen 2/2.5, Phi-3/4, Gemma, Gemma 2, StarCoder2 | LLaMA 3.2 1B, Qwen2.5-Coder-3B, Gemma 2 2B, Phi-3 Mini, StarCoder2 3B, Mistral 7B | `transformer` |
 | Linear RNN | RWKV-6 (Finch), RWKV-7 (Goose) | RWKV-7 1.6B | `rwkv` |
+| AlgZoo tiny models | Single-layer ReLU RNN, attention-only transformer (8–1,408 params) | M₂,₂ (10 params), M₁₆,₁₀ (432 params), transformer h4n4 (176 params) | `stoicheia` |
 
 Most HuggingFace transformer models work out of the box via **auto-config** — no code changes needed. See [BACKENDS.md](BACKENDS.md) for details and how to add new architectures.
 
@@ -59,6 +60,7 @@ This is the Rust equivalent of Python's [TransformerLens](https://github.com/Tra
 | **Activation patching** | Swap activations between a clean and corrupted run to identify which components causally drive a prediction | [`activation_patching`](examples/README.md#example-output-activation_patching) |
 | **Attention patterns** | Visualize where each attention head attends across the sequence | [`attention_patterns`](examples/README.md#example-output-attention_patterns) |
 | **RWKV state analysis** | Inspect and intervene on recurrent state — not just transformers | [`rwkv_inference`](examples/README.md#example-output-rwkv_inference) |
+| **AlgZoo analysis** | Exhaustive MI on tiny models: weight standardization, piecewise-linear region enumeration, neuron ablation, functional probing, surprise accounting | [`stoicheia_analysis`](examples/README.md) |
 
 candle-mi is (to our knowledge) the only MI toolkit with hook points for recurrent architectures — `RwkvState`, `RwkvDecay`, and `RwkvEffectiveAttn` enable mechanistic analysis of RWKV-6/7 models, a frontier that most MI tooling ignores entirely.
 
@@ -86,7 +88,7 @@ This library was built to replicate Anthropic's [circuit-tracing work](https://t
 cargo run --release --features clt,transformer --example figure13_planning_poems
 ```
 
-This uses Llama 3.2 1B with a 524K-feature Cross-Layer Transcoder to suppress natural rhyme features and inject an alternative ("that" → P=0.69), sweeping injection position across all prompt tokens. See the [full output](examples/README.md#example-output-figure13_planning_poems) and the [22 examples](examples/README.md) covering logit lens, attention knockout, steering, activation patching, CLT circuits, SAE encoding, RWKV inference, and more.
+This uses Llama 3.2 1B with a 524K-feature Cross-Layer Transcoder to suppress natural rhyme features and inject an alternative ("that" → P=0.69), sweeping injection position across all prompt tokens. See the [full output](examples/README.md#example-output-figure13_planning_poems) and the [23 examples](examples/README.md) covering logit lens, attention knockout, steering, activation patching, CLT circuits, SAE encoding, RWKV inference, AlgZoo analysis, and more.
 
 ## Quick start
 
@@ -175,6 +177,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | `rwkv-tokenizer` | no | RWKV world tokenizer (required for RWKV inference) |
 | `clt` | no | Cross-Layer Transcoder support |
 | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
+| `stoicheia` | no | AlgZoo tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
 | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
 | `memory` | no | RAM/VRAM memory reporting |
 | `memory-debug` | no | Raw DXGI/NVML values and per-chunk VRAM on stderr (implies `memory`) |
@@ -188,7 +191,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | [API docs (docs.rs)](https://docs.rs/candle-mi) | Crate-level documentation with quick start and examples |
 | [HOOKS.md](HOOKS.md) | Hook point reference, intervention API walkthrough, and worked examples |
 | [BACKENDS.md](BACKENDS.md) | How to add a new model architecture (auto-config, config parser, custom backend) |
-| [examples/README.md](examples/README.md) | 21 runnable examples covering inference, logit lens, knockout, steering, and more |
+| [examples/README.md](examples/README.md) | 25 runnable examples covering inference, logit lens, knockout, steering, AlgZoo analysis, and more |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 | [ROADMAP.md](ROADMAP.md) | Development roadmap and architecture decisions |
 

@@ -390,6 +390,25 @@ in `src/backend.rs` inside `MIModel::from_pretrained()`:
 The backend is gated behind a feature flag, so users only compile what they
 need.
 
+### Stoicheia: A Worked Example
+
+The `stoicheia` module (`src/stoicheia/`) implements two custom `MIBackend`s
+for ARC's [AlgZoo](https://github.com/alignment-research-center/alg-zoo)
+tiny models (8–1,408 parameters):
+
+- **`StoicheiaRnn`** — single-layer ReLU RNN (continuous input). Uses
+  `HookPoint::Custom("rnn.hook_hidden.{t}")` for per-timestep activation
+  capture.
+- **`StoicheiaTransformer`** — attention-only transformer (discrete input,
+  no MLP, no causal mask). Reuses standard `HookPoint` variants (`Embed`,
+  `AttnScores`, `AttnPattern`, `ResidPre/Post`).
+
+These load from `.safetensors` or `.pth` files (auto-detected by extension),
+use explicit `load(config, path, device)` constructors instead of
+`from_pretrained()`, and demonstrate how a non-language-model backend fits
+into the `MIBackend` trait. See `src/stoicheia/mod.rs` for the full
+implementation (~500 lines for both backends).
+
 ---
 
 ## TransformerConfig Reference

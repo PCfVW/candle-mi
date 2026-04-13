@@ -1,6 +1,6 @@
 # Example Style Guide
 
-Every example in candle-mi must follow these conventions. This guide captures lessons learned from building 22 examples and ensures consistency across the codebase.
+Every example in candle-mi must follow these conventions. This guide captures lessons learned from building 23 examples and ensures consistency across the codebase.
 
 ## Table of Contents
 
@@ -81,7 +81,9 @@ let orig_input = candle_core::Tensor::new(&result.encoding().ids[..], model.devi
 
 ## CLI Pattern
 
-Use `clap::Parser`. Standard arguments:
+### Transformer/RWKV examples — `clap::Parser`
+
+Use `clap::Parser` for examples with multiple flexible flags (analyses, sweeps, data-driven experiments). Standard arguments:
 
 ```rust
 #[derive(Parser)]
@@ -111,6 +113,14 @@ struct Args {
 - `--no-runtime` to suppress timing (timing is ON by default). Standard for new examples; existing examples will be updated incrementally.
 - `--limit` for quick iteration during development.
 - `--data` when the example loads external data files (e.g., CounterFact prompt pairs).
+
+### Auto-discovery examples — `env::args()`
+
+Examples that run on all cached models (e.g., `generate`, `attention_patterns`, `rwkv_inference`) may use `env::args()` instead of `clap::Parser`. The pattern: no args → discover and run all cached models; one positional arg → run on that model only.
+
+### Stoicheia examples — domain-specific flags
+
+Stoicheia examples load from local `safetensors` files, not `HuggingFace` Hub. They use `clap::Parser` with domain-specific flags (`--task`, `--hidden-size`, `--seq-len`, `--weights`) instead of a `model` positional argument. The `--output` and `--no-runtime` conventions still apply where appropriate.
 
 ## Runtime Reporting
 
@@ -222,7 +232,7 @@ JSON files go to `examples/results/<example_name>/`.
 
 ## Model Loading
 
-Always use `from_pretrained` with error handling. Use the `main` → `run` pattern for clean error reporting:
+Use the `main` → `run` pattern for clean error reporting:
 
 ```rust
 fn main() {
@@ -233,17 +243,21 @@ fn main() {
 }
 
 fn run() -> candle_mi::Result<()> {
-    let args = Args::parse();
-    let model = MIModel::from_pretrained(&args.model)?;
-    let tokenizer = model
-        .tokenizer()
-        .ok_or_else(|| candle_mi::MIError::Config("model has no tokenizer".into()))?;
     // ...
     Ok(())
 }
 ```
 
-For forward passes, prefer `model.forward_text(prompt, &hooks)?` over manual `encode()` + `Tensor::new()` + `model.forward()` — see [Token Positions](#token-positions).
+Loading patterns vary by backend:
+
+| Backend | Loading pattern |
+|---------|----------------|
+| Transformer | `MIModel::from_pretrained("model-id")?` — downloads from `HuggingFace` Hub |
+| RWKV | `MIModel::from_pretrained("model-id")?` — same, with optional custom tokenizer |
+| SAE | `SparseAutoencoder::from_pretrained_npz(repo, device)?` — specialized loader |
+| Stoicheia | `StoicheiaRnn::load(config, "path/to.safetensors", &device)?` — local file, explicit config |
+
+For transformer/RWKV forward passes, prefer `model.forward_text(prompt, &hooks)?` over manual `encode()` + `Tensor::new()` + `model.forward()` — see [Token Positions](#token-positions). Stoicheia examples operate on raw `f32` arrays (not text), so `forward_text` does not apply.
 
 ## Cargo.toml Entry
 
@@ -252,7 +266,7 @@ Every example needs:
 ```toml
 [[example]]
 name = "example_name"
-required-features = ["transformer"]  # or ["rwkv"], ["clt", "transformer"], etc.
+required-features = ["transformer"]  # or ["rwkv"], ["clt", "transformer"], ["stoicheia"], etc.
 ```
 
 ## Run Commands
@@ -260,20 +274,28 @@ required-features = ["transformer"]  # or ["rwkv"], ["clt", "transformer"], etc.
 Always suggest `--features` explicitly. Always include `mmap` when the example might run on sharded models (7B+):
 
 ```bash
-# Basic
+# Transformer — basic
 cargo run --release --features transformer --example <name>
 
-# With memory reporting
+# Transformer — with memory reporting
 cargo run --release --features transformer,memory --example <name>
 
-# With mmap for large models
+# Transformer — with mmap for large models
 cargo run --release --features transformer,mmap --example <name>
 
-# Quick test
+# Transformer — quick test
 cargo run --release --features transformer --example <name> -- --limit 3
 
-# Clean output (no timing)
+# Transformer — clean output (no timing)
 cargo run --release --features transformer --example <name> -- --no-runtime
+
+# Stoicheia — AlgZoo RNN analysis
+cargo run --release --features stoicheia --example stoicheia_analysis -- \
+    --weights path/to/weights.safetensors --hidden-size 2 --seq-len 2
+
+# Stoicheia — AlgZoo inference
+cargo run --release --features stoicheia --example stoicheia_inference -- \
+    --task 2nd-argmax --hidden-size 16 --seq-len 10 --weights path/to/weights.safetensors
 ```
 
 ## Annotations (CONVENTIONS.md)
@@ -288,15 +310,24 @@ Examples follow the same annotation rules as library code:
 
 ## Checklist for New Examples
 
+**Universal (all examples):**
+
 1. SPDX header on line 1
-2. Module doc with bash run command and paper reference
+2. Module doc with bash run command and paper reference (if replicating)
 3. Standard `#![allow]` pragmas
-4. `clap::Parser` with model, `--output`, `--no-runtime`, `--limit`
-5. Memory reporting behind `#[cfg(feature = "memory")]`
-6. `forward_text` + `label_spans` for position-aware work
-7. Per-item + total timing (on by default, `--no-runtime` to suppress)
-8. JSON output with timing fields
-9. `[[example]]` entry in `Cargo.toml` with `required-features`
-10. Entry in `examples/README.md` table + running commands
-11. CHANGELOG bullet under `[Unreleased]`
-12. All CONVENTIONS.md annotations applied as code is written
+4. `main` → `run` pattern for error handling
+5. Per-item + total timing (on by default)
+6. `[[example]]` entry in `Cargo.toml` with `required-features`
+7. Entry in `examples/README.md` table + running commands
+8. CHANGELOG bullet under `[Unreleased]`
+9. All CONVENTIONS.md annotations applied as code is written
+
+**Recommended for data-driven analyses:**
+
+10. `clap::Parser` with `--output`, `--no-runtime`, `--limit`
+11. JSON output with timing fields (`serde::Serialize` structs)
+12. Memory reporting behind `#[cfg(feature = "memory")]`
+
+**Transformer/RWKV examples only:**
+
+13. `forward_text` + `label_spans` for position-aware work (otherwise bare `encode()` is fine)

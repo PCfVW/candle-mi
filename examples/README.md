@@ -52,6 +52,8 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
 | `attention_routing` | `clt`, `transformer` | Measure how CLT suppress+inject changes attention routing from output position to planning site — identifies specific heads involved in rhyme planning |
 | `clt_probe` | `clt`, `transformer` | Probe CLT feature activations at a token position — find suppress/inject candidates for `figure13_planning_poems` and `attention_routing` |
 | `correction_test` | `clt`, `transformer` | Test whether downstream layers can reverse a prolepsis commitment — injects a contradictory feature at late layers and measures whether the output redirects |
+| `stoicheia_inference` | `stoicheia` | Run an AlgZoo RNN or transformer, compare predictions against ground-truth task function |
+| `stoicheia_analysis` | `stoicheia` | Full Phase B MI pipeline: standardize weights, ablate neurons, probe roles, enumerate regions, run surprise accounting |
 
 ## Running
 
@@ -145,6 +147,18 @@ cargo run --release --features rwkv --example rwkv_inference -- "RWKV/RWKV7-Goos
 
 # RWKV inference — RWKV-6 model (requires rwkv-tokenizer feature)
 cargo run --release --features rwkv,rwkv-tokenizer --example rwkv_inference -- "RWKV/v6-Finch-1B6-HF"
+
+# Stoicheia inference — AlgZoo RNN (requires safetensors weights)
+cargo run --features stoicheia --release --example stoicheia_inference -- --task 2nd-argmax --hidden-size 2 --seq-len 2 --weights tests/fixtures/stoicheia/rnn_2nd_argmax_h2_n2.safetensors
+
+# Stoicheia inference — AlgZoo transformer
+cargo run --features stoicheia --release --example stoicheia_inference -- --task longest-cycle --hidden-size 4 --seq-len 4 --weights tests/fixtures/stoicheia/transformer_longest_cycle_h4_n4.safetensors
+
+# Stoicheia analysis — full Phase B MI pipeline on M₂,₂
+cargo run --features stoicheia --release --example stoicheia_analysis -- --weights tests/fixtures/stoicheia/rnn_2nd_argmax_h2_n2.safetensors --hidden-size 2 --seq-len 2
+
+# Stoicheia analysis — larger model (M₁₆,₁₀), 10K samples
+cargo run --features stoicheia --release --example stoicheia_analysis -- --weights path/to/rnn_16_10.safetensors --hidden-size 16 --seq-len 10 --samples 10000
 
 # Recurrent feedback — default (Llama 3.2 1B, unembed layers 8-15, strength 2.0)
 cargo run --release --features transformer --example recurrent_feedback
@@ -627,6 +641,20 @@ Full results, cross-model comparison, and prolepsis analysis in
   ([Project Gutenberg #98](https://www.gutenberg.org/ebooks/98)), public domain
   — no licensing restrictions for testing or research.
   Use `--text` to supply any plain-text file.
+- **stoicheia_inference** and **stoicheia_analysis** accept both `.safetensors`
+  and `.pth` files (format detected automatically from extension; `.pth` files
+  are converted in memory via [anamnesis](https://crates.io/crates/anamnesis)'
+  pickle VM — no manual conversion step). The M₂,₂ and transformer h4n4
+  fixtures are committed in `tests/fixtures/stoicheia/` and work out of the box.
+  For other models, download `.pth` files from [AlgZoo's GCS
+  bucket](https://github.com/alignment-research-center/alg-zoo) and point
+  directly at them.
+- **stoicheia cross-validation**: the `validate_stoicheia` test suite verifies
+  that candle-mi's RNN and transformer forward passes match Python/PyTorch
+  reference outputs to 1e-4 (RNN) and 1e-2 (transformer) tolerance. The
+  `stoicheia_analysis` integration test exercises all six Phase B MI modules
+  (fast, standardize, piecewise, ablation, probing, surprise) on the M₂,₂
+  fixture.
 - **`memory` feature** enables per-process VRAM reporting and GPU adapter
   identification. On Windows, uses DXGI (`IDXGIAdapter3::QueryVideoMemoryInfo`)
   — the only reliable per-process method under WDDM (NVML returns
