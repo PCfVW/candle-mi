@@ -2,7 +2,21 @@ name: Publish
 
 on:
   push:
+    # Publish to crates.io only on release tags of the form vMAJOR.MINOR.PATCH
+    # (e.g. v0.1.9, v0.2.0, v1.10.25).
+    #
+    # Milestone and pre-release tags that carry a hyphenated suffix are
+    # git-level checkpoints ONLY — they do NOT publish to crates.io:
+    #   v0.1.9-plt          (Stage 1 complete, Gemma arm pending)
+    #   v0.1.9-plt-gemma    (Gemma arm added)
+    #   v1.0.0-rc.1         (release candidate, if ever adopted)
+    # The `tags-ignore: ["v*-*"]` pattern excludes any tag containing a hyphen
+    # after the leading `v`.
+    #
+    # To publish a hyphenated tag intentionally, use the `workflow_dispatch`
+    # trigger (manual run from the Actions tab).
     tags: ["v*"]
+    tags-ignore: ["v*-*"]
   workflow_dispatch:
 
 env:
