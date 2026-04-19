@@ -671,7 +671,7 @@ impl CrossLayerTranscoder {
     /// # Errors
     ///
     /// Returns [`MIError::Config`] if the transcoder schema is not `PltBundle`
-    /// (CLT split files have no skip path; `GemmaScopeNpz` is unsupported and
+    /// (`CltSplit` files have no skip path; `GemmaScopeNpz` is unsupported and
     /// is itself gated at `open()`).
     /// Returns [`MIError::Config`] if `layer >= n_layers`.
     /// Returns [`MIError::Download`] if the bundle file cannot be fetched.
@@ -732,10 +732,9 @@ impl CrossLayerTranscoder {
         residual: &Tensor,
         layer: usize,
     ) -> Result<SparseActivations<CltFeatureId>> {
-        // Compute pre-activations first (same code path as encode_pre_activation),
-        // then apply ReLU and sparsify. Implementation is still inlined here
-        // rather than delegated to keep a single tensor pipeline (no double dtype
-        // promotion) and to avoid a subtle behavioural coupling on shape checks.
+        // Compute pre-activations via the shared workhorse, then apply ReLU and
+        // sparsify. The `encode == relu ∘ encode_pre_activation` invariant is
+        // covered by the `encode_pre_activation_matches_encode_postrelu` test.
         let pre_acts = self.encode_pre_activation_impl(residual, layer)?;
         // ReLU activation.
         let acts = pre_acts.relu()?;
@@ -782,7 +781,7 @@ impl CrossLayerTranscoder {
     }
 
     /// Internal workhorse shared by [`encode`](Self::encode) and
-    /// [`encode_pre_activation`](Self::encode_pre_activation). Returning the
+    /// [`encode_pre_activation`](Self::encode_pre_activation). Returns the
     /// dense `F32` `[n_features]` pre-activation tensor; callers apply their
     /// own downstream ops (`ReLU` + sparsify, or raw histograms).
     fn encode_pre_activation_impl(&self, residual: &Tensor, layer: usize) -> Result<Tensor> {

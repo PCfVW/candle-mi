@@ -136,9 +136,9 @@ struct Args {
     #[arg(long, default_value_t = DEFAULT_STRENGTH)]
     strength: f32,
 
-    /// Number of top decoder-projection features used for Step A's
-    /// auxiliary ranking. Step B always records
-    #[doc = concat!("top-", stringify!(20), ".")]
+    /// Number of top decoder-projection features used for Step A's auxiliary
+    /// ranking. Step B ignores this flag and always records top-20 features
+    /// (`STEP_B_TOP_N`).
     #[arg(long, default_value_t = DEFAULT_TOP_K)]
     top_k: usize,
 
@@ -905,16 +905,23 @@ fn run_arm_step_b(
     )?;
 
     // --- PLT W_skip projection (arm_label == "plt" only) ---
+    // Uses `seq_len - 1` (the trailing-space position that follows "cannot")
+    // as the structural planning site: on rhyming-couplet prompts the model
+    // commits to the rhyme at the last residual-input position before
+    // sampling, not at the position the sweep detects maximum intervention
+    // sensitivity. Empirically on this prompt both sweep spikes also land at
+    // `seq_len - 1`, so the two choices coincide here; documenting the
+    // structural pick because a different prompt could dissociate them.
     let w_skip_projection_at_spike = if arm_label == "plt" {
         eprintln!(
-            "  Computing W_skip · residual[spike] projection onto unembed(\"{INJECT_WORD}\")..."
+            "  Computing W_skip · residual[seq_len - 1] projection onto unembed(\"{INJECT_WORD}\")..."
         );
         Some(compute_w_skip_projection(
             &mut transcoder,
             residuals,
             direction,
             top_k_target_layer,
-            /*spike_position=*/ seq_len - 1,
+            seq_len - 1,
             device,
         )?)
     } else {
