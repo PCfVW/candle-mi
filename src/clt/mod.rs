@@ -1014,7 +1014,15 @@ impl CrossLayerTranscoder {
         let mut loaded = 0_usize;
         let n_source_layers = by_source.len();
         for (layer_idx, (source_layer, indices)) in by_source.iter().enumerate() {
-            let n_target_layers = n_layers - source_layer;
+            // CltSplit writes to every downstream layer; PltBundle / GemmaScopeNpz
+            // only to their own source layer. Keeping this schema-aware prevents
+            // the per-layer schemas from caching the same decoder row under many
+            // spurious (feature, target_layer) keys.
+            let n_target_layers = if matches!(self.config.schema, TranscoderSchema::CltSplit) {
+                n_layers - source_layer
+            } else {
+                1
+            };
             info!(
                 "cache_steering_vectors_all_downstream: loading decoder for source layer {} \
                  ({}/{}, {} downstream layers)",
@@ -1785,32 +1793,36 @@ impl CrossLayerTranscoder {
 }
 
 // ---------------------------------------------------------------------------
-// Schema-aware decoder helpers
+// Schema-aware encoder/decoder helpers
 // ---------------------------------------------------------------------------
 //
 // Introduced with the `PltBundle` schema to concentrate per-schema branching
-// in three private free functions, rather than scattering `match schema { … }`
-// across the seven W_dec access sites (decoder_vector, cache_steering_vectors,
-// cache_steering_vectors_all_downstream, score_features_by_decoder_projection,
-// score_features_by_decoder_projection_batch, extract_decoder_vectors, and
-// ensure_decoder_path).
+// in four private free functions, rather than scattering `match schema { … }`
+// across every encoder/decoder access site.
 //
-// - `decoder_file_and_tensor_name` — resolve (filename, tensor name) inside
-//   that file for a given source layer.
+// - `encoder_file_and_tensor_names` — resolve (filename, `W_enc` name,
+//   `b_enc` name) for a given layer. Used by `ensure_encoder_path`,
+//   `load_encoder`, and `open()`'s first-layer dimension probe.
+// - `decoder_file_and_tensor_name` — resolve (filename, `W_dec` name) for a
+//   given source layer. Used by `ensure_decoder_path`.
 // - `decoder_row` — extract a single `[d_model]` decoder vector for
-//   `(feature_index, target_offset)`.
+//   `(feature_index, target_offset)`. Used by `decoder_vector`,
+//   `cache_steering_vectors`, `cache_steering_vectors_all_downstream`, and
+//   `extract_decoder_vectors`.
 // - `decoder_layer_slice` — extract a `[n_features, d_model]` slice at a
-//   given `target_offset`.
+//   given `target_offset`. Used by `score_features_by_decoder_projection`
+//   and `score_features_by_decoder_projection_batch`.
 
 /// Resolve the encoder file name and the tensor names (`W_enc`, `b_enc`)
 /// inside it for a given source layer, schema-aware.
 ///
-/// - `CltSplit`: `(\"W_enc_{layer}.safetensors\", \"W_enc_{layer}\", \"b_enc_{layer}\")`.
-/// - `PltBundle`: `(\"layer_{layer}.safetensors\", \"W_enc\", \"b_enc\")` —
-///   un-suffixed tensor names bundled with `W_dec`/`W_skip`/`b_dec` in the
-///   same file.
-/// - `GemmaScopeNpz`: `(gemmascope_npz_paths[layer], \"W_enc\", \"b_enc\")` —
-///   per-layer NPZ file; loading is deferred to a follow-up release.
+/// Return tuple is `(filename, W_enc_tensor_name, b_enc_tensor_name)`.
+///
+/// - `CltSplit`: `W_enc_{layer}.safetensors` + `W_enc_{layer}` + `b_enc_{layer}`.
+/// - `PltBundle`: `layer_{layer}.safetensors` + un-suffixed `W_enc` + `b_enc` —
+///   bundled with `W_dec`/`W_skip`/`b_dec` in the same file.
+/// - `GemmaScopeNpz`: `gemmascope_npz_paths[layer]` + un-suffixed `W_enc` +
+///   `b_enc` — per-layer NPZ file; loading is deferred to v0.1.10.
 ///
 /// # Errors
 ///
@@ -1850,14 +1862,14 @@ fn encoder_file_and_tensor_names(
 /// Resolve the decoder file name and the tensor name inside it for a given
 /// source layer, schema-aware.
 ///
-/// - `CltSplit`: `(\"W_dec_{layer}.safetensors\", \"W_dec_{layer}\")` — two
-///   files per layer, layer-suffixed tensor names.
-/// - `PltBundle`: `(\"layer_{layer}.safetensors\", \"W_enc\" bundle's \"W_dec\")`
-///   — encoder and decoder live in the same bundle; tensor name is un-suffixed.
-/// - `GemmaScopeNpz`: `(gemmascope_npz_paths[layer], \"W_dec\")` —
-///   per-layer NPZ file path routed through `config.yaml` from the
-///   `mntss/gemma-scope-transcoders` metadata repo. Returns an error if
-///   `gemmascope_npz_paths` is missing the expected index.
+/// Return tuple is `(filename, W_dec_tensor_name)`.
+///
+/// - `CltSplit`: `W_dec_{layer}.safetensors` + layer-suffixed `W_dec_{layer}` —
+///   encoder and decoder live in separate files.
+/// - `PltBundle`: `layer_{layer}.safetensors` + un-suffixed `W_dec` —
+///   encoder and decoder share the bundle file.
+/// - `GemmaScopeNpz`: `gemmascope_npz_paths[layer]` + un-suffixed `W_dec` —
+///   per-layer NPZ file path routed via `mntss/gemma-scope-transcoders/config.yaml`.
 ///
 /// # Errors
 ///
@@ -1896,8 +1908,8 @@ fn decoder_file_and_tensor_name(
 ///
 /// - `CltSplit`: rank-3 `W_dec` indexed as `(feature_index, target_offset)`.
 /// - `PltBundle` / `GemmaScopeNpz`: rank-2 `W_dec` indexed as `feature_index`.
-///   `target_offset` must be `0` (per-layer transcoder writes only to its own
-///   layer); this is debug-asserted.
+///   `target_offset` must be `0` — per-layer transcoders only write to their
+///   own source layer.
 ///
 /// # Shapes
 /// - `w_dec`: rank-3 `[n_features, n_target_layers, d_model]` for `CltSplit`,
@@ -1906,7 +1918,10 @@ fn decoder_file_and_tensor_name(
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Model`] on candle tensor indexing failure.
+/// Returns [`MIError::Config`] if `schema` is `PltBundle` or `GemmaScopeNpz`
+/// and `target_offset != 0` (callers must pre-check that `target_layer == source_layer`
+/// for per-layer schemas). Returns [`MIError::Model`] on candle tensor indexing
+/// failure.
 fn decoder_row(
     w_dec: &Tensor,
     feature_index: usize,
@@ -1916,10 +1931,12 @@ fn decoder_row(
     match schema {
         TranscoderSchema::CltSplit => Ok(w_dec.i((feature_index, target_offset))?),
         TranscoderSchema::PltBundle | TranscoderSchema::GemmaScopeNpz => {
-            debug_assert_eq!(
-                target_offset, 0,
-                "per-layer schema writes only to its own layer (target_offset must be 0)"
-            );
+            if target_offset != 0 {
+                return Err(MIError::Config(format!(
+                    "per-layer schema {schema:?} only writes to its own layer \
+                     (target_offset must be 0, got {target_offset})"
+                )));
+            }
             Ok(w_dec.i(feature_index)?)
         }
     }
@@ -1943,7 +1960,9 @@ fn decoder_row(
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Model`] on candle tensor indexing failure.
+/// Returns [`MIError::Config`] if `schema` is `PltBundle` or `GemmaScopeNpz`
+/// and `target_offset != 0`. Returns [`MIError::Model`] on candle tensor
+/// indexing failure.
 fn decoder_layer_slice(
     w_dec: &Tensor,
     target_offset: usize,
@@ -1952,10 +1971,12 @@ fn decoder_layer_slice(
     match schema {
         TranscoderSchema::CltSplit => Ok(w_dec.i((.., target_offset, ..))?),
         TranscoderSchema::PltBundle | TranscoderSchema::GemmaScopeNpz => {
-            debug_assert_eq!(
-                target_offset, 0,
-                "per-layer schema writes only to its own layer (target_offset must be 0)"
-            );
+            if target_offset != 0 {
+                return Err(MIError::Config(format!(
+                    "per-layer schema {schema:?} only writes to its own layer \
+                     (target_offset must be 0, got {target_offset})"
+                )));
+            }
             Ok(w_dec.clone())
         }
     }
