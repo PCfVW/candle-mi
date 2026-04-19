@@ -76,6 +76,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the candle-mi reference `0.687`, hard-fails below `0.50`. `--schema plt`
   is a Step-B stub that exits with a pointer to the plan. CUDA-or-bust:
   errors out if the device selector falls back to CPU.
+- **`CrossLayerTranscoder::encode_pre_activation`** — returns the dense
+  `W_enc @ x + b_enc` pre-activation tensor **before** the `ReLU`/`JumpReLU`
+  sparsifier. Step B uses this to histogram encoder pre-activations at the
+  spike layer and its two neighbours (V3 Step 1.7 (D) activation-regime
+  discrimination). `encode()`'s sparse path now routes through the same
+  internal workhorse so the invariant `encode == relu ∘ encode_pre_activation`
+  holds by construction. Unit test confirms the invariant on a synthetic
+  `PltBundle` fixture.
+- **`CrossLayerTranscoder::load_skip_matrix`** — loads the `W_skip` matrix
+  `[d_model, d_model]` from a `PltBundle` layer (e.g.
+  `mntss/transcoder-Llama-3.2-1B`) as dense `F32` on the requested device.
+  Step B uses it to project `W_skip · x` at the spike position onto the
+  unembedding direction, decomposing the apparent PLT planning signal into
+  sparse-feature and linear-skip contributions (V3 Step 1.7). Explicitly
+  errors with `MIError::Config` for `CltSplit` and `GemmaScopeNpz` schemas
+  (no skip path defined). Unit tests cover round-trip values on a synthetic
+  `PltBundle` and the negative path on `CltSplit`.
 
 ### Tests
 

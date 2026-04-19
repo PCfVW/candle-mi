@@ -654,6 +654,58 @@ impl CrossLayerTranscoder {
         Ok(())
     }
 
+    /// Load the `W_skip` matrix for a `PltBundle` layer and return it as a
+    /// dense `F32` tensor on `device`.
+    ///
+    /// `W_skip` is the linear skip path that per-layer transcoders (Llama
+    /// mntss/transcoder-*) apply in parallel to the sparse
+    /// `ReLU(W_enc @ x + b_enc)` branch: the reconstruction is
+    /// `W_skip @ x + W_dec @ sparse_features + b_dec`. Step B instrumentation
+    /// projects `W_skip @ x` at the spike position onto the unembedding
+    /// direction to decompose the apparent planning signal into
+    /// sparse-feature vs linear-skip contributions (V3 Step 1.7).
+    ///
+    /// # Shapes
+    /// - returns: `[d_model, d_model]` dense `F32` tensor.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Config`] if the transcoder schema is not `PltBundle`
+    /// (CLT split files have no skip path; `GemmaScopeNpz` is unsupported and
+    /// is itself gated at `open()`).
+    /// Returns [`MIError::Config`] if `layer >= n_layers`.
+    /// Returns [`MIError::Download`] if the bundle file cannot be fetched.
+    /// Returns [`MIError::Model`] on tensor deserialization failure.
+    pub fn load_skip_matrix(&mut self, layer: usize, device: &Device) -> Result<Tensor> {
+        if !matches!(self.config.schema, TranscoderSchema::PltBundle) {
+            return Err(MIError::Config(format!(
+                "load_skip_matrix: W_skip is only present in PltBundle schema \
+                 (current schema: {:?})",
+                self.config.schema,
+            )));
+        }
+        if layer >= self.config.n_layers {
+            return Err(MIError::Config(format!(
+                "layer {layer} out of range (transcoder has {} layers)",
+                self.config.n_layers
+            )));
+        }
+        info!("Loading W_skip for PltBundle layer {layer}");
+
+        let path = self.ensure_encoder_path(layer)?;
+        let data = std::fs::read(&path)?;
+        let st = SafeTensors::deserialize(&data).map_err(|e| {
+            MIError::Config(format!("failed to deserialize bundle layer {layer}: {e}"))
+        })?;
+        let view = st.tensor("W_skip").map_err(|e| {
+            MIError::Config(format!("tensor 'W_skip' not found in layer {layer}: {e}"))
+        })?;
+        let w_skip = tensor_from_view(&view, device)?;
+        // PROMOTE: W_skip is BF16 on disk in mntss/transcoder-*; F32 for matmul precision
+        let w_skip_f32 = w_skip.to_dtype(DType::F32)?;
+        Ok(w_skip_f32)
+    }
+
     // --- Encoding ---
 
     /// Encode a residual stream activation into sparse CLT features.
@@ -680,6 +732,60 @@ impl CrossLayerTranscoder {
         residual: &Tensor,
         layer: usize,
     ) -> Result<SparseActivations<CltFeatureId>> {
+        // Compute pre-activations first (same code path as encode_pre_activation),
+        // then apply ReLU and sparsify. Implementation is still inlined here
+        // rather than delegated to keep a single tensor pipeline (no double dtype
+        // promotion) and to avoid a subtle behavioural coupling on shape checks.
+        let pre_acts = self.encode_pre_activation_impl(residual, layer)?;
+        // ReLU activation.
+        let acts = pre_acts.relu()?;
+
+        // Transfer to CPU for sparse extraction.
+        let acts_vec: Vec<f32> = acts.to_vec1()?;
+
+        let mut features: Vec<(CltFeatureId, f32)> = acts_vec
+            .iter()
+            .enumerate()
+            .filter(|&(_, v)| *v > 0.0)
+            .map(|(i, v)| (CltFeatureId { layer, index: i }, *v))
+            .collect();
+
+        // Sort by activation magnitude (descending).
+        features.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+        Ok(SparseActivations { features })
+    }
+
+    /// Encode a residual into the dense `W_enc @ x + b_enc` pre-activation
+    /// vector **before** the `ReLU` (or `JumpReLU`) sparsifier runs.
+    ///
+    /// Step B instrumentation histograms these pre-activation values at the
+    /// spike layer and its two neighbours to discriminate activation-regime
+    /// explanations across transcoders (V3 Step 1.7 (D)). Callers that only
+    /// need the sparse post-activation features should use
+    /// [`encode`](Self::encode).
+    ///
+    /// # Shapes
+    /// - `residual`: `[d_model]` — residual stream activation at one position.
+    /// - returns: `[n_features_per_layer]` dense `F32` on the same device as
+    ///   `residual` (no sparsification, includes negative values).
+    ///
+    /// # Requires
+    /// [`load_encoder(layer)`](Self::load_encoder) must have been called first.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Hook`] if no encoder is loaded or the wrong layer is loaded.
+    /// Returns [`MIError::Model`] on tensor operation failure.
+    pub fn encode_pre_activation(&self, residual: &Tensor, layer: usize) -> Result<Tensor> {
+        self.encode_pre_activation_impl(residual, layer)
+    }
+
+    /// Internal workhorse shared by [`encode`](Self::encode) and
+    /// [`encode_pre_activation`](Self::encode_pre_activation). Returning the
+    /// dense `F32` `[n_features]` pre-activation tensor; callers apply their
+    /// own downstream ops (`ReLU` + sparsify, or raw histograms).
+    fn encode_pre_activation_impl(&self, residual: &Tensor, layer: usize) -> Result<Tensor> {
         let enc = self.loaded_encoder.as_ref().ok_or_else(|| {
             MIError::Hook(format!(
                 "no encoder loaded — call load_encoder({layer}) first"
@@ -703,24 +809,7 @@ impl CrossLayerTranscoder {
 
         let pre_acts = w_enc_f32.matmul(&residual_f32.unsqueeze(1)?)?.squeeze(1)?;
         let pre_acts = (&pre_acts + &b_enc_f32)?;
-
-        // ReLU activation.
-        let acts = pre_acts.relu()?;
-
-        // Transfer to CPU for sparse extraction.
-        let acts_vec: Vec<f32> = acts.to_vec1()?;
-
-        let mut features: Vec<(CltFeatureId, f32)> = acts_vec
-            .iter()
-            .enumerate()
-            .filter(|&(_, v)| *v > 0.0)
-            .map(|(i, v)| (CltFeatureId { layer, index: i }, *v))
-            .collect();
-
-        // Sort by activation magnitude (descending).
-        features.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-
-        Ok(SparseActivations { features })
+        Ok(pre_acts)
     }
 
     /// Encode and return only the top-k most active features.
@@ -3284,5 +3373,180 @@ mod tests {
             clt.steering_cache
                 .contains_key(&(CltFeatureId { layer: 0, index: 0 }, 1))
         );
+    }
+
+    #[test]
+    fn encode_pre_activation_matches_encode_postrelu() {
+        // Asserts the invariant that encode()'s sparse output is exactly the
+        // post-ReLU view of encode_pre_activation()'s dense output — so Step B
+        // histograms over the dense pre-activation are numerically coherent
+        // with the sparse features that intervene in the causal tests.
+        let dir = tempfile::tempdir().unwrap();
+        let d_model = 4;
+        let n_features = 5;
+
+        // Seed W_enc so that some pre-activations land positive and others
+        // negative (so ReLU actually sparsifies). b_enc shifts the split point.
+        #[rustfmt::skip]
+        let w_enc: Vec<f32> = vec![
+             1.0,  0.0,  0.0,  0.0, // feature 0: picks up residual[0]
+             0.0,  1.0,  0.0,  0.0, // feature 1: picks up residual[1]
+             0.0,  0.0, -1.0,  0.0, // feature 2: flips sign of residual[2]
+             0.5,  0.5,  0.5,  0.5, // feature 3: mean of residual
+            -1.0, -1.0, -1.0, -1.0, // feature 4: negated sum (will fire only with negative sum)
+        ];
+        let b_enc: Vec<f32> = vec![0.0, 0.0, 0.0, -1.0, 2.0];
+        let path0 = create_synthetic_plt_bundle(
+            dir.path(),
+            0,
+            n_features,
+            d_model,
+            &w_enc,
+            &vec![0.0; n_features * d_model],
+            &vec![0.0; d_model * d_model],
+            &b_enc,
+            &vec![0.0; d_model],
+        );
+
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![Some(path0)],
+            decoder_paths: vec![None],
+            config: CltConfig {
+                n_layers: 1,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features,
+                model_name: "test".to_owned(),
+                schema: TranscoderSchema::PltBundle,
+                gemmascope_npz_paths: Vec::new(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        clt.load_encoder(0, &Device::Cpu).unwrap();
+        // residual chosen so feature 0, 1 fire positive (ReLU passes), feature 2
+        // fires positive (negates -0.5 residual), feature 3 hits b_enc=-1 (barely
+        // positive), feature 4 gets negative pre-activation (ReLU clips to 0).
+        let residual =
+            Tensor::from_vec(vec![1.0_f32, 2.0, -0.5, 1.5], (d_model,), &Device::Cpu).unwrap();
+
+        let pre_acts_tensor = clt.encode_pre_activation(&residual, 0).unwrap();
+        let pre_acts: Vec<f32> = pre_acts_tensor.to_vec1().unwrap();
+        // Dense shape check.
+        assert_eq!(pre_acts.len(), n_features);
+
+        let sparse = clt.encode(&residual, 0).unwrap();
+
+        // Every sparse feature must match max(0, pre_activation).
+        for (fid, act) in &sparse.features {
+            let pre = pre_acts[fid.index];
+            assert!(
+                pre > 0.0,
+                "sparse feature {fid:?} must have positive pre-act"
+            );
+            assert!(
+                (pre - act).abs() < 1e-6,
+                "feature {fid:?}: sparse={act}, pre={pre}"
+            );
+        }
+        // Every dense pre-activation that is <= 0 must be absent from sparse.
+        let sparse_indices: std::collections::HashSet<usize> =
+            sparse.features.iter().map(|(f, _)| f.index).collect();
+        for (i, &pre) in pre_acts.iter().enumerate() {
+            if pre <= 0.0 {
+                assert!(
+                    !sparse_indices.contains(&i),
+                    "feature {i} pre-act {pre} <= 0 but appears in sparse output"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn load_skip_matrix_round_trip_plt_bundle() {
+        let dir = tempfile::tempdir().unwrap();
+        let d_model = 3;
+        let n_features = 2;
+
+        // Seed W_skip with distinct values so we can verify row/column order.
+        #[rustfmt::skip]
+        let w_skip: Vec<f32> = vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ];
+        let path0 = create_synthetic_plt_bundle(
+            dir.path(),
+            0,
+            n_features,
+            d_model,
+            &vec![0.0; n_features * d_model],
+            &vec![0.0; n_features * d_model],
+            &w_skip,
+            &vec![0.0; n_features],
+            &vec![0.0; d_model],
+        );
+
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![Some(path0)],
+            decoder_paths: vec![None],
+            config: CltConfig {
+                n_layers: 1,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features,
+                model_name: "test".to_owned(),
+                schema: TranscoderSchema::PltBundle,
+                gemmascope_npz_paths: Vec::new(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        let loaded = clt.load_skip_matrix(0, &Device::Cpu).unwrap();
+        assert_eq!(loaded.dims(), &[d_model, d_model]);
+        let values: Vec<Vec<f32>> = loaded.to_vec2().unwrap();
+        assert_eq!(values[0], vec![1.0, 2.0, 3.0]);
+        assert_eq!(values[1], vec![4.0, 5.0, 6.0]);
+        assert_eq!(values[2], vec![7.0, 8.0, 9.0]);
+    }
+
+    #[test]
+    fn load_skip_matrix_rejects_clt_split_schema() {
+        // CltSplit transcoders (mntss/clt-*) have no W_skip — attempting to
+        // load one must fail with MIError::Config pointing at the schema.
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![None],
+            decoder_paths: vec![None],
+            config: CltConfig {
+                n_layers: 1,
+                d_model: 4,
+                n_features_per_layer: 2,
+                n_features_total: 2,
+                model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        let err = clt.load_skip_matrix(0, &Device::Cpu).unwrap_err();
+        match err {
+            MIError::Config(msg) => {
+                assert!(
+                    msg.contains("PltBundle"),
+                    "error message should mention PltBundle schema: {msg}"
+                );
+            }
+            other => panic!("expected MIError::Config, got {other:?}"),
+        }
     }
 }
