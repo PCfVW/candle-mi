@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-04-19
+
 ### Added
 
 - **`TranscoderSchema` enum** (`src/clt/mod.rs`) — three-variant
