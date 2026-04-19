@@ -1,7 +1,7 @@
 {
   "experiment": "clt-vs-plt-planning-site",
   "step": "b",
-  "runtime_seconds": 250.8031691,
+  "runtime_seconds": 258.2821495,
   "device_name": "cuda:0",
   "model": "meta-llama/Llama-3.2-1B",
   "prompt": "The birds were singing in the tree,\nAnd everything was wild and free.\nThe river ran down to the sea,\nThere is so much we cannot",
@@ -52732,6 +52732,677 @@
             "logit": -5.1440983
           }
         ]
+      },
+      "max_over_target_follow_up": {
+        "suppress_only": {
+          "protocol": "suppress_only_max_over_target",
+          "suppress_features": [
+            {
+              "layer": 13,
+              "index": 7978
+            },
+            {
+              "layer": 13,
+              "index": 6484
+            },
+            {
+              "layer": 13,
+              "index": 29869
+            },
+            {
+              "layer": 10,
+              "index": 157
+            },
+            {
+              "layer": 10,
+              "index": 18549
+            }
+          ],
+          "inject_feature": null,
+          "strength": 10.0,
+          "spike_position": 30,
+          "spike_token": " ",
+          "max_prob": 0.87125564,
+          "max_logit": 40.32259,
+          "delta_prob": 0.87125456,
+          "delta_logit": 32.193893,
+          "sweep": [
+            {
+              "position": 0,
+              "token": "<|begin_of_text|>",
+              "prob": 0.0000018872056,
+              "logit": 8.765339
+            },
+            {
+              "position": 1,
+              "token": "The",
+              "prob": 8.065689e-7,
+              "logit": 7.8354535
+            },
+            {
+              "position": 2,
+              "token": " birds",
+              "prob": 8.357243e-7,
+              "logit": 7.854163
+            },
+            {
+              "position": 3,
+              "token": " were",
+              "prob": 9.0671693e-7,
+              "logit": 7.9584184
+            },
+            {
+              "position": 4,
+              "token": " singing",
+              "prob": 8.8537615e-7,
+              "logit": 7.936613
+            },
+            {
+              "position": 5,
+              "token": " in",
+              "prob": 8.956038e-7,
+              "logit": 7.951358
+            },
+            {
+              "position": 6,
+              "token": " the",
+              "prob": 9.3458584e-7,
+              "logit": 7.9910655
+            },
+            {
+              "position": 7,
+              "token": " tree",
+              "prob": 9.1144653e-7,
+              "logit": 7.9664
+            },
+            {
+              "position": 8,
+              "token": ",\n",
+              "prob": 8.0352345e-7,
+              "logit": 7.8095994
+            },
+            {
+              "position": 9,
+              "token": "And",
+              "prob": 7.4804575e-7,
+              "logit": 7.7837815
+            },
+            {
+              "position": 10,
+              "token": " everything",
+              "prob": 9.814634e-7,
+              "logit": 8.029323
+            },
+            {
+              "position": 11,
+              "token": " was",
+              "prob": 9.740032e-7,
+              "logit": 8.029442
+            },
+            {
+              "position": 12,
+              "token": " wild",
+              "prob": 7.9488393e-7,
+              "logit": 7.825806
+            },
+            {
+              "position": 13,
+              "token": " and",
+              "prob": 9.014279e-7,
+              "logit": 7.943037
+            },
+            {
+              "position": 14,
+              "token": " free",
+              "prob": 9.292268e-7,
+              "logit": 7.943291
+            },
+            {
+              "position": 15,
+              "token": ".\n",
+              "prob": 6.894089e-7,
+              "logit": 7.730716
+            },
+            {
+              "position": 16,
+              "token": "The",
+              "prob": 9.108387e-7,
+              "logit": 7.9484
+            },
+            {
+              "position": 17,
+              "token": " river",
+              "prob": 9.452165e-7,
+              "logit": 7.994714
+            },
+            {
+              "position": 18,
+              "token": " ran",
+              "prob": 8.667104e-7,
+              "logit": 7.914241
+            },
+            {
+              "position": 19,
+              "token": " down",
+              "prob": 8.4343577e-7,
+              "logit": 7.8821626
+            },
+            {
+              "position": 20,
+              "token": " to",
+              "prob": 8.348549e-7,
+              "logit": 7.8477383
+            },
+            {
+              "position": 21,
+              "token": " the",
+              "prob": 8.7450485e-7,
+              "logit": 7.9157677
+            },
+            {
+              "position": 22,
+              "token": " sea",
+              "prob": 8.626672e-7,
+              "logit": 7.8851633
+            },
+            {
+              "position": 23,
+              "token": ",\n",
+              "prob": 9.598024e-7,
+              "logit": 7.974492
+            },
+            {
+              "position": 24,
+              "token": "There",
+              "prob": 9.161865e-7,
+              "logit": 7.9462857
+            },
+            {
+              "position": 25,
+              "token": " is",
+              "prob": 9.116621e-7,
+              "logit": 7.9349146
+            },
+            {
+              "position": 26,
+              "token": " so",
+              "prob": 0.0000010512578,
+              "logit": 8.093882
+            },
+            {
+              "position": 27,
+              "token": " much",
+              "prob": 9.458738e-7,
+              "logit": 7.9783244
+            },
+            {
+              "position": 28,
+              "token": " we",
+              "prob": 0.0000014138192,
+              "logit": 8.29848
+            },
+            {
+              "position": 29,
+              "token": " cannot",
+              "prob": 0.0011684016,
+              "logit": 15.104991
+            },
+            {
+              "position": 30,
+              "token": " ",
+              "prob": 0.87125564,
+              "logit": 40.32259
+            }
+          ]
+        },
+        "suppress_inject_ranked_inject": {
+          "protocol": "suppress_inject_max_over_target_ranked_inject",
+          "suppress_features": [
+            {
+              "layer": 13,
+              "index": 7978
+            },
+            {
+              "layer": 13,
+              "index": 6484
+            },
+            {
+              "layer": 13,
+              "index": 29869
+            },
+            {
+              "layer": 10,
+              "index": 157
+            },
+            {
+              "layer": 10,
+              "index": 18549
+            }
+          ],
+          "inject_feature": {
+            "layer": 13,
+            "index": 7978
+          },
+          "strength": 10.0,
+          "spike_position": 30,
+          "spike_token": " ",
+          "max_prob": 0.9011862,
+          "max_logit": 37.518677,
+          "delta_prob": 0.90118515,
+          "delta_logit": 29.389978,
+          "sweep": [
+            {
+              "position": 0,
+              "token": "<|begin_of_text|>",
+              "prob": 0.0000016942605,
+              "logit": 8.64751
+            },
+            {
+              "position": 1,
+              "token": "The",
+              "prob": 8.839065e-7,
+              "logit": 7.9428678
+            },
+            {
+              "position": 2,
+              "token": " birds",
+              "prob": 9.02134e-7,
+              "logit": 7.949109
+            },
+            {
+              "position": 3,
+              "token": " were",
+              "prob": 9.759601e-7,
+              "logit": 8.043276
+            },
+            {
+              "position": 4,
+              "token": " singing",
+              "prob": 9.573295e-7,
+              "logit": 8.02541
+            },
+            {
+              "position": 5,
+              "token": " in",
+              "prob": 9.586992e-7,
+              "logit": 8.028458
+            },
+            {
+              "position": 6,
+              "token": " the",
+              "prob": 9.916209e-7,
+              "logit": 8.059796
+            },
+            {
+              "position": 7,
+              "token": " tree",
+              "prob": 9.71213e-7,
+              "logit": 8.038337
+            },
+            {
+              "position": 8,
+              "token": ",\n",
+              "prob": 8.5617535e-7,
+              "logit": 7.893973
+            },
+            {
+              "position": 9,
+              "token": "And",
+              "prob": 8.076939e-7,
+              "logit": 7.8734136
+            },
+            {
+              "position": 10,
+              "token": " everything",
+              "prob": 0.0000010287482,
+              "logit": 8.092012
+            },
+            {
+              "position": 11,
+              "token": " was",
+              "prob": 0.0000010253012,
+              "logit": 8.093589
+            },
+            {
+              "position": 12,
+              "token": " wild",
+              "prob": 8.999426e-7,
+              "logit": 7.96129
+            },
+            {
+              "position": 13,
+              "token": " and",
+              "prob": 9.792924e-7,
+              "logit": 8.039111
+            },
+            {
+              "position": 14,
+              "token": " free",
+              "prob": 0.0000010113096,
+              "logit": 8.044653
+            },
+            {
+              "position": 15,
+              "token": ".\n",
+              "prob": 7.3445176e-7,
+              "logit": 7.8127403
+            },
+            {
+              "position": 16,
+              "token": "The",
+              "prob": 9.769259e-7,
+              "logit": 8.032225
+            },
+            {
+              "position": 17,
+              "token": " river",
+              "prob": 9.930716e-7,
+              "logit": 8.057777
+            },
+            {
+              "position": 18,
+              "token": " ran",
+              "prob": 9.252938e-7,
+              "logit": 7.990853
+            },
+            {
+              "position": 19,
+              "token": " down",
+              "prob": 9.025424e-7,
+              "logit": 7.9633203
+            },
+            {
+              "position": 20,
+              "token": " to",
+              "prob": 8.9625235e-7,
+              "logit": 7.9345846
+            },
+            {
+              "position": 21,
+              "token": " the",
+              "prob": 9.3689977e-7,
+              "logit": 7.998749
+            },
+            {
+              "position": 22,
+              "token": " sea",
+              "prob": 9.136968e-7,
+              "logit": 7.9603963
+            },
+            {
+              "position": 23,
+              "token": ",\n",
+              "prob": 0.0000010016465,
+              "logit": 8.035294
+            },
+            {
+              "position": 24,
+              "token": "There",
+              "prob": 9.68354e-7,
+              "logit": 8.017594
+            },
+            {
+              "position": 25,
+              "token": " is",
+              "prob": 9.613744e-7,
+              "logit": 8.00792
+            },
+            {
+              "position": 26,
+              "token": " so",
+              "prob": 0.0000011068626,
+              "logit": 8.159265
+            },
+            {
+              "position": 27,
+              "token": " much",
+              "prob": 9.99215e-7,
+              "logit": 8.050841
+            },
+            {
+              "position": 28,
+              "token": " we",
+              "prob": 0.0000016841889,
+              "logit": 8.507183
+            },
+            {
+              "position": 29,
+              "token": " cannot",
+              "prob": 0.003244408,
+              "logit": 16.128513
+            },
+            {
+              "position": 30,
+              "token": " ",
+              "prob": 0.9011862,
+              "logit": 37.518677
+            }
+          ]
+        },
+        "suppress_inject_same_inject": {
+          "protocol": "suppress_inject_max_over_target_same_inject",
+          "suppress_features": [
+            {
+              "layer": 13,
+              "index": 7978
+            },
+            {
+              "layer": 13,
+              "index": 6484
+            },
+            {
+              "layer": 13,
+              "index": 29869
+            },
+            {
+              "layer": 10,
+              "index": 157
+            },
+            {
+              "layer": 10,
+              "index": 18549
+            }
+          ],
+          "inject_feature": {
+            "layer": 14,
+            "index": 13043
+          },
+          "strength": 10.0,
+          "spike_position": 30,
+          "spike_token": " ",
+          "max_prob": 0.91706395,
+          "max_logit": 44.31888,
+          "delta_prob": 0.9170629,
+          "delta_logit": 36.190178,
+          "sweep": [
+            {
+              "position": 0,
+              "token": "<|begin_of_text|>",
+              "prob": 0.0000016247261,
+              "logit": 8.622756
+            },
+            {
+              "position": 1,
+              "token": "The",
+              "prob": 8.181935e-7,
+              "logit": 7.851473
+            },
+            {
+              "position": 2,
+              "token": " birds",
+              "prob": 8.478907e-7,
+              "logit": 7.8705525
+            },
+            {
+              "position": 3,
+              "token": " were",
+              "prob": 9.0970656e-7,
+              "logit": 7.964196
+            },
+            {
+              "position": 4,
+              "token": " singing",
+              "prob": 8.9046216e-7,
+              "logit": 7.9456673
+            },
+            {
+              "position": 5,
+              "token": " in",
+              "prob": 9.0641987e-7,
+              "logit": 7.964866
+            },
+            {
+              "position": 6,
+              "token": " the",
+              "prob": 9.440429e-7,
+              "logit": 8.001596
+            },
+            {
+              "position": 7,
+              "token": " tree",
+              "prob": 9.201682e-7,
+              "logit": 7.9765825
+            },
+            {
+              "position": 8,
+              "token": ",\n",
+              "prob": 8.1774226e-7,
+              "logit": 7.828754
+            },
+            {
+              "position": 9,
+              "token": "And",
+              "prob": 7.6121864e-7,
+              "logit": 7.8029594
+            },
+            {
+              "position": 10,
+              "token": " everything",
+              "prob": 9.928513e-7,
+              "logit": 8.041677
+            },
+            {
+              "position": 11,
+              "token": " was",
+              "prob": 9.835308e-7,
+              "logit": 8.039085
+            },
+            {
+              "position": 12,
+              "token": " wild",
+              "prob": 8.2187074e-7,
+              "logit": 7.858028
+            },
+            {
+              "position": 13,
+              "token": " and",
+              "prob": 9.0602373e-7,
+              "logit": 7.9474244
+            },
+            {
+              "position": 14,
+              "token": " free",
+              "prob": 9.3213595e-7,
+              "logit": 7.9469624
+            },
+            {
+              "position": 15,
+              "token": ".\n",
+              "prob": 6.9599633e-7,
+              "logit": 7.74213
+            },
+            {
+              "position": 16,
+              "token": "The",
+              "prob": 9.2093586e-7,
+              "logit": 7.9610944
+            },
+            {
+              "position": 17,
+              "token": " river",
+              "prob": 9.602633e-7,
+              "logit": 8.012294
+            },
+            {
+              "position": 18,
+              "token": " ran",
+              "prob": 8.7809315e-7,
+              "logit": 7.9269285
+            },
+            {
+              "position": 19,
+              "token": " down",
+              "prob": 8.528639e-7,
+              "logit": 7.891128
+            },
+            {
+              "position": 20,
+              "token": " to",
+              "prob": 8.408379e-7,
+              "logit": 7.854392
+            },
+            {
+              "position": 21,
+              "token": " the",
+              "prob": 8.817916e-7,
+              "logit": 7.9241123
+            },
+            {
+              "position": 22,
+              "token": " sea",
+              "prob": 8.7372337e-7,
+              "logit": 7.9007006
+            },
+            {
+              "position": 23,
+              "token": ",\n",
+              "prob": 9.773371e-7,
+              "logit": 7.9940734
+            },
+            {
+              "position": 24,
+              "token": "There",
+              "prob": 9.3168546e-7,
+              "logit": 7.9638457
+            },
+            {
+              "position": 25,
+              "token": " is",
+              "prob": 9.3188686e-7,
+              "logit": 7.956813
+            },
+            {
+              "position": 26,
+              "token": " so",
+              "prob": 0.000001069127,
+              "logit": 8.1101675
+            },
+            {
+              "position": 27,
+              "token": " much",
+              "prob": 9.678665e-7,
+              "logit": 8.000731
+            },
+            {
+              "position": 28,
+              "token": " we",
+              "prob": 0.0000015162007,
+              "logit": 8.368549
+            },
+            {
+              "position": 29,
+              "token": " cannot",
+              "prob": 0.0014740207,
+              "logit": 15.312052
+            },
+            {
+              "position": 30,
+              "token": " ",
+              "prob": 0.91706395,
+              "logit": 44.31888
+            }
+          ]
+        }
       }
     },
     "plt": {
@@ -105281,7 +105952,8 @@
             "logit": 56.159355
           }
         ]
-      }
+      },
+      "max_over_target_follow_up": null
     }
   },
   "sanity_gates": {

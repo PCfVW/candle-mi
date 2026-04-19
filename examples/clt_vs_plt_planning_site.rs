@@ -219,6 +219,32 @@ struct ArmOutput {
     w_skip_projection_at_spike: Option<f32>,
     suppress_only: CausalTestResult,
     suppress_inject: CausalTestResult,
+    /// Follow-up 1 (CLT only): re-run the CLT arm's suppression with the
+    /// top-5 from the max-over-target-layers ranking instead of same-layer,
+    /// to test whether the arm asymmetry on Llama 3.2 1B is a ranking-method
+    /// artefact rather than a transcoder-class limitation (see
+    /// [`findings.md`]). `None` for PLT (no max-over-target metric exists by
+    /// construction).
+    ///
+    /// [`findings.md`]: ../docs/experiments/clt-vs-plt-planning-site/findings.md
+    max_over_target_follow_up: Option<MaxOverTargetFollowUp>,
+}
+
+#[derive(Serialize)]
+// All three fields describe suppression protocols — the shared prefix is
+// intentional and mirrors the `suppress_only`/`suppress_inject` naming of
+// the primary arm.
+#[allow(clippy::struct_field_names)]
+struct MaxOverTargetFollowUp {
+    /// Suppress only — top-5 from max-over-target ranking, no inject.
+    suppress_only: CausalTestResult,
+    /// Suppress + inject where inject is **also** drawn from the
+    /// max-over-target ranking (top-1). Fully method-matched variant.
+    suppress_inject_ranked_inject: CausalTestResult,
+    /// Suppress + inject where inject is held **constant** at the same-layer
+    /// top-1 (same as the primary suppress+inject arm). Isolates the effect
+    /// of swapping the suppress set alone, inject varying removed.
+    suppress_inject_same_inject: CausalTestResult,
 }
 
 #[derive(Serialize)]
@@ -791,6 +817,27 @@ fn run_step_b(args: &Args) -> candle_mi::Result<()> {
         output.arms.plt.suppress_inject.delta_logit,
         output.arms.plt.suppress_inject.spike_position
     );
+    if let Some(ref mot) = output.arms.clt.max_over_target_follow_up {
+        eprintln!("  --- Follow-up 1: CLT max-over-target suppress ---");
+        eprintln!(
+            "  CLT mot suppress-only        ΔP = {:+.6e}  Δlogit = {:+.4}  spike pos {}",
+            mot.suppress_only.delta_prob,
+            mot.suppress_only.delta_logit,
+            mot.suppress_only.spike_position
+        );
+        eprintln!(
+            "  CLT mot suppress+inject (r)  ΔP = {:+.6e}  Δlogit = {:+.4}  spike pos {}",
+            mot.suppress_inject_ranked_inject.delta_prob,
+            mot.suppress_inject_ranked_inject.delta_logit,
+            mot.suppress_inject_ranked_inject.spike_position
+        );
+        eprintln!(
+            "  CLT mot suppress+inject (s)  ΔP = {:+.6e}  Δlogit = {:+.4}  spike pos {}",
+            mot.suppress_inject_same_inject.delta_prob,
+            mot.suppress_inject_same_inject.delta_logit,
+            mot.suppress_inject_same_inject.spike_position
+        );
+    }
     eprintln!("Total elapsed: {runtime_seconds:.2?}s");
     Ok(())
 }
@@ -1027,6 +1074,157 @@ fn run_arm_step_b(
         sweep: sweep_inject_positions,
     };
 
+    // --- Follow-up 1: re-run CLT suppression with max-over-target top-5 ---
+    // Tests whether the arm asymmetry on Llama 3.2 1B (PLT ΔP ≈ +0.986 vs
+    // method-matched CLT ΔP ≈ 5e-7) is a ranking-method artefact rather
+    // than a transcoder-class limitation. Three sweeps:
+    //   1. suppress-only — top-5 from max-over-target ranking, no inject.
+    //   2. suppress+inject with inject also from max-over-target top-1
+    //      (fully method-matched).
+    //   3. suppress+inject with inject held constant at the same-layer
+    //      top-1 (isolates the effect of swapping the suppress set alone).
+    // PLT gets None here because the max-over-target metric has only one
+    // slice by construction (PltBundle decodes only to its own layer).
+    let max_over_target_follow_up = if let Some(ref max_ranking) = top_20_features_max_over_target {
+        eprintln!(
+            "  [Follow-up 1] Max-over-target CLT ranking — 3 extra sweeps to test \
+             ranking-method vs transcoder-class attribution..."
+        );
+        let mot_suppress_features: Vec<CltFeatureId> = max_ranking
+            .iter()
+            .take(DEFAULT_TOP_K)
+            .map(|fs| fs.feature)
+            .collect();
+        let mot_inject_feature = max_ranking.first().map(|fs| fs.feature).ok_or_else(|| {
+            candle_mi::MIError::Config("max-over-target ranking returned 0 features".into())
+        })?;
+
+        // Extend the steering cache with the new features.
+        // BORROW: clone() — union of new features for a second cache call.
+        let mut mot_cache: Vec<CltFeatureId> = mot_suppress_features.clone();
+        mot_cache.push(mot_inject_feature);
+        eprintln!("    Caching decoder vectors for max-over-target features...");
+        transcoder.cache_steering_vectors_all_downstream(&mot_cache, device)?;
+
+        // Build intervention entries. Max-over-target features come from a
+        // cross-layer schema (CltSplit) by construction — expand across all
+        // downstream target layers.
+        let mot_suppress_entries: Vec<(CltFeatureId, usize)> = mot_suppress_features
+            .iter()
+            .flat_map(|feat| (feat.layer..n_layers).map(move |l| (*feat, l)))
+            .collect();
+        let mot_inject_ranked_entries: Vec<(CltFeatureId, usize)> = (mot_inject_feature.layer
+            ..n_layers)
+            .map(|l| (mot_inject_feature, l))
+            .collect();
+
+        // (1) suppress-only.
+        eprintln!("    Sweep 1/3 — suppress-only (max-over-target top-5, no inject)...");
+        let sweep_mot_so = sweep_suppress_only(
+            model,
+            &transcoder,
+            input,
+            seq_len,
+            token_strs,
+            &mot_suppress_entries,
+            strength,
+            inject_token_id,
+            device,
+        )?;
+        let (mot_so_pos, mot_so_spike) = pick_spike(&sweep_mot_so)?;
+        let suppress_only_mot = CausalTestResult {
+            protocol: "suppress_only_max_over_target".into(),
+            // BORROW: clone() — mot_suppress_features is reused in the next two tests.
+            suppress_features: mot_suppress_features.clone(),
+            inject_feature: None,
+            strength,
+            spike_position: mot_so_pos,
+            spike_token: mot_so_spike.token.clone(),
+            max_prob: mot_so_spike.prob,
+            max_logit: mot_so_spike.logit,
+            delta_prob: mot_so_spike.prob - baseline_prob,
+            delta_logit: mot_so_spike.logit - baseline_logit,
+            sweep: sweep_mot_so,
+        };
+
+        // (2) suppress+inject, inject drawn from max-over-target top-1.
+        eprintln!(
+            "    Sweep 2/3 — suppress+inject (max-over-target top-5 + max-over-target top-1 inject)..."
+        );
+        let sweep_mot_si_ranked = sweep_suppress_inject(
+            model,
+            &transcoder,
+            input,
+            seq_len,
+            token_strs,
+            &mot_suppress_entries,
+            &mot_inject_ranked_entries,
+            strength,
+            inject_token_id,
+            baseline_prob,
+            device,
+            /*verbose=*/ false,
+        )?;
+        let (mot_ranked_pos, mot_ranked_spike) = pick_spike(&sweep_mot_si_ranked)?;
+        let suppress_inject_ranked = CausalTestResult {
+            protocol: "suppress_inject_max_over_target_ranked_inject".into(),
+            // BORROW: clone() — mot_suppress_features is reused once more below.
+            suppress_features: mot_suppress_features.clone(),
+            inject_feature: Some(mot_inject_feature),
+            strength,
+            spike_position: mot_ranked_pos,
+            spike_token: mot_ranked_spike.token.clone(),
+            max_prob: mot_ranked_spike.prob,
+            max_logit: mot_ranked_spike.logit,
+            delta_prob: mot_ranked_spike.prob - baseline_prob,
+            delta_logit: mot_ranked_spike.logit - baseline_logit,
+            sweep: sweep_mot_si_ranked,
+        };
+
+        // (3) suppress+inject, inject held constant at same-layer top-1.
+        // Reuses `inject_entries` built earlier from `inject_feature`
+        // (top-20 same-layer top-1); only the suppress set changes.
+        eprintln!(
+            "    Sweep 3/3 — suppress+inject (max-over-target top-5 + same-layer top-1 inject, held constant)..."
+        );
+        let sweep_mot_si_same = sweep_suppress_inject(
+            model,
+            &transcoder,
+            input,
+            seq_len,
+            token_strs,
+            &mot_suppress_entries,
+            &inject_entries,
+            strength,
+            inject_token_id,
+            baseline_prob,
+            device,
+            /*verbose=*/ false,
+        )?;
+        let (mot_held_pos, mot_held_spike) = pick_spike(&sweep_mot_si_same)?;
+        let suppress_inject_same = CausalTestResult {
+            protocol: "suppress_inject_max_over_target_same_inject".into(),
+            suppress_features: mot_suppress_features,
+            inject_feature: Some(inject_feature),
+            strength,
+            spike_position: mot_held_pos,
+            spike_token: mot_held_spike.token.clone(),
+            max_prob: mot_held_spike.prob,
+            max_logit: mot_held_spike.logit,
+            delta_prob: mot_held_spike.prob - baseline_prob,
+            delta_logit: mot_held_spike.logit - baseline_logit,
+            sweep: sweep_mot_si_same,
+        };
+
+        Some(MaxOverTargetFollowUp {
+            suppress_only: suppress_only_mot,
+            suppress_inject_ranked_inject: suppress_inject_ranked,
+            suppress_inject_same_inject: suppress_inject_same,
+        })
+    } else {
+        None
+    };
+
     eprintln!(
         "  Arm elapsed: {:.2?}  (suppress-only ΔP={:+.6e}, suppress+inject ΔP={:+.6e})",
         t_arm.elapsed(),
@@ -1047,6 +1245,7 @@ fn run_arm_step_b(
         w_skip_projection_at_spike,
         suppress_only,
         suppress_inject,
+        max_over_target_follow_up,
     })
 }
 

@@ -124,6 +124,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the CLT arm with max-over-target-layers top-5 suppress to test whether
   the arm asymmetry is a ranking-method artefact rather than a
   transcoder-class limitation.
+- **Follow-up 1** (same example, added to `--schema both` default run):
+  three extra CLT position sweeps using the max-over-target-layers top-5
+  as the suppress set (suppress-only; suppress+inject with max-over-target
+  top-1 inject; suppress+inject with same-layer top-1 inject held
+  constant). Serialized under `arms.clt.max_over_target_follow_up` —
+  `None` for PLT (PltBundle has only one decoder slice by construction).
+  Result: CLT ΔP recovers to **+0.871** (suppress-only) through **+0.917**
+  (suppress+inject with same-layer inject held constant), spike at
+  position 30 matching PLT and the Step A Jacopin reference. CLT/PLT
+  ratio 0.88–0.93 → outcome reclassifies from **C → B** under the
+  method-matched-per-transcoder-capabilities comparison. Confirms
+  discrimination (B) as dominant. `findings.md` updated with the
+  "Follow-up 1 results" section and a revised Stage 1 decision
+  (proceed to Gemma 2 2B in v0.1.10; defer V3 Stage 2 unless Gemma
+  surfaces something new). Runtime ~30 s added to Step B total (~4.5 min
+  total on CUDA).
 
 ### Changed
 

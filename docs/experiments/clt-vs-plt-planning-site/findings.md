@@ -157,3 +157,59 @@ Recommendation: run the (B) follow-up before committing Stage 2 scope.
 6. **Qualitative top-20 decoder inspection** — identify what semantic content each top-20 CLT/PLT feature fires on (V3 Appendix A §E). Labour-intensive; deferred.
 
 Items 1, 2, 3 are natural v0.1.9/v0.1.10 scope. Items 4, 5, 6 are post-release.
+
+---
+
+## Follow-up 1 results — CLT with max-over-target-layers top-5 suppress
+
+Ran 2026-04-19 alongside the primary Step B sweeps (three extra CLT position sweeps, ~30 s added to total runtime). Same invocation, same prompt, same device. Raw data under `arms.clt.max_over_target_follow_up` in [`clt_vs_plt_llama.json`](clt_vs_plt_llama.json).
+
+Suppress set (CLT max-over-target top-5 at L14): `{L13:7978, L13:6484, L13:29869, L10:157, L10:18549}` — all cross-layer, none at L14.
+
+| Arm / protocol | ΔP | Δlogit | Spike pos |
+|---|---|---|---|
+| **CLT** suppress-only (max-over-target top-5) | **+0.871** | **+32.19** | 30 |
+| **CLT** suppress+inject (max-over-target top-5 + max-over-target top-1 inject `L13:7978`) | **+0.901** | **+29.39** | 30 |
+| **CLT** suppress+inject (max-over-target top-5 + same-layer top-1 inject `L14:13043`, held constant) | **+0.917** | **+36.19** | 30 |
+| *Reference — primary Step B* | | | |
+| CLT suppress-only (same-layer top-5, at L14) | +5.7×10⁻⁷ | +0.32 | 7 |
+| PLT suppress-only (top-5 at L14) | +0.986 | +49.83 | 30 |
+
+### Revised outcome: Outcome B, CLT/PLT ratio ≈ 0.93
+
+Under a **method-matched ranking that respects the CLT's cross-layer decoder structure** (max-over-target-layers), the CLT arm recovers a strong causal spike at position 30 — the same position the PLT and the Step A Jacopin result both find. The ratio `ΔP_CLT / ΔP_PLT` is **0.871/0.986 = 0.88** (suppress-only) to **0.917/0.986 = 0.93** (best suppress+inject), well within the "comparable" band of V3 Appendix A's Outcome B ("_PLT is adequate for both detection and intervention. CLTs add cross-layer routing resolution but are not necessary for detection._"). Reclassification:
+
+- **Primary Step B result: Outcome C** (different spike positions under the default same-layer ranking) — retained as a finding about ranking-method choice, not about transcoder-class limitation.
+- **Follow-up 1 result: Outcome B** — the method-matched-per-transcoder-capabilities comparison. CLTs and PLTs both detect and control the Llama 3.2 1B planning site; the observed asymmetry disappears once the CLT's ranking metric respects its cross-layer decoder topology.
+
+### Interpretation
+
+1. **Discrimination (B) is confirmed as the dominant driver of the primary Step B asymmetry.** The CLT's best `" that"`-aligned features are at L13 (cosine 0.608 under max-over-target) and L10 (cosine ≈ 0.565), not at L14 (cosine 0.349 under same-layer). Same-layer ranking at L14 systematically missed them — a methodological artefact, not a CLT weakness.
+
+2. **The ranking-method question is more general than this experiment.** V3 Step 1.7's "top-5 decoder-projection at the spike layer" prescription is neutral on which decoder-slice metric to use. For cross-layer transcoders, same-layer undersells; for per-layer transcoders (PltBundle, GemmaScopeNpz) the choice is trivial (only one slice by construction). A one-liner addition to the V3 methodology section — "use `max_{l' ≥ source_layer} cosine(W_dec[feature, l', :], unembed(word))` for CltSplit, `cosine(W_dec[feature, :], unembed(word))` for PltBundle/GemmaScopeNpz" — makes the comparison fully apples-to-apples without manual per-experiment tuning.
+
+3. **Same-layer top-1 inject beats max-over-target top-1 inject** (0.917 vs 0.901). The dedicated same-layer "that" feature (L14:13043) is a more effective counterfactual than the max-over-target top-1 (L13:7978 — better aligned structurally but writes to L14 via a decoder projection rather than *being* the L14 representation). Minor, but suggests a natural asymmetry: for **suppression** the max-over-target ranking wins; for **injection** the same-layer ranking wins. Inject at the target layer, suppress wherever the decoder projects from.
+
+4. **The outcome-label pair (C primary, B with method-matched ranking) is itself an informative result.** A paper reporting the Llama 3.2 1B CLT-vs-PLT comparison would need to pick one; the honest answer is both, with the caveat spelled out. Hanna & Ameisen's scale-emergence claim for PLTs (nascent signal at 4B on Qwen-3) is *consistent* with PLTs detecting on Llama 3.2 1B under Outcome B, but the (B)-discrimination attribution means their lower bound does not need revising upward — PLT on Llama 3.2 1B matches a well-ranked CLT, so the "PLT planning emerges with scale" story is not directly challenged by our single-model result.
+
+### Stage 1 decision (revised)
+
+Given Outcome B with `ΔP_PLT ≈ ΔP_CLT` (ratio 0.93 at best) on Llama 3.2 1B:
+
+- **V3 stop condition (§444)** says: "_Outcome B with ΔP_PLT ≈ ΔP_CLT (both detection and intervention match) and Hanna & Ameisen's existing 0.6B–14B data already suffices. Write up Stage 1 as a short paper; defer Stage 2._"
+- **Our data meets this condition on Llama 3.2 1B** under method-matched ranking.
+- **Gemma 2 2B (v0.1.10) still useful** — second data point turns one into a pair, strengthens a publishable claim. Not scientifically redundant given the ranking-method finding.
+- **Qwen-3 scale sweep (V3 Stage 2) is genuinely redundant** for the detection claim on this task, given Hanna & Ameisen's existing 0.6B–14B coverage. Reclassify as deferred.
+
+Recommendation: ship v0.1.9 with this finding, proceed to Gemma 2 2B (v0.1.10), **defer V3 Stage 2 unless Gemma surfaces something new**.
+
+### Updated discrimination-battery summary
+
+| Finding | Status |
+|---|---|
+| (A) Dictionary resolution mismatch | Plausible contributor; subsampling ablation still a follow-up but no longer load-bearing. |
+| (B) CLT decoder-projection ambiguity | **Confirmed dominant**. Max-over-target ranking recovers CLT spike (ΔP_CLT = +0.871 to +0.917, up from 5.7×10⁻⁷). |
+| (C) Cross-layer binding | Does not manifest on this prompt (top-5 features that fire are all layer-local). |
+| (D) Activation-function regime | PLT `W_skip · x` projection = +0.541 is non-negligible; suppress-only PLT ΔP still an upper bound on sparse-feature contribution. Isolated by follow-up 4. |
+| (E) Feature-granularity mismatch | Decoder vectors exported; qualitative inspection deferred. |
+| (F) Training-objective divergence | Out of scope. |
