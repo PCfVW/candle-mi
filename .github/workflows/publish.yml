@@ -10,13 +10,16 @@ on:
     #   v0.1.9-plt          (Stage 1 complete, Gemma arm pending)
     #   v0.1.9-plt-gemma    (Gemma arm added)
     #   v1.0.0-rc.1         (release candidate, if ever adopted)
-    # The `tags-ignore: ["v*-*"]` pattern excludes any tag containing a hyphen
-    # after the leading `v`.
+    #
+    # NOTE: GitHub Actions does not allow `tags` and `tags-ignore` on the same
+    # event. Use a single `tags:` list with `!`-prefixed exclusions instead.
+    # See https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpushbranchestagsbranches-ignoretags-ignore
     #
     # To publish a hyphenated tag intentionally, use the `workflow_dispatch`
     # trigger (manual run from the Actions tab).
-    tags: ["v*"]
-    tags-ignore: ["v*-*"]
+    tags:
+      - "v*"
+      - "!v*-*"
   workflow_dispatch:
 
 env:
