@@ -200,6 +200,10 @@ name = "clt_probe"
 required-features = ["clt", "transformer"]
 
 [[example]]
+name = "clt_vs_plt_planning_site"
+required-features = ["clt", "transformer"]
+
+[[example]]
 name = "stoicheia_inference"
 required-features = ["stoicheia"]
 

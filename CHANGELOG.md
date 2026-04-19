@@ -65,6 +65,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `hf_fetch_model::FetchConfigBuilder` with `.token_from_env()` applied, so
   every `hf-fetch-model` call site reads `HF_TOKEN` uniformly. See the
   matching entry under _Fixed_ below for the regression this closes.
+- **`examples/clt_vs_plt_planning_site.rs`** — shared harness for the
+  Hanna & Ameisen CLT-vs-PLT planning-site comparison on Llama 3.2 1B
+  (PLAN-PLT-LLAMA-PLANNING-SIGNAL.md, Step A). `--schema clt` reproduces the
+  `figure13_planning_poems.rs` Llama `-ee` preset on CUDA and additionally
+  records decoder-projection top-5 features aligned with `unembed("that")`
+  at the inject layer plus raw logits alongside probabilities; outputs
+  `docs/experiments/clt-vs-plt-planning-site/clt_vs_plt_llama.json`. Built-in
+  sanity gate: soft-warns if `max P("that")` drifts more than `1e-2` from
+  the candle-mi reference `0.687`, hard-fails below `0.50`. `--schema plt`
+  is a Step-B stub that exits with a pointer to the plan. CUDA-or-bust:
+  errors out if the device selector falls back to CPU.
 
 ### Tests
 
