@@ -1442,6 +1442,13 @@ impl CrossLayerTranscoder {
             if target_layer < source_layer {
                 continue; // This source layer cannot decode to target_layer.
             }
+            // Per-layer schemas (PltBundle, GemmaScopeNpz) only decode to their
+            // own layer. Skip any source layer that would require a non-zero
+            // target_offset — otherwise decoder_layer_slice errors out below
+            // when it would be silently dropping non-decoding candidates.
+            if !self.config.schema.is_cross_layer() && source_layer != target_layer {
+                continue;
+            }
             let target_offset = target_layer - source_layer;
 
             // Load decoder file to CPU.
@@ -1599,6 +1606,11 @@ impl CrossLayerTranscoder {
 
         for source_layer in 0..self.config.n_layers {
             if target_layer < source_layer {
+                continue;
+            }
+            // Per-layer schemas only decode to their own layer (same guard
+            // as score_features_by_decoder_projection above).
+            if !self.config.schema.is_cross_layer() && source_layer != target_layer {
                 continue;
             }
             let target_offset = target_layer - source_layer;

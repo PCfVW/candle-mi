@@ -93,6 +93,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   errors with `MIError::Config` for `CltSplit` and `GemmaScopeNpz` schemas
   (no skip path defined). Unit tests cover round-trip values on a synthetic
   `PltBundle` and the negative path on `CltSplit`.
+### Changed
+
+- **`score_features_by_decoder_projection` + batch variant** now skip source
+  layers that cannot decode to the requested target layer on per-layer
+  schemas (`PltBundle`, `GemmaScopeNpz`). Previously any call with
+  `target_layer != source_layer` on a `PltBundle` transcoder errored with
+  `per-layer schema PltBundle only writes to its own layer` when
+  `decoder_layer_slice` rejected the non-zero `target_offset`. Now the
+  outer loop consults the existing `schema.is_cross_layer()` and skips
+  incompatible source layers cleanly. `CltSplit` behaviour is unchanged.
+  Caught while wiring Step B's `--schema both` path against
+  `mntss/transcoder-Llama-3.2-1B`.
 
 ### Tests
 
