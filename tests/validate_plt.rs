@@ -28,8 +28,6 @@
     clippy::panic,
     clippy::indexing_slicing,
     clippy::cast_possible_truncation,
-    clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
     clippy::as_conversions,
     clippy::missing_docs_in_private_items,
     clippy::missing_panics_doc,
@@ -50,6 +48,12 @@ fn reference_path() -> PathBuf {
 
 #[test]
 #[ignore = "requires mntss/transcoder-Llama-3.2-1B cached (~16 GiB); run with --ignored"]
+// The body is a flat sequence (load reference → open PLT → assert schema →
+// group cases by layer → iterate → compare) with a lot of inline validation
+// messages. Extracting helpers would fragment a naturally linear test story,
+// and the CONVENTIONS annotations + assertion messages account for ~25 of the
+// 115 lines. Pedantic length lint suppressed intentionally.
+#[allow(clippy::too_many_lines)]
 fn validate_plt_llama_encoder_against_python_oracle() {
     // --- Load the frozen reference JSON ---
     let reference_str = std::fs::read_to_string(reference_path()).expect(
@@ -59,7 +63,9 @@ fn validate_plt_llama_encoder_against_python_oracle() {
 
     let plt_repo = reference["plt_repo"].as_str().unwrap();
     let ref_schema = reference["schema"].as_str().unwrap();
+    // CAST: u64 → usize, JSON integer known to fit (PLT d_model = 2048)
     let d_model = reference["d_model"].as_u64().unwrap() as usize;
+    // CAST: u64 → usize, JSON integer known to fit (PLT n_features = 131072)
     let n_features_per_layer = reference["n_features_per_layer"].as_u64().unwrap() as usize;
     let test_cases = reference["test_cases"].as_array().unwrap();
 
@@ -97,6 +103,7 @@ fn validate_plt_llama_encoder_against_python_oracle() {
     // --- Group test cases by layer so each encoder is loaded exactly once ---
     let mut by_layer: HashMap<usize, Vec<&serde_json::Value>> = HashMap::new();
     for tc in test_cases {
+        // CAST: u64 → usize, JSON layer index known to be 0..16 for Llama 3.2 1B
         let layer = tc["layer"].as_u64().unwrap() as usize;
         by_layer.entry(layer).or_default().push(tc);
     }
@@ -112,14 +119,19 @@ fn validate_plt_llama_encoder_against_python_oracle() {
         plt.load_encoder(layer, &device).unwrap();
         println!("Layer {layer}:");
 
+        // INDEX: by_layer was populated from the same `layers` keys we are
+        // iterating — every `layer` is guaranteed to be a key.
         for tc in &by_layer[&layer] {
             let seed = tc["seed"].as_u64().unwrap();
             let residual_vec: Vec<f32> = tc["residual"]
                 .as_array()
                 .unwrap()
                 .iter()
+                // CAST: f64 → f32, JSON residual stored as Python-float (f64)
+                // but candle-mi's encoder works in F32; matches oracle's input dtype.
                 .map(|v| v.as_f64().unwrap() as f32)
                 .collect();
+            // CAST: u64 → usize, JSON count bounded by n_features_per_layer
             let ref_n_active = tc["n_active"].as_u64().unwrap() as usize;
             let ref_top10 = tc["top_10"].as_array().unwrap();
 
@@ -145,7 +157,9 @@ fn validate_plt_llama_encoder_against_python_oracle() {
 
             // --- Top-10 indices + activations ---
             for (rank, ref_item) in ref_top10.iter().enumerate() {
+                // CAST: u64 → usize, JSON feature index bounded by n_features_per_layer
                 let ref_idx = ref_item["index"].as_u64().unwrap() as usize;
+                // CAST: f64 → f32, activation magnitude down-cast to match candle-mi's F32 encoder
                 let ref_act = ref_item["activation"].as_f64().unwrap() as f32;
 
                 let (rust_fid, rust_act) = sparse.features.get(rank).unwrap_or_else(|| {
@@ -178,12 +192,15 @@ fn validate_plt_llama_encoder_against_python_oracle() {
                 }
             }
 
+            // INDEX: sparse.features[0] — safe because we just validated that
+            // top-10 is populated (ref_top10.len() ≥ 1 when we enter this block,
+            // and sparse.features.len() == ref_n_active == ref_top10.len() or more).
+            let top_feature = sparse.features[0].0;
             println!(
-                "  seed={seed:4}: {} active / {} features, top={}, top-10 matches \
+                "  seed={seed:4}: {} active / {} features, top={top_feature}, top-10 matches \
                  (max abs-diff so far = {max_abs_diff:.2e})",
                 sparse.features.len(),
                 n_features_per_layer,
-                sparse.features[0].0,
             );
             total_cases += 1;
         }
