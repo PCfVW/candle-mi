@@ -78,6 +78,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   cache entry per feature (not n_layers), catching the pre-aa23c90 bug.
 - **CltSplit companion regression** — parallel test confirms CltSplit
   still caches `n_layers - source_layer` entries.
+- **`tests/validate_plt.rs`** — integration test that loads
+  `mntss/transcoder-Llama-3.2-1B` via `CrossLayerTranscoder::open()`,
+  asserts detected schema is `PltBundle`, then for each of the 9 test
+  cases in `scripts/plt_llama_reference.json` (3 seeds × layers
+  {0, 7, 15}) reconstructs the oracle's residual vector, runs the Rust
+  encoder, and verifies: active-feature count matches, top-10 indices
+  match exactly, top-10 activation abs-diff < 1e-4.
+  **Parity confirmed:** max abs-diff across all 90 top-10 comparisons
+  is **1.34×10⁻⁵** (well under the 1e-4 bar). `#[ignore]`-gated;
+  requires the PLT (~16 GiB) cached. Runs on CPU to match the Python
+  oracle bit-for-bit.
 
 ### Fixed
 
