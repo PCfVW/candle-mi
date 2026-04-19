@@ -339,7 +339,10 @@ impl CrossLayerTranscoder {
     // gain in reuse, so we suppress the pedantic length lint here.
     #[allow(clippy::too_many_lines)]
     pub fn open(clt_repo: &str) -> Result<Self> {
-        let fetch_config = hf_fetch_model::FetchConfig::builder()
+        // Route through the shared builder so HF_TOKEN is picked up for any
+        // gated transcoder repository (hf-fetch-model 0.9.x requires explicit
+        // opt-in).
+        let fetch_config = crate::download::fetch_config_builder()
             .on_progress(|event| {
                 tracing::info!(
                     filename = %event.filename,
@@ -355,8 +358,14 @@ impl CrossLayerTranscoder {
         // List repo files (no downloads needed) for schema detection and layer counting.
         let rt = tokio::runtime::Runtime::new()
             .map_err(|e| MIError::Download(format!("failed to create tokio runtime: {e}")))?;
-        // hf-fetch-model 0.9.6 takes a shared reqwest client for the metadata listing.
-        let http_client = hf_fetch_model::build_client(None)
+        // hf-fetch-model 0.9.6 takes a shared reqwest client for the metadata
+        // listing. Thread HF_TOKEN through so gated transcoder repos work
+        // (currently mntss/* are public, but the call site must stay uniform
+        // with the rest of the auth handling).
+        // BORROW: std::env::var returns an owned String; .as_deref() hands the
+        // inner &str to build_client without cloning.
+        let hf_token = std::env::var("HF_TOKEN").ok();
+        let http_client = hf_fetch_model::build_client(hf_token.as_deref())
             .map_err(|e| MIError::Download(format!("failed to build HTTP client: {e}")))?;
         let repo_files = rt
             .block_on(hf_fetch_model::repo::list_repo_files_with_metadata(

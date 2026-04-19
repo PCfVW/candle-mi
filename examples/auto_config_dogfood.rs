@@ -47,8 +47,12 @@ fn download_phase(model_id: &str) -> candle_mi::Result<()> {
     eprintln!("(Files will be cached in ~/.cache/huggingface/hub/)\n");
 
     let t0 = std::time::Instant::now();
-    let outcome = hf_fetch_model::download_files_blocking(model_id.to_owned())
+    let fetch_config = candle_mi::fetch_config_builder()
+        .build()
         .map_err(|e| candle_mi::MIError::Download(e.to_string()))?;
+    let outcome =
+        hf_fetch_model::download_files_with_config_blocking(model_id.to_owned(), &fetch_config)
+            .map_err(|e| candle_mi::MIError::Download(e.to_string()))?;
     let elapsed = t0.elapsed();
     eprintln!("Download complete in {elapsed:.2?}");
     let path = outcome.into_inner();
@@ -65,9 +69,13 @@ fn download_phase(model_id: &str) -> candle_mi::Result<()> {
 fn inspect_config(model_id: &str) -> candle_mi::Result<()> {
     eprintln!("=== Step 2: Inspect config.json ===");
 
-    let files = hf_fetch_model::download_files_blocking(model_id.to_owned())
-        .map_err(|e| candle_mi::MIError::Download(e.to_string()))?
-        .into_inner();
+    let fetch_config = candle_mi::fetch_config_builder()
+        .build()
+        .map_err(|e| candle_mi::MIError::Download(e.to_string()))?;
+    let files =
+        hf_fetch_model::download_files_with_config_blocking(model_id.to_owned(), &fetch_config)
+            .map_err(|e| candle_mi::MIError::Download(e.to_string()))?
+            .into_inner();
 
     let config_path = files
         .get("config.json")

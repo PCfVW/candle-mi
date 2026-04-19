@@ -306,4 +306,4 @@ pub use tokenizer::MITokenizer;
 pub use memory::{MemoryReport, MemorySnapshot, sync_and_trim_gpu};
 
 // Download
-pub use download::{download_model, download_model_blocking};
+pub use download::{download_model, download_model_blocking, fetch_config_builder};

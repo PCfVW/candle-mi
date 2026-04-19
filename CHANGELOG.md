@@ -60,6 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   90/90 top-10 CLT parity at max relative error 1.2×10⁻⁶. `scripts/README.md`
   gains a "PLT — Llama 3.2 1B (v0.1.9)" section documenting the pair.
   Consumed by the Rust parity test in V3 Step 1.5 (`tests/validate_plt.rs`).
+- **`fetch_config_builder()`** public helper (`src/download.rs`, re-exported
+  as `candle_mi::fetch_config_builder`) returns a pre-configured
+  `hf_fetch_model::FetchConfigBuilder` with `.token_from_env()` applied, so
+  every `hf-fetch-model` call site reads `HF_TOKEN` uniformly. See the
+  matching entry under _Fixed_ below for the regression this closes.
 
 ### Tests
 
@@ -97,6 +102,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `hf_fetch_model::build_client` helper. The `clt` feature path would not
   compile against 0.9.6 before this fix; the CI per-backend clippy matrix
   (transformer, rwkv) did not cover `clt` and so missed the regression.
+- **`HF_TOKEN` auth across all download call sites.** `hf-fetch-model` 0.9.x
+  no longer auto-reads `HF_TOKEN` from the default `FetchConfig::builder()` —
+  callers must opt in via `.token_from_env()`. Every candle-mi call site
+  (`MIModel::from_pretrained`, `CrossLayerTranscoder::open`,
+  `Sae::from_npz_hf` / `Sae::from_pretrained`, the
+  `download_model{,_blocking}` helpers, the `auto_config_dogfood`,
+  `recurrent_feedback`, and `clt_vs_plt_planning_site` examples, and the
+  `validate_models` Mistral harness) now routes through the new
+  `candle_mi::fetch_config_builder()` helper, unblocking gated models
+  (Llama, Mistral, Gemma, Qwen). `MIModel::from_pretrained` also switches
+  from `download_files_blocking` to
+  `download_files_with_config_blocking(..., &fetch_config)` so the token
+  actually propagates. The raw `build_client(None)` call in the CLT schema
+  probe gains a matching inline `HF_TOKEN` read.
 
 ## [0.1.8] - 2026-04-13
 

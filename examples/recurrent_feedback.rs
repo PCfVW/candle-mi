@@ -561,10 +561,16 @@ fn run() -> candle_mi::Result<()> {
 fn load_transformer(
     model_id: &str,
 ) -> candle_mi::Result<(GenericTransformer, MITokenizer, TransformerConfig, Vec<u32>)> {
+    // hf-fetch-model 0.9.x: go through the shared builder so HF_TOKEN is read
+    // for gated models.
     // BORROW: explicit .to_owned() — &str → String for download API
-    let files = hf_fetch_model::download_files_blocking(model_id.to_owned())
-        .map(hf_fetch_model::DownloadOutcome::into_inner)
+    let fetch_config = candle_mi::fetch_config_builder()
+        .build()
         .map_err(|e| candle_mi::MIError::Download(e.to_string()))?;
+    let files =
+        hf_fetch_model::download_files_with_config_blocking(model_id.to_owned(), &fetch_config)
+            .map(hf_fetch_model::DownloadOutcome::into_inner)
+            .map_err(|e| candle_mi::MIError::Download(e.to_string()))?;
 
     let config_path = files
         .get("config.json")

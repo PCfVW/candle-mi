@@ -28,6 +28,22 @@ use std::path::PathBuf;
 
 use crate::error::{MIError, Result};
 
+/// Returns a pre-configured [`hf_fetch_model::FetchConfigBuilder`] that reads
+/// `HF_TOKEN` from the environment for gated/private `HuggingFace` repos.
+///
+/// hf-fetch-model 0.9.x requires explicit opt-in via `.token_from_env()` — the
+/// public `download_files(...)` convenience wrappers build a no-token default
+/// config that silently fails 401 on gated models (Llama, Mistral, Gemma,
+/// Qwen, etc.). Every candle-mi call site that downloads from HF should start
+/// from this helper so the token handling stays uniform.
+///
+/// Callers can chain further configuration (`.on_progress(...)`, etc.) before
+/// calling `.build()`.
+#[must_use]
+pub fn fetch_config_builder() -> hf_fetch_model::FetchConfigBuilder {
+    hf_fetch_model::FetchConfig::builder().token_from_env()
+}
+
 /// Downloads all files from a `HuggingFace` model repository.
 ///
 /// Uses high-throughput parallel downloads for maximum speed. Files are
@@ -50,7 +66,7 @@ use crate::error::{MIError, Result};
 pub async fn download_model(repo_id: String) -> Result<PathBuf> {
     let progress = hf_fetch_model::progress::IndicatifProgress::new();
 
-    let config = hf_fetch_model::FetchConfig::builder()
+    let config = fetch_config_builder()
         .on_progress(move |event| progress.handle(event))
         .build()
         .map_err(|e| MIError::Download(e.to_string()))?;

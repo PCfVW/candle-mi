@@ -150,9 +150,15 @@ impl MIModel {
         let dtype = DType::F32;
 
         // --- Download / resolve local files ---
-        let files = hf_fetch_model::download_files_blocking(model_id.to_owned())
-            .map(hf_fetch_model::DownloadOutcome::into_inner)
-            .map_err(|e| MIError::Download(e.to_string()))?;
+        // hf-fetch-model 0.9.x requires explicit opt-in to HF_TOKEN; go through
+        // the shared builder so gated models (Llama/Mistral/Gemma/Qwen) work.
+        let fetch_config = crate::download::fetch_config_builder()
+            .build()
+            .map_err(|e| MIError::Download(format!("failed to build fetch config: {e}")))?;
+        let files =
+            hf_fetch_model::download_files_with_config_blocking(model_id.to_owned(), &fetch_config)
+                .map(hf_fetch_model::DownloadOutcome::into_inner)
+                .map_err(|e| MIError::Download(e.to_string()))?;
 
         let config_path = files
             .get("config.json")

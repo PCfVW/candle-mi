@@ -536,7 +536,7 @@ impl SparseAutoencoder {
         hook_layer: usize,
         device: &Device,
     ) -> Result<Self> {
-        let fetch_config = hf_fetch_model::FetchConfig::builder()
+        let fetch_config = crate::download::fetch_config_builder()
             .on_progress(|event| {
                 tracing::info!(
                     filename = %event.filename,
@@ -575,7 +575,7 @@ impl SparseAutoencoder {
     /// Returns [`MIError::Download`] if files cannot be fetched.
     /// Returns [`MIError::Config`] if the SAE format is invalid.
     pub fn from_pretrained(repo_id: &str, sae_id: &str, device: &Device) -> Result<Self> {
-        let fetch_config = hf_fetch_model::FetchConfig::builder()
+        let fetch_config = crate::download::fetch_config_builder()
             .on_progress(|event| {
                 tracing::info!(
                     filename = %event.filename,

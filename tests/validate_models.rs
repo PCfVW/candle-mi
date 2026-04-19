@@ -567,9 +567,10 @@ fn ensure_mistral_7b_cached() -> Option<std::path::PathBuf> {
         }
     }
 
-    // Trigger download via hf-fetch-model
+    // Trigger download via hf-fetch-model; go through the shared builder so
+    // HF_TOKEN is picked up (Mistral 7B is a gated model).
     eprintln!("Downloading mistralai/Mistral-7B-v0.1 via hf-fetch-model...");
-    let config = hf_fetch_model::FetchConfig::builder()
+    let config = candle_mi::fetch_config_builder()
         .filter("*.safetensors")
         .filter("*.safetensors.index.json")
         .filter("*.json")
