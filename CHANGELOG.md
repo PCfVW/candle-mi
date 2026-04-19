@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `ensure_decoder_path`) use the helpers. `CltSplit` behaviour is unchanged
   — refactor only, no external API break. Prepares the decoder side for
   the `PltBundle` encoder wiring that lands alongside.
+- **CLT encoder access routed through schema-aware helpers.**
+  New `encoder_file_and_tensor_names` helper returns `(filename, W_enc name,
+  b_enc name)` per schema. `ensure_encoder_path`, `load_encoder`, and
+  `open()`'s first-layer dimension probe all use it. For non-`CltSplit`
+  schemas, `ensure_decoder_path` now delegates to `ensure_encoder_path` —
+  encoder and decoder share the same bundle file, so the path cache is
+  unified instead of double-tracked.
 
 ### Fixed
 

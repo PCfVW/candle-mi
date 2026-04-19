@@ -452,22 +452,16 @@ impl CrossLayerTranscoder {
             Err(_) => "unknown".to_owned(),
         };
 
-        // Download the first encoder file for dimension detection, branching on schema.
-        // `CltSplit`: `W_enc_0.safetensors` (~75 MB) with tensor `"W_enc_0"`.
-        // `PltBundle`: `layer_0.safetensors` (~1 GiB, bundle of
-        //           `W_enc`/`W_dec`/`W_skip`/`b_enc`/`b_dec`) with un-suffixed tensor `"W_enc"`.
-        let (enc0_filename, enc_tensor_name) = match schema {
-            TranscoderSchema::CltSplit => ("W_enc_0.safetensors", "W_enc_0"),
-            TranscoderSchema::PltBundle => ("layer_0.safetensors", "W_enc"),
-            // Unreachable at runtime — see the n_layers match above.
-            TranscoderSchema::GemmaScopeNpz => {
-                return Err(MIError::Config(GEMMASCOPE_DEFERRAL_ERR.into()));
-            }
-        };
+        // Resolve the first-layer encoder filename and its `W_enc` tensor name
+        // via the schema-aware helper. `gemmascope_npz_paths` is not yet
+        // populated at open() time; the helper is only reached here with
+        // CltSplit / PltBundle (GemmaScope was rejected above), so passing an
+        // empty slice is safe.
+        let (enc0_filename, enc_tensor_name, _) = encoder_file_and_tensor_names(schema, 0, &[])?;
         // BORROW: explicit .to_owned() — hf_fetch_model download_file_blocking requires an owned repo ID.
         let enc0_path = hf_fetch_model::download_file_blocking(
             clt_repo.to_owned(),
-            enc0_filename,
+            &enc0_filename,
             &fetch_config,
         )
         .map_err(|e| MIError::Download(format!("failed to download {enc0_filename}: {e}")))?
@@ -478,7 +472,7 @@ impl CrossLayerTranscoder {
             MIError::Config(format!("failed to deserialize {enc_tensor_name}: {e}"))
         })?;
         let w_enc_view = tensors
-            .tensor(enc_tensor_name)
+            .tensor(&enc_tensor_name)
             .map_err(|e| MIError::Config(format!("tensor '{enc_tensor_name}' not found: {e}")))?;
         let shape = w_enc_view.shape();
         if shape.len() != 2 {
@@ -553,7 +547,11 @@ impl CrossLayerTranscoder {
             // BORROW: explicit .clone() — PathBuf from Vec
             return Ok(path.clone());
         }
-        let filename = format!("W_enc_{layer}.safetensors");
+        let (filename, _, _) = encoder_file_and_tensor_names(
+            self.config.schema,
+            layer,
+            &self.config.gemmascope_npz_paths,
+        )?;
         info!("Downloading {filename} from {}", self.repo_id);
         let path = hf_fetch_model::download_file_blocking(
             self.repo_id.clone(),
@@ -570,7 +568,16 @@ impl CrossLayerTranscoder {
     }
 
     /// Ensure the decoder file for a given layer is downloaded. Returns the path.
+    ///
+    /// For non-`CltSplit` schemas (`PltBundle`, `GemmaScopeNpz`), the encoder
+    /// and decoder live in the same bundle file; this method delegates to
+    /// [`ensure_encoder_path`](Self::ensure_encoder_path) to reuse the shared
+    /// path cache and avoid double-downloading the same file.
     fn ensure_decoder_path(&mut self, layer: usize) -> Result<PathBuf> {
+        if !matches!(self.config.schema, TranscoderSchema::CltSplit) {
+            // Bundle schemas: encoder and decoder share the same file.
+            return self.ensure_encoder_path(layer);
+        }
         if let Some(path) = self
             .decoder_paths
             .get(layer)
@@ -641,8 +648,11 @@ impl CrossLayerTranscoder {
             MIError::Config(format!("failed to deserialize encoder layer {layer}: {e}"))
         })?;
 
-        let w_enc_name = format!("W_enc_{layer}");
-        let b_enc_name = format!("b_enc_{layer}");
+        let (_, w_enc_name, b_enc_name) = encoder_file_and_tensor_names(
+            self.config.schema,
+            layer,
+            &self.config.gemmascope_npz_paths,
+        )?;
 
         let w_enc = tensor_from_view(
             &st.tensor(&w_enc_name)
@@ -1791,6 +1801,51 @@ impl CrossLayerTranscoder {
 //   `(feature_index, target_offset)`.
 // - `decoder_layer_slice` — extract a `[n_features, d_model]` slice at a
 //   given `target_offset`.
+
+/// Resolve the encoder file name and the tensor names (`W_enc`, `b_enc`)
+/// inside it for a given source layer, schema-aware.
+///
+/// - `CltSplit`: `(\"W_enc_{layer}.safetensors\", \"W_enc_{layer}\", \"b_enc_{layer}\")`.
+/// - `PltBundle`: `(\"layer_{layer}.safetensors\", \"W_enc\", \"b_enc\")` —
+///   un-suffixed tensor names bundled with `W_dec`/`W_skip`/`b_dec` in the
+///   same file.
+/// - `GemmaScopeNpz`: `(gemmascope_npz_paths[layer], \"W_enc\", \"b_enc\")` —
+///   per-layer NPZ file; loading is deferred to a follow-up release.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] if `schema` is `GemmaScopeNpz` but
+/// `gemmascope_npz_paths` lacks an entry for `layer`.
+fn encoder_file_and_tensor_names(
+    schema: TranscoderSchema,
+    layer: usize,
+    gemmascope_npz_paths: &[String],
+) -> Result<(String, String, String)> {
+    match schema {
+        TranscoderSchema::CltSplit => Ok((
+            format!("W_enc_{layer}.safetensors"),
+            format!("W_enc_{layer}"),
+            format!("b_enc_{layer}"),
+        )),
+        // BORROW: explicit .to_owned() — tensor names as owned Strings for uniform return type
+        TranscoderSchema::PltBundle => Ok((
+            format!("layer_{layer}.safetensors"),
+            "W_enc".to_owned(),
+            "b_enc".to_owned(),
+        )),
+        TranscoderSchema::GemmaScopeNpz => {
+            let path = gemmascope_npz_paths.get(layer).ok_or_else(|| {
+                MIError::Config(format!(
+                    "GemmaScope NPZ path for layer {layer} missing (gemmascope_npz_paths has {} entries)",
+                    gemmascope_npz_paths.len()
+                ))
+            })?;
+            // BORROW: explicit .clone() — return owned path String
+            // BORROW: explicit .to_owned() — tensor names as owned Strings
+            Ok((path.clone(), "W_enc".to_owned(), "b_enc".to_owned()))
+        }
+    }
+}
 
 /// Resolve the decoder file name and the tensor name inside it for a given
 /// source layer, schema-aware.
