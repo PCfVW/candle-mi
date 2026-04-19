@@ -398,7 +398,8 @@ fn run_clt_arm(args: &Args) -> candle_mi::Result<()> {
         let result = model.forward(&input, &combined)?;
         let prob = extract_token_prob(result.output(), inject_token_id)?;
         let logit = extract_token_logit(result.output(), inject_token_id)?;
-        // BORROW: explicit .as_str() — String to &str for display fallback
+        // BORROW: String::clone — sweep entry needs an owned token string
+        // because the outer token_strs Vec is iterated later for display.
         let token = token_strs.get(pos).map_or_else(String::new, String::clone);
         let display = token.replace('\n', "\\n");
         eprintln!(
@@ -425,7 +426,9 @@ fn run_clt_arm(args: &Args) -> candle_mi::Result<()> {
         })
         .map(|(i, _)| i)
         .ok_or_else(|| candle_mi::MIError::Config("empty sweep".into()))?;
-    // BORROW: .get().ok_or_else() — immutable access to spike entry
+    // INDEX: spike_idx was just produced by max_by over sweep.iter(), so it
+    // is in-bounds by construction. Use .get() anyway to satisfy the crate's
+    // indexing_slicing lint without an #[allow]; the Err arm is unreachable.
     let spike = sweep
         .get(spike_idx)
         .ok_or_else(|| candle_mi::MIError::Config("spike index out of range".into()))?;
@@ -440,7 +443,8 @@ fn run_clt_arm(args: &Args) -> candle_mi::Result<()> {
         return Err(candle_mi::MIError::Config(format!(
             "CLT sanity failed: max P(\"{INJECT_WORD}\") = {max_prob:.4} < \
              hard-min {LLAMA_SPIKE_HARD_MIN:.2}. Expected ~{LLAMA_REFERENCE_MAX_PROB:.3} \
-             (plip-rs §Q2). Check model/CLT repo pinning."
+             (candle-mi reference on the same CLT; figure13_planning_poems.rs \
+             reproduces the same number). Check model/CLT repo pinning."
         )));
     }
     let band_diff = (max_prob - LLAMA_REFERENCE_MAX_PROB).abs();
