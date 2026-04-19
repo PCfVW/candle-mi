@@ -211,6 +211,10 @@ impl TranscoderSchema {
     }
 }
 
+/// Error message returned by [`CrossLayerTranscoder::open`] when handed a
+/// `GemmaScope` repo. The loader lands in v0.1.10 (see roadmap Step 1.6).
+const GEMMASCOPE_DEFERRAL_ERR: &str = "GemmaScope loader lands in v0.1.10 — see roadmap Step 1.6";
+
 /// CLT configuration auto-detected from tensor shapes.
 #[derive(Debug, Clone)]
 pub struct CltConfig {
@@ -302,19 +306,37 @@ pub struct CrossLayerTranscoder {
 }
 
 impl CrossLayerTranscoder {
-    /// Open a CLT from `HuggingFace` and detect its configuration.
+    /// Open a transcoder from `HuggingFace` and detect its configuration.
     ///
-    /// Only downloads `config.yaml` and `W_enc_0.safetensors` (~75 MB).
+    /// Classifies the repository into a [`TranscoderSchema`] from its file
+    /// listing (no downloads), then fetches `config.yaml` (if present) and
+    /// the first encoder file to probe dimensions:
+    ///
+    /// - `CltSplit`: downloads `W_enc_0.safetensors` (~75 MB, CLT-426K)
+    ///   and reads the tensor `W_enc_0`.
+    /// - `PltBundle`: downloads `layer_0.safetensors` (~1 GiB — bundle of
+    ///   `W_enc`/`W_dec`/`W_skip`/`b_enc`/`b_dec`) and reads un-suffixed `W_enc`.
+    /// - `GemmaScopeNpz`: detected but **loading is deferred** to a future
+    ///   release; returns a clear `MIError::Config` pointing to roadmap Step 1.6.
+    ///
     /// All other encoder/decoder files are downloaded lazily on first use.
     ///
     /// # Arguments
-    /// * `clt_repo` — `HuggingFace` repository ID (e.g., `"mntss/clt-gemma-2-2b-426k"`)
+    /// * `clt_repo` — `HuggingFace` repository ID (e.g., `"mntss/clt-gemma-2-2b-426k"`
+    ///   for CLT, `"mntss/transcoder-Llama-3.2-1B"` for PLT)
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Download`] if the repository is inaccessible or files
-    /// cannot be fetched. Returns [`MIError::Config`] if the weight format is
-    /// unexpected.
+    /// Returns [`MIError::Download`] if the repository is inaccessible, if the
+    /// HTTP client cannot be built, or if a file cannot be fetched.
+    /// Returns [`MIError::Config`] if the repository layout is unrecognised,
+    /// if no encoder files are found, if the `GemmaScopeNpz` schema is detected
+    /// (pending v0.1.10), if the encoder safetensors cannot be deserialised,
+    /// if the expected encoder tensor is missing, or if its shape is not 2D.
+    // Schema-branched open() is a deliberately flat sequence (detect → reject
+    // GemmaScope → count layers → parse config → probe dimensions → build
+    // CltConfig). Extracting helpers would scatter the control flow for no
+    // gain in reuse, so we suppress the pedantic length lint here.
     #[allow(clippy::too_many_lines)]
     pub fn open(clt_repo: &str) -> Result<Self> {
         let fetch_config = hf_fetch_model::FetchConfig::builder()
@@ -387,13 +409,12 @@ impl CrossLayerTranscoder {
         // v0.1.9: schema detection succeeds but loading of GemmaScope repos
         // is intentionally deferred. v0.1.10 implements the two-repo NPZ flow.
         if matches!(schema, TranscoderSchema::GemmaScopeNpz) {
-            return Err(MIError::Config(
-                "GemmaScope loader lands in v0.1.10 — see roadmap Step 1.6".into(),
-            ));
+            return Err(MIError::Config(GEMMASCOPE_DEFERRAL_ERR.into()));
         }
 
-        // Count layers per schema. GemmaScopeNpz was rejected earlier, so the match
-        // is effectively binary here but spelled exhaustively for safety.
+        // Count layers per schema. GemmaScopeNpz was rejected at the early
+        // return above; the arm here is unreachable at runtime but spelled out
+        // so `#[non_exhaustive]` + new variants remain a compile-time concern.
         let n_layers = match schema {
             TranscoderSchema::CltSplit => repo_files
                 .iter()
@@ -408,10 +429,7 @@ impl CrossLayerTranscoder {
                 })
                 .count(),
             TranscoderSchema::GemmaScopeNpz => {
-                // EXPLICIT: exhaustive match arm — variant rejected with the deferral error above.
-                return Err(MIError::Config(
-                    "GemmaScope loader lands in v0.1.10 — see roadmap Step 1.6".into(),
-                ));
+                return Err(MIError::Config(GEMMASCOPE_DEFERRAL_ERR.into()));
             }
         };
         if n_layers == 0 {
@@ -441,12 +459,9 @@ impl CrossLayerTranscoder {
         let (enc0_filename, enc_tensor_name) = match schema {
             TranscoderSchema::CltSplit => ("W_enc_0.safetensors", "W_enc_0"),
             TranscoderSchema::PltBundle => ("layer_0.safetensors", "W_enc"),
+            // Unreachable at runtime — see the n_layers match above.
             TranscoderSchema::GemmaScopeNpz => {
-                // GemmaScopeNpz returns early above; this arm is kept for exhaustive matching.
-                // EXPLICIT: exhaustive match on TranscoderSchema; GemmaScopeNpz rejected upstream.
-                return Err(MIError::Config(
-                    "GemmaScope loader lands in v0.1.10 — see roadmap Step 1.6".into(),
-                ));
+                return Err(MIError::Config(GEMMASCOPE_DEFERRAL_ERR.into()));
             }
         };
         // BORROW: explicit .to_owned() — hf_fetch_model download_file_blocking requires an owned repo ID.
