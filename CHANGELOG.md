@@ -27,6 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   and first-file dimension probing. `CltSplit` keeps reading
   `W_enc_0.safetensors` unchanged; `PltBundle` reads the un-suffixed `W_enc`
   tensor from `layer_0.safetensors`.
+- **CLT decoder access routed through schema-aware helpers.**
+  `decoder_file_and_tensor_name`, `decoder_row`, and `decoder_layer_slice`
+  concentrate per-schema branching in three private free functions. All
+  seven `W_dec` access sites (`decoder_vector`, `cache_steering_vectors`,
+  `cache_steering_vectors_all_downstream`, `score_features_by_decoder_projection`,
+  `score_features_by_decoder_projection_batch`, `extract_decoder_vectors`,
+  `ensure_decoder_path`) use the helpers. `CltSplit` behaviour is unchanged
+  — refactor only, no external API break. Prepares the decoder side for
+  the `PltBundle` encoder wiring that lands alongside.
 
 ### Fixed
 

@@ -579,7 +579,11 @@ impl CrossLayerTranscoder {
             // BORROW: explicit .clone() — PathBuf from Vec
             return Ok(path.clone());
         }
-        let filename = format!("W_dec_{layer}.safetensors");
+        let (filename, _) = decoder_file_and_tensor_name(
+            self.config.schema,
+            layer,
+            &self.config.gemmascope_npz_paths,
+        )?;
         info!("Downloading {filename} from {}", self.repo_id);
         let path = hf_fetch_model::download_file_blocking(
             self.repo_id.clone(),
@@ -816,15 +820,20 @@ impl CrossLayerTranscoder {
             ))
         })?;
 
-        let dec_name = format!("W_dec_{}", feature.layer);
+        let (_, dec_tensor_name) = decoder_file_and_tensor_name(
+            self.config.schema,
+            feature.layer,
+            &self.config.gemmascope_npz_paths,
+        )?;
         let w_dec = tensor_from_view(
-            &st.tensor(&dec_name)
-                .map_err(|e| MIError::Config(format!("tensor '{dec_name}' not found: {e}")))?,
+            &st.tensor(&dec_tensor_name).map_err(|e| {
+                MIError::Config(format!("tensor '{dec_tensor_name}' not found: {e}"))
+            })?,
             &Device::Cpu,
         )?;
 
-        // w_dec[feature.index, target_offset, :] → [d_model]
-        let column = w_dec.i((feature.index, target_offset))?;
+        // Shape depends on schema: CltSplit rank-3, PltBundle/GemmaScopeNpz rank-2.
+        let column = decoder_row(&w_dec, feature.index, target_offset, self.config.schema)?;
 
         // Transfer to target device.
         let column = column.to_device(device)?;
@@ -896,10 +905,14 @@ impl CrossLayerTranscoder {
                         "failed to deserialize decoder layer {source_layer}: {e}"
                     ))
                 })?;
-                let dec_name = format!("W_dec_{source_layer}");
+                let (_, dec_tensor_name) = decoder_file_and_tensor_name(
+                    self.config.schema,
+                    *source_layer,
+                    &self.config.gemmascope_npz_paths,
+                )?;
                 let w_dec = tensor_from_view(
-                    &st.tensor(&dec_name).map_err(|e| {
-                        MIError::Config(format!("tensor '{dec_name}' not found: {e}"))
+                    &st.tensor(&dec_tensor_name).map_err(|e| {
+                        MIError::Config(format!("tensor '{dec_tensor_name}' not found: {e}"))
                     })?,
                     &Device::Cpu,
                 )?;
@@ -916,7 +929,8 @@ impl CrossLayerTranscoder {
                             // Extract as independent F32 tensor: to_dtype +
                             // to_vec1 copies data OUT of candle's Arc storage,
                             // so dropping w_dec truly frees the ~1.6 GB decoder.
-                            let view = w_dec.i((index, target_offset))?;
+                            let view =
+                                decoder_row(&w_dec, index, target_offset, self.config.schema)?;
                             let dims = view.dims().to_vec();
                             // PROMOTE: F32 for numerical stability in accumulation
                             let values = view.to_dtype(DType::F32)?.to_vec1::<f32>()?;
@@ -1015,10 +1029,14 @@ impl CrossLayerTranscoder {
                         "failed to deserialize decoder layer {source_layer}: {e}"
                     ))
                 })?;
-                let dec_name = format!("W_dec_{source_layer}");
+                let (_, dec_tensor_name) = decoder_file_and_tensor_name(
+                    self.config.schema,
+                    *source_layer,
+                    &self.config.gemmascope_npz_paths,
+                )?;
                 let w_dec = tensor_from_view(
-                    &st.tensor(&dec_name).map_err(|e| {
-                        MIError::Config(format!("tensor '{dec_name}' not found: {e}"))
+                    &st.tensor(&dec_tensor_name).map_err(|e| {
+                        MIError::Config(format!("tensor '{dec_tensor_name}' not found: {e}"))
                     })?,
                     &Device::Cpu,
                 )?;
@@ -1032,7 +1050,8 @@ impl CrossLayerTranscoder {
                         let target_layer = source_layer + target_offset;
                         let cache_key = (fid, target_layer);
                         if !self.steering_cache.contains_key(&cache_key) {
-                            let view = w_dec.i((index, target_offset))?;
+                            let view =
+                                decoder_row(&w_dec, index, target_offset, self.config.schema)?;
                             let dims = view.dims().to_vec();
                             // PROMOTE: F32 for numerical stability in accumulation
                             let values = view.to_dtype(DType::F32)?.to_vec1::<f32>()?;
@@ -1352,17 +1371,22 @@ impl CrossLayerTranscoder {
                 ))
             })?;
 
-            let dec_name = format!("W_dec_{source_layer}");
+            let (_, dec_tensor_name) = decoder_file_and_tensor_name(
+                self.config.schema,
+                source_layer,
+                &self.config.gemmascope_npz_paths,
+            )?;
             let w_dec = tensor_from_view(
-                &st.tensor(&dec_name)
-                    .map_err(|e| MIError::Config(format!("tensor '{dec_name}' not found: {e}")))?,
+                &st.tensor(&dec_tensor_name).map_err(|e| {
+                    MIError::Config(format!("tensor '{dec_tensor_name}' not found: {e}"))
+                })?,
                 &Device::Cpu,
             )?;
             // PROMOTE: decoder weights are BF16 on disk; F32 for matmul precision
             let w_dec_f32 = w_dec.to_dtype(DType::F32)?;
 
             // Extract target layer slice: [n_features, d_model]
-            let dec_slice = w_dec_f32.i((.., target_offset, ..))?;
+            let dec_slice = decoder_layer_slice(&w_dec_f32, target_offset, self.config.schema)?;
 
             // raw_scores = dec_slice @ direction_norm → [n_features]
             let raw_scores = dec_slice
@@ -1430,6 +1454,11 @@ impl CrossLayerTranscoder {
     ///
     /// Stacks directions to `[n_words, d_model]` on CPU. Each decoder file
     /// loaded one at a time (up to ~2 GB for layer 0). No GPU memory required.
+    // Mirrors score_features_by_decoder_projection structure (validation →
+    // per-source-layer loop → matmul → sort) at the n_words-batched cadence.
+    // Extracting the per-layer body would fragment a naturally sequential
+    // pipeline, so the pedantic length lint is suppressed.
+    #[allow(clippy::too_many_lines)]
     pub fn score_features_by_decoder_projection_batch(
         &mut self,
         directions: &[Tensor],
@@ -1500,15 +1529,21 @@ impl CrossLayerTranscoder {
                     "failed to deserialize decoder layer {source_layer}: {e}"
                 ))
             })?;
-            let dec_name = format!("W_dec_{source_layer}");
+            let (_, dec_tensor_name) = decoder_file_and_tensor_name(
+                self.config.schema,
+                source_layer,
+                &self.config.gemmascope_npz_paths,
+            )?;
             let w_dec = tensor_from_view(
-                &st.tensor(&dec_name)
-                    .map_err(|e| MIError::Config(format!("tensor '{dec_name}' not found: {e}")))?,
+                &st.tensor(&dec_tensor_name).map_err(|e| {
+                    MIError::Config(format!("tensor '{dec_tensor_name}' not found: {e}"))
+                })?,
                 &Device::Cpu,
             )?;
             // PROMOTE: decoder weights are BF16 on disk; F32 for matmul precision
             let w_dec_f32 = w_dec.to_dtype(DType::F32)?;
-            let dec_slice = w_dec_f32.i((.., target_offset, ..))?; // [n_features, d_model]
+            // `[n_features, d_model]` — schema-aware slice at `target_offset`.
+            let dec_slice = decoder_layer_slice(&w_dec_f32, target_offset, self.config.schema)?;
 
             // Batch matmul: [n_features, d_model] × [d_model, n_words] = [n_features, n_words]
             let raw_scores = dec_slice.matmul(&directions_t)?;
@@ -1632,10 +1667,15 @@ impl CrossLayerTranscoder {
                     "failed to deserialize decoder layer {source_layer}: {e}"
                 ))
             })?;
-            let dec_name = format!("W_dec_{source_layer}");
+            let (_, dec_tensor_name) = decoder_file_and_tensor_name(
+                self.config.schema,
+                *source_layer,
+                &self.config.gemmascope_npz_paths,
+            )?;
             let w_dec = tensor_from_view(
-                &st.tensor(&dec_name)
-                    .map_err(|e| MIError::Config(format!("tensor '{dec_name}' not found: {e}")))?,
+                &st.tensor(&dec_tensor_name).map_err(|e| {
+                    MIError::Config(format!("tensor '{dec_tensor_name}' not found: {e}"))
+                })?,
                 &Device::Cpu,
             )?;
 
@@ -1646,7 +1686,7 @@ impl CrossLayerTranscoder {
                 };
                 if let std::collections::hash_map::Entry::Vacant(e) = result.entry(fid) {
                     // Extract as independent F32 tensor (OOM-safe copy).
-                    let view = w_dec.i((index, target_offset))?;
+                    let view = decoder_row(&w_dec, index, target_offset, self.config.schema)?;
                     let dims = view.dims().to_vec();
                     // PROMOTE: decoder weights are BF16 on disk; extract as F32
                     let values = view.to_dtype(DType::F32)?.to_vec1::<f32>()?;
@@ -1735,17 +1775,145 @@ impl CrossLayerTranscoder {
 }
 
 // ---------------------------------------------------------------------------
-// Helper functions
+// Schema-aware decoder helpers
 // ---------------------------------------------------------------------------
+//
+// Introduced with the `PltBundle` schema to concentrate per-schema branching
+// in three private free functions, rather than scattering `match schema { … }`
+// across the seven W_dec access sites (decoder_vector, cache_steering_vectors,
+// cache_steering_vectors_all_downstream, score_features_by_decoder_projection,
+// score_features_by_decoder_projection_batch, extract_decoder_vectors, and
+// ensure_decoder_path).
+//
+// - `decoder_file_and_tensor_name` — resolve (filename, tensor name) inside
+//   that file for a given source layer.
+// - `decoder_row` — extract a single `[d_model]` decoder vector for
+//   `(feature_index, target_offset)`.
+// - `decoder_layer_slice` — extract a `[n_features, d_model]` slice at a
+//   given `target_offset`.
 
-/// Convert a safetensors `TensorView` to a candle `Tensor`.
+/// Resolve the decoder file name and the tensor name inside it for a given
+/// source layer, schema-aware.
 ///
-/// # Shapes
-/// - Preserves the original tensor shape from safetensors.
+/// - `CltSplit`: `(\"W_dec_{layer}.safetensors\", \"W_dec_{layer}\")` — two
+///   files per layer, layer-suffixed tensor names.
+/// - `PltBundle`: `(\"layer_{layer}.safetensors\", \"W_enc\" bundle's \"W_dec\")`
+///   — encoder and decoder live in the same bundle; tensor name is un-suffixed.
+/// - `GemmaScopeNpz`: `(gemmascope_npz_paths[layer], \"W_dec\")` —
+///   per-layer NPZ file path routed through `config.yaml` from the
+///   `mntss/gemma-scope-transcoders` metadata repo. Returns an error if
+///   `gemmascope_npz_paths` is missing the expected index.
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Config`] if the tensor dtype is not supported (BF16, F16, F32).
+/// Returns [`MIError::Config`] if `schema` is `GemmaScopeNpz` but
+/// `gemmascope_npz_paths` lacks an entry for `layer`.
+fn decoder_file_and_tensor_name(
+    schema: TranscoderSchema,
+    layer: usize,
+    gemmascope_npz_paths: &[String],
+) -> Result<(String, String)> {
+    match schema {
+        TranscoderSchema::CltSplit => Ok((
+            format!("W_dec_{layer}.safetensors"),
+            format!("W_dec_{layer}"),
+        )),
+        // BORROW: explicit .to_owned() — tensor name as owned String for uniform return type
+        TranscoderSchema::PltBundle => {
+            Ok((format!("layer_{layer}.safetensors"), "W_dec".to_owned()))
+        }
+        TranscoderSchema::GemmaScopeNpz => {
+            let path = gemmascope_npz_paths.get(layer).ok_or_else(|| {
+                MIError::Config(format!(
+                    "GemmaScope NPZ path for layer {layer} missing (gemmascope_npz_paths has {} entries)",
+                    gemmascope_npz_paths.len()
+                ))
+            })?;
+            // BORROW: explicit .clone() — return owned path String
+            // BORROW: explicit .to_owned() — tensor name as owned String
+            Ok((path.clone(), "W_dec".to_owned()))
+        }
+    }
+}
+
+/// Extract a single decoder row `[d_model]` for `(feature_index, target_offset)`,
+/// schema-aware.
+///
+/// - `CltSplit`: rank-3 `W_dec` indexed as `(feature_index, target_offset)`.
+/// - `PltBundle` / `GemmaScopeNpz`: rank-2 `W_dec` indexed as `feature_index`.
+///   `target_offset` must be `0` (per-layer transcoder writes only to its own
+///   layer); this is debug-asserted.
+///
+/// # Shapes
+/// - `w_dec`: rank-3 `[n_features, n_target_layers, d_model]` for `CltSplit`,
+///   rank-2 `[n_features, d_model]` otherwise.
+/// - returns: `[d_model]`
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`] on candle tensor indexing failure.
+fn decoder_row(
+    w_dec: &Tensor,
+    feature_index: usize,
+    target_offset: usize,
+    schema: TranscoderSchema,
+) -> Result<Tensor> {
+    match schema {
+        TranscoderSchema::CltSplit => Ok(w_dec.i((feature_index, target_offset))?),
+        TranscoderSchema::PltBundle | TranscoderSchema::GemmaScopeNpz => {
+            debug_assert_eq!(
+                target_offset, 0,
+                "per-layer schema writes only to its own layer (target_offset must be 0)"
+            );
+            Ok(w_dec.i(feature_index)?)
+        }
+    }
+}
+
+/// Extract a layer slice `[n_features, d_model]` from `W_dec` at a given
+/// `target_offset`, schema-aware.
+///
+/// Used by the batch decoder-projection scorers to project all features at a
+/// single target layer in one matmul.
+///
+/// - `CltSplit`: rank-3 `W_dec` sliced as `(.., target_offset, ..)` to drop
+///   the target-layer dimension.
+/// - `PltBundle` / `GemmaScopeNpz`: rank-2 `W_dec` is returned as-is (shallow
+///   clone — candle tensors are Arc-backed); `target_offset` must be `0`.
+///
+/// # Shapes
+/// - `w_dec`: rank-3 `[n_features, n_target_layers, d_model]` for `CltSplit`,
+///   rank-2 `[n_features, d_model]` otherwise.
+/// - returns: `[n_features, d_model]`
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`] on candle tensor indexing failure.
+fn decoder_layer_slice(
+    w_dec: &Tensor,
+    target_offset: usize,
+    schema: TranscoderSchema,
+) -> Result<Tensor> {
+    match schema {
+        TranscoderSchema::CltSplit => Ok(w_dec.i((.., target_offset, ..))?),
+        TranscoderSchema::PltBundle | TranscoderSchema::GemmaScopeNpz => {
+            debug_assert_eq!(
+                target_offset, 0,
+                "per-layer schema writes only to its own layer (target_offset must be 0)"
+            );
+            Ok(w_dec.clone())
+        }
+    }
+}
+
+/// Convert a `safetensors` tensor view to a candle [`Tensor`] on `device`.
+///
+/// Accepts `BF16`, `F16`, and `F32` dtypes — the only float dtypes CLT / PLT
+/// repos are known to use in the wild.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] if the tensor dtype is not supported (`BF16`, `F16`, `F32`).
 /// Returns [`MIError::Model`] on tensor construction failure.
 fn tensor_from_view(view: &safetensors::tensor::TensorView<'_>, device: &Device) -> Result<Tensor> {
     let shape: Vec<usize> = view.shape().to_vec();
