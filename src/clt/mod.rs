@@ -367,43 +367,14 @@ impl CrossLayerTranscoder {
             ))
             .map_err(|e| MIError::Download(format!("failed to list repo files: {e}")))?;
 
-        // Classify schema from filename patterns — before any downloads.
-        let has_clt_split = repo_files
-            .iter()
-            .any(|f| f.filename.starts_with("W_enc_") && f.filename.ends_with(".safetensors"));
-        let has_plt_bundle = repo_files
-            .iter()
-            .any(|f| f.filename.starts_with("layer_") && f.filename.ends_with(".safetensors"));
-        let has_gemmascope_npz_direct = repo_files.iter().any(|f| {
-            f.filename.starts_with("layer_")
-                && f.filename.contains("/width_")
-                && f.filename.contains("/average_l0_")
-                && f.filename.ends_with("/params.npz")
-        });
-        let has_config_yaml = repo_files.iter().any(|f| f.filename == "config.yaml");
-        // Case-sensitive match is intentional here: `HuggingFace` filenames in the
-        // `mntss/gemma-scope-transcoders` repo are always lowercase `.bin`; a
-        // case-insensitive fallback would accept bogus matches.
-        let has_gemmascope_bin_metadata = repo_files.iter().any(|f| {
-            f.filename.starts_with("features/layer_")
-                && std::path::Path::new(&f.filename)
-                    .extension()
-                    .is_some_and(|ext| ext.eq_ignore_ascii_case("bin"))
-        });
-        let has_gemmascope_metadata_repo =
-            has_config_yaml && has_gemmascope_bin_metadata && !has_clt_split && !has_plt_bundle;
-
-        let schema = if has_clt_split {
-            TranscoderSchema::CltSplit
-        } else if has_plt_bundle {
-            TranscoderSchema::PltBundle
-        } else if has_gemmascope_npz_direct || has_gemmascope_metadata_repo {
-            TranscoderSchema::GemmaScopeNpz
-        } else {
-            return Err(MIError::Config(format!(
+        // Collect filenames once so schema classification is a pure function over a slice.
+        // BORROW: explicit .as_str() — &str view into each RepoFile.filename
+        let filenames: Vec<&str> = repo_files.iter().map(|f| f.filename.as_str()).collect();
+        let schema = classify_transcoder_schema(&filenames).map_err(|_| {
+            MIError::Config(format!(
                 "unrecognised transcoder repo layout for {clt_repo}"
-            )));
-        };
+            ))
+        })?;
         info!("Transcoder schema detected for {clt_repo}: {schema:?}");
 
         // v0.1.9: schema detection succeeds but loading of GemmaScope repos
@@ -1793,6 +1764,69 @@ impl CrossLayerTranscoder {
 }
 
 // ---------------------------------------------------------------------------
+// Schema classification
+// ---------------------------------------------------------------------------
+
+/// Classify a transcoder repository's on-disk [`TranscoderSchema`] from its
+/// file listing alone — no downloads, no network I/O. Pure function,
+/// unit-testable.
+///
+/// Detection rules, checked in order:
+///
+/// 1. Any file matching `W_enc_*.safetensors` → `CltSplit`.
+/// 2. Any file matching `layer_*.safetensors` (at repo root) → `PltBundle`.
+/// 3. Any file matching `layer_N/width_Xk/average_l0_Y/params.npz` (direct
+///    `google/gemma-scope-2b-pt-transcoders` layout) → `GemmaScopeNpz`.
+/// 4. `config.yaml` present together with `features/layer_*.bin` and no
+///    safetensors weight files (the `mntss/gemma-scope-transcoders` metadata
+///    repo) → `GemmaScopeNpz`.
+///
+/// Rule 1 wins over Rule 2 if both match, but no real repo carries both.
+/// Rule 4 requires *no* safetensors at repo root so it doesn't clash with
+/// an eventual mixed layout.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] if none of the rules match.
+fn classify_transcoder_schema(filenames: &[&str]) -> Result<TranscoderSchema> {
+    let has_clt_split = filenames
+        .iter()
+        .any(|f| f.starts_with("W_enc_") && f.ends_with(".safetensors"));
+    let has_plt_bundle = filenames
+        .iter()
+        .any(|f| f.starts_with("layer_") && f.ends_with(".safetensors"));
+    let has_gemmascope_npz_direct = filenames.iter().any(|f| {
+        f.starts_with("layer_")
+            && f.contains("/width_")
+            && f.contains("/average_l0_")
+            && f.ends_with("/params.npz")
+    });
+    let has_config_yaml = filenames.contains(&"config.yaml");
+    // Case-sensitive extension check — the mntss metadata repo always ships
+    // lowercase `.bin`; case-insensitive would admit bogus matches.
+    let has_gemmascope_bin_metadata = filenames.iter().any(|f| {
+        f.starts_with("features/layer_")
+            && std::path::Path::new(f)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("bin"))
+    });
+    let has_gemmascope_metadata_repo =
+        has_config_yaml && has_gemmascope_bin_metadata && !has_clt_split && !has_plt_bundle;
+
+    if has_clt_split {
+        Ok(TranscoderSchema::CltSplit)
+    } else if has_plt_bundle {
+        Ok(TranscoderSchema::PltBundle)
+    } else if has_gemmascope_npz_direct || has_gemmascope_metadata_repo {
+        Ok(TranscoderSchema::GemmaScopeNpz)
+    } else {
+        Err(MIError::Config(
+            "unrecognised transcoder repo layout".into(),
+        ))
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Schema-aware encoder/decoder helpers
 // ---------------------------------------------------------------------------
 //
@@ -2762,5 +2796,484 @@ mod tests {
         let pruned = graph.threshold(1.0);
         assert_eq!(pruned.len(), 1);
         assert_eq!(pruned.features()[0], CltFeatureId { layer: 0, index: 1 });
+    }
+
+    // ====================================================================
+    // Schema classification (v0.1.9)
+    // ====================================================================
+
+    #[test]
+    fn classify_clt_split_layout() {
+        let files = [
+            "W_enc_0.safetensors",
+            "W_enc_1.safetensors",
+            "W_dec_0.safetensors",
+            "W_dec_1.safetensors",
+            "config.yaml",
+        ];
+        let schema = classify_transcoder_schema(&files).unwrap();
+        assert_eq!(schema, TranscoderSchema::CltSplit);
+        assert!(schema.is_cross_layer());
+        assert!(!schema.is_jump_relu());
+    }
+
+    #[test]
+    fn classify_plt_bundle_layout() {
+        // mntss/transcoder-Llama-3.2-1B + mwhanna/qwen3-*-transcoders*: bundle per layer.
+        let files = [
+            "layer_0.safetensors",
+            "layer_1.safetensors",
+            "features/layer_0.bin", // feature-dashboard metadata, irrelevant for weights
+            "features/layer_1.bin",
+            "README.md",
+        ];
+        let schema = classify_transcoder_schema(&files).unwrap();
+        assert_eq!(schema, TranscoderSchema::PltBundle);
+        assert!(!schema.is_cross_layer());
+        assert!(!schema.is_jump_relu());
+    }
+
+    #[test]
+    fn classify_gemmascope_metadata_repo() {
+        // mntss/gemma-scope-transcoders layout: config.yaml + features/layer_*.bin
+        // and NO weight safetensors at repo root — weights live in the google repo.
+        let files = [
+            "config.yaml",
+            "features/index.json.gz",
+            "features/layer_0.bin",
+            "features/layer_1.bin",
+        ];
+        let schema = classify_transcoder_schema(&files).unwrap();
+        assert_eq!(schema, TranscoderSchema::GemmaScopeNpz);
+        assert!(!schema.is_cross_layer());
+        assert!(schema.is_jump_relu());
+    }
+
+    #[test]
+    fn classify_gemmascope_npz_direct() {
+        // google/gemma-scope-2b-pt-transcoders layout: per-layer NPZ files.
+        let files = [
+            "layer_0/width_16k/average_l0_100/params.npz",
+            "layer_1/width_16k/average_l0_105/params.npz",
+            "layer_2/width_16k/average_l0_108/params.npz",
+        ];
+        let schema = classify_transcoder_schema(&files).unwrap();
+        assert_eq!(schema, TranscoderSchema::GemmaScopeNpz);
+    }
+
+    #[test]
+    fn classify_unrecognised_layout_errors() {
+        let files = ["random_file.txt", "README.md"];
+        let err = classify_transcoder_schema(&files).unwrap_err();
+        match err {
+            MIError::Config(msg) => assert!(
+                msg.contains("unrecognised transcoder repo layout"),
+                "unexpected error message: {msg}"
+            ),
+            other => panic!("expected MIError::Config, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn classify_empty_listing_errors() {
+        let files: [&str; 0] = [];
+        let err = classify_transcoder_schema(&files).unwrap_err();
+        assert!(matches!(err, MIError::Config(_)));
+    }
+
+    #[test]
+    fn classify_prefers_clt_split_over_plt_bundle() {
+        // If somehow both signatures coexist, CltSplit wins (not observed in the wild,
+        // but the detection rules give it priority).
+        let files = ["W_enc_0.safetensors", "layer_0.safetensors"];
+        let schema = classify_transcoder_schema(&files).unwrap();
+        assert_eq!(schema, TranscoderSchema::CltSplit);
+    }
+
+    #[test]
+    fn classify_bin_files_alone_are_not_enough() {
+        // Without config.yaml, bare features/layer_*.bin files should not trigger
+        // the GemmaScope metadata-repo path.
+        let files = ["features/layer_0.bin", "features/layer_1.bin"];
+        assert!(classify_transcoder_schema(&files).is_err());
+    }
+
+    #[test]
+    fn gemmascope_deferral_error_message_is_informative() {
+        // The constant used by `open()` to reject GemmaScope repos in v0.1.9 must
+        // point users to the v0.1.10 follow-up.
+        assert!(
+            GEMMASCOPE_DEFERRAL_ERR.contains("v0.1.10"),
+            "deferral error must mention the follow-up release"
+        );
+        assert!(
+            GEMMASCOPE_DEFERRAL_ERR.contains("Step 1.6"),
+            "deferral error must point at the roadmap step"
+        );
+    }
+
+    // ====================================================================
+    // Schema-aware helper direct tests
+    // ====================================================================
+
+    #[test]
+    fn encoder_file_and_tensor_names_clt_split() {
+        let (filename, w_enc_name, b_enc_name) =
+            encoder_file_and_tensor_names(TranscoderSchema::CltSplit, 7, &[]).unwrap();
+        assert_eq!(filename, "W_enc_7.safetensors");
+        assert_eq!(w_enc_name, "W_enc_7");
+        assert_eq!(b_enc_name, "b_enc_7");
+    }
+
+    #[test]
+    fn encoder_file_and_tensor_names_plt_bundle() {
+        let (filename, w_enc_name, b_enc_name) =
+            encoder_file_and_tensor_names(TranscoderSchema::PltBundle, 3, &[]).unwrap();
+        assert_eq!(filename, "layer_3.safetensors");
+        assert_eq!(w_enc_name, "W_enc");
+        assert_eq!(b_enc_name, "b_enc");
+    }
+
+    #[test]
+    fn encoder_file_and_tensor_names_gemmascope_needs_paths() {
+        // Without populated gemmascope_npz_paths, GemmaScopeNpz fails.
+        assert!(encoder_file_and_tensor_names(TranscoderSchema::GemmaScopeNpz, 0, &[]).is_err());
+
+        let paths = vec![
+            "layer_0/width_16k/average_l0_100/params.npz".to_owned(),
+            "layer_1/width_16k/average_l0_105/params.npz".to_owned(),
+        ];
+        let (filename, w_enc_name, b_enc_name) =
+            encoder_file_and_tensor_names(TranscoderSchema::GemmaScopeNpz, 1, &paths).unwrap();
+        assert_eq!(filename, "layer_1/width_16k/average_l0_105/params.npz");
+        assert_eq!(w_enc_name, "W_enc");
+        assert_eq!(b_enc_name, "b_enc");
+    }
+
+    #[test]
+    fn decoder_file_and_tensor_name_all_schemas() {
+        let (filename, tname) =
+            decoder_file_and_tensor_name(TranscoderSchema::CltSplit, 5, &[]).unwrap();
+        assert_eq!(filename, "W_dec_5.safetensors");
+        assert_eq!(tname, "W_dec_5");
+
+        let (filename, tname) =
+            decoder_file_and_tensor_name(TranscoderSchema::PltBundle, 5, &[]).unwrap();
+        assert_eq!(filename, "layer_5.safetensors");
+        assert_eq!(tname, "W_dec");
+
+        // GemmaScopeNpz needs populated paths.
+        assert!(decoder_file_and_tensor_name(TranscoderSchema::GemmaScopeNpz, 0, &[]).is_err());
+    }
+
+    #[test]
+    fn decoder_row_clt_split_indexes_rank3() {
+        // 2 features × 3 target_offsets × 4 d_model.
+        // Feature 0, offset 1 → [5, 6, 7, 8].
+        #[rustfmt::skip]
+        let values: Vec<f32> = vec![
+            // feature 0: offset 0, offset 1, offset 2
+            0.0, 0.0, 0.0, 0.0,   5.0, 6.0, 7.0, 8.0,   0.0, 0.0, 0.0, 0.0,
+            // feature 1: offset 0, offset 1, offset 2
+            0.0, 0.0, 0.0, 0.0,   9.0, 10.0, 11.0, 12.0, 0.0, 0.0, 0.0, 0.0,
+        ];
+        let w_dec = Tensor::from_vec(values, (2, 3, 4), &Device::Cpu).unwrap();
+
+        let row = decoder_row(&w_dec, 0, 1, TranscoderSchema::CltSplit).unwrap();
+        let got: Vec<f32> = row.to_vec1().unwrap();
+        assert_eq!(got, vec![5.0, 6.0, 7.0, 8.0]);
+
+        let row = decoder_row(&w_dec, 1, 1, TranscoderSchema::CltSplit).unwrap();
+        let got: Vec<f32> = row.to_vec1().unwrap();
+        assert_eq!(got, vec![9.0, 10.0, 11.0, 12.0]);
+    }
+
+    #[test]
+    fn decoder_row_plt_bundle_indexes_rank2_at_offset_zero() {
+        // 2 features × 4 d_model (rank-2 for PltBundle).
+        #[rustfmt::skip]
+        let values: Vec<f32> = vec![
+            1.0, 2.0, 3.0, 4.0,   // feature 0
+            5.0, 6.0, 7.0, 8.0,   // feature 1
+        ];
+        let w_dec = Tensor::from_vec(values, (2, 4), &Device::Cpu).unwrap();
+
+        let row = decoder_row(&w_dec, 1, 0, TranscoderSchema::PltBundle).unwrap();
+        let got: Vec<f32> = row.to_vec1().unwrap();
+        assert_eq!(got, vec![5.0, 6.0, 7.0, 8.0]);
+    }
+
+    #[test]
+    fn decoder_row_plt_bundle_rejects_nonzero_offset() {
+        // target_offset != 0 for a per-layer schema is a caller bug — must error
+        // loudly in release builds (was a debug_assert previously; see aa23c90).
+        let w_dec = Tensor::zeros((2, 4), DType::F32, &Device::Cpu).unwrap();
+        let err = decoder_row(&w_dec, 0, 1, TranscoderSchema::PltBundle).unwrap_err();
+        match err {
+            MIError::Config(msg) => {
+                assert!(msg.contains("target_offset must be 0"), "got: {msg}");
+            }
+            other => panic!("expected MIError::Config, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn decoder_layer_slice_plt_bundle_rejects_nonzero_offset() {
+        let w_dec = Tensor::zeros((2, 4), DType::F32, &Device::Cpu).unwrap();
+        assert!(decoder_layer_slice(&w_dec, 2, TranscoderSchema::PltBundle).is_err());
+    }
+
+    #[test]
+    fn decoder_layer_slice_plt_bundle_returns_full_rank2_at_offset_zero() {
+        #[rustfmt::skip]
+        let values: Vec<f32> = vec![
+            1.0, 2.0, 3.0, 4.0,
+            5.0, 6.0, 7.0, 8.0,
+        ];
+        let w_dec = Tensor::from_vec(values.clone(), (2, 4), &Device::Cpu).unwrap();
+        let slice = decoder_layer_slice(&w_dec, 0, TranscoderSchema::PltBundle).unwrap();
+        assert_eq!(slice.dims(), &[2, 4]);
+        let got: Vec<Vec<f32>> = slice.to_vec2().unwrap();
+        assert_eq!(got[0], vec![1.0, 2.0, 3.0, 4.0]);
+        assert_eq!(got[1], vec![5.0, 6.0, 7.0, 8.0]);
+    }
+
+    // ====================================================================
+    // PltBundle round-trip: cache_steering_vectors_all_downstream
+    // ====================================================================
+
+    /// Write a synthetic PltBundle `layer_{layer}.safetensors` file containing
+    /// all five un-suffixed tensors (`W_enc`, `W_dec`, `W_skip`, `b_enc`, `b_dec`).
+    /// All byte buffers are kept alive via ownership until `serialize` returns.
+    fn create_synthetic_plt_bundle(
+        dir: &std::path::Path,
+        layer: usize,
+        n_features: usize,
+        d_model: usize,
+        w_enc: &[f32],
+        w_dec: &[f32],
+        w_skip: &[f32],
+        b_enc: &[f32],
+        b_dec: &[f32],
+    ) -> PathBuf {
+        assert_eq!(w_enc.len(), n_features * d_model);
+        assert_eq!(
+            w_dec.len(),
+            n_features * d_model,
+            "PltBundle W_dec is rank-2"
+        );
+        assert_eq!(w_skip.len(), d_model * d_model);
+        assert_eq!(b_enc.len(), n_features);
+        assert_eq!(b_dec.len(), d_model);
+
+        // Five byte buffers, all alive for the duration of `tensors` below.
+        let w_enc_bytes: Vec<u8> = w_enc.iter().flat_map(|v| v.to_le_bytes()).collect();
+        let w_dec_bytes: Vec<u8> = w_dec.iter().flat_map(|v| v.to_le_bytes()).collect();
+        let w_skip_bytes: Vec<u8> = w_skip.iter().flat_map(|v| v.to_le_bytes()).collect();
+        let b_enc_bytes: Vec<u8> = b_enc.iter().flat_map(|v| v.to_le_bytes()).collect();
+        let b_dec_bytes: Vec<u8> = b_dec.iter().flat_map(|v| v.to_le_bytes()).collect();
+
+        let mut tensors = HashMap::new();
+        // BORROW: explicit .to_owned() — safetensors HashMap key as owned String
+        tensors.insert(
+            "W_enc".to_owned(),
+            safetensors::tensor::TensorView::new(
+                safetensors::Dtype::F32,
+                vec![n_features, d_model],
+                &w_enc_bytes,
+            )
+            .unwrap(),
+        );
+        tensors.insert(
+            "W_dec".to_owned(),
+            safetensors::tensor::TensorView::new(
+                safetensors::Dtype::F32,
+                vec![n_features, d_model],
+                &w_dec_bytes,
+            )
+            .unwrap(),
+        );
+        tensors.insert(
+            "W_skip".to_owned(),
+            safetensors::tensor::TensorView::new(
+                safetensors::Dtype::F32,
+                vec![d_model, d_model],
+                &w_skip_bytes,
+            )
+            .unwrap(),
+        );
+        tensors.insert(
+            "b_enc".to_owned(),
+            safetensors::tensor::TensorView::new(
+                safetensors::Dtype::F32,
+                vec![n_features],
+                &b_enc_bytes,
+            )
+            .unwrap(),
+        );
+        tensors.insert(
+            "b_dec".to_owned(),
+            safetensors::tensor::TensorView::new(
+                safetensors::Dtype::F32,
+                vec![d_model],
+                &b_dec_bytes,
+            )
+            .unwrap(),
+        );
+
+        let serialized = safetensors::serialize(&tensors, &None).unwrap();
+        let path = dir.join(format!("layer_{layer}.safetensors"));
+        std::fs::write(&path, serialized).unwrap();
+        path
+    }
+
+    #[test]
+    fn plt_bundle_cache_steering_all_downstream_is_single_entry_per_feature() {
+        // Regression test for aa23c90: `cache_steering_vectors_all_downstream`
+        // must use `n_target_layers = 1` for PltBundle (not n_layers - source_layer),
+        // otherwise the same rank-2 W_dec row gets cached under every downstream
+        // (feature, target_layer) key.
+        let dir = tempfile::tempdir().unwrap();
+        let d_model = 4;
+        let n_features = 2;
+
+        // Layer 0 bundle: W_dec row 0 = [1, 2, 3, 4], row 1 = [5, 6, 7, 8].
+        #[rustfmt::skip]
+        let w_dec_0: Vec<f32> = vec![
+            1.0, 2.0, 3.0, 4.0,
+            5.0, 6.0, 7.0, 8.0,
+        ];
+        let path0 = create_synthetic_plt_bundle(
+            dir.path(),
+            0,
+            n_features,
+            d_model,
+            &vec![0.0; n_features * d_model],
+            &w_dec_0,
+            &vec![0.0; d_model * d_model],
+            &vec![0.0; n_features],
+            &vec![0.0; d_model],
+        );
+
+        // Layer 1 bundle (weights don't matter — only layer 0 feature is requested).
+        let path1 = create_synthetic_plt_bundle(
+            dir.path(),
+            1,
+            n_features,
+            d_model,
+            &vec![0.0; n_features * d_model],
+            &vec![99.0; n_features * d_model],
+            &vec![0.0; d_model * d_model],
+            &vec![0.0; n_features],
+            &vec![0.0; d_model],
+        );
+
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            // PltBundle: encoder_paths doubles as decoder_paths (shared file).
+            encoder_paths: vec![Some(path0), Some(path1)],
+            decoder_paths: vec![None, None],
+            config: CltConfig {
+                n_layers: 2,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features * 2,
+                model_name: "test".to_owned(),
+                schema: TranscoderSchema::PltBundle,
+                gemmascope_npz_paths: Vec::new(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        let features = vec![CltFeatureId { layer: 0, index: 0 }];
+        clt.cache_steering_vectors_all_downstream(&features, &Device::Cpu)
+            .unwrap();
+
+        // PltBundle → exactly ONE cache entry, keyed at the source layer.
+        assert_eq!(
+            clt.steering_cache_len(),
+            1,
+            "PltBundle must cache exactly 1 entry per feature (not n_layers)"
+        );
+        let cached = clt
+            .steering_cache
+            .get(&(CltFeatureId { layer: 0, index: 0 }, 0))
+            .expect("entry at (feature, source_layer)");
+        let values: Vec<f32> = cached.to_vec1().unwrap();
+        assert_eq!(values, vec![1.0, 2.0, 3.0, 4.0]);
+
+        // And there must be NO entry at (feature, layer 1) — that would indicate
+        // the pre-aa23c90 bug.
+        assert!(
+            !clt.steering_cache
+                .contains_key(&(CltFeatureId { layer: 0, index: 0 }, 1)),
+            "PltBundle must not cache downstream entries"
+        );
+    }
+
+    #[test]
+    fn clt_split_cache_steering_all_downstream_caches_all_targets() {
+        // Companion regression test: CltSplit must still cache n_target_layers entries
+        // per feature (existing behaviour preserved by commit aa23c90).
+        let dir = tempfile::tempdir().unwrap();
+        let d_model = 4;
+        let n_features = 2;
+
+        // W_dec_0: rank-3 [2 features × 2 target_offsets × 4 d_model].
+        #[rustfmt::skip]
+        let dec0_values: Vec<f32> = vec![
+            // feature 0: offset 0, offset 1
+            1.0, 0.0, 0.0, 0.0,   0.0, 1.0, 0.0, 0.0,
+            // feature 1
+            0.0, 0.0, 1.0, 0.0,   0.0, 0.0, 0.0, 1.0,
+        ];
+        let path0 = create_synthetic_decoder(dir.path(), 0, n_features, 2, d_model, &dec0_values);
+
+        // W_dec_1: rank-3 [2 × 1 × 4].
+        #[rustfmt::skip]
+        let dec1_values: Vec<f32> = vec![
+            2.0, 0.0, 0.0, 0.0,
+            0.0, 2.0, 0.0, 0.0,
+        ];
+        let path1 = create_synthetic_decoder(dir.path(), 1, n_features, 1, d_model, &dec1_values);
+
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![None, None],
+            decoder_paths: vec![Some(path0), Some(path1)],
+            config: CltConfig {
+                n_layers: 2,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features * 2,
+                model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        // Feature at layer 0 should produce 2 cache entries (layer 0 writes to 0, 1).
+        let features = vec![CltFeatureId { layer: 0, index: 0 }];
+        clt.cache_steering_vectors_all_downstream(&features, &Device::Cpu)
+            .unwrap();
+
+        assert_eq!(
+            clt.steering_cache_len(),
+            2,
+            "CltSplit: layer 0 writes to 2 downstream layers"
+        );
+        assert!(
+            clt.steering_cache
+                .contains_key(&(CltFeatureId { layer: 0, index: 0 }, 0))
+        );
+        assert!(
+            clt.steering_cache
+                .contains_key(&(CltFeatureId { layer: 0, index: 0 }, 1))
+        );
     }
 }

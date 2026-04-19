@@ -43,6 +43,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   schemas, `ensure_decoder_path` now delegates to `ensure_encoder_path` —
   encoder and decoder share the same bundle file, so the path cache is
   unified instead of double-tracked.
+- **`classify_transcoder_schema` extracted as a pure function.** The schema
+  detection logic previously inlined in `open()` is now a pure `&[&str] ->
+  Result<TranscoderSchema>` helper. `open()` becomes three lines of
+  collect + call + log; the logic is independently unit-testable.
+
+### Tests
+
+- **Schema classification suite** — seven unit tests covering `CltSplit`,
+  `PltBundle`, `GemmaScopeNpz` (both mntss-metadata and google-direct NPZ
+  layouts), unrecognised layout, empty listing, the CltSplit-over-PltBundle
+  precedence rule, and the deferral-error-message content.
+- **Schema-aware helper suite** — ten unit tests for
+  `encoder_file_and_tensor_names`, `decoder_file_and_tensor_name`,
+  `decoder_row` (rank-3 indexing for CltSplit, rank-2 for PltBundle,
+  rejection of non-zero target_offset), and `decoder_layer_slice`.
+- **PltBundle round-trip** — `create_synthetic_plt_bundle` helper writes
+  a fake `layer_N.safetensors` with all five un-suffixed tensors
+  (`W_enc`/`W_dec`/`W_skip`/`b_enc`/`b_dec`), and a regression test
+  verifies `cache_steering_vectors_all_downstream` produces exactly one
+  cache entry per feature (not n_layers), catching the pre-aa23c90 bug.
+- **CltSplit companion regression** — parallel test confirms CltSplit
+  still caches `n_layers - source_layer` entries.
 
 ### Fixed
 
