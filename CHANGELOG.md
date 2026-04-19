@@ -109,8 +109,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   experiments separate on disk. Total runtime ~4 min on CUDA. First
   empirical numbers on Llama 3.2 1B: PLT suppress-only ΔP = +0.986
   (Δlogit = +49.8) at position 30, method-matched CLT ΔP = +5.7×10⁻⁷ at
-  position 7 — outcome label to be assigned in Step C from
-  `docs/experiments/clt-vs-plt-planning-site/findings.md`.
+  position 7.
+- **`docs/experiments/clt-vs-plt-planning-site/findings.md`** — Step C
+  write-up mapping the Step B data onto V3 Appendix A. Outcome label:
+  **C** (PLT and CLT spike at different positions under the
+  method-matched top-5 decoder-projection ranking). Primary-metric table
+  with Step A paper-replication row for cross-check; secondary metrics
+  (Pearson sweep-profile correlation r ≈ −0.6, decoder-projection
+  magnitude ratios, PLT `W_skip · x` projection = +0.541); and the
+  (A)–(F) discrimination battery populated from the already-captured
+  instrumentation. Key finding under (B): CLT's best decoders for
+  `" that"` sit at L13, not L14 — cosine jumps from 0.349 (same-layer)
+  to 0.608 (max-over-target-layers). Highest-priority follow-up: rerun
+  the CLT arm with max-over-target-layers top-5 suppress to test whether
+  the arm asymmetry is a ranking-method artefact rather than a
+  transcoder-class limitation.
 
 ### Changed
 
