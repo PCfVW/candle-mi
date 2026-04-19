@@ -8,6 +8,23 @@
 
 ---
 
+## Status (2026-04-19)
+
+The experiment design below is preserved as a historical plan. Steps A–D are
+complete; Step E is pending the v0.1.9 tag.
+
+| Step | Status | Artefact |
+|---|---|---|
+| A — Reproduce Jacopin CLT result on Llama 3.2 1B | ✅ Complete | [`clt_step_a_llama.json`](../experiments/clt-vs-plt-planning-site/clt_step_a_llama.json) — CLT suppress+inject (Jacopin cross-layer features) reaches ΔP("that") = +0.687 at position 30, within candle 0.9 stack drift of the paper's +0.777. |
+| B — PLT arm + full V3 Step 1.7 instrumentation | ✅ Complete | [`clt_vs_plt_llama.json`](../experiments/clt-vs-plt-planning-site/clt_vs_plt_llama.json) — PLT suppress-only ΔP = +0.986; method-matched CLT (same-layer top-5) ΔP = +5.7×10⁻⁷. Single prompt (PLAN proposed two; one delivered). |
+| C — Classify outcome against V3 Appendix A | ✅ Complete | [`findings.md`](../experiments/clt-vs-plt-planning-site/findings.md) — **Outcome C** on the primary metric (different spikes). |
+| D — (A)–(F) discrimination battery | ✅ Complete, plus Follow-up 1 | (B) confirmed dominant: CLT max-over-target top-5 suppress recovers ΔP = +0.87–0.92 at pos 30, reclassifying to **Outcome B** under method-matched-per-transcoder-capabilities ranking. Findings.md has the full battery and the follow-up table. |
+| E — Write up and ship with v0.1.9 | ⏳ Pending | README paper-replications row, CHANGELOG [0.1.9] consolidation, v0.1.9 tag. |
+
+**Result in one sentence.** Both transcoder classes detect the Llama 3.2 1B rhyming-couplet planning site at comparable ΔP when each is ranked via a method that respects its decoder topology (same-layer for PLT, max-over-target for CLT); naïve single-layer decoder-projection undersells the CLT by seven orders of magnitude on this prompt.
+
+---
+
 ## Context
 
 Three pieces of prior work define the space:

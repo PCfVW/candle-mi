@@ -441,9 +441,9 @@ Inspect Stage 1 results against Appendix A outcomes. Proceed to Stage 2 only if 
 - **Outcome C**: PLT spike at different layer or flatter profile. Scale-sweep becomes a depth-vs-capacity ablation — interesting.
 - **Outcome A**: PLT misses the spike on small models. Justifies asking "at what scale does PLT start detecting planning?" — sweep answers this directly.
 
-**Stop condition:** Outcome B *with* ΔP_PLT ≈ ΔP_CLT (both detection and intervention match) and Hanna & Ameisen's existing 0.6B–14B data already suffices. Write up Stage 1 as a short paper; defer Stage 2.
+**Stop condition:** Outcome B *with* ΔP_PLT ≈ ΔP_CLT (both detection and intervention match) **and** Hanna & Ameisen's coverage of the same task genuinely suffices. The second clause is the load-bearing one: a rigorous re-read of 2604.12493v1 (see `docs/experiments/clt-vs-plt-planning-site/findings.md`, Stage-1-decision section) shows H&A's Qwen-3 rhyming coverage is _nascent even at 14B_ under their methodology, so the "suffices" premise is not satisfied for the rhyming task. The stop condition may still fire on a/an-style tasks where H&A's a/an result is clean at 14B; it does not fire on rhyming without a matched-methodology Qwen-3 run. When in doubt, defer the decision to after v0.1.10 (Gemma) rather than pre-committing from v0.1.9 data.
 
-**Review gate:** write `docs/stage1_decision.md` with the data, the chosen outcome label, and a one-line go/no-go.
+**Review gate:** write `docs/stage1_decision.md` with the data, the chosen outcome label, and a one-line go/no-go. Reference the findings.md re-read note when the Stage-2 disposition is written.
 
 ---
 
@@ -573,7 +573,7 @@ All steps must also pass the CLAUDE.md pre-commit gate: `cargo fmt`, `cargo clip
 | Two-repo fetch pattern (config from `mntss`, weights from `google`) is novel in candle-mi's loader. | Low | Extra complexity in `open()`. | Encapsulate as a private `resolve_gemmascope_npz_paths(&HfApi) -> Vec<String>` helper. Single entry point, unit-testable in isolation. |
 | Gemma PLT injection point requires new `HookPoint` variant. | Medium | `v0.1.10` needs a minor `src/hooks.rs` addition. | Adding a `HookPoint` variant is mechanical and `#[non_exhaustive]` already covers forward compatibility. Not a real blocker. |
 | Qwen3-8B BF16 doesn't fit with transcoder + activations. | Medium | Stage 2 ceiling is 4B. | Empirical fit-test before coding Step 2.3 examples. |
-| Outcome B with `ΔP_PLT ≈ ΔP_CLT` after Stage 1 — Stage 2 scientifically redundant. | Medium | `v0.1.11` deferred. | Outcome B is a real finding on its own; publish `v0.1.9` (and `v0.1.10` if Gemma confirms) and stop. |
+| Outcome B with `ΔP_PLT ≈ ΔP_CLT` after Stage 1 — Stage 2 possibly redundant. | Medium | `v0.1.11` may be deferred, or may be explicitly motivated by a methodology-confound hypothesis vs H&A's Qwen-3 rhyming result. | Outcome B is a real finding on its own; publish `v0.1.9` (and `v0.1.10` if Gemma confirms). Decide Stage 2 after Gemma lands — H&A's rhyming result is nascent at 14B under their methodology, so a matched-methodology Qwen-3 run remains scientifically interesting regardless of direction (see `findings.md`, Stage-1-decision section). |
 | Rust encode result diverges from Python reference in Step 1.5. | Low | `v0.1.9` blocked. | Likely a missed `W_dec` call site — audit via the `decoder_row()` / `decoder_file_and_tensor_name()` helpers. Less likely: bias or dtype handling in the PltBundle loader. |
 | Decoder-projection ranking unstable across the two rhyming prompts. | Low | Primary metric noisy. | Average across both prompts + one factual-prompt control; report std. |
 | Llama PLT `W_skip` turns out to matter for faithful reconstruction (affects causal-suppression delta). | Low | Interpretation of ΔP needs caveat. | Step 1.2 notes `W_skip` is loaded but unused. If Step 1.7 causal deltas look off, test with `W_skip` included in reconstruction and compare. |

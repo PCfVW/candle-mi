@@ -124,6 +124,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the CLT arm with max-over-target-layers top-5 suppress to test whether
   the arm asymmetry is a ranking-method artefact rather than a
   transcoder-class limitation.
+- **README Paper replications table** — new row for Hanna & Ameisen,
+  *Latent Planning Emerges with Scale* (arXiv 2604.12493, ICLR 2026),
+  pointing at
+  [`docs/experiments/clt-vs-plt-planning-site/findings.md`](docs/experiments/clt-vs-plt-planning-site/findings.md).
+  Summary: both transcoder classes detect the Llama 3.2 1B rhyming-couplet
+  planning site at comparable ΔP when each is ranked via a method that
+  respects its decoder topology (same-layer for PLT, max-over-target for
+  CLT). Llama arm complete; Gemma arm scoped for v0.1.10; Qwen-3 scale
+  sweep TBD.
 - **Follow-up 1** (same example, added to `--schema both` default run):
   three extra CLT position sweeps using the max-over-target-layers top-5
   as the suppress set (suppress-only; suppress+inject with max-over-target

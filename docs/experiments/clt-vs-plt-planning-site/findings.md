@@ -197,11 +197,11 @@ Under a **method-matched ranking that respects the CLT's cross-layer decoder str
 Given Outcome B with `ΔP_PLT ≈ ΔP_CLT` (ratio 0.93 at best) on Llama 3.2 1B:
 
 - **V3 stop condition (§444)** says: "_Outcome B with ΔP_PLT ≈ ΔP_CLT (both detection and intervention match) and Hanna & Ameisen's existing 0.6B–14B data already suffices. Write up Stage 1 as a short paper; defer Stage 2._"
-- **Our data meets this condition on Llama 3.2 1B** under method-matched ranking.
-- **Gemma 2 2B (v0.1.10) still useful** — second data point turns one into a pair, strengthens a publishable claim. Not scientifically redundant given the ranking-method finding.
-- **Qwen-3 scale sweep (V3 Stage 2) is genuinely redundant** for the detection claim on this task, given Hanna & Ameisen's existing 0.6B–14B coverage. Reclassify as deferred.
+- **Our Llama data meets the Outcome B match-criterion** under method-matched ranking. What it does **not** meet is the second clause's premise — a rigorous re-read of Hanna & Ameisen (2604.12493v1) shows their Qwen-3 rhyming result is _nascent even at 14B_ ("overall, these results suggest a lack of strong backward planning"; local planning features in a small minority of couplets). Their rhyming coverage does not "suffice" in the sense §444 assumed; the Stage-1 / Stage-2 trade-off needs to be revisited once Gemma is in.
+- **Gemma 2 2B (v0.1.10) is the next data point** — second same-methodology observation on a different model family. Turns one into a pair, strengthens any public claim about the Llama finding.
+- **V3 Stage 2 (Qwen-3 scale sweep)** — previously flagged as "redundant given H&A coverage" in an earlier draft of this section. Withdrawn. H&A's Qwen-3 rhyming result uses a fundamentally different feature-identification method (pattern-matched top-activating tokens) and intervention protocol (multiplicative ×7/×−3) from ours (decoder-projection cosine + additive ±10). Our Step B follow-up already demonstrated that ranking-method choice alone can swing ΔP by seven orders of magnitude on the same transcoder and prompt — so it is at least plausible that the H&A Qwen-3 nascency is partly methodology-driven rather than scale-limited. A matched-methodology Qwen-3 run is the only way to disentangle this, and it is scientifically interesting regardless of direction.
 
-Recommendation: ship v0.1.9 with this finding, proceed to Gemma 2 2B (v0.1.10), **defer V3 Stage 2 unless Gemma surfaces something new**.
+Recommendation (revised): ship v0.1.9 with this finding, proceed to Gemma 2 2B (v0.1.10). **Decide on V3 Stage 2 after Gemma lands**, with the methodology-confound hypothesis as explicit motivation rather than as something to overrule.
 
 ### Updated discrimination-battery summary
 
