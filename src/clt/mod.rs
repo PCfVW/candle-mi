@@ -162,6 +162,55 @@ impl AttributionGraph {
     }
 }
 
+/// On-disk layout of a transcoder repository.
+///
+/// Determines how weight files are named, which tensors they contain, and
+/// whether `W_dec` is rank-2 (per-layer) or rank-3 (cross-layer). Auto-detected
+/// from the repo file listing at [`CrossLayerTranscoder::open`] time —
+/// see the schema-detection rules documented on each variant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum TranscoderSchema {
+    /// Cross-Layer Transcoder (`mntss/clt-*`): two files per layer,
+    /// `W_enc_{l}.safetensors` + `W_dec_{l}.safetensors`, layer-suffixed tensor
+    /// names (`W_enc_{l}`, `W_dec_{l}`). `W_dec` is rank-3
+    /// `[n_features, n_target_layers, d_model]` — writes to multiple downstream
+    /// layers.
+    CltSplit,
+    /// Per-Layer Transcoder bundle (`mntss/transcoder-*`, `mwhanna/qwen3-*-transcoders*`):
+    /// one file per layer, `layer_{l}.safetensors`, un-suffixed tensor names
+    /// (`W_enc`, `W_dec`, `W_skip`, `b_enc`, `b_dec`). `W_dec` is rank-2
+    /// `[n_features, d_model]` — writes only to layer `l`. The `W_skip` linear
+    /// path is loaded but not used by encode/inject/suppress.
+    PltBundle,
+    /// `GemmaScope` NPZ transcoder (`google/gemma-scope-2b-pt-transcoders`,
+    /// pointed to by `mntss/gemma-scope-transcoders/config.yaml`). Per-layer
+    /// NPZ file at `layer_N/width_16k/average_l0_X/params.npz`. Tensors:
+    /// `W_enc [d_model, n_features]` (transposed vs `PltBundle`), `W_dec`,
+    /// `b_enc`, `b_dec`, and `threshold [n_features]` for `JumpReLU` gating.
+    /// No `W_skip`.
+    ///
+    /// **Not yet loadable in v0.1.9** — [`CrossLayerTranscoder::open`] returns
+    /// a deferral error pointing to roadmap Step 1.6.
+    GemmaScopeNpz,
+}
+
+impl TranscoderSchema {
+    /// Whether this schema writes to multiple downstream layers per feature
+    /// (`CltSplit`) or only to its own layer (`PltBundle`, `GemmaScopeNpz`).
+    #[must_use]
+    pub const fn is_cross_layer(self) -> bool {
+        matches!(self, Self::CltSplit)
+    }
+
+    /// Whether this schema uses `JumpReLU` gating with a per-feature `threshold`
+    /// tensor (`GemmaScopeNpz`) rather than plain `ReLU`.
+    #[must_use]
+    pub const fn is_jump_relu(self) -> bool {
+        matches!(self, Self::GemmaScopeNpz)
+    }
+}
+
 /// CLT configuration auto-detected from tensor shapes.
 #[derive(Debug, Clone)]
 pub struct CltConfig {
@@ -175,6 +224,12 @@ pub struct CltConfig {
     pub n_features_total: usize,
     /// Base model name from config.yaml.
     pub model_name: String,
+    /// Detected on-disk schema.
+    pub schema: TranscoderSchema,
+    /// Per-layer NPZ paths for `GemmaScopeNpz` repos routed via
+    /// `mntss/gemma-scope-transcoders/config.yaml`. Empty for `CltSplit` /
+    /// `PltBundle`; populated in v0.1.10 by the Step 1.6 loader.
+    pub gemmascope_npz_paths: Vec<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -260,6 +315,7 @@ impl CrossLayerTranscoder {
     /// Returns [`MIError::Download`] if the repository is inaccessible or files
     /// cannot be fetched. Returns [`MIError::Config`] if the weight format is
     /// unexpected.
+    #[allow(clippy::too_many_lines)]
     pub fn open(clt_repo: &str) -> Result<Self> {
         let fetch_config = hf_fetch_model::FetchConfig::builder()
             .on_progress(|event| {
@@ -274,21 +330,93 @@ impl CrossLayerTranscoder {
             .build()
             .map_err(|e| MIError::Download(format!("failed to build fetch config: {e}")))?;
 
-        // Detect n_layers by listing repo files (no downloads needed).
+        // List repo files (no downloads needed) for schema detection and layer counting.
         let rt = tokio::runtime::Runtime::new()
             .map_err(|e| MIError::Download(format!("failed to create tokio runtime: {e}")))?;
+        // hf-fetch-model 0.9.6 takes a shared reqwest client for the metadata listing.
+        let http_client = hf_fetch_model::build_client(None)
+            .map_err(|e| MIError::Download(format!("failed to build HTTP client: {e}")))?;
         let repo_files = rt
             .block_on(hf_fetch_model::repo::list_repo_files_with_metadata(
-                clt_repo, None, None,
+                clt_repo,
+                None,
+                None,
+                &http_client,
             ))
             .map_err(|e| MIError::Download(format!("failed to list repo files: {e}")))?;
-        let n_layers = repo_files
+
+        // Classify schema from filename patterns — before any downloads.
+        let has_clt_split = repo_files
             .iter()
-            .filter(|f| f.filename.starts_with("W_enc_") && f.filename.ends_with(".safetensors"))
-            .count();
+            .any(|f| f.filename.starts_with("W_enc_") && f.filename.ends_with(".safetensors"));
+        let has_plt_bundle = repo_files
+            .iter()
+            .any(|f| f.filename.starts_with("layer_") && f.filename.ends_with(".safetensors"));
+        let has_gemmascope_npz_direct = repo_files.iter().any(|f| {
+            f.filename.starts_with("layer_")
+                && f.filename.contains("/width_")
+                && f.filename.contains("/average_l0_")
+                && f.filename.ends_with("/params.npz")
+        });
+        let has_config_yaml = repo_files.iter().any(|f| f.filename == "config.yaml");
+        // Case-sensitive match is intentional here: `HuggingFace` filenames in the
+        // `mntss/gemma-scope-transcoders` repo are always lowercase `.bin`; a
+        // case-insensitive fallback would accept bogus matches.
+        let has_gemmascope_bin_metadata = repo_files.iter().any(|f| {
+            f.filename.starts_with("features/layer_")
+                && std::path::Path::new(&f.filename)
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("bin"))
+        });
+        let has_gemmascope_metadata_repo =
+            has_config_yaml && has_gemmascope_bin_metadata && !has_clt_split && !has_plt_bundle;
+
+        let schema = if has_clt_split {
+            TranscoderSchema::CltSplit
+        } else if has_plt_bundle {
+            TranscoderSchema::PltBundle
+        } else if has_gemmascope_npz_direct || has_gemmascope_metadata_repo {
+            TranscoderSchema::GemmaScopeNpz
+        } else {
+            return Err(MIError::Config(format!(
+                "unrecognised transcoder repo layout for {clt_repo}"
+            )));
+        };
+        info!("Transcoder schema detected for {clt_repo}: {schema:?}");
+
+        // v0.1.9: schema detection succeeds but loading of GemmaScope repos
+        // is intentionally deferred. v0.1.10 implements the two-repo NPZ flow.
+        if matches!(schema, TranscoderSchema::GemmaScopeNpz) {
+            return Err(MIError::Config(
+                "GemmaScope loader lands in v0.1.10 — see roadmap Step 1.6".into(),
+            ));
+        }
+
+        // Count layers per schema. GemmaScopeNpz was rejected earlier, so the match
+        // is effectively binary here but spelled exhaustively for safety.
+        let n_layers = match schema {
+            TranscoderSchema::CltSplit => repo_files
+                .iter()
+                .filter(|f| {
+                    f.filename.starts_with("W_enc_") && f.filename.ends_with(".safetensors")
+                })
+                .count(),
+            TranscoderSchema::PltBundle => repo_files
+                .iter()
+                .filter(|f| {
+                    f.filename.starts_with("layer_") && f.filename.ends_with(".safetensors")
+                })
+                .count(),
+            TranscoderSchema::GemmaScopeNpz => {
+                // EXPLICIT: exhaustive match arm — variant rejected with the deferral error above.
+                return Err(MIError::Config(
+                    "GemmaScope loader lands in v0.1.10 — see roadmap Step 1.6".into(),
+                ));
+            }
+        };
         if n_layers == 0 {
             return Err(MIError::Config(format!(
-                "no CLT encoder files found in {clt_repo}"
+                "no encoder files found in {clt_repo} (schema={schema:?})"
             )));
         }
 
@@ -306,21 +434,37 @@ impl CrossLayerTranscoder {
             Err(_) => "unknown".to_owned(),
         };
 
-        // Download W_enc_0 for dimension detection (~75 MB).
+        // Download the first encoder file for dimension detection, branching on schema.
+        // `CltSplit`: `W_enc_0.safetensors` (~75 MB) with tensor `"W_enc_0"`.
+        // `PltBundle`: `layer_0.safetensors` (~1 GiB, bundle of
+        //           `W_enc`/`W_dec`/`W_skip`/`b_enc`/`b_dec`) with un-suffixed tensor `"W_enc"`.
+        let (enc0_filename, enc_tensor_name) = match schema {
+            TranscoderSchema::CltSplit => ("W_enc_0.safetensors", "W_enc_0"),
+            TranscoderSchema::PltBundle => ("layer_0.safetensors", "W_enc"),
+            TranscoderSchema::GemmaScopeNpz => {
+                // GemmaScopeNpz returns early above; this arm is kept for exhaustive matching.
+                // EXPLICIT: exhaustive match on TranscoderSchema; GemmaScopeNpz rejected upstream.
+                return Err(MIError::Config(
+                    "GemmaScope loader lands in v0.1.10 — see roadmap Step 1.6".into(),
+                ));
+            }
+        };
+        // BORROW: explicit .to_owned() — hf_fetch_model download_file_blocking requires an owned repo ID.
         let enc0_path = hf_fetch_model::download_file_blocking(
             clt_repo.to_owned(),
-            "W_enc_0.safetensors",
+            enc0_filename,
             &fetch_config,
         )
-        .map_err(|e| MIError::Download(format!("failed to download W_enc_0: {e}")))?
+        .map_err(|e| MIError::Download(format!("failed to download {enc0_filename}: {e}")))?
         .into_inner();
 
         let data = std::fs::read(&enc0_path)?;
-        let tensors = SafeTensors::deserialize(&data)
-            .map_err(|e| MIError::Config(format!("failed to deserialize W_enc_0: {e}")))?;
+        let tensors = SafeTensors::deserialize(&data).map_err(|e| {
+            MIError::Config(format!("failed to deserialize {enc_tensor_name}: {e}"))
+        })?;
         let w_enc_view = tensors
-            .tensor("W_enc_0")
-            .map_err(|e| MIError::Config(format!("tensor 'W_enc_0' not found: {e}")))?;
+            .tensor(enc_tensor_name)
+            .map_err(|e| MIError::Config(format!("tensor '{enc_tensor_name}' not found: {e}")))?;
         let shape = w_enc_view.shape();
         if shape.len() != 2 {
             return Err(MIError::Config(format!(
@@ -347,10 +491,16 @@ impl CrossLayerTranscoder {
             n_features_per_layer,
             n_features_total: n_layers * n_features_per_layer,
             model_name,
+            schema,
+            gemmascope_npz_paths: Vec::new(),
         };
         info!(
-            "CLT config: {} layers, d_model={}, features_per_layer={}, total={}",
-            config.n_layers, config.d_model, config.n_features_per_layer, config.n_features_total
+            "CLT config: {} layers, d_model={}, features_per_layer={}, total={}, schema={:?}",
+            config.n_layers,
+            config.d_model,
+            config.n_features_per_layer,
+            config.n_features_total,
+            config.schema,
         );
 
         Ok(Self {
@@ -455,10 +605,10 @@ impl CrossLayerTranscoder {
         }
 
         // Skip if already loaded.
-        if let Some(ref enc) = self.loaded_encoder {
-            if enc.layer == layer {
-                return Ok(());
-            }
+        if let Some(ref enc) = self.loaded_encoder
+            && enc.layer == layer
+        {
+            return Ok(());
         }
 
         // Drop previous encoder (frees GPU memory).
@@ -1359,16 +1509,16 @@ impl CrossLayerTranscoder {
 
             for (w, word_scores) in scores_2d.iter().enumerate() {
                 for (idx, &score) in word_scores.iter().enumerate() {
-                    if score.is_finite() {
-                        if let Some(word_vec) = all_scores.get_mut(w) {
-                            word_vec.push((
-                                CltFeatureId {
-                                    layer: source_layer,
-                                    index: idx,
-                                },
-                                score,
-                            ));
-                        }
+                    if score.is_finite()
+                        && let Some(word_vec) = all_scores.get_mut(w)
+                    {
+                        word_vec.push((
+                            CltFeatureId {
+                                layer: source_layer,
+                                index: idx,
+                            },
+                            score,
+                        ));
                     }
                 }
             }
@@ -1606,11 +1756,11 @@ fn tensor_from_view(view: &safetensors::tensor::TensorView<'_>, device: &Device)
 fn parse_yaml_value(yaml_text: &str, key: &str) -> Option<String> {
     for line in yaml_text.lines() {
         let line = line.trim();
-        if let Some(rest) = line.strip_prefix(key) {
-            if let Some(rest) = rest.strip_prefix(':') {
-                let value = rest.trim().trim_matches('"');
-                return Some(value.to_owned());
-            }
+        if let Some(rest) = line.strip_prefix(key)
+            && let Some(rest) = rest.strip_prefix(':')
+        {
+            let value = rest.trim().trim_matches('"');
+            return Some(value.to_owned());
         }
     }
     None
@@ -1732,6 +1882,8 @@ mod tests {
                 n_features_per_layer: n_features,
                 n_features_total: n_features,
                 model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
             },
             loaded_encoder: Some(LoadedEncoder {
                 layer: 0,
@@ -1765,6 +1917,8 @@ mod tests {
                 n_features_per_layer: 4,
                 n_features_total: 8,
                 model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
             },
             loaded_encoder: Some(LoadedEncoder {
                 layer: 0,
@@ -1807,6 +1961,8 @@ mod tests {
                 n_features_per_layer: 1,
                 n_features_total: 2,
                 model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
             },
             loaded_encoder: None,
             steering_cache,
@@ -1856,6 +2012,8 @@ mod tests {
                 n_features_per_layer: 1,
                 n_features_total: 10,
                 model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
             },
             loaded_encoder: None,
             steering_cache,
@@ -2085,6 +2243,8 @@ mod tests {
                 n_features_per_layer: n_features,
                 n_features_total: n_features * 2,
                 model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -2147,6 +2307,8 @@ mod tests {
                 n_features_per_layer: n_features,
                 n_features_total: n_features,
                 model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -2204,6 +2366,8 @@ mod tests {
                 n_features_per_layer: n_features,
                 n_features_total: n_features,
                 model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -2259,6 +2423,8 @@ mod tests {
                 n_features_per_layer: n_features,
                 n_features_total: n_features * 2,
                 model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -2310,6 +2476,8 @@ mod tests {
                 n_features_per_layer: n_features,
                 n_features_total: n_features,
                 model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),

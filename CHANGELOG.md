@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`TranscoderSchema` enum** (`src/clt/mod.rs`) — three-variant
+  `#[non_exhaustive]` enum (`CltSplit`, `PltBundle`, `GemmaScopeNpz`)
+  classifying transcoder repositories by on-disk layout. Auto-detected at
+  [`CrossLayerTranscoder::open`] time from the repo file listing, before
+  any weight downloads. `is_cross_layer()` and `is_jump_relu()` accessors.
+- **`CltConfig` schema fields** — `schema: TranscoderSchema` and
+  `gemmascope_npz_paths: Vec<String>` exposed on the auto-detected config.
+  The `PltBundle` variant covers `mntss/transcoder-*` and
+  `mwhanna/qwen3-*-transcoders*` per-layer bundles; `GemmaScopeNpz` detection
+  is wired but loading is intentionally deferred to a follow-up release
+  (returns a clear error pointing to roadmap Step 1.6).
+
+### Changed
+
+- **CLT `open()`** now branches on detected schema for both layer counting
+  and first-file dimension probing. `CltSplit` keeps reading
+  `W_enc_0.safetensors` unchanged; `PltBundle` reads the un-suffixed `W_enc`
+  tensor from `layer_0.safetensors`.
+
+### Fixed
+
+- **`hf-fetch-model` 0.9.6 API alignment** — `list_repo_files_with_metadata`
+  now receives the required `&reqwest::Client` via the re-exported
+  `hf_fetch_model::build_client` helper. The `clt` feature path would not
+  compile against 0.9.6 before this fix; the CI per-backend clippy matrix
+  (transformer, rwkv) did not cover `clt` and so missed the regression.
+
 ## [0.1.8] - 2026-04-13
 
 ### Added
