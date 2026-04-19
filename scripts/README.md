@@ -98,6 +98,32 @@ the same repo that candle-mi uses via `hf-fetch-model`.
 cargo test --test validate_sae --features sae,transformer -- --ignored --test-threads=1
 ```
 
+## PLT — Llama 3.2 1B (v0.1.9)
+
+| File | Purpose |
+|------|---------|
+| `plt_llama_validation.py` | From-first-principles encoder oracle: loads `layer_{L}.safetensors` bundles from `mntss/transcoder-Llama-3.2-1B`, applies `ReLU(W_enc @ residual + b_enc)` in torch on CPU. No circuit-tracer involvement. |
+| `plt_llama_reference.json` | Python reference output: 9 test cases (3 seeds × layers {0, 7, 15}) with top-10 feature indices and activations. Frozen oracle for the Rust parity test. |
+
+**Regeneration:**
+```bash
+python scripts/plt_llama_validation.py
+```
+Requires `torch`, `safetensors`, `huggingface_hub`. Outputs `plt_llama_reference.json` (~540 KB).
+
+The methodology mirrors plip-rs's `scripts/clt_reference.py` (which achieved
+90/90 top-10 parity with max relative error 1.2×10⁻⁶ for CLTs). The layer choice
+`[0, 7, 15]` is ends + middle of Llama 3.2 1B's 16-layer stack (plip-rs used
+`[0, 12, 25]` for Gemma 2 2B's 26 layers). PltBundle weight layout:
+`W_enc [131072, 2048]`, `b_enc [131072]`, rank-2 `W_dec [131072, 2048]`,
+`W_skip [2048, 2048]` (Llama PLT linear skip path, present but unused by the
+encoder oracle), `b_dec [2048]`.
+
+**Validation** (candle-mi, lands in V3 Step 1.5):
+```bash
+cargo test --test validate_plt --features clt,transformer -- --ignored --test-threads=1
+```
+
 ## Integration Test Commands
 
 All integration tests require models cached in `~/.cache/huggingface/hub/`
@@ -116,4 +142,7 @@ cargo test --test validate_anacrousis --features transformer -- --ignored --test
 
 # SAE validation (Gemma 2 2B + Gemma Scope SAE)
 cargo test --test validate_sae --features sae,transformer -- --ignored --test-threads=1
+
+# PLT validation (Llama 3.2 1B, v0.1.9 — lands in Step 1.5)
+cargo test --test validate_plt --features clt,transformer -- --ignored --test-threads=1
 ```

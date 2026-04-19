@@ -48,6 +48,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   Result<TranscoderSchema>` helper. `open()` becomes three lines of
   collect + call + log; the logic is independently unit-testable.
 
+### Added (continued)
+
+- **`scripts/plt_llama_validation.py`** + **`scripts/plt_llama_reference.json`** —
+  from-first-principles Python encoder oracle for
+  `mntss/transcoder-Llama-3.2-1B`. Loads `layer_{L}.safetensors` bundles
+  directly via `huggingface_hub` + `safetensors.torch` (no circuit-tracer),
+  applies `ReLU(W_enc @ residual + b_enc)` in torch on CPU, dumps top-10
+  feature indices + activations for 9 test cases (3 seeds × layers {0, 7, 15}).
+  Mirrors plip-rs's `scripts/clt_reference.py` methodology that achieved
+  90/90 top-10 CLT parity at max relative error 1.2×10⁻⁶. `scripts/README.md`
+  gains a "PLT — Llama 3.2 1B (v0.1.9)" section documenting the pair.
+  Consumed by the Rust parity test in V3 Step 1.5 (`tests/validate_plt.rs`).
+
 ### Tests
 
 - **Schema classification suite** — seven unit tests covering `CltSplit`,
