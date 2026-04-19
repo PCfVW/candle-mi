@@ -60,6 +60,19 @@ jobs:
       - name: Tests (Stoicheia)
         run: cargo test --no-default-features --features stoicheia --lib --test stoicheia_analysis --test validate_stoicheia
 
+      # CLT feature is opt-in and pairs with `transformer` in every example.
+      # Without a dedicated lane, clt-only regressions (e.g. the hf-fetch-model
+      # 0.9.6 signature change that broke list_repo_files_with_metadata on the
+      # clt code path) escape the transformer + rwkv lanes entirely.
+      - name: Build (CLT)
+        run: cargo build --no-default-features --features "clt,transformer"
+
+      - name: Clippy (CLT, pedantic)
+        run: cargo clippy --no-default-features --features "clt,transformer" -- -W clippy::pedantic
+
+      - name: Tests (CLT)
+        run: cargo test --no-default-features --features "clt,transformer" --lib
+
       # Check 5 (Rule 15): Bare no-default-features build
       - name: Build (no default features)
         run: cargo build --no-default-features
