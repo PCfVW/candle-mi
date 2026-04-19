@@ -59,13 +59,27 @@ Checked against the local HF cache (`~/.cache/huggingface/hub/`) on 2026-04-18. 
 # Stage 1 Llama arm (v0.1.9)
 hf-fm mntss/transcoder-Llama-3.2-1B
 
-# Gemma arm (v0.1.10)
-# config.yaml lives here (points to the real weights in google/)
+# Gemma arm (v0.1.10) — three-step flow, NOT a bare `hf-fm google/...`:
+#   The google/gemma-scope-2b-pt-transcoders repo hosts many average_l0 variants
+#   per layer (hundreds of GiB total). We only want the lowest-L0 subset curated
+#   by mntss (26 files, ~288 MiB each FP32, ~7.3 GiB total). The curation lives
+#   in mntss/gemma-scope-transcoders/config.yaml.
+
+# Step (i): fetch the curation metadata from mntss (2.5 KiB)
 hf-fm download-file mntss/gemma-scope-transcoders config.yaml
-# Actual weights live here (26 NPZ files, one per layer, FP32, ~288 MiB each = ~7.3 GiB total)
-# Use the lowest-L0 variant per layer as listed in mntss config.yaml.
-# Filter with --filter once the config.yaml URLs are parsed.
-hf-fm google/gemma-scope-2b-pt-transcoders  # ← ~7.3 GiB for the lowest-L0 subset
+
+# Step (ii): parse config.yaml to extract the 26 NPZ paths. Each entry looks
+# like `layer_N/width_16k/average_l0_X/params.npz` — the `average_l0_X` value
+# varies per layer. For quick manual inspection:
+#   grep -A1 '^transcoders:' config.yaml
+# In code, the YAML parser lives in src/clt/gemmascope.rs (Step 1.6, v0.1.10).
+
+# Step (iii): fetch each of the 26 NPZ files selectively from the google repo.
+# Example (replace average_l0_X with the value from config.yaml):
+#   hf-fm download-file google/gemma-scope-2b-pt-transcoders \
+#       layer_0/width_16k/average_l0_106/params.npz
+# Do NOT run `hf-fm google/gemma-scope-2b-pt-transcoders` bare — it downloads
+# every average_l0 variant of every layer (hundreds of GiB).
 ```
 
 ⚠ The cached `google/gemma-scope-2b-pt-res` is the **residual-stream SAE** variant, *not* the MLP transcoder PLT. It is **not** a substitute for `google/gemma-scope-2b-pt-transcoders`.
@@ -202,16 +216,16 @@ The branch point is the on-disk layout (file naming + tensor naming + tensor set
        pub fn is_jump_relu(self) -> bool { matches!(self, Self::GemmaScopeNpz) }
    }
    ```
-2. Add `pub schema: TranscoderSchema` field to `CltConfig`.
+2. Extend `CltConfig`:
+   - Add `pub schema: TranscoderSchema` field.
+   - Add `pub gemmascope_npz_paths: Vec<String>` field. Empty for `CltSplit` / `PltBundle`; populated in v0.1.10 by the `GemmaScopeNpz` path in Step 1.6. Present in v0.1.9 as `Vec::new()` so the Step 1.2 helpers (which accept `Option<&[String]>`) have a stable field to reference without conditional struct layouts.
 3. In `open()` ([`src/clt/mod.rs:263`](../../src/clt/mod.rs#L263)), classify the repo from the already-fetched `repo_files` listing (currently at [mod.rs:285](../../src/clt/mod.rs#L285)) **before** any download:
    - Any file matching `^W_enc_\d+\.safetensors$` → `CltSplit`
    - Any file matching `^layer_\d+\.safetensors$` at repo root → `PltBundle`
    - `config.yaml` present plus `features/layer_\d+\.bin` → **two-repo GemmaScope flow**:
-     - Download `config.yaml`, parse `transcoders` list (helper in Step 1.6)
-     - Redirect subsequent fetches to the *referenced* Google NPZ repo (populate `gemmascope_npz_paths: Vec<String>` on `CltConfig`)
-     - Set `schema = GemmaScopeNpz`
-     - Do NOT read the `.bin` files — they are feature-dashboard metadata, not weights
-   - Any file matching `layer_\d+/width_\d+k/average_l0_\d+/params\.npz` → `GemmaScopeNpz` (direct — when `open()` is called on `google/gemma-scope-2b-pt-transcoders` directly without the `mntss` indirection)
+     - **In v0.1.9 (Llama-only release):** schema detection succeeds but loading intentionally fails. Return `MIError::Config("GemmaScope loader lands in v0.1.10 — see roadmap Step 1.6")`. Do NOT partial-implement YAML parsing or the two-repo fetch in v0.1.9 — the full flow belongs atomically in Step 1.6.
+     - **In v0.1.10:** download `config.yaml`, parse the `transcoders` list (YAML parser implemented in Step 1.6), redirect subsequent fetches to the referenced Google NPZ repo (populate `gemmascope_npz_paths` on `CltConfig`), set `schema = GemmaScopeNpz`. Do NOT read the `.bin` files — they are feature-dashboard metadata, not weights.
+   - Any file matching `layer_\d+/width_\d+k/average_l0_\d+/params\.npz` → `GemmaScopeNpz` (direct — when `open()` is called on `google/gemma-scope-2b-pt-transcoders` directly without the `mntss` indirection). Also returns the v0.1.9 error until Step 1.6 lands.
    - Otherwise → `MIError::Config("unrecognised transcoder repo layout")`
 4. For `n_layers`:
    - `CltSplit`: count `W_enc_\d+\.safetensors` files (existing logic).
@@ -296,20 +310,38 @@ Call these helpers from every site above. Do not scatter match arms across ~7 fu
 1. Existing CLT tests remain — rename assertions to check `config.schema == TranscoderSchema::CltSplit`.
 2. Add a `PltBundle` fixture: write `layer_{0..2}.safetensors` each containing `W_enc`, `W_dec` (rank-2), `W_skip`, `b_enc`, `b_dec`.
 3. Open the fake PLT repo, assert `config.schema == TranscoderSchema::PltBundle`, assert `W_skip` is reachable, and run `cache_steering_vectors_all_downstream` — confirm the cache contains exactly `(feature, source_layer)` entries and no downstream ones.
-4. Add a `GemmaScopeNpz` fixture landing in v0.1.10 (deferred — covered by Step 1.6 acceptance): write `config.yaml` + 2 NPZ files with `W_enc [d_model, n_features]` (transposed), `W_dec`, `b_enc`, `b_dec`, `threshold`. Assert `config.schema == TranscoderSchema::GemmaScopeNpz` and `schema.is_jump_relu()`. Out of scope for `v0.1.9` but scaffolded in the fixtures module.
-5. Negative test: synthesise a layout with no schema signature (no `W_enc_*`, no `layer_*.safetensors`, no `config.yaml`) and assert `open()` returns `MIError::Config("unrecognised transcoder repo layout")`.
+4. `GemmaScopeNpz` positive fixture — **defer creation entirely to v0.1.10** (Step 1.6). Do NOT write partial NPZ fixtures in v0.1.9's tests module; a half-built fixture is rollback risk, not progress. v0.1.10 will add `config.yaml` + 2 NPZ files with `W_enc [d_model, n_features]` (transposed), `W_dec`, `b_enc`, `b_dec`, `threshold`, and assert `config.schema == TranscoderSchema::GemmaScopeNpz` and `schema.is_jump_relu()`.
+5. **GemmaScope-deferral test (v0.1.9):** synthesise a minimal GemmaScope-shaped repo listing (only a `config.yaml` entry plus two `features/layer_*.bin` entries) and assert `open()` returns the `MIError::Config("GemmaScope loader lands in v0.1.10 — see roadmap Step 1.6")` error from Step 1.1 item 3. Confirms that v0.1.9 surfaces the deferral cleanly instead of a generic "unrecognised layout" error.
+6. Negative test: synthesise a layout with no schema signature (no `W_enc_*`, no `layer_*.safetensors`, no `config.yaml`) and assert `open()` returns `MIError::Config("unrecognised transcoder repo layout")`.
 
-### Step 1.4 — Python reference for Llama 3.2 1B PLT
+### Step 1.4 — Python reference oracle for Llama 3.2 1B PLT
 
-**Files:** `scripts/plt_llama_validation.py`, `scripts/plt_llama_reference.json`
+**Primary artefacts:** `scripts/plt_llama_validation.py` + `scripts/plt_llama_reference.json` (+ `scripts/plt_llama_comparison.md` — the Rust vs Python writeup, following the `scripts/clt_position_sweep_comparison.md` / `scripts/rwkv7_validation_comparison.md` convention documented in [`scripts/README.md`](../../scripts/README.md))
 
-Use circuit-tracer (Python) to establish ground truth:
-1. Load `mntss/transcoder-Llama-3.2-1B` via circuit-tracer.
-2. Run 3 fixed prompts (reuse two rhyming-couplet prompts from `figure13_planning_poems` + one simple factual prompt).
-3. For each (layer, token position), dump top-10 active PLT features (feature index + activation magnitude) to JSON.
-4. Script must be deterministic: seeded, `torch.use_deterministic_algorithms(True)`, `CUBLAS_WORKSPACE_CONFIG=:16:8`.
+This step is **reverse-engineering validation**, not end-to-end pipeline validation. It proves we understand the Llama PLT encoder formula well enough to reproduce it in Rust. The methodology is the direct analogue of plip-rs's [`scripts/clt_reference.py`](../../../plip-rs/scripts/clt_reference.py), which achieved 90/90 top-10 parity with max relative error 1.2×10⁻⁶ for CLTs — that is the bar for PLTs.
 
-Commit both the script and the JSON reference. JSON is the frozen oracle.
+**Why from-first-principles, not circuit-tracer.** Using a high-level library like circuit-tracer as the sole oracle can mask shared misunderstandings: if candle-mi and circuit-tracer both handle a PLT edge case incorrectly in the same way (e.g., `W_skip` inclusion, un-suffixed tensor names, an eventual `W_enc` transpose for GemmaScope, the JumpReLU threshold comparison direction), parity holds while correctness fails. For PLTs — where the PltBundle schema has three material differences from CLT (un-suffixed names, optional `W_skip`, rank-2 `W_dec`) and the GemmaScopeNpz schema adds two more (`W_enc` transpose, JumpReLU `threshold`) — the from-first-principles oracle is the decisive correctness test.
+
+**Script protocol (mirrors `clt_reference.py` one-to-one):**
+
+1. Download `layer_{layer}.safetensors` from `mntss/transcoder-Llama-3.2-1B` via `huggingface_hub.hf_hub_download`, then load with `safetensors.torch.load_file`. **No circuit-tracer involvement.**
+2. Extract `W_enc` (shape `[131072, 2048]`) and `b_enc` (shape `[131072]`) — **un-suffixed tensor names per the PltBundle schema**. `W_dec`, `W_skip`, `b_dec` are loaded for inspection/logging but not used by the encoder oracle.
+3. Test layers `[0, 7, 15]` — ends + middle of Llama 3.2 1B's 16 layers. Mirrors plip-rs's `[0, 12, 25]` for Gemma's 26 layers.
+4. 3 random seeds per layer. For each seed: `torch.manual_seed(seed * 100 + layer)`, `residual = torch.randn(2048)`.
+5. Apply the Llama PLT encoder formula directly:
+   ```python
+   pre_acts = w_enc @ residual + b_enc
+   acts = torch.relu(pre_acts)                  # Llama PLT: plain ReLU
+   # (GemmaScope variant, applied in v0.1.10: acts = pre_acts * (pre_acts > threshold))
+   n_active = int((acts > 0).sum())
+   top_vals, top_idx = acts.topk(min(10, n_active))
+   ```
+6. Dump `{layer, seed, residual, n_active, top_10: [{index, activation}, ...]}` per test case to `scripts/plt_llama_reference.json`.
+7. Determinism: `torch.use_deterministic_algorithms(True)`, `os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"`.
+
+Commit both the script and the JSON. The JSON is the frozen oracle consumed by V3 Step 1.5.
+
+**Optional secondary oracle — circuit-tracer conformance check.** A separate `scripts/plt_llama_circuit_tracer_check.py` may be written as a second-opinion diagnostic: load `mntss/transcoder-Llama-3.2-1B` via circuit-tracer, run the two rhyming-couplet prompts from `figure13_planning_poems`, dump top-10 features per (layer, position). This validates end-to-end pipeline behaviour on real prompts — useful but **not required** for V3 Step 1.5 to pass. The primary oracle is sufficient to close the reverse-engineering loop.
 
 ### Step 1.5 — Rust validation test for Llama 3.2 1B PLT
 
@@ -362,7 +394,7 @@ GemmaScope PLTs reconstruct MLP output *after* the post-MLP RMSNorm, and Gemma 2
 
 ### Step 1.7 — CLT vs PLT controlled experiment
 
-**Files:** `examples/clt_vs_plt_planning_site.rs`, `outputs/clt_vs_plt_{model}.json`, `docs/clt_vs_plt_findings.md`
+**Files:** `examples/clt_vs_plt_planning_site.rs`, `docs/experiments/clt-vs-plt-planning-site/clt_vs_plt_{model}.json`, `docs/experiments/clt-vs-plt-planning-site/findings.md`
 
 For each (model, prompt) in `{Llama 3.2 1B, Gemma 2 2B}` × `{two rhyming-couplet prompts from figure13_planning_poems}`:
 
@@ -376,7 +408,26 @@ For each (model, prompt) in `{Llama 3.2 1B, Gemma 2 2B}` × `{two rhyming-couple
    - Suppress (zero out) the top-5 planning-aligned features at the spike position.
    - Measure `ΔP(planned_word)` and `Δlogit(planned_word)` at the final token position.
    - This is the **primary comparison metric** (see Appendix A).
-4. **Output:** `outputs/clt_vs_plt_{model}.json` in deloson-compatible format. Summary markdown `docs/clt_vs_plt_findings.md` with one table per model and narrative interpretation mapped to the four outcomes in Appendix A.
+4. **Output:** `docs/experiments/clt-vs-plt-planning-site/clt_vs_plt_{model}.json` in deloson-compatible format. Required fields, captured on every run (whether or not Outcome C materialises) so no experiment re-runs are needed for follow-up analysis:
+   - **Primary metric** — `ΔP(planned_word)` and `Δlogit(planned_word)` per transcoder.
+   - **Spike localisation** — spike (layer, position), top-5 planning-aligned features per transcoder.
+   - **Full activation trace across all layers for the top-20 features** (not just the top-5 used for suppression). Stores encoder output at every `(layer, position)` for each of the 20 features per transcoder. Size: ~20 × n_layers × seq_len × 4 bytes ≈ 40 KB per run. Enables the (C) cross-layer-binding analysis in the investigation commitment below.
+   - **Encoder output distribution** — 32-bin histogram of encoder pre-activation at the spike layer and the two neighbours, per transcoder. Discriminates activation-regime explanations (Llama PLT `ReLU + W_skip` vs CLT `ReLU` vs GemmaScope JumpReLU with `threshold`).
+   - **Both CLT decoder-slice metrics computed in parallel** — `W_dec[feature, 0, :]` projection (same-layer) AND `max_{l'} W_dec[feature, l', :]` projection (max-over-target-layers). Discriminates the CLT-side ambiguity in decoder-projection ranking; PLT has only one slice by construction.
+   - **`W_skip · x` projection onto `unembed(planned_word)`** at the spike position for Llama PLT. Tells us whether the linear skip path contributes materially to the apparent planning signal. GemmaScope PLT has no `W_skip` — field is `null` for that schema in v0.1.10.
+   - **Top-20 feature IDs + their decoder vectors** exported alongside top-5. Enables qualitative / semantic inspection of feature granularity during follow-up without re-running forward passes.
+5. **Summary markdown `docs/experiments/clt-vs-plt-planning-site/findings.md`** — one table per model with `ΔP_CLT` vs `ΔP_PLT` side by side, narrative interpretation mapped to the four outcomes in Appendix A, plus placeholder sections for the (A)–(F) discrimination battery (populated only if Outcome C materialises).
+
+**Investigation commitment for Outcome C** (CLT and PLT disagree on spike layer / position): the already-captured instrumentation supports a discrimination battery — we investigate, we do not log-and-move-on. Candidate explanations, in rough order from "mundane / methodological" to "scientifically interesting":
+
+- **(A) Dictionary resolution mismatch.** Llama CLT is 32,768 features/layer; Llama PLT is 131,072 features/layer (4×). Higher resolution may resolve finer features that sit at different layers. *Resolved by:* subsampling PLT features to CLT per-layer resolution and re-ranking top-5.
+- **(B) Decoder-projection ambiguity (CLT side).** CLT's rank-3 `W_dec` requires choosing a target-layer slice for the projection. Different choices can relocate the CLT spike. *Resolved by:* the two CLT metrics captured in parallel; if max-over-slices reports a different spike than same-layer, the discrepancy is methodological.
+- **(C) Cross-layer binding (Jacopin Q1's core mechanism).** CLT spike layer ≈ "where the cross-layer feature starts propagating"; PLT spike layer ≈ "where a layer-local feature fires hardest for this prompt". **These are different quantities even when measuring the same computation.** *Resolved by:* inspecting the per-layer activation trace for each top-20 feature — if the CLT feature activates monotonically from layer X onward but the PLT feature peaks sharply at layer Y ≠ X, that signature is consistent with cross-layer binding.
+- **(D) Activation-function regime.** ReLU + `W_skip` vs ReLU vs JumpReLU with `threshold` produce different sparsity shapes. *Resolved by:* the encoder output histograms + the Llama PLT `W_skip · x` projection.
+- **(E) Feature-granularity mismatch.** CLT may encode a group-level "-out" feature; PLT may encode per-word "about" / "out" / "shout". Top-5 ranking then picks different layers. *Partially resolved by:* qualitative inspection of the top-20 decoder vectors — what semantic content does each fire on? This is labour-intensive and interpretive.
+- **(F) Training-objective / training-data divergence.** Out of our control without re-training CLT or PLT ourselves. *Flagged, not resolved.*
+
+**Epistemic stance:** (A)–(D) are mechanically resolvable on already-captured data; (E) is best-effort semantic interpretation; (F) is acknowledged beyond scope. `docs/experiments/clt-vs-plt-planning-site/findings.md` contains placeholder subsections for (A)–(F) from the start, so the follow-up narrative structure is in place before any Outcome-C result arrives.
 
 **Stage 1 deliverable:** merged PR, version bump to `0.1.9` in `Cargo.toml` + `Cargo.lock`, `CHANGELOG.md` entry under `[0.1.9]`, tag **`v0.1.9`** (publishes to crates.io). README Paper replications table gains a Hanna & Ameisen row (with "Llama arm complete; Gemma arm in v0.1.10; scale-sweep TBD" note).
 
@@ -462,11 +513,12 @@ Merged PR, version bump to `0.1.11` in `Cargo.toml` + `Cargo.lock` (patch — Qw
 |---|---|---|---|
 | `TranscoderSchema` enum, `CltConfig.schema` | 1.1 | `v0.1.9` | Compiles; doc comments present; `#[non_exhaustive]` enum. |
 | Schema-aware `decoder_row()` + `decoder_file_and_tensor_name()` helpers | 1.2 | `v0.1.9` | All `W_dec_` call sites routed through helpers. |
-| `PltBundle` + `CltSplit` fixture unit tests | 1.3 | `v0.1.9` | Both schemas pass; unrecognised-layout negative test passes. `GemmaScopeNpz` fixture scaffolded but exercised in v0.1.10. |
-| `scripts/plt_llama_validation.py` + JSON | 1.4 | `v0.1.9` | Deterministic Python run committed. |
+| `PltBundle` + `CltSplit` fixture unit tests | 1.3 | `v0.1.9` | Both schemas pass. GemmaScope-deferral negative test passes (returns the explicit `"lands in v0.1.10"` error). Unrecognised-layout negative test passes. `GemmaScopeNpz` positive fixture deferred entirely to v0.1.10. |
+| `scripts/plt_llama_validation.py` + JSON (primary, from-first-principles oracle) | 1.4 | `v0.1.9` | Deterministic Python run committed. Matches plip-rs `clt_reference.py` structure. Bar: abs diff < 1e-4 top-10 against candle-mi Rust encoder. |
 | `tests/validate_plt.rs` (Llama) | 1.5 | `v0.1.9` | CUDA test passes: top-10 IDs match, abs diff < 1e-4. |
 | `examples/clt_vs_plt_planning_site.rs` (Llama arm) | 1.7 | `v0.1.9` | Runs end-to-end on Llama 3.2 1B. |
-| `docs/clt_vs_plt_findings.md` | 1.7 | `v0.1.9` | Outcome label assigned (A/B/C/D) per Appendix A. |
+| `docs/experiments/clt-vs-plt-planning-site/findings.md` | 1.7 | `v0.1.9` | Outcome label assigned (A/B/C/D) per Appendix A. Placeholder sections for the (A)–(F) Outcome-C discrimination battery present from the start; populated from already-captured data if the outcome is C. |
+| `docs/experiments/clt-vs-plt-planning-site/clt_vs_plt_{model}.json` instrumentation fields | 1.7 | `v0.1.9` | JSON contains: primary metric, spike localisation, full activation trace for top-20 features, encoder output histograms, both CLT decoder-slice metrics, Llama PLT `W_skip · x` projection, top-20 feature decoder vectors. |
 | `tests/validate_plt_gemma.rs` | 1.6 | `v0.1.10` | Top-10 IDs match, abs diff < 1e-4. No anamnesis gate — uses existing NPZ parser. |
 | Gemma arm in `clt_vs_plt_planning_site.rs` | 1.6 | `v0.1.10` | Extends the Llama arm. Proceeds in parallel after Step 1.5 passes. |
 | `docs/stage1_decision.md` | gate | — | Go/no-go for Stage 2 recorded (not a published artefact). |
@@ -485,7 +537,7 @@ All steps must also pass the CLAUDE.md pre-commit gate: `cargo fmt`, `cargo clip
 2. `refactor(clt): route W_dec access through decoder_row and decoder_file_and_tensor_name helpers`
 3. `feat(clt): PltBundle branch in encoder loader and cache/score helpers`
 4. `test(clt): PltBundle and CltSplit fixtures, unrecognised-layout negative test`
-5. `feat(scripts): add plt_llama_validation.py reference` — PUSH
+5. `feat(scripts): add plt_llama_validation.py (from-first-principles PLT oracle, mirrors plip-rs clt_reference.py)` — PUSH
 6. `test(clt): validate PLT on Llama 3.2 1B against Python reference` — PUSH (optional milestone tag `v0.1.9-plt-llama` — no publish)
 7. `feat(examples): clt_vs_plt_planning_site comparison (Llama arm)`
 8. `docs: CLT vs PLT findings + README Paper replications row`
