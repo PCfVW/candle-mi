@@ -203,7 +203,7 @@ pub fn classify_regions(
         .collect();
 
     // Sort by count descending (most populated first)
-    regions.sort_by(|a, b| b.count.cmp(&a.count));
+    regions.sort_by_key(|r| std::cmp::Reverse(r.count));
 
     Ok(RegionMap {
         regions,
