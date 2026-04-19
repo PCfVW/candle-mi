@@ -93,6 +93,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   errors with `MIError::Config` for `CltSplit` and `GemmaScopeNpz` schemas
   (no skip path defined). Unit tests cover round-trip values on a synthetic
   `PltBundle` and the negative path on `CltSplit`.
+- **`examples/clt_vs_plt_planning_site.rs` Step B harness** — `--schema both`
+  (new default) runs the full V3 Step 1.7 CLT-vs-PLT comparison on Llama
+  3.2 1B. Four position sweeps per invocation (2 arms × 2 protocols:
+  suppress-only top-5 + suppress+inject using decoder-projection-derived
+  features), full instrumentation payload serialized to
+  `docs/experiments/clt-vs-plt-planning-site/clt_vs_plt_llama.json`:
+  top-20 decoder-projection rankings per arm, CLT's max-over-target-layers
+  second-metric ranking (slice ambiguity control), top-20 decoder vectors,
+  20×n_layers×seq_len all-layer activation traces, 32-bin pre-activation
+  histograms at the spike layer and its two neighbours, PLT `W_skip · x`
+  projection at the spike position. `--schema clt` preserves Step A's
+  Jacopin replication path unchanged; its output path moves from
+  `clt_vs_plt_llama.json` to `clt_step_a_llama.json` to keep the two
+  experiments separate on disk. Total runtime ~4 min on CUDA. First
+  empirical numbers on Llama 3.2 1B: PLT suppress-only ΔP = +0.986
+  (Δlogit = +49.8) at position 30, method-matched CLT ΔP = +5.7×10⁻⁷ at
+  position 7 — outcome label to be assigned in Step C from
+  `docs/experiments/clt-vs-plt-planning-site/findings.md`.
+
 ### Changed
 
 - **`score_features_by_decoder_projection` + batch variant** now skip source

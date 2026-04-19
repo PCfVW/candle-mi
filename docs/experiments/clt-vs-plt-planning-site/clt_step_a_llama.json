@@ -1,0 +1,301 @@
+{
+  "schema": "clt",
+  "model": "meta-llama/Llama-3.2-1B",
+  "transcoder_repo": "mntss/clt-llama-3.2-1b-524k",
+  "prompt": "The birds were singing in the tree,\nAnd everything was wild and free.\nThe river ran down to the sea,\nThere is so much we cannot",
+  "tokens": [
+    "<|begin_of_text|>",
+    "The",
+    " birds",
+    " were",
+    " singing",
+    " in",
+    " the",
+    " tree",
+    ",\n",
+    "And",
+    " everything",
+    " was",
+    " wild",
+    " and",
+    " free",
+    ".\n",
+    "The",
+    " river",
+    " ran",
+    " down",
+    " to",
+    " the",
+    " sea",
+    ",\n",
+    "There",
+    " is",
+    " so",
+    " much",
+    " we",
+    " cannot",
+    " "
+  ],
+  "suppress_word": "free",
+  "inject_word": "that",
+  "inject_token_id": 430,
+  "suppress_features": [
+    {
+      "layer": 13,
+      "index": 30985
+    },
+    {
+      "layer": 9,
+      "index": 5488
+    },
+    {
+      "layer": 14,
+      "index": 27874
+    },
+    {
+      "layer": 13,
+      "index": 32049
+    }
+  ],
+  "inject_feature": {
+    "layer": 14,
+    "index": 13043
+  },
+  "strength": 10.0,
+  "top_k_target_layer": 14,
+  "top_k_features": [
+    {
+      "feature": {
+        "layer": 14,
+        "index": 13043
+      },
+      "cosine": 0.3487651
+    },
+    {
+      "feature": {
+        "layer": 8,
+        "index": 13602
+      },
+      "cosine": 0.25303504
+    },
+    {
+      "feature": {
+        "layer": 10,
+        "index": 26284
+      },
+      "cosine": 0.24326979
+    },
+    {
+      "feature": {
+        "layer": 12,
+        "index": 28751
+      },
+      "cosine": 0.23574226
+    },
+    {
+      "feature": {
+        "layer": 0,
+        "index": 30018
+      },
+      "cosine": 0.23464245
+    }
+  ],
+  "baseline_prob": 0.0000010573334,
+  "baseline_logit": 8.128698,
+  "spike_position": 30,
+  "spike_token": " ",
+  "max_prob": 0.6865558,
+  "max_logit": 23.972672,
+  "delta_prob": 0.68655473,
+  "delta_logit": 15.843973,
+  "reference_max_prob": 0.687,
+  "reference_tolerance": 0.01,
+  "sweep": [
+    {
+      "position": 0,
+      "token": "<|begin_of_text|>",
+      "prob": 9.0783914e-7,
+      "logit": 8.006577
+    },
+    {
+      "position": 1,
+      "token": "The",
+      "prob": 0.0000010348496,
+      "logit": 8.117619
+    },
+    {
+      "position": 2,
+      "token": " birds",
+      "prob": 0.0000010539586,
+      "logit": 8.128078
+    },
+    {
+      "position": 3,
+      "token": " were",
+      "prob": 0.0000010454459,
+      "logit": 8.120564
+    },
+    {
+      "position": 4,
+      "token": " singing",
+      "prob": 0.0000010715802,
+      "logit": 8.138929
+    },
+    {
+      "position": 5,
+      "token": " in",
+      "prob": 0.0000010526496,
+      "logit": 8.126623
+    },
+    {
+      "position": 6,
+      "token": " the",
+      "prob": 0.0000010598797,
+      "logit": 8.130748
+    },
+    {
+      "position": 7,
+      "token": " tree",
+      "prob": 0.0000010562946,
+      "logit": 8.128841
+    },
+    {
+      "position": 8,
+      "token": ",\n",
+      "prob": 0.0000011030722,
+      "logit": 8.159227
+    },
+    {
+      "position": 9,
+      "token": "And",
+      "prob": 0.0000011032781,
+      "logit": 8.17146
+    },
+    {
+      "position": 10,
+      "token": " everything",
+      "prob": 0.0000010540757,
+      "logit": 8.128623
+    },
+    {
+      "position": 11,
+      "token": " was",
+      "prob": 0.000001055794,
+      "logit": 8.130055
+    },
+    {
+      "position": 12,
+      "token": " wild",
+      "prob": 0.0000010480886,
+      "logit": 8.125034
+    },
+    {
+      "position": 13,
+      "token": " and",
+      "prob": 0.0000010554955,
+      "logit": 8.129014
+    },
+    {
+      "position": 14,
+      "token": " free",
+      "prob": 9.958231e-7,
+      "logit": 8.066961
+    },
+    {
+      "position": 15,
+      "token": ".\n",
+      "prob": 0.000001119033,
+      "logit": 8.139509
+    },
+    {
+      "position": 16,
+      "token": "The",
+      "prob": 0.0000010562669,
+      "logit": 8.128941
+    },
+    {
+      "position": 17,
+      "token": " river",
+      "prob": 0.0000010616719,
+      "logit": 8.136952
+    },
+    {
+      "position": 18,
+      "token": " ran",
+      "prob": 0.0000010551584,
+      "logit": 8.129079
+    },
+    {
+      "position": 19,
+      "token": " down",
+      "prob": 0.0000010486286,
+      "logit": 8.117898
+    },
+    {
+      "position": 20,
+      "token": " to",
+      "prob": 0.000001050223,
+      "logit": 8.119067
+    },
+    {
+      "position": 21,
+      "token": " the",
+      "prob": 0.0000010529432,
+      "logit": 8.122316
+    },
+    {
+      "position": 22,
+      "token": " sea",
+      "prob": 0.0000010327924,
+      "logit": 8.097426
+    },
+    {
+      "position": 23,
+      "token": ",\n",
+      "prob": 0.0000010234768,
+      "logit": 8.083123
+    },
+    {
+      "position": 24,
+      "token": "There",
+      "prob": 0.0000010419253,
+      "logit": 8.113933
+    },
+    {
+      "position": 25,
+      "token": " is",
+      "prob": 0.0000010437134,
+      "logit": 8.10521
+    },
+    {
+      "position": 26,
+      "token": " so",
+      "prob": 0.0000010901559,
+      "logit": 8.153866
+    },
+    {
+      "position": 27,
+      "token": " much",
+      "prob": 0.0000010840888,
+      "logit": 8.13998
+    },
+    {
+      "position": 28,
+      "token": " we",
+      "prob": 0.0000014445869,
+      "logit": 8.370578
+    },
+    {
+      "position": 29,
+      "token": " cannot",
+      "prob": 0.00049461675,
+      "logit": 13.741339
+    },
+    {
+      "position": 30,
+      "token": " ",
+      "prob": 0.6865558,
+      "logit": 23.972672
+    }
+  ]
+}
