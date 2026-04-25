@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Bump `anamnesis` dependency** from `0.4.1` to `0.4.2`. v0.4.2 closes
+  Phase 4.5 of anamnesis (full GGUF block-quant coverage — 22 of 22
+  kernels, MXFP4 added) and ships a CLI feature-gate UX fix; neither
+  affects candle-mi's `sae` (npz) or `stoicheia` (pth) feature paths
+  — the bump is a "stay-current" validation against the new release.
+  All 191 candle-mi tests pass against `anamnesis 0.4.2` with the
+  `sae,stoicheia` feature set.
+
 ## [0.1.9] - 2026-04-19
 
 ### Added
