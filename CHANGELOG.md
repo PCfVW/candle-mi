@@ -7,8 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`GemmaScope` PLT loader** (`src/clt/gemmascope.rs`, `src/clt/mod.rs`) —
+  realises v0.1.9's deferred [`TranscoderSchema::GemmaScopeNpz`] arm:
+  - New `pub` module `clt::gemmascope` with `parse_gemmascope_config()`
+    hand-rolled `YAML` parser (no `serde_yaml` dependency) and the
+    crate-private `GEMMASCOPE_WEIGHTS_REPO` constant pointing to
+    `google/gemma-scope-2b-pt-transcoders` (the actual NPZ weights repo).
+  - Two-repo flow inside `CrossLayerTranscoder::open()`: caller passes
+    `mntss/gemma-scope-transcoders` (curation), open() fetches
+    `config.yaml` from there, parses the `transcoders:` list, and routes
+    NPZ fetches to the `google/*` weights repo.
+  - NPZ encoder loader handles the `W_enc [d_model, n_features]`
+    on-disk transpose to canonical `[n_features, d_model]` orientation
+    (matching `circuit-tracer`'s `load_gemma_scope_transcoder()` reference)
+    and loads the per-feature `threshold` tensor for `JumpReLU` gating.
+  - `encode()` branches on schema: `CltSplit`/`PltBundle` keep plain
+    `ReLU`; `GemmaScopeNpz` applies `pre * (pre > threshold)` element-wise.
+  - `LoadedEncoder.threshold: Option<Tensor>` field — `None` for
+    non-`JumpReLU` schemas.
+  - The whole `GemmaScope` path is gated behind the `sae` feature
+    (NPZ parsing requires `anamnesis/npz`); without `sae`, `open()`
+    surfaces a clear `MIError::Config` explaining the feature gate.
+- **`scripts/plt_gemma_validation.py`** + **`scripts/plt_gemma_reference.json`** —
+  from-first-principles encoder oracle for `google/gemma-scope-2b-pt-transcoders`.
+  Loads NPZ files directly via `huggingface_hub` + `numpy` (no
+  `circuit-tracer` involvement), applies
+  `pre = W_enc.T @ residual + b_enc; acts = pre * (pre > threshold)` in
+  torch on CPU, dumps top-10 feature indices + activations for 9 test
+  cases (3 seeds × layers `{0, 12, 25}`). Methodology mirrors
+  `plt_llama_validation.py` (V3 Step 1.4) for the Llama PLT arm.
+- **`tests/validate_plt_gemma.rs`** — `#[ignore]` integration test
+  (CPU; requires ~864 MiB of cached NPZs) asserting candle-mi's
+  `GemmaScope` encoder reproduces the Python oracle's top-10 feature
+  indices exactly with abs-diff < 1e-4 on activation magnitudes.
+  Validated on Gemma 2 2B `width_16k`: 9/9 cases pass with max abs-diff
+  4.20e-5. Gated by `required-features = ["clt", "sae", "transformer"]`.
+
 ### Changed
 
+- **`src/sae/npz.rs` visibility** — promoted from private `mod npz`
+  to `pub(crate) mod npz` so the CLT `GemmaScope` loader can reuse
+  the existing `NPZ → candle Tensor` bridge instead of duplicating
+  `F32`/`F64` conversion logic.
+- **`CrossLayerTranscoder::open()` `GemmaScopeNpz` branch** — replaces
+  the v0.1.9 deferral early-return with cfg-branched dispatch:
+  `#[cfg(feature = "sae")]` calls `Self::open_gemmascope()`;
+  `#[cfg(not(feature = "sae"))]` returns an `MIError::Config`
+  instructing the caller to enable `sae`.
+- **`download_repo()` helper** (`src/clt/mod.rs`) — new private method
+  that routes lazy downloads to the right `HuggingFace` repo per
+  schema. For `CltSplit` / `PltBundle` this is `self.repo_id`; for
+  `GemmaScopeNpz` it is `GEMMASCOPE_WEIGHTS_REPO`. Fixes the bug
+  where layer-N≥1 NPZ fetches incorrectly targeted the `mntss/*`
+  curation repo (caught by `validate_plt_gemma` on layer 12).
 - **Bump `anamnesis` dependency** from `0.4.1` to `0.4.2`. v0.4.2 closes
   Phase 4.5 of anamnesis (full GGUF block-quant coverage — 22 of 22
   kernels, MXFP4 added) and ships a CLI feature-gate UX fix; neither
@@ -16,6 +69,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   — the bump is a "stay-current" validation against the new release.
   All 191 candle-mi tests pass against `anamnesis 0.4.2` with the
   `sae,stoicheia` feature set.
+- **Bump `hf-fetch-model` dependency** from `0.9.7` to `0.9.8` via
+  `cargo update`. v0.9.8 adds download durability features
+  (per-file timeout, automatic resume on retry); no breaking changes.
+
+### Removed
+
+- **`GEMMASCOPE_DEFERRAL_ERR` constant** (`src/clt/mod.rs`) — superseded
+  by the actual `GemmaScope` loader. The v0.1.9 deferral test
+  (`gemmascope_deferral_error_message_is_informative`) is also removed.
 
 ## [0.1.9] - 2026-04-19
 
