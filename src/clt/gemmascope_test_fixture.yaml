@@ -1,0 +1,35 @@
+# Transcoder Configuration Gemma Scope Transcoders (lowest L0)
+# Frozen snapshot of mntss/gemma-scope-transcoders/config.yaml taken
+# 2026-04-30 (commit 9250a2d). Used by parse_gemmascope_config tests.
+model_name: "google/gemma-2-2b"
+model_kind: "transcoder_set"
+feature_input_hook: "ln2.hook_normalized"
+feature_output_hook: 'hook_mlp_out'
+
+transcoders:
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_0/width_16k/average_l0_76/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_1/width_16k/average_l0_65/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_2/width_16k/average_l0_49/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_3/width_16k/average_l0_54/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_4/width_16k/average_l0_88/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_5/width_16k/average_l0_87/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_6/width_16k/average_l0_95/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_7/width_16k/average_l0_70/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_8/width_16k/average_l0_52/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_9/width_16k/average_l0_72/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_10/width_16k/average_l0_88/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_11/width_16k/average_l0_5/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_12/width_16k/average_l0_6/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_13/width_16k/average_l0_8/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_14/width_16k/average_l0_8/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_15/width_16k/average_l0_8/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_16/width_16k/average_l0_10/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_17/width_16k/average_l0_12/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_18/width_16k/average_l0_13/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_19/width_16k/average_l0_12/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_20/width_16k/average_l0_11/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_21/width_16k/average_l0_13/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_22/width_16k/average_l0_15/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_23/width_16k/average_l0_25/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_24/width_16k/average_l0_37/params.npz"
+  - "hf://google/gemma-scope-2b-pt-transcoders/layer_25/width_16k/average_l0_41/params.npz"

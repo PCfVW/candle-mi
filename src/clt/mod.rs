@@ -33,13 +33,17 @@
 //!   where `n_target_layers = n_layers - l` (layer l writes to layers l..n_layers-1)
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use candle_core::{DType, Device, IndexOp, Tensor};
 use safetensors::tensor::SafeTensors;
 use tracing::info;
 
 use crate::error::{MIError, Result};
+
+pub mod gemmascope;
+
+use crate::clt::gemmascope::GEMMASCOPE_WEIGHTS_REPO;
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -190,8 +194,10 @@ pub enum TranscoderSchema {
     /// `b_enc`, `b_dec`, and `threshold [n_features]` for `JumpReLU` gating.
     /// No `W_skip`.
     ///
-    /// **Not yet loadable in v0.1.9** — [`CrossLayerTranscoder::open`] returns
-    /// a deferral error pointing to roadmap Step 1.6.
+    /// Loaded via the two-repo flow when the `sae` feature is enabled
+    /// (NPZ parsing is provided by `anamnesis/npz`). Without `sae`,
+    /// [`CrossLayerTranscoder::open`] returns [`MIError::Config`]
+    /// instructing the caller to enable the feature.
     GemmaScopeNpz,
 }
 
@@ -210,10 +216,6 @@ impl TranscoderSchema {
         matches!(self, Self::GemmaScopeNpz)
     }
 }
-
-/// Error message returned by [`CrossLayerTranscoder::open`] when handed a
-/// `GemmaScope` repo. The loader lands in v0.1.10 (see roadmap Step 1.6).
-const GEMMASCOPE_DEFERRAL_ERR: &str = "GemmaScope loader lands in v0.1.10 — see roadmap Step 1.6";
 
 /// CLT configuration auto-detected from tensor shapes.
 #[derive(Debug, Clone)]
@@ -246,6 +248,12 @@ struct LoadedEncoder {
     layer: usize,
     /// Encoder weight matrix.
     ///
+    /// Stored in the `[n_features, d_model]` orientation regardless of
+    /// schema: `CltSplit` and `PltBundle` files store `W_enc` directly in
+    /// this layout, while `GemmaScopeNpz` files store the transpose
+    /// `[d_model, n_features]` on disk and the loader applies `.t()` to
+    /// canonicalise the orientation here.
+    ///
     /// # Shapes
     /// - `w_enc`: `[n_features, d_model]`
     w_enc: Tensor,
@@ -254,6 +262,15 @@ struct LoadedEncoder {
     /// # Shapes
     /// - `b_enc`: `[n_features]`
     b_enc: Tensor,
+    /// Per-feature `JumpReLU` threshold, present only for the `GemmaScopeNpz`
+    /// schema. `None` for `CltSplit` and `PltBundle`, which use plain `ReLU`.
+    /// When `Some`, [`encode`](CrossLayerTranscoder::encode) gates the
+    /// pre-activation by `pre > threshold` element-wise instead of clamping
+    /// at zero.
+    ///
+    /// # Shapes
+    /// - `threshold`: `[n_features]` (when `Some`)
+    threshold: Option<Tensor>,
 }
 
 // ---------------------------------------------------------------------------
@@ -316,23 +333,32 @@ impl CrossLayerTranscoder {
     ///   and reads the tensor `W_enc_0`.
     /// - `PltBundle`: downloads `layer_0.safetensors` (~1 GiB — bundle of
     ///   `W_enc`/`W_dec`/`W_skip`/`b_enc`/`b_dec`) and reads un-suffixed `W_enc`.
-    /// - `GemmaScopeNpz`: detected but **loading is deferred** to a future
-    ///   release; returns a clear `MIError::Config` pointing to roadmap Step 1.6.
+    /// - `GemmaScopeNpz`: requires the `sae` feature (NPZ parsing via
+    ///   `anamnesis/npz`). With `sae` enabled, the two-repo flow fetches
+    ///   `mntss/gemma-scope-transcoders/config.yaml` (~2.5 KiB) for the
+    ///   per-layer `.npz` curation, then downloads the layer-0 `.npz`
+    ///   (~288 MiB FP32) from `google/gemma-scope-2b-pt-transcoders` to
+    ///   probe dimensions. Without `sae`, returns a `MIError::Config`
+    ///   instructing the caller to enable the feature.
     ///
     /// All other encoder/decoder files are downloaded lazily on first use.
     ///
     /// # Arguments
     /// * `clt_repo` — `HuggingFace` repository ID (e.g., `"mntss/clt-gemma-2-2b-426k"`
-    ///   for CLT, `"mntss/transcoder-Llama-3.2-1B"` for PLT)
+    ///   for CLT, `"mntss/transcoder-Llama-3.2-1B"` for PLT,
+    ///   `"mntss/gemma-scope-transcoders"` for `GemmaScope` PLT — note that
+    ///   the user-facing arg names the curation repo, not the underlying
+    ///   `google/*` weights repo)
     ///
     /// # Errors
     ///
     /// Returns [`MIError::Download`] if the repository is inaccessible, if the
     /// HTTP client cannot be built, or if a file cannot be fetched.
     /// Returns [`MIError::Config`] if the repository layout is unrecognised,
-    /// if no encoder files are found, if the `GemmaScopeNpz` schema is detected
-    /// (pending v0.1.10), if the encoder safetensors cannot be deserialised,
-    /// if the expected encoder tensor is missing, or if its shape is not 2D.
+    /// if no encoder files are found, if the `GemmaScopeNpz` schema is
+    /// detected without the `sae` feature, if a weight file (safetensors or
+    /// `.npz`) cannot be deserialised, if the expected encoder tensor is
+    /// missing, or if its shape is not 2D.
     // Schema-branched open() is a deliberately flat sequence (detect → reject
     // GemmaScope → count layers → parse config → probe dimensions → build
     // CltConfig). Extracting helpers would scatter the control flow for no
@@ -386,15 +412,29 @@ impl CrossLayerTranscoder {
         })?;
         info!("Transcoder schema detected for {clt_repo}: {schema:?}");
 
-        // v0.1.9: schema detection succeeds but loading of GemmaScope repos
-        // is intentionally deferred. v0.1.10 implements the two-repo NPZ flow.
+        // GemmaScope dispatches into a dedicated implementation: it needs the
+        // two-repo flow (curation YAML on mntss, weights on google/) and
+        // NPZ parsing via anamnesis. Without the `sae` feature, surface a
+        // clear feature-gate error instead of a cryptic deserialisation failure.
         if matches!(schema, TranscoderSchema::GemmaScopeNpz) {
-            return Err(MIError::Config(GEMMASCOPE_DEFERRAL_ERR.into()));
+            #[cfg(feature = "sae")]
+            {
+                return Self::open_gemmascope(clt_repo, fetch_config);
+            }
+            #[cfg(not(feature = "sae"))]
+            {
+                return Err(MIError::Config(
+                    "GemmaScope loading requires the 'sae' feature \
+                     (NPZ parsing via anamnesis/npz); add 'sae' to your \
+                     candle-mi features list"
+                        .into(),
+                ));
+            }
         }
 
-        // Count layers per schema. GemmaScopeNpz was rejected at the early
-        // return above; the arm here is unreachable at runtime but spelled out
-        // so `#[non_exhaustive]` + new variants remain a compile-time concern.
+        // Count layers per schema. GemmaScopeNpz dispatches above so the
+        // arm here is dead at runtime — kept to satisfy exhaustive matching
+        // and to fail loudly if the dispatch is ever bypassed.
         let n_layers = match schema {
             TranscoderSchema::CltSplit => repo_files
                 .iter()
@@ -409,7 +449,11 @@ impl CrossLayerTranscoder {
                 })
                 .count(),
             TranscoderSchema::GemmaScopeNpz => {
-                return Err(MIError::Config(GEMMASCOPE_DEFERRAL_ERR.into()));
+                return Err(MIError::Config(
+                    "internal: GemmaScope schema reached the n_layers match \
+                     (open_gemmascope dispatch should have fired earlier)"
+                        .into(),
+                ));
             }
         };
         if n_layers == 0 {
@@ -503,6 +547,108 @@ impl CrossLayerTranscoder {
         })
     }
 
+    /// `GemmaScope`-specific [`open`](Self::open) implementation, gated
+    /// behind the `sae` feature for `anamnesis/npz` parsing.
+    ///
+    /// Implements the two-repo flow:
+    /// 1. Fetches `mntss/gemma-scope-transcoders/config.yaml` (~2.5 KiB)
+    ///    from `clt_repo` (the curation entry-point).
+    /// 2. Parses the curation `YAML` via [`gemmascope::parse_gemmascope_config`]
+    ///    to obtain the per-layer `.npz` paths inside
+    ///    `google/gemma-scope-2b-pt-transcoders` (the weights repo).
+    /// 3. Downloads the layer-0 `.npz` (~288 MiB FP32) from the weights
+    ///    repo to probe `(d_model, n_features_per_layer)` from `W_enc`.
+    ///    The on-disk shape is `[d_model, n_features]` — transposed vs
+    ///    the `[n_features, d_model]` convention used by the other
+    ///    schemas.
+    /// 4. Builds [`CltConfig`] and returns the constructed transcoder.
+    ///    All other layer NPZs are downloaded lazily.
+    ///
+    /// Caller (`open()`) has already classified the schema and built
+    /// `fetch_config`.
+    #[cfg(feature = "sae")]
+    fn open_gemmascope(clt_repo: &str, fetch_config: hf_fetch_model::FetchConfig) -> Result<Self> {
+        use crate::clt::gemmascope::{GEMMASCOPE_WEIGHTS_REPO, parse_gemmascope_config};
+
+        info!(
+            "Opening GemmaScope transcoder via two-repo flow \
+             (curation: {clt_repo}, weights: {GEMMASCOPE_WEIGHTS_REPO})"
+        );
+
+        // Step 1: fetch the curation YAML from the mntss repo.
+        // BORROW: explicit .to_owned() — hf_fetch_model takes ownership of the repo ID.
+        let yaml_path = hf_fetch_model::download_file_blocking(
+            clt_repo.to_owned(),
+            "config.yaml",
+            &fetch_config,
+        )
+        .map_err(|e| MIError::Download(format!("failed to download {clt_repo}/config.yaml: {e}")))?
+        .into_inner();
+        let yaml_text = std::fs::read_to_string(&yaml_path)?;
+
+        // Step 2: parse YAML to discover per-layer NPZ paths and model_name.
+        let model_name =
+            parse_yaml_value(&yaml_text, "model_name").unwrap_or_else(|| "unknown".to_owned());
+        let gemmascope_npz_paths = parse_gemmascope_config(&yaml_text)?;
+        let n_layers = gemmascope_npz_paths.len();
+
+        // Step 3: probe layer-0 NPZ to discover dimensions.
+        let first_npz_relpath = gemmascope_npz_paths.first().ok_or_else(|| {
+            MIError::Config(
+                "parse_gemmascope_config returned empty paths despite passing validation".into(),
+            )
+        })?;
+        info!(
+            "Downloading first GemmaScope NPZ for dimension probe: \
+             {GEMMASCOPE_WEIGHTS_REPO}/{first_npz_relpath} (~288 MiB)"
+        );
+        // BORROW: explicit .to_owned() — hf_fetch_model takes ownership of the repo ID.
+        let first_npz_path = hf_fetch_model::download_file_blocking(
+            GEMMASCOPE_WEIGHTS_REPO.to_owned(),
+            first_npz_relpath,
+            &fetch_config,
+        )
+        .map_err(|e| {
+            MIError::Download(format!(
+                "failed to download {GEMMASCOPE_WEIGHTS_REPO}/{first_npz_relpath}: {e}"
+            ))
+        })?
+        .into_inner();
+        let (n_features_per_layer, d_model) = read_gemmascope_npz_shape(&first_npz_path)?;
+
+        // Step 4: assemble the path cache with the layer-0 path pre-populated.
+        let mut encoder_paths: Vec<Option<PathBuf>> = vec![None; n_layers];
+        if let Some(slot) = encoder_paths.first_mut() {
+            *slot = Some(first_npz_path);
+        }
+        let decoder_paths: Vec<Option<PathBuf>> = vec![None; n_layers];
+
+        let config = CltConfig {
+            n_layers,
+            d_model,
+            n_features_per_layer,
+            n_features_total: n_layers * n_features_per_layer,
+            model_name,
+            schema: TranscoderSchema::GemmaScopeNpz,
+            gemmascope_npz_paths,
+        };
+        info!(
+            "GemmaScope config: {} layers, d_model={}, features_per_layer={}, total={}",
+            config.n_layers, config.d_model, config.n_features_per_layer, config.n_features_total,
+        );
+
+        Ok(Self {
+            // BORROW: explicit .to_owned() — store an owned repo ID for lazy downloads.
+            repo_id: clt_repo.to_owned(),
+            fetch_config,
+            encoder_paths,
+            decoder_paths,
+            config,
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        })
+    }
+
     /// Access the auto-detected CLT configuration.
     #[must_use]
     pub const fn config(&self) -> &CltConfig {
@@ -516,6 +662,26 @@ impl CrossLayerTranscoder {
     }
 
     // --- Lazy download helpers ---
+
+    /// `HuggingFace` repo to fetch weight files from for the current schema.
+    ///
+    /// For `CltSplit` and `PltBundle` this is the repo passed to `open()`.
+    /// For `GemmaScopeNpz` it is `google/gemma-scope-2b-pt-transcoders` —
+    /// the `mntss/*` repo passed by the caller is only the curation
+    /// entry-point (it holds the `config.yaml`, not the actual weights).
+    /// See [`gemmascope::GEMMASCOPE_WEIGHTS_REPO`].
+    fn download_repo(&self) -> String {
+        match self.config.schema {
+            TranscoderSchema::CltSplit | TranscoderSchema::PltBundle => {
+                // BORROW: explicit .clone() — hf_fetch_model takes ownership of the repo ID
+                self.repo_id.clone()
+            }
+            TranscoderSchema::GemmaScopeNpz => {
+                // BORROW: explicit .to_owned() — promote &'static str to owned String
+                GEMMASCOPE_WEIGHTS_REPO.to_owned()
+            }
+        }
+    }
 
     /// Ensure the encoder file for a given layer is downloaded. Returns the path.
     fn ensure_encoder_path(&mut self, layer: usize) -> Result<PathBuf> {
@@ -532,14 +698,11 @@ impl CrossLayerTranscoder {
             layer,
             &self.config.gemmascope_npz_paths,
         )?;
-        info!("Downloading {filename} from {}", self.repo_id);
-        let path = hf_fetch_model::download_file_blocking(
-            self.repo_id.clone(),
-            &filename,
-            &self.fetch_config,
-        )
-        .map_err(|e| MIError::Download(format!("failed to download {filename}: {e}")))?
-        .into_inner();
+        let repo = self.download_repo();
+        info!("Downloading {filename} from {repo}");
+        let path = hf_fetch_model::download_file_blocking(repo, &filename, &self.fetch_config)
+            .map_err(|e| MIError::Download(format!("failed to download {filename}: {e}")))?
+            .into_inner();
         if let Some(slot) = self.encoder_paths.get_mut(layer) {
             // BORROW: explicit .clone() — store PathBuf in cache
             *slot = Some(path.clone());
@@ -571,14 +734,11 @@ impl CrossLayerTranscoder {
             layer,
             &self.config.gemmascope_npz_paths,
         )?;
-        info!("Downloading {filename} from {}", self.repo_id);
-        let path = hf_fetch_model::download_file_blocking(
-            self.repo_id.clone(),
-            &filename,
-            &self.fetch_config,
-        )
-        .map_err(|e| MIError::Download(format!("failed to download {filename}: {e}")))?
-        .into_inner();
+        let repo = self.download_repo();
+        info!("Downloading {filename} from {repo}");
+        let path = hf_fetch_model::download_file_blocking(repo, &filename, &self.fetch_config)
+            .map_err(|e| MIError::Download(format!("failed to download {filename}: {e}")))?
+            .into_inner();
         if let Some(slot) = self.decoder_paths.get_mut(layer) {
             // BORROW: explicit .clone() — store PathBuf in cache
             *slot = Some(path.clone());
@@ -591,7 +751,16 @@ impl CrossLayerTranscoder {
     /// Load a single encoder's weights to the specified device.
     ///
     /// Frees any previously loaded encoder first (stream-and-free pattern).
-    /// Peak GPU overhead: ~75 MB for CLT-426K, ~450 MB for CLT-2.5M.
+    /// Peak GPU overhead: ~75 MB for CLT-426K, ~450 MB for CLT-2.5M, ~144 MB
+    /// for `GemmaScope`-2b at `width_16k` (one of `W_enc` / `W_dec`).
+    ///
+    /// File format and tensor layout depend on [`TranscoderSchema`]:
+    /// - `CltSplit` / `PltBundle`: safetensors with `W_enc` already in
+    ///   `[n_features, d_model]` orientation; `threshold` absent.
+    /// - `GemmaScopeNpz`: `.npz` archive with `W_enc` stored as
+    ///   `[d_model, n_features]` (transposed) plus a `threshold [n_features]`
+    ///   tensor for `JumpReLU`. The loader transposes `W_enc` so the
+    ///   in-memory layout matches the other schemas.
     ///
     /// # Arguments
     /// * `layer` — Layer index (`0..n_layers`)
@@ -599,7 +768,10 @@ impl CrossLayerTranscoder {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Config`] if the layer is out of range.
+    /// Returns [`MIError::Config`] if the layer is out of range, if the
+    /// `GemmaScopeNpz` schema is encountered without the `sae` feature,
+    /// or if a required tensor (`W_enc`, `b_enc`, or `threshold` for
+    /// `GemmaScopeNpz`) is missing from the file.
     /// Returns [`MIError::Download`] if the encoder file cannot be fetched.
     /// Returns [`MIError::Model`] on tensor deserialization failure.
     pub fn load_encoder(&mut self, layer: usize, device: &Device) -> Result<()> {
@@ -623,7 +795,44 @@ impl CrossLayerTranscoder {
         info!("Loading CLT encoder for layer {layer}");
 
         let enc_path = self.ensure_encoder_path(layer)?;
-        let data = std::fs::read(&enc_path)?;
+
+        let loaded = match self.config.schema {
+            TranscoderSchema::CltSplit | TranscoderSchema::PltBundle => {
+                self.load_encoder_safetensors(&enc_path, layer, device)?
+            }
+            TranscoderSchema::GemmaScopeNpz => {
+                #[cfg(feature = "sae")]
+                {
+                    Self::load_encoder_npz(&enc_path, layer, device)?
+                }
+                #[cfg(not(feature = "sae"))]
+                {
+                    return Err(MIError::Config(
+                        "GemmaScope encoder loading requires the 'sae' feature \
+                         (NPZ parsing via anamnesis/npz)"
+                            .into(),
+                    ));
+                }
+            }
+        };
+
+        self.loaded_encoder = Some(loaded);
+
+        Ok(())
+    }
+
+    /// Load an encoder from a safetensors bundle (`CltSplit` or `PltBundle`).
+    ///
+    /// Reads the file once into a `Vec<u8>`, deserialises with `safetensors`,
+    /// extracts `W_enc` and `b_enc` by their schema-specific tensor names.
+    /// `threshold` is `None` because these schemas use plain `ReLU`.
+    fn load_encoder_safetensors(
+        &self,
+        path: &Path,
+        layer: usize,
+        device: &Device,
+    ) -> Result<LoadedEncoder> {
+        let data = std::fs::read(path)?;
         let st = SafeTensors::deserialize(&data).map_err(|e| {
             MIError::Config(format!("failed to deserialize encoder layer {layer}: {e}"))
         })?;
@@ -645,13 +854,72 @@ impl CrossLayerTranscoder {
             device,
         )?;
 
-        self.loaded_encoder = Some(LoadedEncoder {
+        Ok(LoadedEncoder {
             layer,
             w_enc,
             b_enc,
-        });
+            threshold: None,
+        })
+    }
 
-        Ok(())
+    /// Load an encoder from a `GemmaScope` `.npz` bundle (`GemmaScopeNpz`).
+    ///
+    /// Delegates to [`crate::sae::npz::load_npz`] for the NPZ → candle
+    /// tensor conversion, then:
+    /// - Transposes `W_enc` from on-disk `[d_model, n_features]` to the
+    ///   canonical `[n_features, d_model]` orientation. The transpose
+    ///   produces non-unit strides, so `.contiguous()` is applied
+    ///   immediately to keep the encode-path matmul efficient.
+    /// - Loads the per-feature `threshold` tensor required by `JumpReLU`.
+    ///
+    /// `W_dec` and `b_dec` are also read by `load_npz` but discarded
+    /// here; the decoder path re-loads them on demand. Peak transient
+    /// memory during this call: ~288 MiB for `GemmaScope`-2b `width_16k`
+    /// (sum of all five tensors at `F32`).
+    #[cfg(feature = "sae")]
+    fn load_encoder_npz(path: &Path, layer: usize, device: &Device) -> Result<LoadedEncoder> {
+        let npz_map = crate::sae::npz::load_npz(path, device)?;
+
+        let w_enc_disk = npz_map.get("W_enc").ok_or_else(|| {
+            MIError::Config(format!(
+                "tensor 'W_enc' not found in {} for layer {layer}",
+                path.display()
+            ))
+        })?;
+        // CONTIGUOUS: t() yields non-unit strides; the encode-path matmul
+        // requires a contiguous W_enc on the n_features-major axis
+        let w_enc = w_enc_disk.t()?.contiguous()?;
+
+        // BORROW: explicit .clone() — Tensor is Arc-backed; this hands the
+        // LoadedEncoder its own handle without copying the underlying buffer.
+        let b_enc = npz_map
+            .get("b_enc")
+            .ok_or_else(|| {
+                MIError::Config(format!(
+                    "tensor 'b_enc' not found in {} for layer {layer}",
+                    path.display()
+                ))
+            })?
+            .clone();
+
+        // BORROW: explicit .clone() — same Arc-handle pattern as b_enc.
+        let threshold = npz_map
+            .get("threshold")
+            .ok_or_else(|| {
+                MIError::Config(format!(
+                    "tensor 'threshold' not found in {} for layer {layer} \
+                     (GemmaScope requires a JumpReLU threshold)",
+                    path.display()
+                ))
+            })?
+            .clone();
+
+        Ok(LoadedEncoder {
+            layer,
+            w_enc,
+            b_enc,
+            threshold: Some(threshold),
+        })
     }
 
     /// Load the `W_skip` matrix for a `PltBundle` layer and return it as a
@@ -713,8 +981,13 @@ impl CrossLayerTranscoder {
     /// The residual should be the "residual mid" activation at the given layer
     /// (after attention, before MLP).
     ///
-    /// Returns all features that pass the `ReLU` threshold, sorted by
-    /// activation magnitude in descending order.
+    /// Returns all features that pass the activation threshold, sorted by
+    /// activation magnitude in descending order. Activation depends on
+    /// schema:
+    /// - `CltSplit` / `PltBundle`: plain `ReLU` — features with
+    ///   `pre > 0` are kept, others zeroed.
+    /// - `GemmaScopeNpz`: `JumpReLU` — features with `pre > threshold[i]`
+    ///   are kept (gated by per-feature threshold), others zeroed.
     ///
     /// # Shapes
     /// - `residual`: `[d_model]` — residual stream activation at one position
@@ -725,19 +998,47 @@ impl CrossLayerTranscoder {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Hook`] if no encoder is loaded or the wrong layer is loaded.
+    /// Returns [`MIError::Hook`] if no encoder is loaded, the wrong layer is
+    /// loaded, or the schema is `GemmaScopeNpz` but the loaded encoder lacks
+    /// a `threshold` tensor (an internal load-path mismatch).
     /// Returns [`MIError::Model`] on tensor operation failure.
     pub fn encode(
         &self,
         residual: &Tensor,
         layer: usize,
     ) -> Result<SparseActivations<CltFeatureId>> {
-        // Compute pre-activations via the shared workhorse, then apply ReLU and
-        // sparsify. The `encode == relu ∘ encode_pre_activation` invariant is
-        // covered by the `encode_pre_activation_matches_encode_postrelu` test.
         let pre_acts = self.encode_pre_activation_impl(residual, layer)?;
-        // ReLU activation.
-        let acts = pre_acts.relu()?;
+
+        // Schema-specific activation. The CltSplit/PltBundle path keeps the
+        // existing `encode == relu ∘ encode_pre_activation` invariant
+        // (covered by the `encode_pre_activation_matches_encode_postrelu`
+        // test); the GemmaScopeNpz path gates by per-feature threshold.
+        let acts = match self.config.schema {
+            TranscoderSchema::CltSplit | TranscoderSchema::PltBundle => pre_acts.relu()?,
+            TranscoderSchema::GemmaScopeNpz => {
+                // Re-borrow the encoder so we can reach into `threshold`.
+                // encode_pre_activation_impl already validated that an
+                // encoder is loaded for this `layer`.
+                let enc = self.loaded_encoder.as_ref().ok_or_else(|| {
+                    MIError::Hook(
+                        "encoder dropped between pre-activation and activation \
+                         (internal logic error)"
+                            .into(),
+                    )
+                })?;
+                let threshold = enc.threshold.as_ref().ok_or_else(|| {
+                    MIError::Hook(
+                        "GemmaScope encode requires a threshold tensor; \
+                         the loaded encoder has none (load path mismatch?)"
+                            .into(),
+                    )
+                })?;
+                // JumpReLU: pre * (pre > threshold), element-wise.
+                // PROMOTE: U8 boolean mask -> F32 for elementwise multiply with the F32 pre-activation
+                let mask = pre_acts.gt(threshold)?.to_dtype(DType::F32)?;
+                (&pre_acts * &mask)?
+            }
+        };
 
         // Transfer to CPU for sparse extraction.
         let acts_vec: Vec<f32> = acts.to_vec1()?;
@@ -2168,6 +2469,48 @@ fn parse_yaml_value(yaml_text: &str, key: &str) -> Option<String> {
     None
 }
 
+/// Read `(n_features_per_layer, d_model)` from a `GemmaScope` `.npz` file by
+/// inspecting the `W_enc` tensor shape.
+///
+/// `GemmaScope`'s on-disk `W_enc` shape is `[d_model, n_features]` —
+/// transposed vs the `[n_features, d_model]` convention used by the
+/// `CltSplit` and `PltBundle` schemas. The first dimension is therefore
+/// `d_model`, the second is `n_features_per_layer`. The encoder loader
+/// re-applies the transpose at load time so downstream matmul code stays
+/// schema-agnostic.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`](crate::MIError::Config) if the `.npz` cannot
+/// be parsed, if `W_enc` is missing from the archive, or if `W_enc` is not
+/// a 2D tensor.
+#[cfg(feature = "sae")]
+fn read_gemmascope_npz_shape(npz_path: &Path) -> Result<(usize, usize)> {
+    let npz_map = anamnesis::parse_npz(npz_path)?;
+    let w_enc = npz_map.get("W_enc").ok_or_else(|| {
+        MIError::Config(format!(
+            "tensor 'W_enc' not found in {}",
+            npz_path.display()
+        ))
+    })?;
+    if w_enc.shape.len() != 2 {
+        return Err(MIError::Config(format!(
+            "expected 2D W_enc, got shape {:?} in {}",
+            w_enc.shape,
+            npz_path.display()
+        )));
+    }
+    let d_model = *w_enc
+        .shape
+        .first()
+        .ok_or_else(|| MIError::Config("W_enc shape is empty".into()))?;
+    let n_features_per_layer = *w_enc
+        .shape
+        .get(1)
+        .ok_or_else(|| MIError::Config("W_enc shape has fewer than 2 dimensions".into()))?;
+    Ok((n_features_per_layer, d_model))
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -2291,6 +2634,7 @@ mod tests {
                 layer: 0,
                 w_enc,
                 b_enc,
+                threshold: None,
             }),
             steering_cache: HashMap::new(),
         };
@@ -2326,6 +2670,7 @@ mod tests {
                 layer: 0,
                 w_enc,
                 b_enc,
+                threshold: None,
             }),
             steering_cache: HashMap::new(),
         };
@@ -2333,6 +2678,115 @@ mod tests {
         // Requesting layer 1 when layer 0 is loaded should error.
         let result = clt.encode(&residual, 1);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn encode_gemmascope_jump_relu_gates_below_threshold() {
+        // Synthetic GemmaScopeNpz encoder: feature i picks up residual[i].
+        // Per-feature thresholds force features 2 and 3 to be gated out.
+        let device = Device::Cpu;
+        let d_model = 8;
+        let n_features = 4;
+
+        // W_enc: [4, 8] — identity-like rows.
+        #[rustfmt::skip]
+        let w_enc_data: Vec<f32> = vec![
+            1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // feature 0: residual[0]
+            0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // feature 1: residual[1]
+            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, // feature 2: residual[2]
+            0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, // feature 3: residual[3]
+        ];
+        let w_enc = Tensor::from_vec(w_enc_data, (n_features, d_model), &device).unwrap();
+        let b_enc = Tensor::zeros((n_features,), DType::F32, &device).unwrap();
+        // Per-feature JumpReLU thresholds.
+        let threshold =
+            Tensor::from_vec(vec![0.5_f32, 1.0, 1.5, 2.0], (n_features,), &device).unwrap();
+        // Residual: features 0–3 see pre-activation 1.5 each.
+        // Gating: pre > threshold → features 0 (1.5 > 0.5) and 1 (1.5 > 1.0) pass;
+        //         feature 2 (1.5 > 1.5 is false) and feature 3 (1.5 > 2.0 false) fail.
+        let residual_data: Vec<f32> = vec![1.5, 1.5, 1.5, 1.5, 0.0, 0.0, 0.0, 0.0];
+        let residual = Tensor::from_vec(residual_data, (d_model,), &device).unwrap();
+
+        let clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![None; 1],
+            decoder_paths: vec![None; 1],
+            config: CltConfig {
+                n_layers: 1,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features,
+                model_name: "test".to_owned(),
+                schema: TranscoderSchema::GemmaScopeNpz,
+                gemmascope_npz_paths: vec!["dummy/path/params.npz".to_owned()],
+            },
+            loaded_encoder: Some(LoadedEncoder {
+                layer: 0,
+                w_enc,
+                b_enc,
+                threshold: Some(threshold),
+            }),
+            steering_cache: HashMap::new(),
+        };
+
+        let sparse = clt.encode(&residual, 0).unwrap();
+        assert_eq!(
+            sparse.len(),
+            2,
+            "only features above their per-feature threshold should pass"
+        );
+        let indices: Vec<usize> = sparse.features.iter().map(|(f, _)| f.index).collect();
+        assert!(indices.contains(&0), "feature 0 (1.5 > 0.5) should pass");
+        assert!(indices.contains(&1), "feature 1 (1.5 > 1.0) should pass");
+        assert!(
+            !indices.contains(&2),
+            "feature 2 (1.5 not > 1.5) should be gated"
+        );
+        assert!(
+            !indices.contains(&3),
+            "feature 3 (1.5 not > 2.0) should be gated"
+        );
+    }
+
+    #[test]
+    fn encode_gemmascope_without_threshold_returns_clear_error() {
+        // Defensive test: if a GemmaScopeNpz encoder somehow ends up with
+        // threshold = None (load-path bug), encode() must fail with a
+        // helpful message instead of producing silently wrong output.
+        let device = Device::Cpu;
+        let w_enc = Tensor::zeros((4, 8), DType::F32, &device).unwrap();
+        let b_enc = Tensor::zeros((4,), DType::F32, &device).unwrap();
+        let residual = Tensor::zeros((8,), DType::F32, &device).unwrap();
+
+        let clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![None; 1],
+            decoder_paths: vec![None; 1],
+            config: CltConfig {
+                n_layers: 1,
+                d_model: 8,
+                n_features_per_layer: 4,
+                n_features_total: 4,
+                model_name: "test".to_owned(),
+                schema: TranscoderSchema::GemmaScopeNpz,
+                gemmascope_npz_paths: vec!["dummy".to_owned()],
+            },
+            loaded_encoder: Some(LoadedEncoder {
+                layer: 0,
+                w_enc,
+                b_enc,
+                threshold: None, // intentional load-path mismatch
+            }),
+            steering_cache: HashMap::new(),
+        };
+        let err = clt.encode(&residual, 0).unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("threshold"),
+            "error message must mention threshold; got: {msg}"
+        );
     }
 
     #[test]
@@ -3005,20 +3459,6 @@ mod tests {
         // the GemmaScope metadata-repo path.
         let files = ["features/layer_0.bin", "features/layer_1.bin"];
         assert!(classify_transcoder_schema(&files).is_err());
-    }
-
-    #[test]
-    fn gemmascope_deferral_error_message_is_informative() {
-        // The constant used by `open()` to reject GemmaScope repos in v0.1.9 must
-        // point users to the v0.1.10 follow-up.
-        assert!(
-            GEMMASCOPE_DEFERRAL_ERR.contains("v0.1.10"),
-            "deferral error must mention the follow-up release"
-        );
-        assert!(
-            GEMMASCOPE_DEFERRAL_ERR.contains("Step 1.6"),
-            "deferral error must point at the roadmap step"
-        );
     }
 
     // ====================================================================
