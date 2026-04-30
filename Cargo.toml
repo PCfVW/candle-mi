@@ -97,6 +97,10 @@ name = "validate_plt"
 required-features = ["clt", "transformer"]
 
 [[test]]
+name = "validate_plt_gemma"
+required-features = ["clt", "sae", "transformer"]
+
+[[test]]
 name = "validate_anacrousis"
 required-features = ["transformer"]
 
