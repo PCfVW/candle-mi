@@ -60,10 +60,12 @@ Checked against the local HF cache (`~/.cache/huggingface/hub/`) on 2026-04-18. 
 hf-fm mntss/transcoder-Llama-3.2-1B
 
 # Gemma arm (v0.1.10) — three-step flow, NOT a bare `hf-fm google/...`:
-#   The google/gemma-scope-2b-pt-transcoders repo hosts many average_l0 variants
-#   per layer (hundreds of GiB total). We only want the lowest-L0 subset curated
-#   by mntss (26 files, ~288 MiB each FP32, ~7.3 GiB total). The curation lives
-#   in mntss/gemma-scope-transcoders/config.yaml.
+#   The google/gemma-scope-2b-pt-transcoders repo hosts 198 NPZ files
+#   (26 layers × ~7.6 average_l0 variants per layer, all width_16k, ~288 MiB
+#   each FP32, ≈ 55.7 GiB total — verified 2026-04-30 via `hf-fm list-files`).
+#   We only want the lowest-L0 subset curated by mntss (26 files, one per
+#   layer, ~7.3 GiB total). The curation lives in
+#   mntss/gemma-scope-transcoders/config.yaml.
 
 # Step (i): fetch the curation metadata from mntss (2.5 KiB)
 hf-fm download-file mntss/gemma-scope-transcoders config.yaml
@@ -74,12 +76,18 @@ hf-fm download-file mntss/gemma-scope-transcoders config.yaml
 #   grep -A1 '^transcoders:' config.yaml
 # In code, the YAML parser lives in src/clt/gemmascope.rs (Step 1.6, v0.1.10).
 
-# Step (iii): fetch each of the 26 NPZ files selectively from the google repo.
+# Step (iii): fetch NPZ files selectively from the google repo. Step 1.6 is
+# staged so the heavy fetch is deferred:
+#   - Phase A (loader correctness): just 3 NPZs for layers {0, 12, 25} —
+#     ~864 MiB. Enough for plt_gemma_validation.py + validate_plt_gemma.rs.
+#   - Phase B (full experiment): the remaining 23 NPZs — ~6.5 GiB more.
+#     Only needed once Phase A parity is green and the position-sweep in
+#     clt_vs_plt_planning_site needs every layer.
 # Example (replace average_l0_X with the value from config.yaml):
 #   hf-fm download-file google/gemma-scope-2b-pt-transcoders \
-#       layer_0/width_16k/average_l0_106/params.npz
+#       layer_0/width_16k/average_l0_76/params.npz
 # Do NOT run `hf-fm google/gemma-scope-2b-pt-transcoders` bare — it downloads
-# every average_l0 variant of every layer (hundreds of GiB).
+# all 198 average_l0 variants (~55.7 GiB).
 ```
 
 ⚠ The cached `google/gemma-scope-2b-pt-res` is the **residual-stream SAE** variant, *not* the MLP transcoder PLT. It is **not** a substitute for `google/gemma-scope-2b-pt-transcoders`.
@@ -380,17 +388,65 @@ GemmaScope is a JumpReLU transcoder with a per-feature `threshold [16384]` tenso
 **Obstacle 4 — injection point** (unchanged from V2):
 GemmaScope PLTs reconstruct MLP output *after* the post-MLP RMSNorm, and Gemma 2's 4-norm architecture means the decoder vector lives in a different space than the CLT decoder. Circuit-tracer's Python source is the reference; the candidate targets are an existing `ResidPost(l)` / `MlpOut(l)` or a new `ResidPostMlpNorm(l)` `HookPoint` variant.
 
-**Implementation plan for v0.1.10:**
-1. Add `src/clt/gemmascope.rs` (or extend `clt/mod.rs`) with a YAML config-parser. Reuse `serde_yaml` if already a candle-mi dep, otherwise add it to `Cargo.toml`.
-2. Wire `TranscoderSchema::GemmaScopeNpz` into `open()`: fetch `config.yaml` via `hf_fetch_model`, parse, populate `gemmascope_npz_paths: Vec<String>` into `CltConfig`.
-3. Extend encoder loading to accept a transposed `W_enc` and a `threshold` tensor. Parameterize the activation (`ReLU` vs `JumpReLU(threshold)`).
-4. Read circuit-tracer's Python GemmaScope injection code. Identify which residual-stream slot it writes to.
-5. If that slot maps to an existing [`HookPoint`](../../src/hooks.rs) variant, use it directly. If not, add `HookPoint::ResidPostMlpNorm(l)` (prefer this over inverse-norm math — no numerical round-trip).
-6. Write `scripts/plt_gemma_validation.py` + `scripts/plt_gemma_reference.json` (mirror of Step 1.4).
-7. Add `tests/validate_plt_gemma.rs` (mirror of Step 1.5).
-8. Extend `examples/clt_vs_plt_planning_site.rs` to run the Gemma arm.
+**Implementation plan for v0.1.10 — staged in two phases.** Phase A delivers
+loader correctness on a minimal NPZ subset (~864 MiB); Phase B fetches the
+remaining 23 NPZs (~6.5 GiB more) only after Phase A parity is locked.
+This bounds disk and network exposure to the schema-correctness work — if
+`circuit-tracer`'s Python reference reveals a misunderstanding (Risk
+register's first row), we back out before committing to the full 7.3 GiB.
 
-**Ship plan:** `v0.1.9` ships Llama-only. `v0.1.10` adds the Gemma arm as a patch release (purely additive — new `TranscoderSchema::GemmaScopeNpz` path, new optional `threshold` tensor field, new YAML config parser, no breaking changes). The Gemma result extends but does not gate the publication of the Llama CLT-vs-PLT comparison.
+**Phase A — loader correctness (no full-experiment data).** Cumulative
+download: `config.yaml` (~2.5 KiB) + 3 NPZs (layers `{0, 12, 25}`, ~864 MiB).
+
+1. Add `src/clt/gemmascope.rs` with a YAML config-parser. Reuse `serde_yaml`
+   if already a candle-mi dep, otherwise add it to `Cargo.toml`. Parse the
+   `transcoders:` list into `Vec<String>` of `layer_N/width_16k/average_l0_X/params.npz`
+   paths. (No downloads at this step — pure parsing.)
+2. Wire `TranscoderSchema::GemmaScopeNpz` into `open()`: fetch `config.yaml`
+   from `mntss/gemma-scope-transcoders` via `hf_fetch_model`, parse, populate
+   `gemmascope_npz_paths: Vec<String>` into `CltConfig`. Replace the
+   `GEMMASCOPE_DEFERRAL_ERR` early-return at [`src/clt/mod.rs:391`](../../src/clt/mod.rs#L391)
+   with the real flow.
+3. Extend encoder loading (`load_encoder`, `encode_pre_activation_impl`) to:
+   (a) load NPZ via `anamnesis::parse::npz::parse_npz` instead of
+   `safetensors`, (b) transpose `W_enc` from on-disk `[d_model, n_features]`
+   to candle-mi's `[n_features, d_model]` convention, (c) load the
+   `threshold [n_features]` tensor, (d) apply `JumpReLU` (`pre * (pre > threshold)`,
+   element-wise) instead of `ReLU` when `schema.is_jump_relu()`.
+4. Read circuit-tracer's Python `GemmaScope` injection code
+   (`circuit_tracer/transcoder/single_layer_transcoder.py`, function
+   `load_gemma_scope_transcoder`). Identify which residual-stream slot it
+   writes to.
+5. If that slot maps to an existing [`HookPoint`](../../src/hooks.rs) variant,
+   use it directly. If not, add `HookPoint::ResidPostMlpNorm(l)` (prefer this
+   over inverse-norm math — no numerical round-trip).
+6. Write `scripts/plt_gemma_validation.py` + `scripts/plt_gemma_reference.json`
+   (mirror of Step 1.4 — test layers `{0, 12, 25}`, 3 random seeds each, dump
+   top-10 per (layer, seed)).
+7. Add `tests/validate_plt_gemma.rs` (mirror of Step 1.5 — `#[ignore]`, CUDA;
+   asserts top-10 IDs match exactly and abs diff < 1e-4 against the
+   Python reference).
+
+**Phase A commit point:** all Phase A items land cleanly → push → milestone
+tag `v0.1.10-plt-gemma-loader` (hyphenated, does NOT publish to crates.io
+per [`publish.yml`](../../.github/workflows/publish.yml)). Phase B is
+unblocked once Phase A is green.
+
+**Phase B — full experiment.** Cumulative download adds the remaining 23
+NPZs (~6.5 GiB). Phase B has a single coding item plus the release; no
+new schema work.
+
+8. Extend `examples/clt_vs_plt_planning_site.rs` to run the Gemma arm
+   (CLT + GemmaScope PLT, position-sweep across all 26 layers, full
+   instrumentation per Step 1.7 step 4).
+
+**Ship plan:** `v0.1.9` shipped Llama-only. `v0.1.10` adds the Gemma arm as
+a patch release (purely additive — new `TranscoderSchema::GemmaScopeNpz`
+path, new optional `threshold` tensor field, new YAML config parser, no
+breaking changes). The Gemma result extends but does not gate the publication
+of the Llama CLT-vs-PLT comparison. Phase A and Phase B both ship under the
+single `v0.1.10` tag — the staging is for development risk control, not for
+release sequencing.
 
 ### Step 1.7 — CLT vs PLT controlled experiment
 
