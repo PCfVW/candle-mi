@@ -52,7 +52,7 @@ impl RnnWeights {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) if tensor
+    /// Returns [`MIError::Model`] if tensor
     /// extraction fails.
     #[allow(clippy::similar_names)]
     pub fn from_model(model: &StoicheiaRnn) -> Result<Self> {
@@ -119,7 +119,7 @@ impl RnnWeights {
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Config`](crate::MIError::Config) if slice lengths
+/// Returns [`MIError::Config`] if slice lengths
 /// do not match the declared dimensions, or if `hidden_size` exceeds the
 /// stack buffer.
 pub fn forward_fast(
@@ -174,7 +174,7 @@ pub fn forward_fast(
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Config`](crate::MIError::Config) if slice lengths
+/// Returns [`MIError::Config`] if slice lengths
 /// do not match the declared dimensions.
 pub fn forward_fast_ablated(
     weights: &RnnWeights,
@@ -236,7 +236,7 @@ pub fn forward_fast_ablated(
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Config`](crate::MIError::Config) if slice lengths
+/// Returns [`MIError::Config`] if slice lengths
 /// do not match the declared dimensions.
 // EXPLICIT: range loops with index arithmetic for SIMD-friendly layout.
 #[allow(clippy::needless_range_loop)]
@@ -337,7 +337,7 @@ pub fn forward_fast_traced(
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Config`](crate::MIError::Config) if slice lengths
+/// Returns [`MIError::Config`] if slice lengths
 /// do not match.
 pub fn accuracy(
     weights: &RnnWeights,

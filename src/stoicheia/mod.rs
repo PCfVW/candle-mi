@@ -87,9 +87,9 @@ pub use config::{StoicheiaArch, StoicheiaConfig, StoicheiaOutput, StoicheiaTask}
 /// # Errors
 ///
 /// Returns [`MIError::Io`](crate::MIError::Io) if the file cannot be read.
-/// Returns [`MIError::Config`](crate::MIError::Config) if the file
+/// Returns [`MIError::Config`] if the file
 /// extension is not recognized.
-/// Returns [`MIError::Model`](crate::MIError::Model) if `.pth` parsing
+/// Returns [`MIError::Model`] if `.pth` parsing
 /// or safetensors conversion fails.
 fn load_weight_bytes(path: &Path) -> Result<Vec<u8>> {
     match path.extension().and_then(|e| e.to_str()) {
@@ -168,9 +168,9 @@ impl StoicheiaRnn {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) if weights are
+    /// Returns [`MIError::Model`] if weights are
     /// missing or have wrong shapes.
-    /// Returns [`MIError::Config`](crate::MIError::Config) if the file
+    /// Returns [`MIError::Config`] if the file
     /// extension is not recognized.
     #[allow(clippy::similar_names)]
     pub fn load(config: StoicheiaConfig, path: impl AsRef<Path>, device: &Device) -> Result<Self> {
@@ -457,9 +457,9 @@ impl StoicheiaTransformer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) if weights are
+    /// Returns [`MIError::Model`] if weights are
     /// missing or have wrong shapes.
-    /// Returns [`MIError::Config`](crate::MIError::Config) if the file
+    /// Returns [`MIError::Config`] if the file
     /// extension is not recognized.
     pub fn load(config: StoicheiaConfig, path: impl AsRef<Path>, device: &Device) -> Result<Self> {
         let buffer = load_weight_bytes(path.as_ref())?;

@@ -158,7 +158,7 @@ pub struct RegionMap {
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Config`](crate::MIError::Config) if slice dimensions
+/// Returns [`MIError::Config`] if slice dimensions
 /// do not match.
 pub fn classify_regions(
     weights: &RnnWeights,
@@ -228,7 +228,7 @@ pub fn classify_regions(
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Model`](crate::MIError::Model) if the iterated
+/// Returns [`MIError::Model`] if the iterated
 /// matrix-vector product overflows (non-contractive `W_hh`).
 // EXPLICIT: index arithmetic matches the row-major matrix layout.
 #[allow(clippy::needless_range_loop)]

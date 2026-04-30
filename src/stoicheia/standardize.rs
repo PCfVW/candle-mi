@@ -72,9 +72,9 @@ impl StandardizedRnn {
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Model`](crate::MIError::Model) if weight extraction
+/// Returns [`MIError::Model`] if weight extraction
 /// fails.
-/// Returns [`MIError::Config`](crate::MIError::Config) if any `W_ih[j]`
+/// Returns [`MIError::Config`] if any `W_ih[j]`
 /// is exactly zero (degenerate neuron — no input sensitivity).
 pub fn standardize_rnn(model: &StoicheiaRnn) -> Result<StandardizedRnn> {
     let weights = RnnWeights::from_model(model)?;
@@ -85,7 +85,7 @@ pub fn standardize_rnn(model: &StoicheiaRnn) -> Result<StandardizedRnn> {
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Config`](crate::MIError::Config) if any `W_ih[j]`
+/// Returns [`MIError::Config`] if any `W_ih[j]`
 /// is exactly zero.
 // EXPLICIT: index arithmetic matches the row-major weight layout.
 #[allow(clippy::needless_range_loop, clippy::similar_names)]
