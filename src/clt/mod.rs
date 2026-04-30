@@ -233,8 +233,8 @@ pub struct CltConfig {
     /// Detected on-disk schema.
     pub schema: TranscoderSchema,
     /// Per-layer NPZ paths for `GemmaScopeNpz` repos routed via
-    /// `mntss/gemma-scope-transcoders/config.yaml`. Empty for `CltSplit` /
-    /// `PltBundle`; populated in v0.1.10 by the Step 1.6 loader.
+    /// `mntss/gemma-scope-transcoders/config.yaml`. Populated by `open()`
+    /// for `GemmaScopeNpz` schemas; empty for `CltSplit` / `PltBundle`.
     pub gemmascope_npz_paths: Vec<String>,
 }
 
@@ -2469,8 +2469,8 @@ fn parse_yaml_value(yaml_text: &str, key: &str) -> Option<String> {
     None
 }
 
-/// Read `(n_features_per_layer, d_model)` from a `GemmaScope` `.npz` file by
-/// inspecting the `W_enc` tensor shape.
+/// Read `(n_features_per_layer, d_model)` from a `GemmaScope` `.npz` file
+/// by inspecting the `W_enc` tensor shape.
 ///
 /// `GemmaScope`'s on-disk `W_enc` shape is `[d_model, n_features]` —
 /// transposed vs the `[n_features, d_model]` convention used by the
@@ -2479,20 +2479,27 @@ fn parse_yaml_value(yaml_text: &str, key: &str) -> Option<String> {
 /// re-applies the transpose at load time so downstream matmul code stays
 /// schema-agnostic.
 ///
+/// Uses `anamnesis::inspect_npz` rather than `parse_npz` so the call only
+/// reads the `.npz` central directory (~kB) instead of materialising every
+/// tensor (~288 MiB at `width_16k`). Open-time shape probe is metadata-only.
+///
 /// # Errors
 ///
-/// Returns [`MIError::Config`](crate::MIError::Config) if the `.npz` cannot
-/// be parsed, if `W_enc` is missing from the archive, or if `W_enc` is not
-/// a 2D tensor.
+/// Returns [`MIError::Config`] if the `.npz` cannot be parsed, if `W_enc`
+/// is missing from the archive, or if `W_enc` is not a 2D tensor.
 #[cfg(feature = "sae")]
 fn read_gemmascope_npz_shape(npz_path: &Path) -> Result<(usize, usize)> {
-    let npz_map = anamnesis::parse_npz(npz_path)?;
-    let w_enc = npz_map.get("W_enc").ok_or_else(|| {
-        MIError::Config(format!(
-            "tensor 'W_enc' not found in {}",
-            npz_path.display()
-        ))
-    })?;
+    let info = anamnesis::inspect_npz(npz_path)?;
+    let w_enc = info
+        .tensors
+        .iter()
+        .find(|t| t.name == "W_enc")
+        .ok_or_else(|| {
+            MIError::Config(format!(
+                "tensor 'W_enc' not found in {}",
+                npz_path.display()
+            ))
+        })?;
     if w_enc.shape.len() != 2 {
         return Err(MIError::Config(format!(
             "expected 2D W_enc, got shape {:?} in {}",

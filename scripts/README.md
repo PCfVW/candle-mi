@@ -124,6 +124,47 @@ encoder oracle), `b_dec [2048]`.
 cargo test --test validate_plt --features clt,transformer -- --ignored --test-threads=1
 ```
 
+## PLT — Gemma 2 2B (v0.1.10)
+
+| File | Purpose |
+|------|---------|
+| `plt_gemma_validation.py` | From-first-principles encoder oracle for the GemmaScope PLT. Two-repo flow: parses `mntss/gemma-scope-transcoders/config.yaml` to discover per-layer NPZ paths, then loads each `params.npz` from `google/gemma-scope-2b-pt-transcoders` directly via `huggingface_hub` + `numpy`, applies `pre = W_enc.T @ residual + b_enc; acts = pre * (pre > threshold)` in torch on CPU. No circuit-tracer involvement. |
+| `plt_gemma_reference.json` | Python reference output: 9 test cases (3 seeds × layers {0, 12, 25}) with top-10 feature indices and activations. Frozen oracle for the Rust parity test. |
+
+**Regeneration:**
+```bash
+python scripts/plt_gemma_validation.py
+```
+Requires `torch`, `numpy`, `huggingface_hub`, `pyyaml`. Outputs
+`plt_gemma_reference.json` (~610 KB). First run downloads ~864 MiB
+(3 NPZs × ~288 MiB each FP32) into the HF cache.
+
+The methodology mirrors `plt_llama_validation.py`, adapted for the
+`GemmaScopeNpz` schema:
+- **Two-repo flow** — curation YAML on `mntss/gemma-scope-transcoders`,
+  weights on `google/gemma-scope-2b-pt-transcoders`. The 26-entry
+  curation list points at the lowest-`L0` variant per layer.
+- **`W_enc` transpose** — GemmaScope stores `W_enc` as
+  `[d_model, n_features] = [2304, 16384]` on disk; the oracle applies
+  `.T.contiguous()` to canonicalise the orientation, matching
+  `circuit-tracer`'s `load_gemma_scope_transcoder()` reference.
+- **JumpReLU activation** — `acts = pre * (pre > threshold)` element-wise
+  with a per-feature `threshold [n_features]` tensor, instead of plain
+  `ReLU` (Llama PLT) or `ReLU` after CLT decoder skip.
+- **Layer choice** `{0, 12, 25}` — ends + middle of Gemma 2 2B's
+  26-layer stack, mirroring plip-rs's `[0, 12, 25]`.
+
+GemmaScope NPZ tensor layout (`width_16k`):
+`W_enc [2304, 16384]`, `W_dec [16384, 2304]`, `b_enc [16384]`,
+`b_dec [2304]`, `threshold [16384]`. No `W_skip` (GemmaScope is a
+pure JumpReLU transcoder).
+
+**Validation** (candle-mi, V3 Step 1.6 / Phase A.7 — 9/9 cases pass on
+CPU with max abs-diff 4.20e-5):
+```bash
+cargo test --test validate_plt_gemma --features clt,sae,transformer -- --ignored
+```
+
 ## Integration Test Commands
 
 All integration tests require models cached in `~/.cache/huggingface/hub/`
@@ -145,4 +186,7 @@ cargo test --test validate_sae --features sae,transformer -- --ignored --test-th
 
 # PLT validation (Llama 3.2 1B, v0.1.9 — lands in Step 1.5)
 cargo test --test validate_plt --features clt,transformer -- --ignored --test-threads=1
+
+# PLT validation (Gemma 2 2B GemmaScope, v0.1.10 — Phase A.7, CPU)
+cargo test --test validate_plt_gemma --features clt,sae,transformer -- --ignored
 ```
