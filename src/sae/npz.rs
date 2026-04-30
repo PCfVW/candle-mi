@@ -93,3 +93,37 @@ pub fn load_npz(path: &Path, device: &Device) -> Result<HashMap<String, Tensor>>
     }
     Ok(tensors)
 }
+
+/// Like [`load_npz`] but converts only tensors whose name appears in `names`.
+///
+/// The underlying [`anamnesis::parse_npz`] still reads every NPZ entry into
+/// raw byte buffers (a truly selective read would need an `anamnesis` API
+/// change tracked in `anamnesis/ROADMAP.md` § Phase 5+). The savings here
+/// come from skipping the byte → candle [`Tensor`] dtype conversion for
+/// tensors the caller does not need. For the `GemmaScope` encoder load,
+/// this drops the ~144 MiB `F32` allocation for `W_dec` (and the ~50 ms of
+/// `chunks_exact(4)` work that copying it would entail) per layer load.
+///
+/// Names not present in the archive are silently skipped — the returned
+/// map will simply lack those entries, letting the caller decide whether
+/// missing names are an error.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] if any **selected** tensor has an
+/// unsupported dtype.
+/// Returns [`MIError::Io`] if the file cannot be read.
+pub fn load_npz_selective(
+    path: &Path,
+    names: &[&str],
+    device: &Device,
+) -> Result<HashMap<String, Tensor>> {
+    let npz = parse_npz(path)?;
+    let mut tensors = HashMap::with_capacity(names.len());
+    for &name in names {
+        if let Some(npy) = npz.get(name) {
+            tensors.insert(name.to_owned(), npz_tensor_to_candle(npy, device)?);
+        }
+    }
+    Ok(tensors)
+}

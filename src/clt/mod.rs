@@ -602,6 +602,13 @@ impl CrossLayerTranscoder {
             "Downloading first GemmaScope NPZ for dimension probe: \
              {GEMMASCOPE_WEIGHTS_REPO}/{first_npz_relpath} (~288 MiB)"
         );
+        // TODO(anamnesis): once anamnesis ships an HTTP-range NPZ inspector
+        // (analogous to `hf-fm inspect` for safetensors — see
+        // `anamnesis/ROADMAP.md` § Phase 5+), replace this full layer-0
+        // download with a remote shape probe. That would cut `open()`
+        // cold-start time from ~30 s on a 100 Mbps link to <1 s and bring
+        // the GemmaScope `open()` flow in line with the CltSplit pattern
+        // (which downloads only the small encoder file at probe time).
         // BORROW: explicit .to_owned() — hf_fetch_model takes ownership of the repo ID.
         let first_npz_path = hf_fetch_model::download_file_blocking(
             GEMMASCOPE_WEIGHTS_REPO.to_owned(),
@@ -864,21 +871,24 @@ impl CrossLayerTranscoder {
 
     /// Load an encoder from a `GemmaScope` `.npz` bundle (`GemmaScopeNpz`).
     ///
-    /// Delegates to [`crate::sae::npz::load_npz`] for the NPZ → candle
-    /// tensor conversion, then:
+    /// Delegates to [`crate::sae::npz::load_npz_selective`] for the NPZ →
+    /// candle tensor conversion, requesting only the three tensors the
+    /// encoder actually needs (`W_enc`, `b_enc`, `threshold`). Then:
     /// - Transposes `W_enc` from on-disk `[d_model, n_features]` to the
     ///   canonical `[n_features, d_model]` orientation. The transpose
     ///   produces non-unit strides, so `.contiguous()` is applied
     ///   immediately to keep the encode-path matmul efficient.
     /// - Loads the per-feature `threshold` tensor required by `JumpReLU`.
     ///
-    /// `W_dec` and `b_dec` are also read by `load_npz` but discarded
-    /// here; the decoder path re-loads them on demand. Peak transient
-    /// memory during this call: ~288 MiB for `GemmaScope`-2b `width_16k`
-    /// (sum of all five tensors at `F32`).
+    /// The decoder-side tensors (`W_dec`, `b_dec`) are still parsed into
+    /// raw byte buffers by `anamnesis::parse_npz` (a true selective read
+    /// would need cross-crate work; see `anamnesis/ROADMAP.md`), but the
+    /// `byte → F32 candle Tensor` conversion is skipped — saving the
+    /// ~144 MiB `F32` allocation for `W_dec` per layer load.
     #[cfg(feature = "sae")]
     fn load_encoder_npz(path: &Path, layer: usize, device: &Device) -> Result<LoadedEncoder> {
-        let npz_map = crate::sae::npz::load_npz(path, device)?;
+        let npz_map =
+            crate::sae::npz::load_npz_selective(path, &["W_enc", "b_enc", "threshold"], device)?;
 
         let w_enc_disk = npz_map.get("W_enc").ok_or_else(|| {
             MIError::Config(format!(
@@ -1007,6 +1017,27 @@ impl CrossLayerTranscoder {
         residual: &Tensor,
         layer: usize,
     ) -> Result<SparseActivations<CltFeatureId>> {
+        let mut features = self.compute_active_features(residual, layer)?;
+        // Full sort by activation magnitude (descending). `f32::total_cmp`
+        // gives a strict total ordering — handles NaN deterministically
+        // (instead of the silent `Ordering::Equal` fallback that previously
+        // masked numerical bugs).
+        features.sort_by(|a, b| b.1.total_cmp(&a.1));
+        Ok(SparseActivations { features })
+    }
+
+    /// Apply the schema-specific activation, sparsify, and return the
+    /// **unsorted** list of `(feature_id, activation)` pairs.
+    ///
+    /// Shared workhorse for [`encode`](Self::encode) (which then full-sorts)
+    /// and [`top_k`](Self::top_k) (which does a partial sort instead). The
+    /// activation matches the schema convention: plain `ReLU` for `CltSplit`
+    /// and `PltBundle`, `JumpReLU(threshold)` for `GemmaScopeNpz`.
+    fn compute_active_features(
+        &self,
+        residual: &Tensor,
+        layer: usize,
+    ) -> Result<Vec<(CltFeatureId, f32)>> {
         let pre_acts = self.encode_pre_activation_impl(residual, layer)?;
 
         // Schema-specific activation. The CltSplit/PltBundle path keeps the
@@ -1033,27 +1064,26 @@ impl CrossLayerTranscoder {
                             .into(),
                     )
                 })?;
-                // JumpReLU: pre * (pre > threshold), element-wise.
-                // PROMOTE: U8 boolean mask -> F32 for elementwise multiply with the F32 pre-activation
-                let mask = pre_acts.gt(threshold)?.to_dtype(DType::F32)?;
-                (&pre_acts * &mask)?
+                // JumpReLU: select pre-activation where mask is non-zero, 0 otherwise.
+                // `where_cond` fuses the mask-select into one op — avoids the
+                // U8 → F32 dtype cast and the explicit elementwise multiply
+                // that the older `pre * mask.to_dtype(F32)` formulation needed.
+                let mask = pre_acts.gt(threshold)?;
+                let zeros = pre_acts.zeros_like()?;
+                mask.where_cond(&pre_acts, &zeros)?
             }
         };
 
         // Transfer to CPU for sparse extraction.
         let acts_vec: Vec<f32> = acts.to_vec1()?;
 
-        let mut features: Vec<(CltFeatureId, f32)> = acts_vec
+        let features: Vec<(CltFeatureId, f32)> = acts_vec
             .iter()
             .enumerate()
             .filter(|&(_, v)| *v > 0.0)
             .map(|(i, v)| (CltFeatureId { layer, index: i }, *v))
             .collect();
-
-        // Sort by activation magnitude (descending).
-        features.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-
-        Ok(SparseActivations { features })
+        Ok(features)
     }
 
     /// Encode a residual into the dense `W_enc @ x + b_enc` pre-activation
@@ -1130,9 +1160,28 @@ impl CrossLayerTranscoder {
         layer: usize,
         k: usize,
     ) -> Result<SparseActivations<CltFeatureId>> {
-        let mut sparse = self.encode(residual, layer)?;
-        sparse.truncate(k);
-        Ok(sparse)
+        let mut features = self.compute_active_features(residual, layer)?;
+        if k == 0 {
+            return Ok(SparseActivations {
+                features: Vec::new(),
+            });
+        }
+        if features.len() <= k {
+            // Already small enough — full sort is cheap and matches
+            // `encode()` semantics for the result.
+            features.sort_by(|a, b| b.1.total_cmp(&a.1));
+            return Ok(SparseActivations { features });
+        }
+        // Partial sort: O(N) average via `select_nth_unstable_by` puts the
+        // top-k partition at indices 0..k (unordered), then a small O(k log k)
+        // sort orders just that partition for the descending-by-magnitude
+        // contract. Beats `encode().truncate(k)` (O(N log N)) by a wide
+        // margin for dense layers — e.g. for N≈10 000 active features and
+        // k=10, ~10× fewer comparisons (~10 K vs ~133 K).
+        features.select_nth_unstable_by(k - 1, |a, b| b.1.total_cmp(&a.1));
+        features.truncate(k);
+        features.sort_by(|a, b| b.1.total_cmp(&a.1));
+        Ok(SparseActivations { features })
     }
 
     // --- Decoder access ---

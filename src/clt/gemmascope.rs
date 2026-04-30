@@ -46,6 +46,22 @@ pub(crate) const GEMMASCOPE_WEIGHTS_REPO: &str = "google/gemma-scope-2b-pt-trans
 /// Prefix that `transcoders:` entries carry in the `mntss` config — `hf://`.
 const HF_URL_PREFIX: &str = "hf://";
 
+/// Upper bound on the size of a curation `YAML` we accept.
+///
+/// The real `mntss/gemma-scope-transcoders/config.yaml` is ~2.5 KiB; this
+/// cap is ~400× headroom and rejects anything larger as a defensive guard
+/// against an accidentally-corrupted or maliciously-crafted file. Without
+/// the cap, [`parse_gemmascope_config`] would allocate a `Vec<String>`
+/// proportional to the input length.
+const MAX_YAML_BYTES: usize = 1024 * 1024;
+
+/// Upper bound on the number of `transcoders:` entries we accept.
+///
+/// The real curation lists 26 entries (one per Gemma 2 2B layer). Even the
+/// largest plausible Gemma family (`27b`, 46 layers) would fit. The 1024
+/// cap is ~40× headroom; a list larger than this is a corruption signal.
+const MAX_TRANSCODERS: usize = 1024;
+
 /// Parse the `transcoders:` list from a `GemmaScope` curation `YAML`.
 ///
 /// Returns the per-layer `.npz` paths relative to the
@@ -69,11 +85,20 @@ const HF_URL_PREFIX: &str = "hf://";
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Config`] if no `transcoders:` key is found, if the
-/// list is empty, if a non-list line appears inside the block, if any
-/// entry is missing the `hf://` prefix, or if any entry points at a repo
-/// other than the curated `GemmaScope` weights repo.
+/// Returns [`MIError::Config`] if the input exceeds the crate-private
+/// `MAX_YAML_BYTES` (1 MiB) or `MAX_TRANSCODERS` (1024) caps, if no
+/// `transcoders:` key is found, if the list is empty, if a non-list line
+/// appears inside the block, if any entry is missing the `hf://` prefix,
+/// or if any entry points at a repo other than the curated `GemmaScope`
+/// weights repo.
 pub fn parse_gemmascope_config(yaml: &str) -> Result<Vec<String>> {
+    if yaml.len() > MAX_YAML_BYTES {
+        return Err(MIError::Config(format!(
+            "gemmascope config.yaml is {} bytes; refusing to parse anything \
+             larger than {MAX_YAML_BYTES} bytes",
+            yaml.len()
+        )));
+    }
     let mut npz_paths: Vec<String> = Vec::new();
     let mut in_transcoders_block = false;
     let expected_repo_prefix = format!("{GEMMASCOPE_WEIGHTS_REPO}/");
@@ -132,6 +157,12 @@ pub fn parse_gemmascope_config(yaml: &str) -> Result<Vec<String>> {
                 ))
             })?;
 
+        if npz_paths.len() >= MAX_TRANSCODERS {
+            return Err(MIError::Config(format!(
+                "gemmascope config.yaml lists more than {MAX_TRANSCODERS} \
+                 transcoders; refusing to continue parsing"
+            )));
+        }
         // BORROW: explicit .to_owned() — the parser hands the caller an owned Vec
         npz_paths.push(relpath.to_owned());
     }
@@ -265,6 +296,35 @@ transcoders:
         let err = parse_gemmascope_config(yaml).unwrap_err();
         assert!(
             matches!(&err, MIError::Config(msg) if msg.contains("non-list line")),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn rejects_oversize_yaml() {
+        // Build a YAML payload larger than MAX_YAML_BYTES (1 MiB) and assert
+        // it is rejected before the parser allocates any per-entry state.
+        let oversize = "x".repeat(super::MAX_YAML_BYTES + 1);
+        let err = parse_gemmascope_config(&oversize).unwrap_err();
+        assert!(
+            matches!(&err, MIError::Config(msg) if msg.contains("refusing to parse")),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn rejects_too_many_transcoders() {
+        // Synthesise a transcoders: list with one more than MAX_TRANSCODERS
+        // entries. The parser must abort before fully populating the Vec.
+        let mut yaml = String::from("transcoders:\n");
+        for i in 0..=super::MAX_TRANSCODERS {
+            yaml.push_str(&format!(
+                "  - \"hf://google/gemma-scope-2b-pt-transcoders/layer_{i}/width_16k/average_l0_1/params.npz\"\n"
+            ));
+        }
+        let err = parse_gemmascope_config(&yaml).unwrap_err();
+        assert!(
+            matches!(&err, MIError::Config(msg) if msg.contains("more than")),
             "unexpected error: {err}"
         );
     }
