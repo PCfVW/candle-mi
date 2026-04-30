@@ -52,7 +52,10 @@
 //! - `b_dec`: shape `[d_in]` — decoder bias
 //! - `threshold`: shape `[d_sae]` — `JumpReLU` threshold (optional)
 
-mod npz;
+// `npz` adapts anamnesis NPZ tensors to candle. Originally private to the
+// `sae` module; now `pub(crate)` so the CLT GemmaScope loader can share
+// the same NPZ → candle bridge without duplicating the F32/F64 conversion.
+pub(crate) mod npz;
 
 use std::path::Path;
 
