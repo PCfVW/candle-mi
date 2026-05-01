@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-05-01
+
+### Added (Phase B — Gemma arm of `clt_vs_plt_planning_site`)
+
+- **`--family {llama,gemma}` CLI flag** on `examples/clt_vs_plt_planning_site.rs`,
+  backed by a new `FamilyPreset` struct that centralises every model-,
+  transcoder-, prompt-, and sanity-gate constant. Two shipped presets:
+  `LLAMA` (the original Jacopin replication target — unchanged behaviour
+  by default) and `GEMMA` (`mntss/clt-gemma-2-2b-426k` +
+  `mntss/gemma-scope-transcoders` curation entry-point routing to
+  `google/gemma-scope-2b-pt-transcoders` weights). `GEMMA.reference_max_prob = 0.457`,
+  measured 2026-05-01 via `figure13_planning_poems --preset gemma2-2b-426k`
+  on this candle 0.9 stack (cf. plip-rs's reported `0.483`, ~5% drift).
+- **Dual-hookpoint capture** in Step B's harness. `PltInputHook` enum
+  (`ResidMid` for Llama `PltBundle`, `MlpPre` for `GemmaScopeNpz`)
+  resolves to the concrete `HookPoint` per family. The Gemma run captures
+  both `ResidMid` (for the CLT) and `MlpPre` (for the GemmaScope PLT) at
+  every layer, so each transcoder is fed its native input. Llama keeps
+  its single-hook path (no change) when both arms share `ResidMid`.
+- **`plt_has_w_skip` capability bit** on `FamilyPreset`. Llama PLT (`true`)
+  retains its `W_skip · x` projection at the spike position; GemmaScope
+  (`false`, pure `JumpReLU` transcoder, no skip path) emits `null` for
+  that field — preserving cross-family JSON schema compatibility.
+- **Per-family output filenames** (`clt_step_a_{family}.json`,
+  `clt_vs_plt_{family}.json`) and per-family default repos (CLI
+  overrides via `--model` / `--clt-repo` / `--plt-repo` still work).
+- **Gemma 2 2B Step A reproduction** committed at
+  `docs/experiments/clt-vs-plt-planning-site/clt_step_a_gemma2_2b.json` —
+  hand-picked Jacopin features `{(L16:13725), (L25:9385)}` + inject
+  `(L22:10243)`, `P(" around") = 0.4567` at trailing-space spike (pos 31).
+- **Gemma 2 2B Step B run** committed at `clt_vs_plt_gemma2_2b.json`
+  with the full V3 Step 1.7 instrumentation (top-20 features per arm,
+  all-layer activation traces, pre-activation histograms at L22 ± 1,
+  both CLT decoder-slice metrics in parallel, GemmaScope-side `W_skip`
+  projection emitted as `null`). Runtime 12.5 min on the 5060 Ti.
+- **`docs/experiments/clt-vs-plt-planning-site/findings.md` Gemma section**
+  with a "What 'detection' means here" disambiguation block (Step A
+  paper-protocol vs Step B method-matched protocol), the Gemma headline
+  result table (degenerate Outcome B — both arms ≈ 0 under both
+  same-layer and max-over-target rankings), a Llama-vs-Gemma contrast
+  table, and the (A)–(F) discrimination battery preliminary status.
+  The Llama analysis is now under `# Llama 3.2 1B — findings` and is
+  unchanged in content.
+
+### Fixed (Phase B)
+
+- **`GemmaScope` decoder access** (`src/clt/mod.rs`) — Phase A's deferral
+  surfaced as `HeaderTooLarge` failures when the PLT arm of
+  `clt_vs_plt_planning_site --family gemma` reached
+  `score_features_by_decoder_projection` on a `GemmaScopeNpz` transcoder
+  (the call read the `.npz` file via `SafeTensors::deserialize` →
+  immediate parse failure). New `load_decoder_w_dec(schema, path, layer)`
+  free function dispatches to either safetensors deserialisation
+  (`CltSplit`, `PltBundle`) or `crate::sae::npz::load_npz_selective`
+  (`GemmaScopeNpz`, requires the `sae` feature). All six decoder-load
+  sites — `decoder_vector`, `cache_steering_vectors`,
+  `cache_steering_vectors_all_downstream`,
+  `score_features_by_decoder_projection`,
+  `score_features_by_decoder_projection_batch`, `extract_decoder_vectors`
+  — collapse from a 5-line read+deserialize+name-lookup+view block to a
+  one-line helper call. Diagnostic `info!` byte-size lines compute from
+  the returned `Tensor` via `elem_count() * dtype().size_in_bytes()`.
+
 ### Added
 
 - **`GemmaScope` PLT loader** (`src/clt/gemmascope.rs`, `src/clt/mod.rs`) —
