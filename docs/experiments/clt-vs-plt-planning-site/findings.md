@@ -1,10 +1,25 @@
-# CLT vs PLT planning-site comparison on Llama 3.2 1B — findings
+# CLT vs PLT planning-site comparison — findings (Llama 3.2 1B + Gemma 2 2B)
 
-**Experiment:** [`examples/clt_vs_plt_planning_site.rs`](../../../examples/clt_vs_plt_planning_site.rs)  
-**Plan:** [`PLAN-PLT-LLAMA-PLANNING-SIGNAL.md`](../../roadmaps/PLAN-PLT-LLAMA-PLANNING-SIGNAL.md)  
-**Instrumentation spec:** [candle-mi v0.1.9 roadmap V3, Step 1.7](../../roadmaps/candle_mi_v019_roadmap_V3.md)  
-**Raw data:** [`clt_vs_plt_llama.json`](clt_vs_plt_llama.json) (Step B) · [`clt_step_a_llama.json`](clt_step_a_llama.json) (Step A paper replication)  
+**Experiment:** [`examples/clt_vs_plt_planning_site.rs`](../../../examples/clt_vs_plt_planning_site.rs)
+**Plan:** [`PLAN-PLT-LLAMA-PLANNING-SIGNAL.md`](../../roadmaps/PLAN-PLT-LLAMA-PLANNING-SIGNAL.md)
+**Instrumentation spec:** [candle-mi v0.1.9 roadmap V3, Step 1.7](../../roadmaps/candle_mi_v019_roadmap_V3.md)
+**Raw data:**
+- Llama 3.2 1B — [`clt_vs_plt_llama.json`](clt_vs_plt_llama.json) (Step B) · [`clt_step_a_llama.json`](clt_step_a_llama.json) (Step A paper replication)
+- Gemma 2 2B — [`clt_vs_plt_gemma2_2b.json`](clt_vs_plt_gemma2_2b.json) (Step B) · [`clt_step_a_gemma2_2b.json`](clt_step_a_gemma2_2b.json) (Step A paper replication)
+
 **Hardware / stack:** CUDA on RTX 5060 Ti 16 GB · candle 0.9 · F32 end-to-end · single CUDA forward per sweep position
+
+**Run command:**
+```powershell
+# Llama 3.2 1B (default)
+cargo run --release --features clt,transformer,mmap --example clt_vs_plt_planning_site
+# Gemma 2 2B (v0.1.10)
+cargo run --release --features clt,sae,transformer,mmap --example clt_vs_plt_planning_site -- --family gemma
+```
+
+---
+
+# Llama 3.2 1B — findings
 
 ## One-line answer
 
@@ -212,4 +227,91 @@ Recommendation (revised): ship v0.1.9 with this finding, proceed to Gemma 2 2B (
 | (C) Cross-layer binding | Does not manifest on this prompt (top-5 features that fire are all layer-local). |
 | (D) Activation-function regime | PLT `W_skip · x` projection = +0.541 is non-negligible; suppress-only PLT ΔP still an upper bound on sparse-feature contribution. Isolated by follow-up 4. |
 | (E) Feature-granularity mismatch | Decoder vectors exported; qualitative inspection deferred. |
+| (F) Training-objective divergence | Out of scope. |
+
+---
+
+# Gemma 2 2B — findings
+
+**Transcoders:** CLT `mntss/clt-gemma-2-2b-426k` (16 384 features × 26 layers, `CltSplit` schema, `BF16`); PLT `mntss/gemma-scope-transcoders` curation entry-point routing to `google/gemma-scope-2b-pt-transcoders` weights (16 384 features × 26 layers, `GemmaScopeNpz` schema, `JumpReLU` with per-feature threshold, no `W_skip`, F32 NPZ on disk).
+
+**Prompt** (figure13 `gemma2-2b-426k` preset): `"The stars were twinkling in the night, / The lanterns cast a golden light. / She wandered in the dark about, / And found a hidden passage"` — `"-out"` → `" around"` rhyming-couplet pair.
+
+**Step A (Jacopin replication, hand-picked features):** suppress `(L16:13725)` + `(L25:9385)` ("about", "out"), inject `(L22:10243)` ("around"), strength 10. Result: **`P(" around") = 0.4567`** at the trailing-space spike (position 31, after "passage"), within ±0.01 of the pinned reference (`GEMMA.reference_max_prob = 0.457`, measured 2026-05-01 via figure13). Step A confirms the planning signal is in the model and is causally controllable when the suppress/inject features are chosen via the original Jacopin protocol.
+
+## What "detection" means here
+
+The Step B "no detection" verdict below is a claim about the **V3 Step 1.7 method-matched ranking**, not about whether the planning signal exists in Gemma 2 2B. Two distinct protocols inhabit this experiment. **Step A (the Jacopin paper protocol)** uses hand-picked suppress + inject features chosen by domain expertise on the rhyme-cluster geometry — figure13 reproduces this on both Llama 3.2 1B and Gemma 2 2B; the v0.1.10 candle-mi run reproduced it again at `P(" around") = 0.4567` (within ±0.01 of the pinned reference). **Step B (the V3 Step 1.7 method-matched ranking)** replaces the hand-picking with an automatic procedure: take the top-5 features by `cosine(decoder_row(feature, target_layer), unembed(inject_word))` at the inject feature's source layer, then run the same suppress / suppress+inject sweep. The point of Step B is to score CLT and PLT *by the same scoring procedure*, so the comparison across transcoder classes is fair.
+
+When Step B's `ΔP` is at noise level, the model has not lost its planning behaviour — Step A is the ground truth that the planning signal exists and is causally controllable, and Step A is reproducible on this build. What a Step B null tells us is that **the automatic top-5 decoder-projection ranking does not recover the same features the hand-picked Jacopin protocol does**. On Llama 3.2 1B, swapping the CLT's same-layer ranking for max-over-target ranking (which respects the cross-layer decoder topology) recovered the signal (Outcome B, ratio 0.93). On Gemma 2 2B that same fix does *not* recover it — the Step B null is robust across both same-layer and max-over-target rankings, on both transcoder classes. So the Gemma Step B result is a finding about the **method-matched protocol's sensitivity at this model scale and architecture**, not a claim that Gemma 2 2B fails to plan rhymes (it manifestly does, per Step A's `P(" around") = 0.4567`).
+
+## One-line answer
+
+**Outcome A-mirror — neither arm detects under the V3 Step 1.7 method-matched ranking.** Both the GemmaScope PLT and the mntss CLT, ranked by top-5 decoder-projection-cosine onto `unembed(" around")` at L22 (the hand-picked inject feature's layer), produce ΔP values at baseline noise:
+
+| Arm | Protocol | `top_k_target_layer` | Suppress set (top-5) | ΔP | Δlogit | Spike pos |
+|---|---|---|---|---|---|---|
+| **PLT** (GemmaScope) | suppress-only | L22 | `{L22:1804, L22:2111, L22:16225, L22:11833, L22:6010}` | **+4.46×10⁻¹¹** | +0.001 | 20 (` in`) |
+| **PLT** (GemmaScope) | suppress+inject | L22 | + inject `L22:1804` | **+4.41×10⁻¹¹** | +0.001 | 20 (` in`) |
+| **CLT** (same-layer top-5 at L22) | suppress-only | L22 | `{L19:962, L20:13957, L21:6897, L20:14424, L7:8254}` | **+1.75×10⁻⁷** | -3.07 | 31 (` `) |
+| **CLT** (same-layer top-5 at L22) | suppress+inject | L22 | + inject `L19:962` | **+1.07×10⁻⁹** | +0.04 | 20 (` in`) |
+| **CLT** (max-over-target top-5) | suppress-only | L22 | `{L24:8075, L23:5179, L21:11103, L23:2282, L19:962}` | **−1.69×10⁻⁹** | −0.034 | 20 (` in`) |
+| **CLT** (max-over-target top-5) | suppress+inject (ranked) | L22 | + inject `L24:8075` | **−1.63×10⁻⁹** | −0.033 | 20 (` in`) |
+| **CLT** (max-over-target top-5) | suppress+inject (same-layer inject) | L22 | + inject `L19:962` (same-layer top-1) | **−1.08×10⁻⁹** | −0.024 | 20 (` in`) |
+| *Reference* | | | | | | |
+| Step A (Jacopin features) | suppress+inject | — | `{L16:13725, L25:9385}` + inject `L22:10243` | **+0.4567** | (huge) | 31 (` `) |
+| Baseline `P(" around")` | — | — | — | 4.84×10⁻⁸ | — | — |
+
+All Step B ΔPs are within an order of magnitude of the baseline 4.84×10⁻⁸ — the apparent "spike" at position 20 (` in`, mid-prompt) is at probability ~5×10⁻⁸, indistinguishable from no-intervention noise. Position 31 (the structural planning site that Step A controls cleanly) registers as the top spike for only one arm/protocol combination (CLT suppress-only same-layer), and even there ΔP = +1.75×10⁻⁷ — three to four orders of magnitude below Step A's +0.4567.
+
+## Outcome label
+
+**Degenerate Outcome B (both arms ≈ 0)** — `ΔP_PLT ≈ ΔP_CLT` matches Outcome B's signature, but with both at noise level rather than at a strong shared peak. The honest reading is **"neither method-matched protocol detects the planning signal that Step A demonstrably can control"**, which V3 Appendix A's four outcomes (A/B/C/D) don't cleanly capture — the closest cell is "Outcome A inverted": Outcome A is "PLT misses, CLT detects strongly"; here PLT misses *and* CLT also misses (under both same-layer and max-over-target rankings).
+
+## Comparison to Llama 3.2 1B
+
+The two-model picture is now genuinely informative:
+
+| Model | CLT same-layer | CLT max-over-target | PLT same-layer | Step A (Jacopin) |
+|---|---|---|---|---|
+| **Llama 3.2 1B** | +5.7×10⁻⁷ (≈0) | **+0.871** | **+0.986** | +0.687 |
+| **Gemma 2 2B** | +1.75×10⁻⁷ (≈0) | −1.69×10⁻⁹ (≈0) | +4.46×10⁻¹¹ (≈0) | +0.4567 |
+
+Three contrasts that didn't appear in the Llama-only writeup:
+
+1. **The (B) discrimination resolution does not transfer.** On Llama, switching CLT from same-layer to max-over-target ranking recovered ΔP from 5.7×10⁻⁷ → +0.871 (six-orders-of-magnitude improvement). On Gemma, the same switch leaves CLT at noise (−1.69×10⁻⁹). So discrimination (B) is *not* the dominant story on Gemma — the CLT's max-over-target features (`L24:8075`, `L23:5179`, …) are simply not the features that mediate the planning signal here.
+2. **GemmaScope's `W_skip` is structurally absent.** On Llama, the PLT `W_skip · x` projection (+0.541) was a non-negligible contributor to the apparent PLT signal — sparse-feature suppression was an upper bound. On Gemma, GemmaScope is a pure JumpReLU transcoder with no `W_skip`, so the suppress-only ΔP *is* the full sparse-feature-mediated effect. The number is +4.46×10⁻¹¹ — meaning the top-5 decoder-aligned sparse features genuinely don't move `P(" around")`.
+3. **PLT cosines are weaker on Gemma.** Top-5 at L22 max cosine = 0.50 (Gemma) vs ~0.65 (Llama). The decoder-projection ranking method finds weaker `unembed(" around")`-aligned features at the inject-feature's layer.
+
+## Implications for Stage 1 decision
+
+Combining the two models:
+
+- **Llama 3.2 1B (revised, with max-over-target follow-up):** Outcome B, ratio 0.93 — both transcoders detect when the CLT ranking respects its cross-layer decoder topology.
+- **Gemma 2 2B:** degenerate Outcome B (both ≈ 0) — neither method-matched ranking detects, even though Step A confirms the planning signal is present and controllable via the Jacopin features.
+
+The Stage 1 stop condition (V3 § Decision checkpoint) reads: "_Outcome B with ΔP_PLT ≈ ΔP_CLT (both detection and intervention match) and Hanna & Ameisen's coverage of the same task genuinely suffices._" Gemma's degenerate-B result **fails the "match" clause** in spirit — both arms at zero is not the kind of "match" the stop condition envisaged. So:
+
+- The Llama-only Outcome B (ratio 0.93) is no longer the whole story.
+- The Gemma double-null is itself a notable finding: **the V3 Step 1.7 method-matched ranking has lower sensitivity than the original Jacopin paper protocol on this model**, possibly losing the planning signal entirely on the larger of our two test models.
+- This **strengthens the case for proceeding to Stage 2** (Qwen-3 scale sweep at 0.6B/1.7B/4B) — the Llama-Gemma pair already shows that the method-matched ranking's behaviour varies wildly across models within a 1.7-2× parameter span, and Hanna & Ameisen's "PLT planning emerges with scale" claim deserves a matched-methodology test.
+
+Specifically, the V3 § Decision checkpoint stop condition says the run should fire on Outcome B with `ΔP_PLT ≈ ΔP_CLT` *and* the H&A coverage being sufficient. Gemma's null-B doesn't trigger the stop, and the H&A "suffices" premise was already shown to be unsupported for rhyming. **Both clauses now point toward continuing to Stage 2** — but Stage 2 is conditional on user direction; this section reports the data, not the decision.
+
+## Caveats specific to Gemma
+
+- **Single prompt.** Same prompt as figure13's `gemma2-2b-426k` preset; no second-prompt cross-check.
+- **Hookpoint difference.** GemmaScope's encoder reads from `MlpPre` (post-`LN2`); CLT reads from `ResidMid`. The harness captures both at every layer (`PltInputHook::MlpPre` for GemmaScope, `ResidMid` for the CLT — see [`examples/clt_vs_plt_planning_site.rs`](../../../examples/clt_vs_plt_planning_site.rs) `FamilyPreset.plt_input_hook`). Per-arm residuals confirmed correct in Step A's reproduction of `P(" around") = 0.4567`.
+- **`top_k_target_layer = 22`** (the inject feature's layer per the Jacopin protocol). Whether a different target-layer choice would reveal different decoder-projection features is not tested here — the V3 Step 1.7 prescription pins it to the inject-feature's source layer.
+- **Discrimination battery (A)–(F) not yet populated for Gemma.** The instrumentation (top-20 decoder vectors, all-layer activation traces, pre-activation histograms at L22 ± 1, both CLT decoder-slice metrics in parallel) is captured in [`clt_vs_plt_gemma2_2b.json`](clt_vs_plt_gemma2_2b.json); a full (A)–(F) analysis paralleling the Llama section is a v0.1.11+ follow-up.
+
+## Discrimination battery — Gemma (preliminary, from already-captured data)
+
+| Finding | Status |
+|---|---|
+| (A) Dictionary resolution mismatch | Both arms 16 384 features/layer × 26 layers — **identical** dictionary sizes, no resolution gap to attribute. |
+| (B) CLT decoder-projection ambiguity | **Does not transfer from Llama.** Max-over-target ranking on Gemma leaves CLT at noise (−1.7×10⁻⁹), unlike Llama where it recovered the spike. |
+| (C) Cross-layer binding | Top-5 features under both rankings are layer-local; not investigated in detail. |
+| (D) Activation-function regime | GemmaScope is `JumpReLU` with per-feature threshold, no `W_skip`. The +4.5×10⁻¹¹ PLT result *is* the full sparse-feature contribution (no upper-bound caveat as on Llama). |
+| (E) Feature-granularity mismatch | Top-5 same-layer PLT features at L22 (cosines 0.50, 0.40, 0.38, 0.17, 0.15) — qualitative inspection deferred. |
 | (F) Training-objective divergence | Out of scope. |
