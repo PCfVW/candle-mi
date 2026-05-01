@@ -602,13 +602,18 @@ impl CrossLayerTranscoder {
             "Downloading first GemmaScope NPZ for dimension probe: \
              {GEMMASCOPE_WEIGHTS_REPO}/{first_npz_relpath} (~288 MiB)"
         );
-        // TODO(anamnesis): once anamnesis ships an HTTP-range NPZ inspector
-        // (analogous to `hf-fm inspect` for safetensors — see
-        // `anamnesis/ROADMAP.md` § Phase 5+), replace this full layer-0
-        // download with a remote shape probe. That would cut `open()`
-        // cold-start time from ~30 s on a 100 Mbps link to <1 s and bring
-        // the GemmaScope `open()` flow in line with the CltSplit pattern
-        // (which downloads only the small encoder file at probe time).
+        // TODO(hf-fetch-model): the library API to do this without the full
+        // download already exists — anamnesis v0.4.3 ships
+        // `inspect_npz_from_reader<R: Read + Seek>` (Phase 4.7). The missing
+        // piece is an HTTP-range-backed `Read + Seek` adapter for arbitrary
+        // HF files, which `hf-fetch-model` already implements internally for
+        // safetensors. Once exposed publicly, replace the
+        // `download_file_blocking + read_gemmascope_npz_shape` pair below
+        // with `let reader = hf_fetch_model::range_reader(repo, file)?;
+        // let info = anamnesis::inspect_npz_from_reader(reader)?;`. Cuts
+        // `open()` cold-start from ~30 s on a 100 Mbps link to <1 s
+        // (~7 small range requests, well under 100 KiB on a typical
+        // GemmaScope `params.npz`).
         // BORROW: explicit .to_owned() — hf_fetch_model takes ownership of the repo ID.
         let first_npz_path = hf_fetch_model::download_file_blocking(
             GEMMASCOPE_WEIGHTS_REPO.to_owned(),

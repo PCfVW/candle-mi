@@ -69,6 +69,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   — the bump is a "stay-current" validation against the new release.
   All 191 candle-mi tests pass against `anamnesis 0.4.2` with the
   `sae,stoicheia` feature set.
+- **Bump `anamnesis` dependency** from `0.4.2` to `0.4.3`. v0.4.3 ships
+  Phase 4.7 — `inspect_npz_from_reader<R: Read + Seek>`, the
+  reader-generic NPZ inspector that resolves the library-side half of
+  Phase A's algorithmic finding 4 (the candle-mi v0.1.10 GemmaScope
+  `open()` flow is explicitly credited as the dogfooding cycle that
+  drove the API). The remaining piece — an HTTP-range `Read + Seek`
+  adapter for HF files — is downstream work in `hf-fetch-model`. The
+  `open_gemmascope` `TODO` is updated to point at the new API and to
+  document the call-site refactor pattern. v0.4.3 also ships an
+  mmap-based always-on `parse()` (~3236× faster on a 11.6 GiB
+  safetensors shard) and an `n_elements` overflow saturation fix;
+  neither affects candle-mi's CLT path. All candle-mi tests pass
+  against `anamnesis 0.4.3` with the `sae,stoicheia` feature set.
 - **Bump `hf-fetch-model` dependency** from `0.9.7` to `0.9.8` via
   `cargo update`. v0.9.8 adds download durability features
   (per-file timeout, automatic resume on retry); no breaking changes.

@@ -49,7 +49,7 @@ libloading = { version = "0.9", optional = true }
 # Optional: tensor format parsing via anamnesis
 # - sae feature activates "npz" (Gemma Scope SAE weights)
 # - stoicheia feature activates "pth" (AlgZoo .pth agnostic loading)
-anamnesis = { version = "0.4.2", optional = true }
+anamnesis = { version = "0.4.3", optional = true }
 
 # Optional: per-process VRAM on Windows via DXGI (IDXGIAdapter3::QueryVideoMemoryInfo)
 [target.'cfg(windows)'.dependencies]
