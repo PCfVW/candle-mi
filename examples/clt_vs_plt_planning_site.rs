@@ -66,71 +66,204 @@ use candle_mi::{HookPoint, HookSpec, MIModel, extract_token_prob};
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
-/// Reference `P("that")` at the spike on Llama 3.2 1B with
-/// `mntss/clt-llama-3.2-1b-524k` in the candle-mi/candle 0.9 stack. Matches
-/// `examples/figure13_planning_poems.rs` on the same build.
-const LLAMA_REFERENCE_MAX_PROB: f32 = 0.687;
-
-/// Tight tolerance for drift from the reference value.
-const LLAMA_REFERENCE_TOL: f32 = 1e-2;
-
-/// Hard-fail threshold for the Step A sanity gate: a spike weaker than this
-/// indicates the harness is broken, not noise.
-const LLAMA_SPIKE_HARD_MIN: f32 = 0.50;
-
-// ── Llama preset ────────────────────────────────────────────────────────────
-
-/// The `-ee` rhyming prompt. Final line primes a rhyme the transcoder has to
-/// "plan" at the comma on line 3 — that is the planning site the sweep finds.
-const PROMPT: &str = "The birds were singing in the tree,\n\
-                      And everything was wild and free.\n\
-                      The river ran down to the sea,\n\
-                      There is so much we cannot";
-const SUPPRESS_WORD: &str = "free";
-const INJECT_WORD: &str = "that";
-/// Jacopin-paper suppress features (used by Step A only).
-const SUPPRESS_FEATURES: &[(usize, usize)] = &[
-    (13, 30985), // "he"
-    (9, 5488),   // "be"
-    (14, 27874), // "ne"
-    (13, 32049), // "we"
-];
-/// Jacopin-paper inject feature (used by Step A only).
-const INJECT_FEATURE: (usize, usize) = (14, 13043); // "that"
 const DEFAULT_STRENGTH: f32 = 10.0;
 const DEFAULT_TOP_K: usize = 5;
 /// Step B tracks the top-20 features per arm (a superset of the top-5 used
 /// for suppression). V3 Step 1.7 (E) uses the top-20 for qualitative /
 /// cross-layer-binding inspection without re-running forward passes.
 const STEP_B_TOP_N: usize = 20;
-/// Spike-layer neighbours to histogram (layer 14 is the known Jacopin spike
-/// layer on Llama; 13 and 15 bracket it).
+/// Spike-layer neighbours to histogram. V3 Step 1.7 (D) spec — the spike
+/// layer is discovered per run; the offsets pick the spike's two neighbours.
 const HISTOGRAM_NEIGHBOUR_OFFSETS: &[i64] = &[-1, 0, 1];
 /// 32-bin fixed-edge histogram is the V3 Step 1.7 (D) spec.
 const HISTOGRAM_N_BINS: usize = 32;
+
+// ── Family presets ──────────────────────────────────────────────────────────
+
+/// Which `HookPoint` the family's `PLT` encoder reads its input from.
+///
+/// `PltBundle` (Llama `mntss/transcoder-*`) reads from the residual stream
+/// between attention and MLP (`hook_resid_mid` in `TransformerLens`-speak,
+/// [`HookPoint::ResidMid`] here). `GemmaScopeNpz`'s `config.yaml` declares
+/// `feature_input_hook: "ln2.hook_normalized"` — the post-`LN2` (pre-MLP)
+/// normalised residual, captured in candle-mi as [`HookPoint::MlpPre`]
+/// (verified at `src/transformer/mod.rs` immediately after
+/// `layer.mid_norm.forward(...)`).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum PltInputHook {
+    /// `blocks.{i}.hook_resid_mid` — Llama `PltBundle`.
+    ResidMid,
+    /// `blocks.{i}.mlp.hook_pre` — `GemmaScope` (post-`LN2`).
+    MlpPre,
+}
+
+impl PltInputHook {
+    /// Resolve to the concrete [`HookPoint`] for a given layer index.
+    const fn at(self, layer: usize) -> HookPoint {
+        match self {
+            Self::ResidMid => HookPoint::ResidMid(layer),
+            Self::MlpPre => HookPoint::MlpPre(layer),
+        }
+    }
+}
+
+/// Per-family configuration for the planning-site harness.
+///
+/// Centralises every model-, transcoder-, and prompt-specific constant so
+/// `run_step_a` and `run_step_b` are family-agnostic. Two shipped presets:
+/// [`LLAMA`] (the original Jacopin replication target) and [`GEMMA`].
+struct FamilyPreset {
+    /// Display name used in CLI matching and output filenames.
+    name: &'static str,
+    /// Default `HuggingFace` model id.
+    model: &'static str,
+    /// Default `HuggingFace` `CLT` repository.
+    clt_repo: &'static str,
+    /// Default `HuggingFace` `PLT` repository (or `GemmaScope` curation repo).
+    plt_repo: &'static str,
+    /// Rhyming-couplet prompt that primes a planning site at the trailing
+    /// position.
+    prompt: &'static str,
+    /// The word being suppressed (`-ee` for Llama, `-out` for Gemma).
+    suppress_word: &'static str,
+    /// The word being injected (the planning target).
+    inject_word: &'static str,
+    /// Hand-picked suppress features for Step A (paper replication).
+    suppress_features: &'static [(usize, usize)],
+    /// Hand-picked inject feature for Step A (paper replication).
+    inject_feature: (usize, usize),
+    /// Reference `P(inject_word)` at the spike on this candle 0.9 build,
+    /// pinned by running `examples/figure13_planning_poems.rs --preset` on
+    /// the same model + CLT first.
+    reference_max_prob: f32,
+    /// Tolerance (±absolute) on the reference value before Step A's
+    /// sanity-gate emits a `WARN` (still proceeds).
+    reference_tol: f32,
+    /// Hard-fail threshold: a spike below this indicates the harness is
+    /// broken, not noise. Pinned at ~0.73 × `reference_max_prob` (Llama's
+    /// 0.50/0.687 ratio).
+    spike_hard_min: f32,
+    /// `HookPoint` family the `PLT` encoder reads from. See [`PltInputHook`].
+    plt_input_hook: PltInputHook,
+    /// Whether this family's `PLT` ships a `W_skip` linear path that we
+    /// project at the spike position. `true` for Llama `PltBundle`,
+    /// `false` for `GemmaScope` (pure `JumpReLU` transcoder, no skip path).
+    plt_has_w_skip: bool,
+    /// Output filename for Step A (in the experiment dir).
+    step_a_output: &'static str,
+    /// Output filename for Step B (in the experiment dir).
+    step_b_output: &'static str,
+}
+
+/// Llama 3.2 1B + `mntss/clt-llama-3.2-1b-524k` + `mntss/transcoder-Llama-3.2-1B`.
+///
+/// The original Jacopin replication target. Reference `P("that") = 0.687` at
+/// the spike position on the candle 0.9 stack; cf. plip-rs's reported 0.777
+/// (cause of the gap not investigated — KV-cache differences, candle-core
+/// version delta, or both are plausible candidates).
+///
+/// Suppress `-ee` group: `L13:30985 ("he")`, `L9:5488 ("be")`,
+/// `L14:27874 ("ne")`, `L13:32049 ("we")`. Inject `"that" (L14:13043)`.
+const LLAMA: FamilyPreset = FamilyPreset {
+    name: "llama",
+    model: "meta-llama/Llama-3.2-1B",
+    clt_repo: "mntss/clt-llama-3.2-1b-524k",
+    plt_repo: "mntss/transcoder-Llama-3.2-1B",
+    prompt: "The birds were singing in the tree,\n\
+             And everything was wild and free.\n\
+             The river ran down to the sea,\n\
+             There is so much we cannot",
+    suppress_word: "free",
+    inject_word: "that",
+    suppress_features: &[(13, 30985), (9, 5488), (14, 27874), (13, 32049)],
+    inject_feature: (14, 13043),
+    reference_max_prob: 0.687,
+    reference_tol: 1e-2,
+    spike_hard_min: 0.50,
+    plt_input_hook: PltInputHook::ResidMid,
+    plt_has_w_skip: true,
+    step_a_output: "clt_step_a_llama.json",
+    step_b_output: "clt_vs_plt_llama.json",
+};
+
+/// Gemma 2 2B + `mntss/clt-gemma-2-2b-426k` + `mntss/gemma-scope-transcoders`.
+///
+/// Reference `P(" around") = 0.457` at the spike position (trailing space
+/// after "passage") on the candle 0.9 stack — measured 2026-05-01 via
+/// `examples/figure13_planning_poems.rs --preset gemma2-2b-426k` (cf.
+/// plip-rs's reported 0.483; ~5% drift, smaller than Llama's ~12%).
+///
+/// Suppress `-out` group: `L16:13725 ("about")`, `L25:9385 ("out")`.
+/// Inject `"around" (L22:10243)`. The PLT side uses `GemmaScope` (loaded
+/// via the v0.1.10 `TranscoderSchema::GemmaScopeNpz` two-repo flow); its
+/// encoder reads from `MlpPre` (post-`LN2`) and it has no `W_skip`.
+const GEMMA: FamilyPreset = FamilyPreset {
+    name: "gemma",
+    model: "google/gemma-2-2b",
+    clt_repo: "mntss/clt-gemma-2-2b-426k",
+    plt_repo: "mntss/gemma-scope-transcoders",
+    prompt: "The stars were twinkling in the night,\n\
+             The lanterns cast a golden light.\n\
+             She wandered in the dark about,\n\
+             And found a hidden passage",
+    suppress_word: "out",
+    inject_word: "around",
+    suppress_features: &[(16, 13725), (25, 9385)],
+    inject_feature: (22, 10243),
+    reference_max_prob: 0.457,
+    reference_tol: 1e-2,
+    spike_hard_min: 0.30,
+    plt_input_hook: PltInputHook::MlpPre,
+    plt_has_w_skip: false,
+    step_a_output: "clt_step_a_gemma2_2b.json",
+    step_b_output: "clt_vs_plt_gemma2_2b.json",
+};
+
+/// Resolve a `--family` CLI value to the matching [`FamilyPreset`].
+fn resolve_family(name: &str) -> candle_mi::Result<&'static FamilyPreset> {
+    match name {
+        "llama" => Ok(&LLAMA),
+        "gemma" => Ok(&GEMMA),
+        other => Err(candle_mi::MIError::Config(format!(
+            "--family must be `llama` or `gemma`, got `{other}`"
+        ))),
+    }
+}
 
 // ── CLI ─────────────────────────────────────────────────────────────────────
 
 #[derive(Parser)]
 #[command(name = "clt_vs_plt_planning_site")]
-#[command(about = "CLT vs PLT planning-site comparison on Llama 3.2 1B")]
+#[command(about = "CLT vs PLT planning-site comparison")]
 struct Args {
+    /// Model family. `llama` (default — Llama 3.2 1B + Llama PLT, original
+    /// Jacopin replication target); `gemma` (Gemma 2 2B + GemmaScope PLT,
+    /// shipped in v0.1.10).
+    #[arg(long, default_value = "llama")]
+    family: String,
+
     /// Mode. `both` (default) runs Step B (full comparison, both arms,
     /// both protocols); `clt` runs Step A (Jacopin replication, CLT only).
     #[arg(long, default_value = "both")]
     schema: String,
 
-    /// `HuggingFace` model ID.
-    #[arg(long, default_value = "meta-llama/Llama-3.2-1B")]
-    model: String,
+    /// `HuggingFace` model ID. If omitted, uses the family's default
+    /// (`meta-llama/Llama-3.2-1B` for `llama`, `google/gemma-2-2b` for
+    /// `gemma`).
+    #[arg(long)]
+    model: Option<String>,
 
-    /// `HuggingFace` `CLT` repository.
-    #[arg(long, default_value = "mntss/clt-llama-3.2-1b-524k")]
-    clt_repo: String,
+    /// `HuggingFace` `CLT` repository. If omitted, uses the family's default.
+    #[arg(long)]
+    clt_repo: Option<String>,
 
-    /// `HuggingFace` `PLT` repository (used by Step B).
-    #[arg(long, default_value = "mntss/transcoder-Llama-3.2-1B")]
-    plt_repo: String,
+    /// `HuggingFace` `PLT` repository (used by Step B). If omitted, uses
+    /// the family's default. For `gemma`, the user-facing arg is the
+    /// curation repo (`mntss/gemma-scope-transcoders`); the actual NPZ
+    /// weights are fetched from `google/gemma-scope-2b-pt-transcoders` by
+    /// `CrossLayerTranscoder::open` automatically.
+    #[arg(long)]
+    plt_repo: Option<String>,
 
     /// Steering strength for both the suppress and inject hooks.
     #[arg(long, default_value_t = DEFAULT_STRENGTH)]
@@ -142,11 +275,26 @@ struct Args {
     #[arg(long, default_value_t = DEFAULT_TOP_K)]
     top_k: usize,
 
-    /// Output JSON path override. Defaults per mode:
-    /// `--schema clt` → `clt_step_a_llama.json`;
-    /// `--schema both` → `clt_vs_plt_llama.json`.
+    /// Output JSON path override. Defaults per mode + family:
+    /// `--schema clt` → `clt_step_a_{family}.json`;
+    /// `--schema both` → `clt_vs_plt_{family}.json`.
     #[arg(long)]
     output: Option<PathBuf>,
+}
+
+impl Args {
+    /// Resolve every effective string field against the family preset
+    /// (CLI value if provided, preset default otherwise).
+    fn model<'a>(&'a self, preset: &'static FamilyPreset) -> &'a str {
+        // BORROW: explicit .as_deref() — &str view of Option<String> with preset fallback
+        self.model.as_deref().unwrap_or(preset.model)
+    }
+    fn clt_repo<'a>(&'a self, preset: &'static FamilyPreset) -> &'a str {
+        self.clt_repo.as_deref().unwrap_or(preset.clt_repo)
+    }
+    fn plt_repo<'a>(&'a self, preset: &'static FamilyPreset) -> &'a str {
+        self.plt_repo.as_deref().unwrap_or(preset.plt_repo)
+    }
 }
 
 // ── Step A output types ─────────────────────────────────────────────────────
@@ -313,10 +461,10 @@ const fn feature_id(pair: (usize, usize)) -> CltFeatureId {
     }
 }
 
-fn default_output_path(step: Step) -> PathBuf {
+fn default_output_path(step: Step, preset: &'static FamilyPreset) -> PathBuf {
     let filename = match step {
-        Step::A => "clt_step_a_llama.json",
-        Step::B => "clt_vs_plt_llama.json",
+        Step::A => preset.step_a_output,
+        Step::B => preset.step_b_output,
     };
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("docs")
@@ -426,10 +574,11 @@ fn run() -> candle_mi::Result<()> {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
 
-    // BORROW: &str view of the CLI-parsed String for match discrimination
+    // BORROW: &str view of CLI-parsed Strings for match discrimination
+    let preset = resolve_family(args.family.as_str())?;
     match args.schema.as_str() {
-        "clt" => run_step_a(&args),
-        "both" => run_step_b(&args),
+        "clt" => run_step_a(&args, preset),
+        "both" => run_step_b(&args, preset),
         other => Err(candle_mi::MIError::Config(format!(
             "--schema must be `clt` (Step A) or `both` (Step B), got `{other}`"
         ))),
@@ -441,12 +590,18 @@ fn run() -> candle_mi::Result<()> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[allow(clippy::too_many_lines)]
-fn run_step_a(args: &Args) -> candle_mi::Result<()> {
+fn run_step_a(args: &Args, preset: &'static FamilyPreset) -> candle_mi::Result<()> {
     let t_start = std::time::Instant::now();
 
-    eprintln!("=== Step A: CLT baseline on Llama 3.2 1B ===\n");
-    eprintln!("Loading model: {}", args.model);
-    let model = MIModel::from_pretrained(&args.model)?;
+    let model_id = args.model(preset);
+    let clt_repo = args.clt_repo(preset);
+
+    eprintln!(
+        "=== Step A: CLT baseline ({}, {}) ===\n",
+        preset.name, model_id
+    );
+    eprintln!("Loading model: {model_id}");
+    let model = MIModel::from_pretrained(model_id)?;
     let device = model.device().clone();
     if !device.is_cuda() {
         return Err(candle_mi::MIError::Config(
@@ -464,17 +619,21 @@ fn run_step_a(args: &Args) -> candle_mi::Result<()> {
         model.hidden_size()
     );
 
-    eprintln!("Opening CLT: {}", args.clt_repo);
-    let mut clt = CrossLayerTranscoder::open(&args.clt_repo)?;
+    eprintln!("Opening CLT: {clt_repo}");
+    let mut clt = CrossLayerTranscoder::open(clt_repo)?;
 
-    let suppress_features: Vec<CltFeatureId> =
-        SUPPRESS_FEATURES.iter().copied().map(feature_id).collect();
-    let inject_feature = feature_id(INJECT_FEATURE);
+    let suppress_features: Vec<CltFeatureId> = preset
+        .suppress_features
+        .iter()
+        .copied()
+        .map(feature_id)
+        .collect();
+    let inject_feature = feature_id(preset.inject_feature);
     // BORROW: clone() — owned Vec to pass separately from the expanded all-features list
     let mut all_features: Vec<CltFeatureId> = suppress_features.clone();
     all_features.push(inject_feature);
 
-    let prompt_with_space = format!("{PROMPT} ");
+    let prompt_with_space = format!("{} ", preset.prompt);
     let token_ids = tokenizer.encode(&prompt_with_space)?;
     let seq_len = token_ids.len();
     let token_strs: Vec<String> = token_ids
@@ -487,15 +646,15 @@ fn run_step_a(args: &Args) -> candle_mi::Result<()> {
         .collect();
     eprintln!("Tokens ({seq_len}): {token_strs:?}");
 
-    let inject_token_id = tokenizer.find_token_id(INJECT_WORD)?;
+    let inject_token_id = tokenizer.find_token_id(preset.inject_word)?;
     let inject_token_str = tokenizer.decode_token(inject_token_id)?;
     eprintln!("Inject token: \"{inject_token_str}\" (id={inject_token_id})");
 
     let top_k_target_layer = inject_feature.layer;
     eprintln!(
-        "Ranking top-{} CLT features by cosine(decoder_row, unembed(\"{INJECT_WORD}\")) \
+        "Ranking top-{} CLT features by cosine(decoder_row, unembed(\"{}\")) \
          at layer {top_k_target_layer}...",
-        args.top_k
+        args.top_k, preset.inject_word
     );
     let direction = model.backend().embedding_vector(inject_token_id)?;
     let top_k_scores =
@@ -558,42 +717,40 @@ fn run_step_a(args: &Args) -> candle_mi::Result<()> {
 
     let (spike_position, spike) = pick_spike(&sweep)?;
 
-    if spike.prob < LLAMA_SPIKE_HARD_MIN {
+    if spike.prob < preset.spike_hard_min {
         return Err(candle_mi::MIError::Config(format!(
-            "CLT sanity failed: max P(\"{INJECT_WORD}\") = {:.4} < \
-             hard-min {LLAMA_SPIKE_HARD_MIN:.2}. Expected ~{LLAMA_REFERENCE_MAX_PROB:.3} \
-             (candle-mi reference; figure13_planning_poems.rs reproduces the same \
-             number). Check model/CLT repo pinning.",
-            spike.prob
+            "CLT sanity failed: max P(\"{}\") = {:.4} < hard-min {:.2}. \
+             Expected ~{:.3} (candle-mi reference; figure13_planning_poems.rs \
+             reproduces the same number). Check model/CLT repo pinning.",
+            preset.inject_word, spike.prob, preset.spike_hard_min, preset.reference_max_prob
         )));
     }
-    let band_diff = (spike.prob - LLAMA_REFERENCE_MAX_PROB).abs();
-    if band_diff > LLAMA_REFERENCE_TOL {
+    let band_diff = (spike.prob - preset.reference_max_prob).abs();
+    if band_diff > preset.reference_tol {
         eprintln!(
             "\nWARN: max_prob {:.4} drifted {band_diff:.4} from \
-             reference {LLAMA_REFERENCE_MAX_PROB:.3} (tol ±{LLAMA_REFERENCE_TOL:.2}).",
-            spike.prob
+             reference {:.3} (tol ±{:.2}).",
+            spike.prob, preset.reference_max_prob, preset.reference_tol
         );
     } else {
         eprintln!(
-            "\nOK: max_prob {:.4} within ±{LLAMA_REFERENCE_TOL:.2} of \
-             reference {LLAMA_REFERENCE_MAX_PROB:.3}.",
-            spike.prob
+            "\nOK: max_prob {:.4} within ±{:.2} of reference {:.3}.",
+            spike.prob, preset.reference_tol, preset.reference_max_prob
         );
     }
 
     let output_path = args
         .output
         .clone()
-        .unwrap_or_else(|| default_output_path(Step::A));
+        .unwrap_or_else(|| default_output_path(Step::A, preset));
     let output = StepAOutput {
         schema: "clt".into(),
-        model: args.model.clone(),
-        transcoder_repo: args.clt_repo.clone(),
-        prompt: PROMPT.into(),
+        model: model_id.to_owned(),
+        transcoder_repo: clt_repo.to_owned(),
+        prompt: preset.prompt.into(),
         tokens: token_strs,
-        suppress_word: SUPPRESS_WORD.into(),
-        inject_word: INJECT_WORD.into(),
+        suppress_word: preset.suppress_word.into(),
+        inject_word: preset.inject_word.into(),
         inject_token_id,
         suppress_features,
         inject_feature,
@@ -608,8 +765,8 @@ fn run_step_a(args: &Args) -> candle_mi::Result<()> {
         max_logit: spike.logit,
         delta_prob: spike.prob - baseline_prob,
         delta_logit: spike.logit - baseline_logit,
-        reference_max_prob: LLAMA_REFERENCE_MAX_PROB,
-        reference_tolerance: LLAMA_REFERENCE_TOL,
+        reference_max_prob: preset.reference_max_prob,
+        reference_tolerance: preset.reference_tol,
         sweep,
     };
     write_json(&output, &output_path)?;
@@ -633,12 +790,19 @@ fn run_step_a(args: &Args) -> candle_mi::Result<()> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[allow(clippy::too_many_lines)]
-fn run_step_b(args: &Args) -> candle_mi::Result<()> {
+fn run_step_b(args: &Args, preset: &'static FamilyPreset) -> candle_mi::Result<()> {
     let t_start = std::time::Instant::now();
 
-    eprintln!("=== Step B: CLT vs PLT method-matched comparison ===\n");
-    eprintln!("Loading model: {}", args.model);
-    let model = MIModel::from_pretrained(&args.model)?;
+    let model_id = args.model(preset);
+    let clt_repo = args.clt_repo(preset);
+    let plt_repo = args.plt_repo(preset);
+
+    eprintln!(
+        "=== Step B: CLT vs PLT method-matched comparison ({}, {}) ===\n",
+        preset.name, model_id
+    );
+    eprintln!("Loading model: {model_id}");
+    let model = MIModel::from_pretrained(model_id)?;
     let device = model.device().clone();
     if !device.is_cuda() {
         return Err(candle_mi::MIError::Config(
@@ -657,7 +821,7 @@ fn run_step_b(args: &Args) -> candle_mi::Result<()> {
     );
 
     // --- Shared preamble: tokenize, direction, baseline ---
-    let prompt_with_space = format!("{PROMPT} ");
+    let prompt_with_space = format!("{} ", preset.prompt);
     let token_ids = tokenizer.encode(&prompt_with_space)?;
     let seq_len = token_ids.len();
     let token_strs: Vec<String> = token_ids
@@ -670,7 +834,7 @@ fn run_step_b(args: &Args) -> candle_mi::Result<()> {
         .collect();
     eprintln!("Tokens ({seq_len}): {token_strs:?}");
 
-    let inject_token_id = tokenizer.find_token_id(INJECT_WORD)?;
+    let inject_token_id = tokenizer.find_token_id(preset.inject_word)?;
     let inject_token_str = tokenizer.decode_token(inject_token_id)?;
     eprintln!("Inject token: \"{inject_token_str}\" (id={inject_token_id})");
 
@@ -678,11 +842,27 @@ fn run_step_b(args: &Args) -> candle_mi::Result<()> {
 
     let input = Tensor::new(&token_ids[..], &device)?.unsqueeze(0)?;
 
-    // --- One baseline forward with ResidMid captures at every layer ---
-    eprintln!("\nCapturing baseline residuals at every layer...");
+    // --- One baseline forward with the family's required hook captures ---
+    // CLT always reads from `ResidMid`. The PLT side reads from
+    // `preset.plt_input_hook` — `ResidMid` for Llama PltBundle (same as CLT,
+    // residuals shared) or `MlpPre` for GemmaScope (post-LN2; captured
+    // separately). When the two coincide we reuse one capture set.
+    let plt_uses_distinct_hook = preset.plt_input_hook != PltInputHook::ResidMid;
+    eprintln!(
+        "\nCapturing baseline residuals at every layer ({} hook{})...",
+        if plt_uses_distinct_hook {
+            "ResidMid + PLT-specific"
+        } else {
+            "ResidMid only"
+        },
+        if plt_uses_distinct_hook { "s" } else { "" }
+    );
     let mut capture_spec = HookSpec::new();
     for layer in 0..n_layers {
         capture_spec.capture(HookPoint::ResidMid(layer));
+        if plt_uses_distinct_hook {
+            capture_spec.capture(preset.plt_input_hook.at(layer));
+        }
     }
     let baseline_cache = model.forward(&input, &capture_spec)?;
     let baseline_prob = extract_token_prob(baseline_cache.output(), inject_token_id)?;
@@ -693,9 +873,10 @@ fn run_step_b(args: &Args) -> candle_mi::Result<()> {
     );
     // BORROW: clone() — detach per-layer residual tensors from the HookCache
     // so we can drop the cache once the two arms start running.
-    let mut residuals: Vec<Tensor> = Vec::with_capacity(n_layers);
+    let mut clt_residuals: Vec<Tensor> = Vec::with_capacity(n_layers);
+    let mut plt_residuals: Vec<Tensor> = Vec::with_capacity(n_layers);
     for layer in 0..n_layers {
-        let t = baseline_cache
+        let resid_mid = baseline_cache
             .get(&HookPoint::ResidMid(layer))
             .ok_or_else(|| {
                 candle_mi::MIError::Config(format!(
@@ -703,24 +884,42 @@ fn run_step_b(args: &Args) -> candle_mi::Result<()> {
                 ))
             })?
             .clone();
-        residuals.push(t);
+        if plt_uses_distinct_hook {
+            let plt_hook = preset.plt_input_hook.at(layer);
+            let plt_resid = baseline_cache
+                .get(&plt_hook)
+                .ok_or_else(|| {
+                    candle_mi::MIError::Config(format!(
+                        "HookCache missing {plt_hook:?} — capture_spec wiring bug"
+                    ))
+                })?
+                .clone();
+            plt_residuals.push(plt_resid);
+        } else {
+            // BORROW: clone() — Tensor is Arc-backed; cheap shared handle.
+            plt_residuals.push(resid_mid.clone());
+        }
+        clt_residuals.push(resid_mid);
     }
     drop(baseline_cache);
 
-    let top_k_target_layer: usize = 14;
+    // Top-K target layer = the (paper-derived) layer where the inject
+    // feature lives. Llama: 14. Gemma: 22.
+    let top_k_target_layer: usize = preset.inject_feature.0;
     let suppress_inject_strength = args.strength;
 
     // --- CLT arm ---
-    eprintln!("\n── CLT arm (mntss/clt-llama-3.2-1b-524k) ──");
+    eprintln!("\n── CLT arm ({clt_repo}) ──");
     let clt_arm = run_arm_step_b(
         "clt",
-        &args.clt_repo,
+        clt_repo,
         &model,
-        &residuals,
+        &clt_residuals,
         &input,
         seq_len,
         &token_strs,
         inject_token_id,
+        preset.inject_word,
         &direction,
         baseline_prob,
         baseline_logit,
@@ -728,20 +927,22 @@ fn run_step_b(args: &Args) -> candle_mi::Result<()> {
         top_k_target_layer,
         n_layers,
         /*include_max_over_target=*/ true,
+        /*plt_has_w_skip=*/ false, // CLT arm never has W_skip
         &device,
     )?;
 
     // --- PLT arm ---
-    eprintln!("\n── PLT arm (mntss/transcoder-Llama-3.2-1B) ──");
+    eprintln!("\n── PLT arm ({plt_repo}) ──");
     let plt_arm = run_arm_step_b(
         "plt",
-        &args.plt_repo,
+        plt_repo,
         &model,
-        &residuals,
+        &plt_residuals,
         &input,
         seq_len,
         &token_strs,
         inject_token_id,
+        preset.inject_word,
         &direction,
         baseline_prob,
         baseline_logit,
@@ -749,31 +950,33 @@ fn run_step_b(args: &Args) -> candle_mi::Result<()> {
         top_k_target_layer,
         n_layers,
         /*include_max_over_target=*/ false,
+        /*plt_has_w_skip=*/ preset.plt_has_w_skip,
         &device,
     )?;
 
-    // NOTE: Step B does NOT reuse Step A's LLAMA_REFERENCE_MAX_PROB=0.687 gate.
-    // That reference was for Step A's Jacopin protocol (cross-layer -ee suppress
-    // features). Step B uses decoder-projection-derived top-5 suppress features
-    // at the target layer, producing a numerically different signal even with
-    // the same transcoder. The gate field in the output JSON records this
-    // intentionally (clt_suppress_inject_gate_triggered=false, no reference).
+    // NOTE: Step B does NOT reuse Step A's reference_max_prob gate. That
+    // reference was for Step A's Jacopin protocol (cross-layer suppress
+    // features). Step B uses decoder-projection-derived top-5 suppress
+    // features at the target layer, producing a numerically different signal
+    // even with the same transcoder. The gate field in the output JSON
+    // records this intentionally (clt_suppress_inject_gate_triggered=false,
+    // no reference).
     let clt_gate_triggered = false;
 
     let runtime_seconds = t_start.elapsed().as_secs_f64();
     let output_path = args
         .output
         .clone()
-        .unwrap_or_else(|| default_output_path(Step::B));
+        .unwrap_or_else(|| default_output_path(Step::B, preset));
     let output = StepBOutput {
         experiment: "clt-vs-plt-planning-site",
         step: "b",
         runtime_seconds,
         device_name: describe_device(&device),
-        model: args.model.clone(),
-        prompt: PROMPT.into(),
+        model: model_id.to_owned(),
+        prompt: preset.prompt.into(),
         tokens: token_strs,
-        inject_word: INJECT_WORD.into(),
+        inject_word: preset.inject_word.into(),
         inject_token_id,
         top_k_target_layer,
         baseline_prob,
@@ -783,9 +986,9 @@ fn run_step_b(args: &Args) -> candle_mi::Result<()> {
             plt: plt_arm,
         },
         sanity_gates: SanityGates {
-            clt_reference_max_prob: LLAMA_REFERENCE_MAX_PROB,
-            clt_reference_tolerance: LLAMA_REFERENCE_TOL,
-            clt_hard_min: LLAMA_SPIKE_HARD_MIN,
+            clt_reference_max_prob: preset.reference_max_prob,
+            clt_reference_tolerance: preset.reference_tol,
+            clt_hard_min: preset.spike_hard_min,
             clt_suppress_inject_gate_triggered: clt_gate_triggered,
             plt_reference_max_prob: None,
         },
@@ -854,6 +1057,7 @@ fn run_arm_step_b(
     seq_len: usize,
     token_strs: &[String],
     inject_token_id: u32,
+    inject_word: &str,
     direction: &Tensor,
     baseline_prob: f32,
     baseline_logit: f32,
@@ -861,6 +1065,7 @@ fn run_arm_step_b(
     top_k_target_layer: usize,
     n_layers: usize,
     include_max_over_target: bool,
+    plt_has_w_skip: bool,
     device: &candle_core::Device,
 ) -> candle_mi::Result<ArmOutput> {
     let t_arm = std::time::Instant::now();
@@ -871,7 +1076,7 @@ fn run_arm_step_b(
 
     // --- Top-20 same-layer ranking ---
     eprintln!(
-        "  Ranking top-{STEP_B_TOP_N} features by cosine(decoder_row, unembed(\"{INJECT_WORD}\")) \
+        "  Ranking top-{STEP_B_TOP_N} features by cosine(decoder_row, unembed(\"{inject_word}\")) \
          at layer {top_k_target_layer}..."
     );
     let top_20_scores = transcoder.score_features_by_decoder_projection(
@@ -941,7 +1146,7 @@ fn run_arm_step_b(
     )?;
 
     // --- Pre-activation histograms at spike layer ± 1 ---
-    eprintln!("  Computing pre-activation histograms at L14 ± 1...");
+    eprintln!("  Computing pre-activation histograms at L{top_k_target_layer} ± 1...");
     let pre_activation_histograms = build_pre_activation_histograms(
         &mut transcoder,
         residuals,
@@ -951,17 +1156,22 @@ fn run_arm_step_b(
         device,
     )?;
 
-    // --- PLT W_skip projection (arm_label == "plt" only) ---
-    // Uses `seq_len - 1` (the trailing-space position that follows "cannot")
+    // --- PLT W_skip projection (PLT arm with W_skip-bearing transcoder only) ---
+    // Uses `seq_len - 1` (the trailing-space position that follows the prompt)
     // as the structural planning site: on rhyming-couplet prompts the model
     // commits to the rhyme at the last residual-input position before
     // sampling, not at the position the sweep detects maximum intervention
-    // sensitivity. Empirically on this prompt both sweep spikes also land at
-    // `seq_len - 1`, so the two choices coincide here; documenting the
+    // sensitivity. Empirically on the Llama prompt both sweep spikes also land
+    // at `seq_len - 1`, so the two choices coincide there; documenting the
     // structural pick because a different prompt could dissociate them.
-    let w_skip_projection_at_spike = if arm_label == "plt" {
+    //
+    // GemmaScope is a pure JumpReLU transcoder with no W_skip path
+    // (`plt_has_w_skip = false`), so the projection field is `None` for that
+    // arm — the field is preserved in the output JSON for cross-family
+    // structural compatibility.
+    let w_skip_projection_at_spike = if arm_label == "plt" && plt_has_w_skip {
         eprintln!(
-            "  Computing W_skip · residual[seq_len - 1] projection onto unembed(\"{INJECT_WORD}\")..."
+            "  Computing W_skip · residual[seq_len - 1] projection onto unembed(\"{inject_word}\")..."
         );
         Some(compute_w_skip_projection(
             &mut transcoder,
