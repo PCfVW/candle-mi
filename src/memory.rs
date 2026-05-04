@@ -163,6 +163,10 @@ impl MemorySnapshot {
 /// // After dropping all GPU tensors from a forward pass:
 /// sync_and_trim_gpu(&device);
 /// ```
+// Cannot be `const fn`: the `cuda` branch calls non-const FFI (cuDeviceGetDefaultMemPool,
+// cuMemPoolTrimTo). Without `cuda` the body collapses to a no-op, which is why clippy
+// suggests `const` — but `const fn` would break the cuda-enabled build.
+#[allow(clippy::missing_const_for_fn)]
 pub fn sync_and_trim_gpu(device: &candle_core::Device) {
     #[cfg(feature = "cuda")]
     if let candle_core::Device::Cuda(cuda_dev) = device {

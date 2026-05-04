@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Bumped `hf-fetch-model` from `0.9` to `0.10`. No source changes required;
+  consumed API surface (`FetchConfig::builder`, `.token_from_env()`,
+  `.on_progress()`, `download_with_config`, `DownloadOutcome::into_inner`,
+  `progress::IndicatifProgress`) is unchanged.
+- Bumped `anamnesis` from `0.4.3` to `0.4.5`.
+
+### Fixed
+
+- `cargo check --features sae` (without `clt`) no longer fails with `dead_code`
+  on `load_npz_selective`. The function is now gated `#[cfg(feature = "clt")]`
+  to match its only call sites in [`src/clt/mod.rs`].
+
 ## [0.1.10] - 2026-05-01
 
 ### Added (Phase B — Gemma arm of `clt_vs_plt_planning_site`)

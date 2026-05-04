@@ -113,6 +113,7 @@ pub fn load_npz(path: &Path, device: &Device) -> Result<HashMap<String, Tensor>>
 /// Returns [`MIError::Config`] if any **selected** tensor has an
 /// unsupported dtype.
 /// Returns [`MIError::Io`] if the file cannot be read.
+#[cfg(feature = "clt")]
 pub fn load_npz_selective(
     path: &Path,
     names: &[&str],

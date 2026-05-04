@@ -40,7 +40,7 @@ statrs = "0.17"
 tracing = "0.1"
 
 # Model downloads (hf-fetch-model wraps hf-hub v0.5)
-hf-fetch-model = { version = "0.9", features = ["indicatif"] }
+hf-fetch-model = { version = "0.10", features = ["indicatif"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
 # Optional: memory reporting (NVML FFI for per-process VRAM)
@@ -49,7 +49,7 @@ libloading = { version = "0.9", optional = true }
 # Optional: tensor format parsing via anamnesis
 # - sae feature activates "npz" (Gemma Scope SAE weights)
 # - stoicheia feature activates "pth" (AlgZoo .pth agnostic loading)
-anamnesis = { version = "0.4.3", optional = true }
+anamnesis = { version = "0.4.5", optional = true }
 
 # Optional: per-process VRAM on Windows via DXGI (IDXGIAdapter3::QueryVideoMemoryInfo)
 [target.'cfg(windows)'.dependencies]

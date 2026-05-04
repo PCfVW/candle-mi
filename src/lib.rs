@@ -185,8 +185,30 @@
 //!   CLT circuits, SAE encoding, RWKV inference, `AlgZoo` analysis, and more.
 
 #![deny(warnings)] // All warns → errors in CI
-#![cfg_attr(not(any(feature = "mmap", feature = "memory")), forbid(unsafe_code))] // Rule 5: safe by default
-#![cfg_attr(any(feature = "mmap", feature = "memory"), deny(unsafe_code))] // mmap/memory: deny for scoped FFI
+// Rule 5: safe by default
+#![cfg_attr(not(any(feature = "mmap", feature = "memory")), forbid(unsafe_code))]
+// mmap/memory: deny for scoped FFI
+#![cfg_attr(any(feature = "mmap", feature = "memory"), deny(unsafe_code))]
+// Test-code relaxations: the strict `unwrap_used`/`indexing_slicing`/`panic` denies in
+// `Cargo.toml` target *library* code (Rule 3). Inside `#[cfg(test)]` blocks, `unwrap()`,
+// `assert_eq!(v[0], …)`, and `panic!` are the canonical Rust test idioms — failure-by-panic
+// IS the test signal. Allow them only under `cfg(test)`; production builds remain strict.
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::indexing_slicing,
+        clippy::unreadable_literal,
+        clippy::panic,
+        clippy::wildcard_enum_match_arm,
+        clippy::redundant_clone,
+        clippy::needless_collect,
+        clippy::format_push_string,
+        clippy::doc_markdown,
+        clippy::too_many_arguments,
+        clippy::missing_const_for_fn,
+    )
+)]
 
 pub mod backend;
 pub mod cache;

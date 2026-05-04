@@ -31,7 +31,7 @@ use crate::error::{MIError, Result};
 /// Returns a pre-configured [`hf_fetch_model::FetchConfigBuilder`] that reads
 /// `HF_TOKEN` from the environment for gated/private `HuggingFace` repos.
 ///
-/// hf-fetch-model 0.9.x requires explicit opt-in via `.token_from_env()` — the
+/// hf-fetch-model requires explicit opt-in via `.token_from_env()` — the
 /// public `download_files(...)` convenience wrappers build a no-token default
 /// config that silently fails 401 on gated models (Llama, Mistral, Gemma,
 /// Qwen, etc.). Every candle-mi call site that downloads from HF should start
