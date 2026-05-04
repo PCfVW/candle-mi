@@ -251,7 +251,11 @@ pub(crate) fn apply_intervention(tensor: &Tensor, intervention: &Intervention) -
 /// Declares which activations to capture and which interventions to apply.
 ///
 /// Passed to [`MIBackend::forward`](crate::MIBackend::forward). When empty,
-/// the forward pass has zero overhead (no clones, no extra allocations).
+/// the forward pass has negligible overhead — a few microseconds of
+/// per-hook-point `is_captured` checks (which return immediately on the empty
+/// `HashSet`), and a small placeholder allocation for the returned
+/// [`HookCache`]. No activations are cloned and no captures are stored. See
+/// `docs/hook-architecture-diagnostic.md` for measured numbers on Llama-3.2-1B.
 ///
 /// # Example
 ///

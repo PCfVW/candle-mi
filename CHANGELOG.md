@@ -20,6 +20,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `cargo check --features sae` (without `clt`) no longer fails with `dead_code`
   on `load_npz_selective`. The function is now gated `#[cfg(feature = "clt")]`
   to match its only call sites in [`src/clt/mod.rs`].
+- Corrected `HookSpec` doc comment: an empty `HookSpec` is **not** zero
+  overhead. Measured cost on Llama-3.2-1B (CUDA F32, 100 runs) is ~226 µs
+  on a ~35.82 ms forward — about 0.6%. The previously cited "+11.5%" /
+  "+17.5%" overheads were 10-run noise artifacts. See
+  `docs/hook-architecture-diagnostic.md` for the full diagnostic.
+
+### Added
+
+- `docs/hook-architecture-diagnostic.md` — diagnostic write-up of the hook
+  hot-path investigation (`is_captured`, `interventions_at`, capture-density
+  sweep, equal-count shape comparison). Conclusion: the hook architecture is
+  not a performance bottleneck; do not refactor for speed.
+- `tests/bench_hook_diagnostic.rs` — micro-bench backing the diagnostic
+  (5 sub-benches A-E on Llama-3.2-1B).
 
 ## [0.1.10] - 2026-05-01
 
