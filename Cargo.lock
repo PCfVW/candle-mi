@@ -800,7 +800,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -895,7 +895,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1493,10 +1493,11 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hf-fetch-model"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13f2593829bd69ce5c3afcb25b7a3645bae504cb4fcf327e59f58131261605a8"
+checksum = "a9fcbbc0f3bc2f8020d5f00dadeb146ae67641e67a309c1a09e54582010bb21b"
 dependencies = [
+ "anamnesis",
  "dirs",
  "fs2",
  "futures-util",
@@ -1664,9 +1665,9 @@ dependencies = [
 
 [[package]]
 name = "hypomnesis"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36e500fcf22bd1c8b71ac7723ac0cf80781c24eb01fca91bb48e92f2a72af921"
+checksum = "4a3285148bca58f9b403c5ddddd02df685575cea8be163ac60c09886fab1d49c"
 dependencies = [
  "libloading 0.9.0",
  "thiserror 2.0.18",
@@ -2239,7 +2240,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2904,7 +2905,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3353,7 +3354,7 @@ dependencies = [
  "getrandom 0.4.2",
  "once_cell",
  "rustix",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4057,7 +4058,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
