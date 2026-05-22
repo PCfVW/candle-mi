@@ -3,10 +3,10 @@
 //! Transformer configuration and `HuggingFace` `config.json` parsing.
 //!
 //! [`TransformerConfig`] captures the ~12 configuration axes that distinguish
-//! modern decoder-only transformer architectures (`LLaMA`, `Qwen2`, Gemma 2,
-//! `Phi-3`, `StarCoder2`, Mistral, etc.).  One forward pass implementation
-//! covers all of them; adding a new model family requires only a new
-//! `parse_*` function (~30 lines).
+//! modern decoder-only transformer architectures (`LLaMA`, `Qwen2`, `Qwen3`,
+//! Gemma 2, `Phi-3`, `StarCoder2`, Mistral, etc.).  One forward pass
+//! implementation covers all of them; adding a new model family requires only
+//! a new `parse_*` function (~30 lines).
 //!
 //! # Usage
 //!
@@ -47,6 +47,7 @@ pub const SUPPORTED_MODEL_TYPES: &[&str] = &[
     "mistral",
     "phi3",
     "qwen2",
+    "qwen3",
     "starcoder2",
 ];
 
@@ -191,10 +192,10 @@ impl fmt::Display for MlpLayout {
 /// | `tie_word_embeddings` | `tie_word_embeddings` | `false` ⁵ |
 ///
 /// ¹ `StarCoder2` reads `norm_epsilon` instead.\
-/// ² 1e-6 for Qwen2, Gemma, Gemma 2.\
-/// ³ 1 000 000 for Qwen2.\
-/// ⁴ 32 768 for Qwen2/Mistral; 16 384 for `StarCoder2`; 8 192 for
-///   Gemma/Gemma 2; 4 096 for `LLaMA`/`Phi-3`.\
+/// ² 1e-6 for `Qwen2`, `Qwen3`, Gemma, Gemma 2.\
+/// ³ 1 000 000 for `Qwen2`/`Qwen3`.\
+/// ⁴ 32 768 for `Qwen2`/Mistral; 40 960 for `Qwen3`; 16 384 for `StarCoder2`;
+///   8 192 for Gemma/Gemma 2; 4 096 for `LLaMA`/`Phi-3`.\
 /// ⁵ `true` for Gemma, Gemma 2, `StarCoder2`.
 ///
 /// ## Hardcoded architecture axes
@@ -205,7 +206,7 @@ impl fmt::Display for MlpLayout {
 /// | Field | Description |
 /// |-------|-------------|
 /// | `norm_type` | [`RmsNorm`](NormType::RmsNorm) for most; [`GemmaRmsNorm`](NormType::GemmaRmsNorm) for Gemma/Gemma 2; read from `norm_type` key for `StarCoder2` (default [`RmsNorm`](NormType::RmsNorm), `"layer_norm"` → [`LayerNorm`](NormType::LayerNorm)) |
-/// | `activation` | [`Silu`](Activation::Silu) for `LLaMA`/Qwen2/`Phi-3`/Mistral; [`GeluApprox`](Activation::GeluApprox) for Gemma/Gemma 2/`StarCoder2` |
+/// | `activation` | [`Silu`](Activation::Silu) for `LLaMA`/`Qwen2`/`Qwen3`/`Phi-3`/Mistral; [`GeluApprox`](Activation::GeluApprox) for Gemma/Gemma 2/`StarCoder2` |
 /// | `qkv_layout` | [`Fused`](QkvLayout::Fused) for `Phi-3`; [`Separate`](QkvLayout::Separate) for all others |
 /// | `mlp_layout` | [`GatedFused`](MlpLayout::GatedFused) for `Phi-3`; [`Plain`](MlpLayout::Plain) for `StarCoder2`; [`GatedSeparate`](MlpLayout::GatedSeparate) for all others |
 /// | `embedding_scale` | `Some(sqrt(hidden_size))` for Gemma/Gemma 2; `None` for all others |
@@ -214,7 +215,13 @@ impl fmt::Display for MlpLayout {
 ///
 /// ## Per-family `config.json` extensions
 ///
-/// **Qwen2** — reads `attention_bias` (default `true`) → `qkv_bias`.
+/// **`Qwen2`** — reads `attention_bias` (default `true`) → `qkv_bias`.
+///
+/// **`Qwen3`** — drops `attention_bias` (Qwen3 has no QKV bias) and adds
+/// per-head-dim `RMSNorm` on `Q` and `K` before `RoPE` (`use_qk_norm: true`,
+/// `qk_norm_eps` parsed from `rms_norm_eps`).  The `q_norm.weight` and
+/// `k_norm.weight` tensors live alongside the QKV projections in each
+/// attention block and are loaded by [`crate::transformer`].
 ///
 /// **Gemma / Gemma 2** — hardcodes `embedding_scale` to `sqrt(hidden_size)`,
 /// `tie_word_embeddings` defaults to `true`, and `norm_eps` defaults to 1e-6.
@@ -307,6 +314,19 @@ pub struct TransformerConfig {
     /// When `true`, even layers (0, 2, 4, ...) use sliding window and
     /// odd layers use global causal.  `true` for Gemma 2.
     pub alternating_sliding_window: bool,
+
+    // --- Qwen3 extensions ----------------------------------------------------
+    /// Whether per-head-dim `RMSNorm` is applied to `Q` and `K` before `RoPE`.
+    /// `true` for `Qwen3`; `false` for all other supported families.  When
+    /// `true`, [`crate::transformer`] loads `q_norm.weight` and `k_norm.weight`
+    /// of shape `[head_dim]` from each layer's `self_attn` namespace.
+    pub use_qk_norm: bool,
+    /// Epsilon used by the per-head-dim `Q`/`K` `RMSNorm` when
+    /// [`use_qk_norm`](Self::use_qk_norm) is `true`.  Unused when
+    /// `use_qk_norm == false`; conventionally mirrors
+    /// [`norm_eps`](Self::norm_eps) so a non-`Qwen3` model that ever flips the
+    /// flag picks up a sensible default.
+    pub qk_norm_eps: f64,
 }
 
 // ---------------------------------------------------------------------------
@@ -335,6 +355,7 @@ impl TransformerConfig {
         match model_type {
             "llama" => Self::parse_llama(config),
             "qwen2" => Self::parse_qwen2(config),
+            "qwen3" => Self::parse_qwen3(config),
             "gemma" => Self::parse_gemma(config),
             "gemma2" => Self::parse_gemma2(config),
             "phi3" => Self::parse_phi3(config),
@@ -363,6 +384,7 @@ impl TransformerConfig {
     fn parse_llama(config: &Value) -> Result<Self> {
         let hidden_size = get_usize(config, "hidden_size")?;
         let num_attention_heads = get_usize(config, "num_attention_heads")?;
+        let norm_eps = get_f64_or(config, "rms_norm_eps", 1e-5);
 
         Ok(Self {
             hidden_size,
@@ -374,7 +396,7 @@ impl TransformerConfig {
             vocab_size: get_usize(config, "vocab_size")?,
 
             norm_type: NormType::RmsNorm,
-            norm_eps: get_f64_or(config, "rms_norm_eps", 1e-5),
+            norm_eps,
             activation: Activation::Silu,
             qkv_layout: QkvLayout::Separate,
             mlp_layout: MlpLayout::GatedSeparate,
@@ -393,6 +415,65 @@ impl TransformerConfig {
             use_post_norms: false,
             sliding_window: None,
             alternating_sliding_window: false,
+
+            use_qk_norm: false,
+            qk_norm_eps: norm_eps,
+        })
+    }
+
+    /// Parse a `Qwen3` config.
+    ///
+    /// Differs from [`parse_qwen2`](Self::parse_qwen2) in three places:
+    /// drops the QKV bias (`Qwen3` has no `attention_bias`), and adds
+    /// per-head-dim `RMSNorm` on `Q` and `K` before `RoPE`
+    /// (`use_qk_norm: true`, `qk_norm_eps` parsed from `rms_norm_eps`).
+    /// The `q_norm.weight` and `k_norm.weight` tensors live alongside
+    /// the QKV projections in each attention block and are loaded by
+    /// [`crate::transformer`].
+    ///
+    /// `max_position_embeddings` defaults to 40 960 (the `Qwen3-1.7B-Base`
+    /// release default); upstream variants override the key explicitly.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Config`] if required dimension fields are missing.
+    fn parse_qwen3(config: &Value) -> Result<Self> {
+        let hidden_size = get_usize(config, "hidden_size")?;
+        let num_attention_heads = get_usize(config, "num_attention_heads")?;
+        let norm_eps = get_f64_or(config, "rms_norm_eps", 1e-6);
+
+        Ok(Self {
+            hidden_size,
+            num_layers: get_usize(config, "num_hidden_layers")?,
+            num_attention_heads,
+            num_kv_heads: get_usize_or(config, "num_key_value_heads", num_attention_heads),
+            head_dim: get_head_dim(config, hidden_size, num_attention_heads)?,
+            intermediate_size: get_usize(config, "intermediate_size")?,
+            vocab_size: get_usize(config, "vocab_size")?,
+
+            norm_type: NormType::RmsNorm,
+            norm_eps,
+            activation: Activation::Silu,
+            qkv_layout: QkvLayout::Separate,
+            mlp_layout: MlpLayout::GatedSeparate,
+            qkv_bias: false,
+            o_proj_bias: false,
+            mlp_bias: false,
+            embedding_scale: None,
+            tie_word_embeddings: get_bool_or(config, "tie_word_embeddings", true),
+
+            rope_theta: get_f64_or(config, "rope_theta", 1_000_000.0),
+            max_position_embeddings: get_usize_or(config, "max_position_embeddings", 40_960),
+
+            attn_logit_softcapping: None,
+            final_logit_softcapping: None,
+            query_pre_attn_scalar: None,
+            use_post_norms: false,
+            sliding_window: None,
+            alternating_sliding_window: false,
+
+            use_qk_norm: true,
+            qk_norm_eps: norm_eps,
         })
     }
 
@@ -407,6 +488,7 @@ impl TransformerConfig {
     fn parse_qwen2(config: &Value) -> Result<Self> {
         let hidden_size = get_usize(config, "hidden_size")?;
         let num_attention_heads = get_usize(config, "num_attention_heads")?;
+        let norm_eps = get_f64_or(config, "rms_norm_eps", 1e-6);
 
         Ok(Self {
             hidden_size,
@@ -418,7 +500,7 @@ impl TransformerConfig {
             vocab_size: get_usize(config, "vocab_size")?,
 
             norm_type: NormType::RmsNorm,
-            norm_eps: get_f64_or(config, "rms_norm_eps", 1e-6),
+            norm_eps,
             activation: Activation::Silu,
             qkv_layout: QkvLayout::Separate,
             mlp_layout: MlpLayout::GatedSeparate,
@@ -437,6 +519,9 @@ impl TransformerConfig {
             use_post_norms: false,
             sliding_window: None,
             alternating_sliding_window: false,
+
+            use_qk_norm: false,
+            qk_norm_eps: norm_eps,
         })
     }
 
@@ -450,6 +535,7 @@ impl TransformerConfig {
     fn parse_gemma(config: &Value) -> Result<Self> {
         let hidden_size = get_usize(config, "hidden_size")?;
         let num_attention_heads = get_usize(config, "num_attention_heads")?;
+        let norm_eps = get_f64_or(config, "rms_norm_eps", 1e-6);
 
         Ok(Self {
             hidden_size,
@@ -461,7 +547,7 @@ impl TransformerConfig {
             vocab_size: get_usize(config, "vocab_size")?,
 
             norm_type: NormType::GemmaRmsNorm,
-            norm_eps: get_f64_or(config, "rms_norm_eps", 1e-6),
+            norm_eps,
             activation: Activation::GeluApprox,
             qkv_layout: QkvLayout::Separate,
             mlp_layout: MlpLayout::GatedSeparate,
@@ -487,6 +573,9 @@ impl TransformerConfig {
             use_post_norms: false,
             sliding_window: None,
             alternating_sliding_window: false,
+
+            use_qk_norm: false,
+            qk_norm_eps: norm_eps,
         })
     }
 
@@ -501,6 +590,7 @@ impl TransformerConfig {
     fn parse_gemma2(config: &Value) -> Result<Self> {
         let hidden_size = get_usize(config, "hidden_size")?;
         let num_attention_heads = get_usize(config, "num_attention_heads")?;
+        let norm_eps = get_f64_or(config, "rms_norm_eps", 1e-6);
 
         Ok(Self {
             hidden_size,
@@ -512,7 +602,7 @@ impl TransformerConfig {
             vocab_size: get_usize(config, "vocab_size")?,
 
             norm_type: NormType::GemmaRmsNorm,
-            norm_eps: get_f64_or(config, "rms_norm_eps", 1e-6),
+            norm_eps,
             activation: Activation::GeluApprox,
             qkv_layout: QkvLayout::Separate,
             mlp_layout: MlpLayout::GatedSeparate,
@@ -539,6 +629,9 @@ impl TransformerConfig {
             use_post_norms: true,
             sliding_window: get_optional_usize(config, "sliding_window"),
             alternating_sliding_window: true,
+
+            use_qk_norm: false,
+            qk_norm_eps: norm_eps,
         })
     }
 
@@ -552,6 +645,7 @@ impl TransformerConfig {
     fn parse_phi3(config: &Value) -> Result<Self> {
         let hidden_size = get_usize(config, "hidden_size")?;
         let num_attention_heads = get_usize(config, "num_attention_heads")?;
+        let norm_eps = get_f64_or(config, "rms_norm_eps", 1e-5);
 
         Ok(Self {
             hidden_size,
@@ -563,7 +657,7 @@ impl TransformerConfig {
             vocab_size: get_usize(config, "vocab_size")?,
 
             norm_type: NormType::RmsNorm,
-            norm_eps: get_f64_or(config, "rms_norm_eps", 1e-5),
+            norm_eps,
             activation: Activation::Silu,
             qkv_layout: QkvLayout::Fused,
             mlp_layout: MlpLayout::GatedFused,
@@ -582,6 +676,9 @@ impl TransformerConfig {
             use_post_norms: false,
             sliding_window: None,
             alternating_sliding_window: false,
+
+            use_qk_norm: false,
+            qk_norm_eps: norm_eps,
         })
     }
 
@@ -597,6 +694,7 @@ impl TransformerConfig {
         let hidden_size = get_usize(config, "hidden_size")?;
         let num_attention_heads = get_usize(config, "num_attention_heads")?;
         let use_bias = get_bool_or(config, "use_bias", true);
+        let norm_eps = get_f64_or(config, "norm_epsilon", 1e-5);
 
         // StarCoder2 specifies norm_type in config (usually "layer_norm").
         let norm_type = match config.get("norm_type").and_then(Value::as_str) {
@@ -614,7 +712,7 @@ impl TransformerConfig {
             vocab_size: get_usize(config, "vocab_size")?,
 
             norm_type,
-            norm_eps: get_f64_or(config, "norm_epsilon", 1e-5),
+            norm_eps,
             activation: Activation::GeluApprox,
             qkv_layout: QkvLayout::Separate,
             mlp_layout: MlpLayout::Plain,
@@ -633,6 +731,9 @@ impl TransformerConfig {
             use_post_norms: false,
             sliding_window: get_optional_usize(config, "sliding_window"),
             alternating_sliding_window: false,
+
+            use_qk_norm: false,
+            qk_norm_eps: norm_eps,
         })
     }
 
@@ -646,6 +747,7 @@ impl TransformerConfig {
     fn parse_mistral(config: &Value) -> Result<Self> {
         let hidden_size = get_usize(config, "hidden_size")?;
         let num_attention_heads = get_usize(config, "num_attention_heads")?;
+        let norm_eps = get_f64_or(config, "rms_norm_eps", 1e-5);
 
         Ok(Self {
             hidden_size,
@@ -657,7 +759,7 @@ impl TransformerConfig {
             vocab_size: get_usize(config, "vocab_size")?,
 
             norm_type: NormType::RmsNorm,
-            norm_eps: get_f64_or(config, "rms_norm_eps", 1e-5),
+            norm_eps,
             activation: Activation::Silu,
             qkv_layout: QkvLayout::Separate,
             mlp_layout: MlpLayout::GatedSeparate,
@@ -676,6 +778,9 @@ impl TransformerConfig {
             use_post_norms: false,
             sliding_window: get_optional_usize(config, "sliding_window"),
             alternating_sliding_window: false,
+
+            use_qk_norm: false,
+            qk_norm_eps: norm_eps,
         })
     }
 }
@@ -870,7 +975,15 @@ impl TransformerConfig {
     /// # Errors
     ///
     /// Returns [`MIError::Config`] if required dimension fields are missing.
-    #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+    // EXPLICIT: parse_auto is a deliberately flat sequence (required scalars →
+    // optional scalars → tensor-name inference → model_type fixups → struct
+    // construction). Extracting helpers would scatter the logic and the
+    // helpers would have no other call sites.
+    #[allow(
+        clippy::cast_precision_loss,
+        clippy::as_conversions,
+        clippy::too_many_lines
+    )]
     fn parse_auto(config: &Value, tensor_names: &[String], model_type: &str) -> Result<Self> {
         // Helper: check if a tensor matching `layers.0.<suffix>` exists
         let has_layer0 = |suffix: &str| {
@@ -939,6 +1052,12 @@ impl TransformerConfig {
             || has_layer0("mlp.gate_proj.bias")
             || has_layer0("mlp.gate_up_proj.bias");
 
+        // QK norm (`Qwen3` and the like): per-head-dim `RMSNorm` on `Q` / `K`
+        // before `RoPE`.  Detected by the presence of `q_norm.weight` /
+        // `k_norm.weight` in layer 0's `self_attn` namespace.
+        let use_qk_norm =
+            has_layer0("self_attn.q_norm.weight") && has_layer0("self_attn.k_norm.weight");
+
         // Norm type: LayerNorm if norm layers have bias tensors
         let has_norm_bias = has_layer0("input_layernorm.bias");
         let base_norm_type = if has_norm_bias {
@@ -1006,6 +1125,9 @@ impl TransformerConfig {
             use_post_norms,
             sliding_window,
             alternating_sliding_window,
+
+            use_qk_norm,
+            qk_norm_eps: norm_eps,
         })
     }
 }
@@ -1386,6 +1508,50 @@ mod tests {
         assert!(config.qkv_bias);
         assert!(!config.o_proj_bias);
         assert!(config.tie_word_embeddings);
+        // `Qwen2` has plain `ReLU`-style attention (no `QK norm`).
+        assert!(!config.use_qk_norm);
+    }
+
+    #[test]
+    fn parse_qwen3_no_bias_and_qk_norm() {
+        // `Qwen3-1.7B-Base` — actual `config.json` scalar values
+        let json = serde_json::json!({
+            "model_type": "qwen3",
+            "hidden_size": 2048,
+            "num_hidden_layers": 28,
+            "num_attention_heads": 16,
+            "num_key_value_heads": 8,
+            "head_dim": 128,
+            "intermediate_size": 6144,
+            "vocab_size": 151936,
+            "rms_norm_eps": 1e-6,
+            "rope_theta": 1_000_000.0,
+            "max_position_embeddings": 40_960,
+            "hidden_act": "silu",
+            "tie_word_embeddings": true
+        });
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+
+        // Qwen3 has no QKV bias (unlike Qwen2).
+        assert!(!config.qkv_bias);
+        assert!(!config.o_proj_bias);
+        assert!(!config.mlp_bias);
+
+        // QK norm is the defining Qwen3 addition.
+        assert!(config.use_qk_norm);
+        assert!((config.qk_norm_eps - 1e-6).abs() < f64::EPSILON);
+
+        // No Gemma 2 softcapping.
+        assert!(config.attn_logit_softcapping.is_none());
+        assert!(config.final_logit_softcapping.is_none());
+        assert!(config.query_pre_attn_scalar.is_none());
+        assert!(!config.use_post_norms);
+
+        // Dimensions match the 1.7B Base release.
+        assert_eq!(config.hidden_size, 2048);
+        assert_eq!(config.num_layers, 28);
+        assert_eq!(config.head_dim, 128);
+        assert_eq!(config.num_kv_heads, 8);
     }
 
     #[test]
@@ -1542,6 +1708,50 @@ mod tests {
         let manual = TransformerConfig::from_hf_config(&json).unwrap();
         let auto = TransformerConfig::parse_auto(&json, &names, "llama").unwrap();
         assert_eq!(auto, manual);
+    }
+
+    #[test]
+    fn auto_config_matches_qwen3() {
+        // `Qwen3-1.7B-Base` — actual `config.json` scalar values + tensor names
+        // taken from the published `model.safetensors` header.
+        let json = serde_json::json!({
+            "model_type": "qwen3",
+            "hidden_size": 2048,
+            "num_hidden_layers": 28,
+            "num_attention_heads": 16,
+            "num_key_value_heads": 8,
+            "head_dim": 128,
+            "intermediate_size": 6144,
+            "vocab_size": 151936,
+            "rms_norm_eps": 1e-6,
+            "rope_theta": 1_000_000.0,
+            "max_position_embeddings": 40_960,
+            "hidden_act": "silu",
+            "tie_word_embeddings": true
+        });
+        let names = tensor_names(&[
+            "model.embed_tokens.weight",
+            "model.layers.0.input_layernorm.weight",
+            "model.layers.0.mlp.down_proj.weight",
+            "model.layers.0.mlp.gate_proj.weight",
+            "model.layers.0.mlp.up_proj.weight",
+            "model.layers.0.post_attention_layernorm.weight",
+            "model.layers.0.self_attn.k_norm.weight",
+            "model.layers.0.self_attn.k_proj.weight",
+            "model.layers.0.self_attn.o_proj.weight",
+            "model.layers.0.self_attn.q_norm.weight",
+            "model.layers.0.self_attn.q_proj.weight",
+            "model.layers.0.self_attn.v_proj.weight",
+            "model.norm.weight",
+        ]);
+
+        let manual = TransformerConfig::from_hf_config(&json).unwrap();
+        let auto = TransformerConfig::parse_auto(&json, &names, "qwen3").unwrap();
+        assert_eq!(auto, manual);
+
+        // Sanity: both surfaces should detect QK norm.
+        assert!(manual.use_qk_norm);
+        assert!(auto.use_qk_norm);
     }
 
     #[test]
