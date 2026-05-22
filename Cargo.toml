@@ -150,6 +150,10 @@ name = "figure13_planning_poems"
 required-features = ["clt", "transformer"]
 
 [[example]]
+name = "vocab_scan"
+required-features = ["clt", "transformer"]
+
+[[example]]
 name = "generate"
 required-features = ["transformer"]
 
