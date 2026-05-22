@@ -28,6 +28,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`TranscoderSchema::CltSplitJumpReLU`** — new schema variant for the
+  BlueLightAI Qwen3 CLTs (`bluelightai/clt-qwen3-{0.6b,1.7b}-base-20k`).
+  Same file layout as `CltSplit` (per-layer `W_enc_{l}.safetensors` +
+  `W_dec_{l}.safetensors`, rank-3 cross-layer decoder) with `JumpReLU`
+  activation (per-feature `threshold_{l}` tensor in the encoder file).
+  Auto-detected via the `features/index.json.gz` circuit-tracer sidecar
+  that BlueLightAI ships and mntss `CltSplit` repos do not. All five
+  decoder-access methods (`decoder_vector`, `cache_steering_vectors`,
+  `cache_steering_vectors_all_downstream`,
+  `score_features_by_decoder_projection`,
+  `score_features_by_decoder_projection_batch`, `extract_decoder_vectors`)
+  dispatch through the same `load_decoder_w_dec` helper as plain
+  `CltSplit`; no caller-site changes required.
+- `scripts/clt_qwen3_validation.py` — from-first-principles Python
+  encoder oracle for the BlueLightAI Qwen3 1.7B CLT, mirroring
+  `plt_gemma_validation.py`. Produces `scripts/clt_qwen3_reference.json`
+  (9 test cases across layers `{0, 13, 27}`).
+- `tests/validate_clt_qwen3.rs` — `#[ignore]`-gated integration test
+  asserting encoder parity vs the Python oracle: schema detected as
+  `CltSplitJumpReLU`, top-K feature indices match exactly, activation
+  magnitudes within `abs-diff < 1e-4` (measured: 2.38e-6).
 - **`Qwen3` model family** support in the generic transformer arm.
   `"qwen3"` joins `SUPPORTED_MODEL_TYPES` with a new `parse_qwen3` config
   parser (no QKV bias, `40 960` default `max_position_embeddings`,
