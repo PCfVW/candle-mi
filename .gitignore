@@ -12,3 +12,10 @@ examples/results/**/*.json
 
 # Hallucinated feature evidence (kept locally, not in repo)
 examples/figure13/llama_output_old_hallucinated.json
+
+# Vocab-scan large outputs (multi-100s of MB to 1+ GiB). Kept locally
+# for re-analysis but never committed; the small `*_phonological_clean.json`
+# subset is committed for the rebuttal record.
+docs/experiments/**/vocab_scan_*_raw.json
+docs/experiments/**/vocab_scan_*_phonological.json
+!docs/experiments/**/vocab_scan_*_phonological_clean.json
