@@ -130,36 +130,53 @@ def feature_dominant_rime(
     top_tokens: list[dict],
     cmu: dict[str, list[list[str]]],
     top_k: int,
-) -> tuple[str | None, int, int]:
-    """Return ``(dominant_rime, count, n_resolved)`` for one feature's
-    top-K tokens.
+) -> tuple[str | None, int, int, list[str]]:
+    """Return ``(dominant_rime, unique_word_count, n_unique_resolved,
+    sample_words)`` for one feature's top-K tokens.
 
-    `dominant_rime` is the most common rime across CMU-resolvable
-    tokens; `count` is how many of those tokens share it;
-    `n_resolved` is the total number of CMU-resolvable tokens (≤ top_k).
-    Returns ``(None, 0, 0)`` when no tokens resolve.
+    BPE variants of the same word (` the`, `The`, `_the`, `.the`, etc.)
+    collapse to one normalised entry — phonological clusters should be
+    distinct words sharing a rime, not the same word in multiple
+    tokenisations.
+
+    `dominant_rime` is the rime with the most *unique normalised words*
+    among CMU-resolvable top-K tokens.  `unique_word_count` is the
+    number of unique words sharing that rime.  `n_unique_resolved` is
+    the total number of unique CMU-resolvable words in the top-K
+    (denominator for the rime-share fraction).  `sample_words` lists
+    up to 5 of the dominant-rime words for downstream display.
+
+    Returns ``(None, 0, 0, [])`` when no tokens resolve.
     """
-    rime_counts: Counter[str] = Counter()
-    n_resolved = 0
+    # Group resolvable top-K tokens by rime, keeping unique words only.
+    rime_to_words: dict[str, set[str]] = defaultdict(set)
+    seen_words: set[str] = set()
     for entry in top_tokens[:top_k]:
         text = entry.get("text", "")
         word = normalise_token(text)
         if word is None:
             continue
+        if word in seen_words:
+            continue
         pron_variants = cmu.get(word)
         if not pron_variants:
+            seen_words.add(word)
             continue
-        # Use the first pronunciation variant (CMUdict orders them by
-        # frequency).
+        # Use the first pronunciation variant (CMUdict orders by frequency).
         rime = extract_rime(pron_variants[0])
         if rime is None:
+            seen_words.add(word)
             continue
-        rime_counts[rime] += 1
-        n_resolved += 1
-    if not rime_counts:
-        return (None, 0, n_resolved)
-    dominant, count = rime_counts.most_common(1)[0]
-    return (dominant, count, n_resolved)
+        rime_to_words[rime].add(word)
+        seen_words.add(word)
+    n_unique_resolved = sum(len(w) for w in rime_to_words.values())
+    if not rime_to_words:
+        return (None, 0, n_unique_resolved, [])
+    dominant_rime, dominant_words = max(
+        rime_to_words.items(), key=lambda kv: len(kv[1])
+    )
+    sample = sorted(dominant_words)[:5]
+    return (dominant_rime, len(dominant_words), n_unique_resolved, sample)
 
 
 def main() -> None:
@@ -198,6 +215,17 @@ def main() -> None:
         default=None,
         help="Optional annotated JSON output path",
     )
+    parser.add_argument(
+        "--clean-only-output",
+        action="store_true",
+        help=(
+            "When set, the --output JSON contains ONLY the phonologically-"
+            "clean features (commit-friendly subset, typically a few MB) "
+            "instead of every feature in the scan (typically 100s of MB to "
+            "1+ GB).  Rhyme-group counts + scan parameters are always "
+            "included in the header regardless of this flag."
+        ),
+    )
     args = parser.parse_args()
 
     print(f"Loading {args.input} ...", file=sys.stderr)
@@ -214,18 +242,21 @@ def main() -> None:
     print(f"Scanning {len(features)} features (top_k={args.top_k}) ...", file=sys.stderr)
 
     # Annotate every feature with its dominant rime + share; flag clean.
+    # All counts are over UNIQUE NORMALISED WORDS (not raw tokens) — BPE
+    # variants of the same word do not inflate a rime cluster.
     clean_features: list[dict] = []
     rime_to_features: dict[str, list[dict]] = defaultdict(list)
     for feat in features:
         top_tokens = feat.get("top_tokens", [])
-        dominant, count, n_resolved = feature_dominant_rime(
+        dominant, count, n_unique, sample = feature_dominant_rime(
             top_tokens, cmu, args.top_k
         )
-        share = count / n_resolved if n_resolved > 0 else 0.0
+        share = count / n_unique if n_unique > 0 else 0.0
         feat["cmudict_rime"] = dominant
-        feat["cmudict_rime_count"] = count
-        feat["cmudict_resolved_count"] = n_resolved
+        feat["cmudict_rime_unique_word_count"] = count
+        feat["cmudict_unique_resolved_count"] = n_unique
         feat["cmudict_rime_share"] = round(share, 4)
+        feat["cmudict_rime_sample_words"] = sample
         is_clean = (
             dominant is not None
             and count >= args.min_cluster_size
@@ -250,17 +281,27 @@ def main() -> None:
         rime_to_features.items(), key=lambda kv: -len(kv[1])
     )
     for rime, feats in sorted_rimes[:30]:
-        sample_tokens = []
-        for f in feats[:3]:
-            top1 = f.get("top_tokens", [{}])[0].get("text", "")
-            sample_tokens.append(top1.strip())
-        sample_str = ", ".join(sample_tokens)
+        # Show diverse sample words (drawn from the dominant-rime samples
+        # already computed per feature).
+        seen: set[str] = set()
+        diverse: list[str] = []
+        for f in feats:
+            for w in f.get("cmudict_rime_sample_words", []):
+                if w not in seen:
+                    seen.add(w)
+                    diverse.append(w)
+                if len(diverse) >= 6:
+                    break
+            if len(diverse) >= 6:
+                break
+        sample_str = ", ".join(diverse)
         print(
-            f"  {rime:<12}  {len(feats):4d} features  e.g. {sample_str}",
+            f"  {rime:<14}  {len(feats):4d} features  words: {sample_str}",
             file=sys.stderr,
         )
 
     # JSON output.
+    output_features = clean_features if args.clean_only_output else features
     output_data = {
         "input": str(args.input),
         "top_k": args.top_k,
@@ -268,10 +309,9 @@ def main() -> None:
         "min_cluster_size": args.min_cluster_size,
         "n_features_scanned": len(features),
         "n_phonologically_clean": n_clean,
-        "rhyme_group_counts": {
-            rime: len(feats) for rime, feats in sorted_rimes
-        },
-        "features": features,
+        "clean_only_output": args.clean_only_output,
+        "rhyme_group_counts": {rime: len(feats) for rime, feats in sorted_rimes},
+        "features": output_features,
     }
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
