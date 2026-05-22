@@ -6,7 +6,7 @@
 //! and multi-query attention (MQA) via the `num_kv_heads` configuration.
 
 use candle_core::{D, DType, Module, Tensor};
-use candle_nn::{Linear, VarBuilder};
+use candle_nn::{Linear, RmsNorm, VarBuilder};
 
 use crate::config::{QkvLayout, TransformerConfig};
 use crate::error::Result;
@@ -93,6 +93,14 @@ pub struct Attention {
     scale: f64,
     /// Optional attention logit soft-capping value (Gemma 2).
     attn_logit_softcapping: Option<f64>,
+    /// Optional per-head-dim `RMSNorm` applied to `Q` before `RoPE` (`Qwen3`).
+    /// `Some(_)` when [`TransformerConfig::use_qk_norm`] is `true`; `None`
+    /// otherwise.  Weight shape: `[head_dim]`.
+    q_norm: Option<RmsNorm>,
+    /// Optional per-head-dim `RMSNorm` applied to `K` before `RoPE` (`Qwen3`).
+    /// `Some(_)` when [`TransformerConfig::use_qk_norm`] is `true`; `None`
+    /// otherwise.  Weight shape: `[head_dim]`.
+    k_norm: Option<RmsNorm>,
 }
 
 impl Attention {
@@ -157,6 +165,17 @@ impl Attention {
             |scalar| 1.0 / scalar.sqrt(),
         );
 
+        // Qwen3-style QK norm: per-head-dim `RMSNorm` of Q and K before RoPE.
+        // The weight tensors live at `self_attn.q_norm.weight` /
+        // `self_attn.k_norm.weight` with shape `[head_dim]`.
+        let (q_norm, k_norm) = if config.use_qk_norm {
+            let q_norm = candle_nn::rms_norm(config.head_dim, config.qk_norm_eps, vb.pp("q_norm"))?;
+            let k_norm = candle_nn::rms_norm(config.head_dim, config.qk_norm_eps, vb.pp("k_norm"))?;
+            (Some(q_norm), Some(k_norm))
+        } else {
+            (None, None)
+        };
+
         Ok(Self {
             qkv,
             o_proj,
@@ -165,10 +184,20 @@ impl Attention {
             head_dim: config.head_dim,
             scale,
             attn_logit_softcapping: config.attn_logit_softcapping,
+            q_norm,
+            k_norm,
         })
     }
 
     /// Run the attention forward pass with hook capture and intervention.
+    ///
+    /// For `Qwen3`-family models (`TransformerConfig::use_qk_norm == true`),
+    /// `RMSNorm` is applied per head dimension to `Q` and `K` after the
+    /// projection-and-reshape step and **before** the
+    /// [`HookPoint::AttnQ`] / [`HookPoint::AttnK`] capture/intervention
+    /// block, so those hooks see the same post-`QK`-norm tensors that
+    /// actually feed into `RoPE`.  For non-`Qwen3` models (`q_norm` /
+    /// `k_norm` are `None`), behaviour is unchanged.
     ///
     /// # Shapes
     /// - `x`: `[batch, seq, hidden_size]`
@@ -202,6 +231,15 @@ impl Attention {
         let mut v = v
             .reshape((batch, seq_len, self.num_kv_heads, self.head_dim))?
             .transpose(1, 2)?;
+
+        // QK norm (Qwen3-style): per-head-dim `RMSNorm` of Q / K before
+        // RoPE.  No-op when `q_norm` / `k_norm` are `None`.  Applied here so
+        // the AttnQ / AttnK hooks below capture post-QK-norm tensors,
+        // matching the values that actually feed into `RoPE` and attention.
+        if let (Some(qn), Some(kn)) = (&self.q_norm, &self.k_norm) {
+            q = qn.forward(&q)?;
+            k = kn.forward(&k)?;
+        }
 
         // Hook: capture and/or intervene on Q, K, V after reshape (before RoPE)
         if hooks.is_captured(&HookPoint::AttnQ(layer_idx)) {

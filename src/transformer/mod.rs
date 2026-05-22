@@ -2,9 +2,13 @@
 
 //! Generic transformer implementation.
 //!
-//! A single forward pass covers `LLaMA`, `Qwen2`, Gemma, Gemma 2, `Phi-3`,
-//! `StarCoder2`, Mistral, and more — parameterized by
+//! A single forward pass covers `LLaMA`, `Qwen2`, `Qwen3`, Gemma, Gemma 2,
+//! `Phi-3`, `StarCoder2`, Mistral, and more — parameterized by
 //! [`TransformerConfig`].
+//!
+//! `Qwen3` adds per-head-dim `RMSNorm` on `Q` and `K` before `RoPE`
+//! ([`TransformerConfig::use_qk_norm`]); the rest of the forward pass is
+//! shared with the other GQA-style decoder-only families.
 
 pub(crate) mod attention;
 pub(crate) mod mlp;
