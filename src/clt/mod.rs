@@ -2135,6 +2135,88 @@ impl CrossLayerTranscoder {
         Ok(result)
     }
 
+    /// Extract the full decoder matrix for one `(source_layer, target_layer)`
+    /// pair as a contiguous `[n_features_per_layer, d_model]` tensor on the
+    /// requested device.
+    ///
+    /// Returns the same data as
+    /// [`extract_decoder_vectors`](Self::extract_decoder_vectors) restricted
+    /// to a single source layer, but packed into a single matmul-ready matrix
+    /// instead of a `HashMap` of independent vectors.  Useful for batched
+    /// cosine-similarity analysis against external directions
+    /// (vocabulary scans, feature labelling, attribution across all features
+    /// at once) where the per-feature loop in `extract_decoder_vectors`
+    /// would force `n_features` small device transfers.
+    ///
+    /// Schema-aware: `CltSplit` / `CltSplitJumpReLU` return the
+    /// `target_offset = target_layer - source_layer` slice of the rank-3
+    /// decoder; `PltBundle` / `GemmaScopeNpz` accept only
+    /// `target_layer == source_layer` (rank-2 decoder, single target).
+    ///
+    /// # Shapes
+    /// - returns: `[n_features_per_layer, d_model]` `F32` on `device`
+    ///
+    /// # Arguments
+    /// * `source_layer` — feature source layer (`0..n_layers`)
+    /// * `target_layer` — downstream target layer (`source_layer..n_layers`
+    ///   for cross-layer schemas; must equal `source_layer` for per-layer
+    ///   schemas)
+    /// * `device` — target device (`Cpu` or `Cuda`)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Config`](crate::MIError::Config) if `source_layer`
+    /// or `target_layer` is out of range, or if `target_layer < source_layer`
+    /// (cross-layer schemas), or if `target_layer != source_layer` for
+    /// per-layer schemas.
+    /// Returns [`MIError::Download`](crate::MIError::Download) if the
+    /// decoder file cannot be fetched.
+    /// Returns [`MIError::Model`](crate::MIError::Model) on tensor operation
+    /// failure.
+    ///
+    /// # Memory
+    ///
+    /// Loads one decoder file to CPU (up to ~2 GiB for layer 0 of a 28-layer
+    /// cross-layer CLT in `BF16`), slices to the requested `target_layer`,
+    /// promotes to `F32`, and moves to `device`.  The large
+    /// `BF16` source-tensor drops before this function returns.  Peak:
+    /// ~1 decoder file + ~1 sliced + promoted matrix.
+    pub fn decoder_matrix(
+        &mut self,
+        source_layer: usize,
+        target_layer: usize,
+        device: &Device,
+    ) -> Result<Tensor> {
+        if source_layer >= self.config.n_layers {
+            return Err(MIError::Config(format!(
+                "source_layer {source_layer} out of range (max {})",
+                self.config.n_layers - 1
+            )));
+        }
+        if target_layer >= self.config.n_layers {
+            return Err(MIError::Config(format!(
+                "target_layer {target_layer} out of range (max {})",
+                self.config.n_layers - 1
+            )));
+        }
+        if target_layer < source_layer {
+            return Err(MIError::Config(format!(
+                "target_layer {target_layer} must be >= source_layer {source_layer}"
+            )));
+        }
+        let target_offset = target_layer - source_layer;
+        let dec_path = self.ensure_decoder_path(source_layer)?;
+        let w_dec = load_decoder_w_dec(self.config.schema, &dec_path, source_layer)?;
+        let slice = decoder_layer_slice(&w_dec, target_offset, self.config.schema)?;
+        // PROMOTE: decoder weights are BF16 on disk for safetensors schemas
+        // (and F32 for GemmaScopeNpz); the returned matrix is F32 to match the
+        // F32-everywhere precision strategy and to be matmul-ready for
+        // cosine analysis.
+        let slice_f32 = slice.to_dtype(DType::F32)?;
+        let slice_on_device = slice_f32.to_device(device)?;
+        Ok(slice_on_device)
+    }
+
     /// Build an attribution graph by scoring features against a direction.
     ///
     /// Convenience wrapper around
@@ -3450,6 +3532,67 @@ mod tests {
             .to_vec1()
             .unwrap();
         assert_eq!(v2, vec![21.0, 22.0, 23.0, 24.0]);
+    }
+
+    #[test]
+    fn decoder_matrix_clt_split_returns_contiguous_slice() {
+        // Mirrors `extract_decoder_vectors_synthetic`, but checks the
+        // contiguous-matrix accessor: the returned tensor should have shape
+        // `[n_features, d_model]` and contain the full target-offset slice
+        // for the given (source_layer, target_layer) pair, F32 on the
+        // requested device.
+        let dir = tempfile::tempdir().unwrap();
+        let d_model = 4;
+        let n_features = 3;
+
+        #[rustfmt::skip]
+        let dec0_values: Vec<f32> = vec![
+            // feature 0: offset 0, offset 1
+            1.0, 2.0, 3.0, 4.0,  5.0, 6.0, 7.0, 8.0,
+            // feature 1
+            9.0, 10.0, 11.0, 12.0,  13.0, 14.0, 15.0, 16.0,
+            // feature 2
+            17.0, 18.0, 19.0, 20.0,  21.0, 22.0, 23.0, 24.0,
+        ];
+        let path0 = create_synthetic_decoder(dir.path(), 0, n_features, 2, d_model, &dec0_values);
+
+        let mut clt = CrossLayerTranscoder {
+            repo_id: "test".to_owned(),
+            fetch_config: hf_fetch_model::FetchConfig::builder().build().unwrap(),
+            encoder_paths: vec![None; 2],
+            decoder_paths: vec![Some(path0), None],
+            config: CltConfig {
+                n_layers: 2,
+                d_model,
+                n_features_per_layer: n_features,
+                n_features_total: n_features * 2,
+                model_name: "test".to_owned(),
+                schema: TranscoderSchema::CltSplit,
+                gemmascope_npz_paths: Vec::new(),
+            },
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        };
+
+        // source_layer=0, target_layer=1 → target_offset=1, which is
+        // [feature, 1, d_model] = the second 4-element block of each feature.
+        let matrix = clt.decoder_matrix(0, 1, &Device::Cpu).unwrap();
+        assert_eq!(matrix.dims(), &[n_features, d_model]);
+        assert_eq!(matrix.dtype(), DType::F32);
+
+        let flat: Vec<f32> = matrix.flatten_all().unwrap().to_vec1().unwrap();
+        assert_eq!(
+            flat,
+            vec![
+                5.0, 6.0, 7.0, 8.0, // feature 0, offset 1
+                13.0, 14.0, 15.0, 16.0, // feature 1, offset 1
+                21.0, 22.0, 23.0, 24.0, // feature 2, offset 1
+            ]
+        );
+
+        // target_layer < source_layer is rejected.
+        let err = clt.decoder_matrix(1, 0, &Device::Cpu);
+        assert!(err.is_err(), "target_layer < source_layer must error");
     }
 
     #[test]
