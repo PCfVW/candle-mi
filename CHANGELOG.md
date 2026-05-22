@@ -28,6 +28,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`Qwen3` model family** support in the generic transformer arm.
+  `"qwen3"` joins `SUPPORTED_MODEL_TYPES` with a new `parse_qwen3` config
+  parser (no QKV bias, `40 960` default `max_position_embeddings`,
+  `rope_theta = 1_000_000`).  Two new `TransformerConfig` axes
+  (`use_qk_norm: bool`, `qk_norm_eps: f64`) drive an optional per-head-dim
+  `RMSNorm` of `Q` and `K` before `RoPE` — the defining `Qwen3`
+  architectural addition vs `Qwen2`.  `Attention` conditionally loads
+  `self_attn.q_norm.weight` and `self_attn.k_norm.weight` (shape
+  `[head_dim]`) and applies them in the forward pass before the existing
+  `AttnQ` / `AttnK` hook block, so those hooks capture post-`QK`-norm
+  tensors.  `parse_auto` detects `Qwen3`-shaped models via the
+  `self_attn.q_norm.weight` / `k_norm.weight` tensor names.  All 7 prior
+  per-family parsers were lightly restructured (extract `norm_eps` into a
+  local binding) so the new `qk_norm_eps` field mirrors `norm_eps` for
+  non-`Qwen3` families.
+- `scripts/qwen3_forward_validation.py` + `scripts/qwen3_forward_reference.json`
+  — from-first-principles Python forward-pass oracle that loads
+  `Qwen/Qwen3-1.7B-Base` via `transformers` in `F32` on CPU, runs three
+  fixed prompts (geographic recall, arithmetic, narrative continuation),
+  and dumps top-10 logits + the post-final-norm last-token residual to
+  JSON for cross-validation.
+- `tests/validate_qwen3_forward.rs` — `#[ignore]`-gated CPU + GPU
+  integration tests (one wrapper each) asserting full forward-pass
+  parity against the Python oracle.  Acceptance: top-10 logit indices
+  match exactly, magnitudes within `abs-diff < 1e-3` (CPU) /
+  `< 5e-3` (GPU).  Locally validated on RTX 5060 Ti 16 GB at
+  max `abs-diff = 5.53e-5` across all top-10 logits (90× margin under
+  the GPU bar) — `Qwen3-1.7B-Base` is now a fully validated model in
+  the same row as Llama 3.2 1B, Gemma 2 2B, Qwen2.5-Coder-3B, etc.
 - `docs/hook-architecture-diagnostic.md` — diagnostic write-up of the hook
   hot-path investigation (`is_captured`, `interventions_at`, capture-density
   sweep, equal-count shape comparison). Conclusion: the hook architecture is
