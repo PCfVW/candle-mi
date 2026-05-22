@@ -199,21 +199,43 @@ pub enum TranscoderSchema {
     /// [`CrossLayerTranscoder::open`] returns [`MIError::Config`]
     /// instructing the caller to enable the feature.
     GemmaScopeNpz,
+    /// `BlueLightAI` Cross-Layer Transcoder with `JumpReLU` activation
+    /// (`bluelightai/clt-qwen3-{0.6b,1.7b}-base-20k`). Same file layout
+    /// as [`CltSplit`](Self::CltSplit) (per-layer `W_enc_{l}.safetensors` +
+    /// `W_dec_{l}.safetensors`, layer-suffixed tensor names, rank-3
+    /// cross-layer `W_dec`) but the encoder file additionally carries
+    /// a per-feature `threshold_{l} [n_features]` tensor that gates the
+    /// pre-activation via `pre * (pre > threshold)` — same activation
+    /// semantics as [`GemmaScopeNpz`](Self::GemmaScopeNpz).
+    ///
+    /// Encoder-file tensors: `W_enc_{l}`, `b_enc_{l}`, `b_dec_{l}`,
+    /// `threshold_{l}`. The `b_dec_{l}` tensor is `BlueLightAI`-specific
+    /// (mntss `CltSplit` keeps `b_dec` with `W_dec`); candle-mi does not
+    /// load `b_dec` for any schema, so this is a documentation-only
+    /// quirk with no load-site consequences.
+    ///
+    /// Distinguished from plain `CltSplit` at classification time by the
+    /// presence of a `features/index.json.gz` sidecar (circuit-tracer
+    /// metadata that mntss `CltSplit` repos do not ship). The classifier
+    /// is filename-only (no HTTP I/O); the sidecar is the cheapest
+    /// reliable signal for the `JumpReLU` semantics.
+    CltSplitJumpReLU,
 }
 
 impl TranscoderSchema {
     /// Whether this schema writes to multiple downstream layers per feature
-    /// (`CltSplit`) or only to its own layer (`PltBundle`, `GemmaScopeNpz`).
+    /// (`CltSplit`, `CltSplitJumpReLU`) or only to its own layer
+    /// (`PltBundle`, `GemmaScopeNpz`).
     #[must_use]
     pub const fn is_cross_layer(self) -> bool {
-        matches!(self, Self::CltSplit)
+        matches!(self, Self::CltSplit | Self::CltSplitJumpReLU)
     }
 
     /// Whether this schema uses `JumpReLU` gating with a per-feature `threshold`
-    /// tensor (`GemmaScopeNpz`) rather than plain `ReLU`.
+    /// tensor (`GemmaScopeNpz`, `CltSplitJumpReLU`) rather than plain `ReLU`.
     #[must_use]
     pub const fn is_jump_relu(self) -> bool {
-        matches!(self, Self::GemmaScopeNpz)
+        matches!(self, Self::GemmaScopeNpz | Self::CltSplitJumpReLU)
     }
 }
 
@@ -436,7 +458,10 @@ impl CrossLayerTranscoder {
         // arm here is dead at runtime — kept to satisfy exhaustive matching
         // and to fail loudly if the dispatch is ever bypassed.
         let n_layers = match schema {
-            TranscoderSchema::CltSplit => repo_files
+            // CltSplit and CltSplitJumpReLU share the W_enc_*.safetensors
+            // per-layer file convention; layer count derives from the same
+            // filename pattern.
+            TranscoderSchema::CltSplit | TranscoderSchema::CltSplitJumpReLU => repo_files
                 .iter()
                 .filter(|f| {
                     f.filename.starts_with("W_enc_") && f.filename.ends_with(".safetensors")
@@ -684,7 +709,9 @@ impl CrossLayerTranscoder {
     /// See [`gemmascope::GEMMASCOPE_WEIGHTS_REPO`].
     fn download_repo(&self) -> String {
         match self.config.schema {
-            TranscoderSchema::CltSplit | TranscoderSchema::PltBundle => {
+            TranscoderSchema::CltSplit
+            | TranscoderSchema::PltBundle
+            | TranscoderSchema::CltSplitJumpReLU => {
                 // BORROW: explicit .clone() — hf_fetch_model takes ownership of the repo ID
                 self.repo_id.clone()
             }
@@ -724,12 +751,18 @@ impl CrossLayerTranscoder {
 
     /// Ensure the decoder file for a given layer is downloaded. Returns the path.
     ///
-    /// For non-`CltSplit` schemas (`PltBundle`, `GemmaScopeNpz`), the encoder
-    /// and decoder live in the same bundle file; this method delegates to
+    /// For non-split schemas (`PltBundle`, `GemmaScopeNpz`), the encoder and
+    /// decoder live in the same bundle file; this method delegates to
     /// [`ensure_encoder_path`](Self::ensure_encoder_path) to reuse the shared
-    /// path cache and avoid double-downloading the same file.
+    /// path cache and avoid double-downloading the same file. Both
+    /// `CltSplit` and `CltSplitJumpReLU` ship encoder and decoder in
+    /// separate `W_enc_{l}.safetensors` / `W_dec_{l}.safetensors` files
+    /// and take the full download path.
     fn ensure_decoder_path(&mut self, layer: usize) -> Result<PathBuf> {
-        if !matches!(self.config.schema, TranscoderSchema::CltSplit) {
+        if !matches!(
+            self.config.schema,
+            TranscoderSchema::CltSplit | TranscoderSchema::CltSplitJumpReLU,
+        ) {
             // Bundle schemas: encoder and decoder share the same file.
             return self.ensure_encoder_path(layer);
         }
@@ -809,7 +842,13 @@ impl CrossLayerTranscoder {
         let enc_path = self.ensure_encoder_path(layer)?;
 
         let loaded = match self.config.schema {
-            TranscoderSchema::CltSplit | TranscoderSchema::PltBundle => {
+            // All safetensors-backed schemas route through the same
+            // loader. `load_encoder_safetensors` conditionally reads
+            // `threshold_{layer}` when `schema.is_jump_relu()` is true
+            // (currently only `CltSplitJumpReLU` on the safetensors path).
+            TranscoderSchema::CltSplit
+            | TranscoderSchema::PltBundle
+            | TranscoderSchema::CltSplitJumpReLU => {
                 self.load_encoder_safetensors(&enc_path, layer, device)?
             }
             TranscoderSchema::GemmaScopeNpz => {
@@ -833,11 +872,16 @@ impl CrossLayerTranscoder {
         Ok(())
     }
 
-    /// Load an encoder from a safetensors bundle (`CltSplit` or `PltBundle`).
+    /// Load an encoder from a safetensors bundle (`CltSplit`, `PltBundle`,
+    /// or `CltSplitJumpReLU`).
     ///
     /// Reads the file once into a `Vec<u8>`, deserialises with `safetensors`,
     /// extracts `W_enc` and `b_enc` by their schema-specific tensor names.
-    /// `threshold` is `None` because these schemas use plain `ReLU`.
+    /// For `is_jump_relu()` schemas (currently only `CltSplitJumpReLU` on
+    /// this safetensors path; `GemmaScopeNpz` goes through
+    /// [`load_encoder_npz`](Self::load_encoder_npz)) a per-feature
+    /// `threshold` tensor is read from the same file. For plain-`ReLU`
+    /// schemas (`CltSplit`, `PltBundle`) `threshold` is `None`.
     fn load_encoder_safetensors(
         &self,
         path: &Path,
@@ -866,11 +910,34 @@ impl CrossLayerTranscoder {
             device,
         )?;
 
+        let threshold = if self.config.schema.is_jump_relu() {
+            // CltSplitJumpReLU stores `threshold_{layer}` in the same
+            // file as `W_enc_{layer}` and `b_enc_{layer}` (layer-suffixed
+            // naming). PROMOTE: BF16 on disk → F32 for the `pre > threshold`
+            // gate, matching the F32-everywhere precision strategy.
+            let threshold_name = format!("threshold_{layer}");
+            let t = tensor_from_view(
+                &st.tensor(&threshold_name).map_err(|e| {
+                    MIError::Config(format!(
+                        "tensor '{threshold_name}' not found in encoder file \
+                         for layer {layer} (CltSplitJumpReLU requires a \
+                         JumpReLU threshold): {e}"
+                    ))
+                })?,
+                device,
+            )?;
+            // PROMOTE: threshold may be BF16 on disk; encode-path gate
+            // needs F32 to match the F32 pre-activation tensor.
+            Some(t.to_dtype(DType::F32)?)
+        } else {
+            None
+        };
+
         Ok(LoadedEncoder {
             layer,
             w_enc,
             b_enc,
-            threshold: None,
+            threshold,
         })
     }
 
@@ -1001,8 +1068,9 @@ impl CrossLayerTranscoder {
     /// schema:
     /// - `CltSplit` / `PltBundle`: plain `ReLU` — features with
     ///   `pre > 0` are kept, others zeroed.
-    /// - `GemmaScopeNpz`: `JumpReLU` — features with `pre > threshold[i]`
-    ///   are kept (gated by per-feature threshold), others zeroed.
+    /// - `GemmaScopeNpz` / `CltSplitJumpReLU`: `JumpReLU` — features
+    ///   with `pre > threshold[i]` are kept (gated by per-feature
+    ///   threshold), others zeroed.
     ///
     /// # Shapes
     /// - `residual`: `[d_model]` — residual stream activation at one position
@@ -1014,8 +1082,9 @@ impl CrossLayerTranscoder {
     /// # Errors
     ///
     /// Returns [`MIError::Hook`] if no encoder is loaded, the wrong layer is
-    /// loaded, or the schema is `GemmaScopeNpz` but the loaded encoder lacks
-    /// a `threshold` tensor (an internal load-path mismatch).
+    /// loaded, or the schema uses `JumpReLU` (`GemmaScopeNpz`,
+    /// `CltSplitJumpReLU`) but the loaded encoder lacks a `threshold` tensor
+    /// (an internal load-path mismatch).
     /// Returns [`MIError::Model`] on tensor operation failure.
     pub fn encode(
         &self,
@@ -1037,7 +1106,8 @@ impl CrossLayerTranscoder {
     /// Shared workhorse for [`encode`](Self::encode) (which then full-sorts)
     /// and [`top_k`](Self::top_k) (which does a partial sort instead). The
     /// activation matches the schema convention: plain `ReLU` for `CltSplit`
-    /// and `PltBundle`, `JumpReLU(threshold)` for `GemmaScopeNpz`.
+    /// and `PltBundle`, `JumpReLU(threshold)` for `GemmaScopeNpz` and
+    /// `CltSplitJumpReLU`.
     fn compute_active_features(
         &self,
         residual: &Tensor,
@@ -1048,10 +1118,11 @@ impl CrossLayerTranscoder {
         // Schema-specific activation. The CltSplit/PltBundle path keeps the
         // existing `encode == relu ∘ encode_pre_activation` invariant
         // (covered by the `encode_pre_activation_matches_encode_postrelu`
-        // test); the GemmaScopeNpz path gates by per-feature threshold.
+        // test); the JumpReLU schemas (`GemmaScopeNpz`,
+        // `CltSplitJumpReLU`) gate by per-feature threshold.
         let acts = match self.config.schema {
             TranscoderSchema::CltSplit | TranscoderSchema::PltBundle => pre_acts.relu()?,
-            TranscoderSchema::GemmaScopeNpz => {
+            TranscoderSchema::GemmaScopeNpz | TranscoderSchema::CltSplitJumpReLU => {
                 // Re-borrow the encoder so we can reach into `threshold`.
                 // encode_pre_activation_impl already validated that an
                 // encoder is loaded for this `layer`.
@@ -1064,7 +1135,7 @@ impl CrossLayerTranscoder {
                 })?;
                 let threshold = enc.threshold.as_ref().ok_or_else(|| {
                     MIError::Hook(
-                        "GemmaScope encode requires a threshold tensor; \
+                        "JumpReLU encode requires a threshold tensor; \
                          the loaded encoder has none (load path mismatch?)"
                             .into(),
                     )
@@ -1403,11 +1474,12 @@ impl CrossLayerTranscoder {
         let mut loaded = 0_usize;
         let n_source_layers = by_source.len();
         for (layer_idx, (source_layer, indices)) in by_source.iter().enumerate() {
-            // CltSplit writes to every downstream layer; PltBundle / GemmaScopeNpz
-            // only to their own source layer. Keeping this schema-aware prevents
-            // the per-layer schemas from caching the same decoder row under many
-            // spurious (feature, target_layer) keys.
-            let n_target_layers = if matches!(self.config.schema, TranscoderSchema::CltSplit) {
+            // CltSplit and CltSplitJumpReLU write to every downstream layer;
+            // PltBundle / GemmaScopeNpz only to their own source layer.
+            // Keeping this schema-aware prevents the per-layer schemas from
+            // caching the same decoder row under many spurious
+            // (feature, target_layer) keys.
+            let n_target_layers = if self.config.schema.is_cross_layer() {
                 n_layers - source_layer
             } else {
                 1
@@ -2141,17 +2213,26 @@ impl CrossLayerTranscoder {
 ///
 /// Detection rules, checked in order:
 ///
-/// 1. Any file matching `W_enc_*.safetensors` → `CltSplit`.
-/// 2. Any file matching `layer_*.safetensors` (at repo root) → `PltBundle`.
-/// 3. Any file matching `layer_N/width_Xk/average_l0_Y/params.npz` (direct
+/// 1. Any file matching `W_enc_*.safetensors` AND a
+///    `features/index.json.gz` sidecar (the `BlueLightAI` `circuit-tracer`
+///    metadata signature) → `CltSplitJumpReLU`.
+/// 2. Any file matching `W_enc_*.safetensors` (without the `BlueLightAI`
+///    sidecar) → `CltSplit`.
+/// 3. Any file matching `layer_*.safetensors` (at repo root) → `PltBundle`.
+/// 4. Any file matching `layer_N/width_Xk/average_l0_Y/params.npz` (direct
 ///    `google/gemma-scope-2b-pt-transcoders` layout) → `GemmaScopeNpz`.
-/// 4. `config.yaml` present together with `features/layer_*.bin` and no
+/// 5. `config.yaml` present together with `features/layer_*.bin` and no
 ///    safetensors weight files (the `mntss/gemma-scope-transcoders` metadata
 ///    repo) → `GemmaScopeNpz`.
 ///
-/// Rule 1 wins over Rule 2 if both match, but no real repo carries both.
-/// Rule 4 requires *no* safetensors at repo root so it doesn't clash with
-/// an eventual mixed layout.
+/// Rule 1 wins over Rule 2 when the `BlueLightAI` `features/index.json.gz`
+/// sidecar is present — distinguishes the `JumpReLU` `BlueLightAI` variant
+/// from the plain-`ReLU` mntss `CltSplit` repos which ship only
+/// `W_{enc,dec}_*.safetensors` and no `features/` sidecar.
+///
+/// Rules 1 or 2 win over Rule 3 if both match, but no real repo carries
+/// both. Rule 5 requires *no* safetensors at repo root so it doesn't
+/// clash with an eventual mixed layout.
 ///
 /// # Errors
 ///
@@ -2160,6 +2241,11 @@ fn classify_transcoder_schema(filenames: &[&str]) -> Result<TranscoderSchema> {
     let has_clt_split = filenames
         .iter()
         .any(|f| f.starts_with("W_enc_") && f.ends_with(".safetensors"));
+    // `BlueLightAI` repos ship a `features/index.json.gz` sidecar
+    // (circuit-tracer feature metadata); mntss CltSplit repos do not.
+    // The sidecar is the cheapest reliable filename-only signal for
+    // the JumpReLU variant — no HTTP-range header peek required.
+    let has_bluelightai_sidecar = filenames.contains(&"features/index.json.gz");
     let has_plt_bundle = filenames
         .iter()
         .any(|f| f.starts_with("layer_") && f.ends_with(".safetensors"));
@@ -2181,7 +2267,9 @@ fn classify_transcoder_schema(filenames: &[&str]) -> Result<TranscoderSchema> {
     let has_gemmascope_metadata_repo =
         has_config_yaml && has_gemmascope_bin_metadata && !has_clt_split && !has_plt_bundle;
 
-    if has_clt_split {
+    if has_clt_split && has_bluelightai_sidecar {
+        Ok(TranscoderSchema::CltSplitJumpReLU)
+    } else if has_clt_split {
         Ok(TranscoderSchema::CltSplit)
     } else if has_plt_bundle {
         Ok(TranscoderSchema::PltBundle)
@@ -2220,7 +2308,11 @@ fn classify_transcoder_schema(filenames: &[&str]) -> Result<TranscoderSchema> {
 ///
 /// Return tuple is `(filename, W_enc_tensor_name, b_enc_tensor_name)`.
 ///
-/// - `CltSplit`: `W_enc_{layer}.safetensors` + `W_enc_{layer}` + `b_enc_{layer}`.
+/// - `CltSplit`, `CltSplitJumpReLU`: `W_enc_{layer}.safetensors` +
+///   `W_enc_{layer}` + `b_enc_{layer}`. `CltSplitJumpReLU` additionally
+///   carries `threshold_{layer}` and `b_dec_{layer}` in the same file;
+///   `threshold_{layer}` is read by the encoder loader for `JumpReLU`
+///   gating, `b_dec_{layer}` is unused by candle-mi.
 /// - `PltBundle`: `layer_{layer}.safetensors` + un-suffixed `W_enc` + `b_enc` —
 ///   bundled with `W_dec`/`W_skip`/`b_dec` in the same file.
 /// - `GemmaScopeNpz`: `gemmascope_npz_paths[layer]` + un-suffixed `W_enc` +
@@ -2236,7 +2328,7 @@ fn encoder_file_and_tensor_names(
     gemmascope_npz_paths: &[String],
 ) -> Result<(String, String, String)> {
     match schema {
-        TranscoderSchema::CltSplit => Ok((
+        TranscoderSchema::CltSplit | TranscoderSchema::CltSplitJumpReLU => Ok((
             format!("W_enc_{layer}.safetensors"),
             format!("W_enc_{layer}"),
             format!("b_enc_{layer}"),
@@ -2266,8 +2358,9 @@ fn encoder_file_and_tensor_names(
 ///
 /// Return tuple is `(filename, W_dec_tensor_name)`.
 ///
-/// - `CltSplit`: `W_dec_{layer}.safetensors` + layer-suffixed `W_dec_{layer}` —
-///   encoder and decoder live in separate files.
+/// - `CltSplit`, `CltSplitJumpReLU`: `W_dec_{layer}.safetensors` +
+///   layer-suffixed `W_dec_{layer}` — encoder and decoder live in
+///   separate files.
 /// - `PltBundle`: `layer_{layer}.safetensors` + un-suffixed `W_dec` —
 ///   encoder and decoder share the bundle file.
 /// - `GemmaScopeNpz`: `gemmascope_npz_paths[layer]` + un-suffixed `W_dec` —
@@ -2283,7 +2376,7 @@ fn decoder_file_and_tensor_name(
     gemmascope_npz_paths: &[String],
 ) -> Result<(String, String)> {
     match schema {
-        TranscoderSchema::CltSplit => Ok((
+        TranscoderSchema::CltSplit | TranscoderSchema::CltSplitJumpReLU => Ok((
             format!("W_dec_{layer}.safetensors"),
             format!("W_dec_{layer}"),
         )),
@@ -2331,7 +2424,9 @@ fn decoder_row(
     schema: TranscoderSchema,
 ) -> Result<Tensor> {
     match schema {
-        TranscoderSchema::CltSplit => Ok(w_dec.i((feature_index, target_offset))?),
+        TranscoderSchema::CltSplit | TranscoderSchema::CltSplitJumpReLU => {
+            Ok(w_dec.i((feature_index, target_offset))?)
+        }
         TranscoderSchema::PltBundle | TranscoderSchema::GemmaScopeNpz => {
             if target_offset != 0 {
                 return Err(MIError::Config(format!(
@@ -2371,7 +2466,9 @@ fn decoder_layer_slice(
     schema: TranscoderSchema,
 ) -> Result<Tensor> {
     match schema {
-        TranscoderSchema::CltSplit => Ok(w_dec.i((.., target_offset, ..))?),
+        TranscoderSchema::CltSplit | TranscoderSchema::CltSplitJumpReLU => {
+            Ok(w_dec.i((.., target_offset, ..))?)
+        }
         TranscoderSchema::PltBundle | TranscoderSchema::GemmaScopeNpz => {
             if target_offset != 0 {
                 return Err(MIError::Config(format!(
@@ -2451,7 +2548,11 @@ fn parse_yaml_value(yaml_text: &str, key: &str) -> Option<String> {
 /// [`MIError::Config`] explaining the feature gate.
 fn load_decoder_w_dec(schema: TranscoderSchema, path: &Path, layer: usize) -> Result<Tensor> {
     match schema {
-        TranscoderSchema::CltSplit => {
+        // CltSplit and CltSplitJumpReLU share the layer-suffixed
+        // `W_dec_{layer}` tensor-name and per-layer safetensors file
+        // convention; the JumpReLU vs plain-ReLU distinction lives in
+        // the encoder, not the decoder.
+        TranscoderSchema::CltSplit | TranscoderSchema::CltSplitJumpReLU => {
             load_w_dec_safetensors(path, &format!("W_dec_{layer}"), layer)
         }
         TranscoderSchema::PltBundle => load_w_dec_safetensors(path, "W_dec", layer),
@@ -3504,6 +3605,49 @@ mod tests {
         assert!(classify_transcoder_schema(&files).is_err());
     }
 
+    #[test]
+    fn classify_clt_split_jump_relu_layout() {
+        // bluelightai/clt-qwen3-1.7b-base-20k layout: CltSplit-style
+        // per-layer safetensors PLUS a `features/index.json.gz`
+        // circuit-tracer sidecar that mntss CltSplit repos don't ship.
+        let files = [
+            "W_enc_0.safetensors",
+            "W_enc_1.safetensors",
+            "W_dec_0.safetensors",
+            "W_dec_1.safetensors",
+            "config.yaml",
+            "features/index.json.gz",
+            "features/layer_0.bin",
+            "features/layer_1.bin",
+        ];
+        let schema = classify_transcoder_schema(&files).unwrap();
+        assert_eq!(schema, TranscoderSchema::CltSplitJumpReLU);
+        assert!(schema.is_cross_layer());
+        assert!(schema.is_jump_relu());
+    }
+
+    #[test]
+    fn classify_clt_split_without_sidecar_stays_plain() {
+        // mntss/clt-* CltSplit repos ship W_enc_/W_dec_ safetensors with
+        // no circuit-tracer sidecar; classification must still resolve
+        // to plain CltSplit (plain ReLU activation) and NOT be mistaken
+        // for the JumpReLU variant.
+        let files = ["W_enc_0.safetensors", "W_dec_0.safetensors", "config.yaml"];
+        let schema = classify_transcoder_schema(&files).unwrap();
+        assert_eq!(schema, TranscoderSchema::CltSplit);
+        assert!(!schema.is_jump_relu());
+    }
+
+    #[test]
+    fn classify_prefers_jump_relu_over_plain_clt_split_when_sidecar_present() {
+        // If both signatures match (W_enc_*.safetensors AND the
+        // features/index.json.gz sidecar), the JumpReLU variant wins —
+        // this is the `BlueLightAI` case. Rule ordering, not file count.
+        let files = ["W_enc_0.safetensors", "features/index.json.gz"];
+        let schema = classify_transcoder_schema(&files).unwrap();
+        assert_eq!(schema, TranscoderSchema::CltSplitJumpReLU);
+    }
+
     // ====================================================================
     // Schema-aware helper direct tests
     // ====================================================================
@@ -3524,6 +3668,30 @@ mod tests {
         assert_eq!(filename, "layer_3.safetensors");
         assert_eq!(w_enc_name, "W_enc");
         assert_eq!(b_enc_name, "b_enc");
+    }
+
+    #[test]
+    fn encoder_file_and_tensor_names_clt_split_jump_relu() {
+        // CltSplitJumpReLU shares the layer-suffixed file/tensor naming
+        // with plain CltSplit; the helper must return the same triple.
+        // The additional `threshold_{layer}` tensor lives in the same
+        // file but is not surfaced by this helper (it's read directly
+        // by `load_encoder_safetensors`).
+        let (filename, w_enc_name, b_enc_name) =
+            encoder_file_and_tensor_names(TranscoderSchema::CltSplitJumpReLU, 13, &[]).unwrap();
+        assert_eq!(filename, "W_enc_13.safetensors");
+        assert_eq!(w_enc_name, "W_enc_13");
+        assert_eq!(b_enc_name, "b_enc_13");
+    }
+
+    #[test]
+    fn decoder_file_and_tensor_name_clt_split_jump_relu() {
+        // CltSplitJumpReLU decoder lives in a separate file with
+        // layer-suffixed tensor name, matching plain CltSplit.
+        let (filename, tname) =
+            decoder_file_and_tensor_name(TranscoderSchema::CltSplitJumpReLU, 13, &[]).unwrap();
+        assert_eq!(filename, "W_dec_13.safetensors");
+        assert_eq!(tname, "W_dec_13");
     }
 
     #[test]
