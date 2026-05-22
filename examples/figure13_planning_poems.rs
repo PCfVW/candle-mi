@@ -7,13 +7,21 @@
 //! feature, sweeping the injection position across the prompt to locate
 //! planning sites.
 //!
-//! Three built-in presets select model, CLT, prompt, features, and strength:
+//! Four built-in presets select model, CLT, prompt, features, and strength:
 //!
 //! | Preset | Model | CLT | Suppress | Inject |
 //! |--------|-------|-----|----------|--------|
 //! | `llama3.2-1b-524k` | Llama 3.2 1B | 524K | -ee group: L13:30985 + L9:5488 + L14:27874 + L13:32049 | L14:13043 ("that") |
 //! | `gemma2-2b-426k` | Gemma 2 2B | 426K | L16:13725 + L25:9385 ("-out") | L22:10243 ("around") |
 //! | `gemma2-2b-2.5m` | Gemma 2 2B | 2.5M | L25:57092 + L23:49923 + L20:77102 ("-out") | L25:82839 ("can") |
+//! | `qwen3-1.7b-20k` | Qwen3 1.7B Base | 20K | (populated after vocab scan) | (populated after vocab scan) |
+//!
+//! The `qwen3-1.7b-20k` preset ships as a **placeholder** — the
+//! `suppress_features` / `inject_feature` slots are filled in only after the
+//! Appendix B vocabulary scan runs (`examples/vocab_scan` +
+//! `scripts/vocab_scan_cmudict_filter.py`).  Running the preset with empty
+//! placeholders surfaces an early error; once the scan picks a clean
+//! rhyme group, the preset is updated in a separate commit.
 //!
 //! ```bash
 //! # Llama 3.2 1B (default)
@@ -24,6 +32,9 @@
 //!
 //! # Gemma 2 2B, 2.5M CLT (word-level features)
 //! cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset gemma2-2b-2.5m
+//!
+//! # Qwen3 1.7B Base, BlueLightAI 20K CLT (after vocab scan populates features)
+//! cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-1.7b-20k
 //! ```
 //!
 //! Outputs JSON suitable for direct import into Mathematica via
@@ -184,6 +195,31 @@ const GEMMA_2M: Preset = Preset {
     strength: 10.0,
 };
 
+/// `Qwen3-1.7B-Base` with `BlueLightAI` 20K CLT
+/// (`bluelightai/clt-qwen3-1.7b-base-20k`).
+///
+/// **Placeholder** — the `suppress_features` slot is empty (`&[]`) and
+/// `inject_feature` is set to a sentinel `(0, 0)` until the Appendix B
+/// vocabulary scan picks a clean rhyme group.  `select_preset` rejects
+/// the preset with a clear error pointing at the scan workflow when the
+/// placeholders are still in place.
+///
+/// `prompt` mirrors the four-line rhyming-couplet structure of the
+/// `LLAMA` / `GEMMA` presets, ending mid-fourth-line so the planning
+/// site sits at the trailing-space spike before the rhyme word.  The
+/// `suppress_word` / `inject_word` are TBD on the same schedule as
+/// the feature IDs.
+const QWEN3: Preset = Preset {
+    model: "Qwen/Qwen3-1.7B-Base",
+    clt_repo: "bluelightai/clt-qwen3-1.7b-base-20k",
+    prompt: "(placeholder prompt — populate after vocab scan picks rhyme group)",
+    suppress_word: "",
+    inject_word: "",
+    suppress_features: &[],
+    inject_feature: (0, 0),
+    strength: 10.0,
+};
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /// Parse a "layer:index" string into a [`CltFeatureId`].
@@ -278,15 +314,29 @@ fn run() -> candle_mi::Result<()> {
     )
 }
 
-/// Select a built-in preset by name.
+/// Select a built-in preset by name.  Rejects the `qwen3-1.7b-20k`
+/// placeholder until the vocab-scan-driven features are filled in.
 fn select_preset(name: &str) -> candle_mi::Result<&'static Preset> {
     match name {
         "llama3.2-1b-524k" => Ok(&LLAMA),
         "gemma2-2b-426k" => Ok(&GEMMA),
         "gemma2-2b-2.5m" => Ok(&GEMMA_2M),
+        "qwen3-1.7b-20k" => {
+            if QWEN3.suppress_features.is_empty() || QWEN3.inject_feature == (0, 0) {
+                Err(candle_mi::MIError::Config(
+                    "preset 'qwen3-1.7b-20k' is a placeholder — run the \
+                     vocabulary scan first (`examples/vocab_scan` + \
+                     `scripts/vocab_scan_cmudict_filter.py`) and populate \
+                     the QWEN3 const with the chosen suppress/inject features"
+                        .into(),
+                ))
+            } else {
+                Ok(&QWEN3)
+            }
+        }
         other => Err(candle_mi::MIError::Config(format!(
-            "unknown preset '{other}' \
-             (expected 'llama3.2-1b-524k', 'gemma2-2b-426k', or 'gemma2-2b-2.5m')"
+            "unknown preset '{other}' (expected 'llama3.2-1b-524k', \
+             'gemma2-2b-426k', 'gemma2-2b-2.5m', or 'qwen3-1.7b-20k')"
         ))),
     }
 }
