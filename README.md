@@ -16,7 +16,7 @@
 
 | Architecture | Families | Validated models | Feature |
 |---|---|---|---|
-| Decoder-only transformer | LLaMA 1/2/3, Mistral, Qwen 2/2.5, Phi-3/4, Gemma, Gemma 2, StarCoder2 | LLaMA 3.2 1B, Qwen2.5-Coder-3B, Gemma 2 2B, Phi-3 Mini, StarCoder2 3B, Mistral 7B | `transformer` |
+| Decoder-only transformer | LLaMA 1/2/3, Mistral, Qwen 2/2.5, Qwen 3, Phi-3/4, Gemma, Gemma 2, StarCoder2 | LLaMA 3.2 1B, Qwen2.5-Coder-3B, Qwen3-1.7B-Base, Gemma 2 2B, Phi-3 Mini, StarCoder2 3B, Mistral 7B | `transformer` |
 | Linear RNN | RWKV-6 (Finch), RWKV-7 (Goose) | RWKV-7 1.6B | `rwkv` |
 | [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny models | Single-layer ReLU RNN, attention-only transformer (8–1,408 params) | M₂,₂ (10 params), M₁₆,₁₀ (432 params), transformer h4n4 (176 params) | `stoicheia` |
 

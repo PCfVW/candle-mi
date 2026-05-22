@@ -124,10 +124,12 @@ impl TransformerLayer {
 
 /// Config-driven generic transformer backend.
 ///
-/// One implementation covers `LLaMA`, `Qwen2`, Gemma 2, `Phi-3`,
+/// One implementation covers `LLaMA`, `Qwen2`, `Qwen3`, Gemma 2, `Phi-3`,
 /// `StarCoder2`, Mistral, and more.  Architecture differences are
 /// captured in [`TransformerConfig`] fields; the forward pass branches
 /// on these at runtime with zero overhead when the branch is not taken.
+/// `Qwen3`'s per-head-dim `QK` norm runs only when
+/// [`TransformerConfig::use_qk_norm`] is `true`.
 pub struct GenericTransformer {
     /// Token embedding matrix.
     embed_tokens: Embedding,
