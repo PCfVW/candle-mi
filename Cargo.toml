@@ -77,6 +77,10 @@ name = "validate_models"
 required-features = ["transformer"]
 
 [[test]]
+name = "validate_qwen3_forward"
+required-features = ["transformer"]
+
+[[test]]
 name = "bench_hook_overhead"
 required-features = ["transformer"]
 
