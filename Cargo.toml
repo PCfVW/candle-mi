@@ -85,6 +85,10 @@ name = "bench_hook_overhead"
 required-features = ["transformer"]
 
 [[test]]
+name = "bench_hook_diagnostic"
+required-features = ["transformer"]
+
+[[test]]
 name = "validate_rwkv6"
 required-features = ["rwkv", "rwkv-tokenizer"]
 
