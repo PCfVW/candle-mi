@@ -1,0 +1,151 @@
+{
+  "model": "Qwen/Qwen3-0.6B-Base",
+  "clt_repo": "bluelightai/clt-qwen3-0.6b-base-20k",
+  "prompt": "At every grand celebration,\nEach careful preparation,\nBrings joy beyond expectation,\nAnd then the brief",
+  "tokens": [
+    "At",
+    " every",
+    " grand",
+    " celebration",
+    ",\n",
+    "Each",
+    " careful",
+    " preparation",
+    ",\n",
+    "Br",
+    "ings",
+    " joy",
+    " beyond",
+    " expectation",
+    ",\n",
+    "And",
+    " then",
+    " the",
+    " brief",
+    " "
+  ],
+  "suppress_word": "duration",
+  "inject_word": "myself",
+  "suppress_features": [
+    {
+      "layer": 19,
+      "index": 9578
+    },
+    {
+      "layer": 0,
+      "index": 8867
+    },
+    {
+      "layer": 25,
+      "index": 4979
+    }
+  ],
+  "inject_feature": {
+    "layer": 22,
+    "index": 4081
+  },
+  "strength": 10.0,
+  "baseline_prob": 2.2584172e-9,
+  "sweep": [
+    {
+      "position": 0,
+      "token": "At",
+      "prob": 1.388895e-11
+    },
+    {
+      "position": 1,
+      "token": " every",
+      "prob": 3.5591385e-9
+    },
+    {
+      "position": 2,
+      "token": " grand",
+      "prob": 2.6166533e-9
+    },
+    {
+      "position": 3,
+      "token": " celebration",
+      "prob": 3.4633947e-9
+    },
+    {
+      "position": 4,
+      "token": ",\n",
+      "prob": 5.923168e-9
+    },
+    {
+      "position": 5,
+      "token": "Each",
+      "prob": 2.561132e-9
+    },
+    {
+      "position": 6,
+      "token": " careful",
+      "prob": 2.7229088e-9
+    },
+    {
+      "position": 7,
+      "token": " preparation",
+      "prob": 3.2549987e-9
+    },
+    {
+      "position": 8,
+      "token": ",\n",
+      "prob": 3.430927e-9
+    },
+    {
+      "position": 9,
+      "token": "Br",
+      "prob": 2.6795162e-9
+    },
+    {
+      "position": 10,
+      "token": "ings",
+      "prob": 4.027691e-9
+    },
+    {
+      "position": 11,
+      "token": " joy",
+      "prob": 2.895837e-9
+    },
+    {
+      "position": 12,
+      "token": " beyond",
+      "prob": 5.941373e-9
+    },
+    {
+      "position": 13,
+      "token": " expectation",
+      "prob": 1.9554813e-9
+    },
+    {
+      "position": 14,
+      "token": ",\n",
+      "prob": 3.116778e-9
+    },
+    {
+      "position": 15,
+      "token": "And",
+      "prob": 2.512955e-9
+    },
+    {
+      "position": 16,
+      "token": " then",
+      "prob": 3.0896388e-9
+    },
+    {
+      "position": 17,
+      "token": " the",
+      "prob": 3.3107446e-9
+    },
+    {
+      "position": 18,
+      "token": " brief",
+      "prob": 2.7452514e-9
+    },
+    {
+      "position": 19,
+      "token": " ",
+      "prob": 1.0840255e-15
+    }
+  ]
+}

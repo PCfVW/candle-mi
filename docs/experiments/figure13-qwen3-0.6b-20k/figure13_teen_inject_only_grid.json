@@ -1,0 +1,1075 @@
+{
+  "model": "Qwen/Qwen3-0.6B-Base",
+  "clt_repo": "bluelightai/clt-qwen3-0.6b-base-20k",
+  "prompt": "She counted thirteen, then fourteen,\nFollowed shortly by fifteen,\nAnd carefully whispered sixteen,\nBefore she reached",
+  "tokens": [
+    "She",
+    " counted",
+    " thirteen",
+    ",",
+    " then",
+    " fourteen",
+    ",\n",
+    "Follow",
+    "ed",
+    " shortly",
+    " by",
+    " fifteen",
+    ",\n",
+    "And",
+    " carefully",
+    " whispered",
+    " sixteen",
+    ",\n",
+    "Before",
+    " she",
+    " reached",
+    " "
+  ],
+  "suppress_word": "seventeen",
+  "inject_word": "duration",
+  "suppress_features": [],
+  "inject_feature": {
+    "layer": 15,
+    "index": 2229
+  },
+  "no_suppress": true,
+  "strength": 5.0,
+  "baseline_prob": 2.873525e-8,
+  "sweep": [
+    {
+      "position": 0,
+      "token": "She",
+      "prob": 3.70301e-8
+    },
+    {
+      "position": 1,
+      "token": " counted",
+      "prob": 2.7808893e-8
+    },
+    {
+      "position": 2,
+      "token": " thirteen",
+      "prob": 3.2099337e-8
+    },
+    {
+      "position": 3,
+      "token": ",",
+      "prob": 3.0773613e-8
+    },
+    {
+      "position": 4,
+      "token": " then",
+      "prob": 2.870843e-8
+    },
+    {
+      "position": 5,
+      "token": " fourteen",
+      "prob": 4.1459057e-8
+    },
+    {
+      "position": 6,
+      "token": ",\n",
+      "prob": 3.2928057e-8
+    },
+    {
+      "position": 7,
+      "token": "Follow",
+      "prob": 2.873632e-8
+    },
+    {
+      "position": 8,
+      "token": "ed",
+      "prob": 3.0120415e-8
+    },
+    {
+      "position": 9,
+      "token": " shortly",
+      "prob": 2.6303434e-8
+    },
+    {
+      "position": 10,
+      "token": " by",
+      "prob": 2.9009149e-8
+    },
+    {
+      "position": 11,
+      "token": " fifteen",
+      "prob": 2.6654057e-8
+    },
+    {
+      "position": 12,
+      "token": ",\n",
+      "prob": 3.069084e-8
+    },
+    {
+      "position": 13,
+      "token": "And",
+      "prob": 3.022331e-8
+    },
+    {
+      "position": 14,
+      "token": " carefully",
+      "prob": 2.8395974e-8
+    },
+    {
+      "position": 15,
+      "token": " whispered",
+      "prob": 3.019995e-8
+    },
+    {
+      "position": 16,
+      "token": " sixteen",
+      "prob": 3.3541284e-8
+    },
+    {
+      "position": 17,
+      "token": ",\n",
+      "prob": 2.7308202e-8
+    },
+    {
+      "position": 18,
+      "token": "Before",
+      "prob": 3.0799388e-8
+    },
+    {
+      "position": 19,
+      "token": " she",
+      "prob": 2.8562603e-8
+    },
+    {
+      "position": 20,
+      "token": " reached",
+      "prob": 7.393676e-8
+    },
+    {
+      "position": 21,
+      "token": " ",
+      "prob": 0.0000013645272
+    }
+  ],
+  "sweep_grid": [
+    {
+      "strength": 0.5,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "She",
+          "prob": 2.9471863e-8
+        },
+        {
+          "position": 1,
+          "token": " counted",
+          "prob": 2.9549266e-8
+        },
+        {
+          "position": 2,
+          "token": " thirteen",
+          "prob": 3.1225113e-8
+        },
+        {
+          "position": 3,
+          "token": ",",
+          "prob": 2.9004802e-8
+        },
+        {
+          "position": 4,
+          "token": " then",
+          "prob": 2.870687e-8
+        },
+        {
+          "position": 5,
+          "token": " fourteen",
+          "prob": 2.7728987e-8
+        },
+        {
+          "position": 6,
+          "token": ",\n",
+          "prob": 2.9457585e-8
+        },
+        {
+          "position": 7,
+          "token": "Follow",
+          "prob": 2.8786626e-8
+        },
+        {
+          "position": 8,
+          "token": "ed",
+          "prob": 2.8826488e-8
+        },
+        {
+          "position": 9,
+          "token": " shortly",
+          "prob": 2.852493e-8
+        },
+        {
+          "position": 10,
+          "token": " by",
+          "prob": 2.8526559e-8
+        },
+        {
+          "position": 11,
+          "token": " fifteen",
+          "prob": 2.7502864e-8
+        },
+        {
+          "position": 12,
+          "token": ",\n",
+          "prob": 2.8795855e-8
+        },
+        {
+          "position": 13,
+          "token": "And",
+          "prob": 2.8989955e-8
+        },
+        {
+          "position": 14,
+          "token": " carefully",
+          "prob": 2.8785156e-8
+        },
+        {
+          "position": 15,
+          "token": " whispered",
+          "prob": 2.8911446e-8
+        },
+        {
+          "position": 16,
+          "token": " sixteen",
+          "prob": 2.865829e-8
+        },
+        {
+          "position": 17,
+          "token": ",\n",
+          "prob": 2.8137126e-8
+        },
+        {
+          "position": 18,
+          "token": "Before",
+          "prob": 2.8657906e-8
+        },
+        {
+          "position": 19,
+          "token": " she",
+          "prob": 2.8814064e-8
+        },
+        {
+          "position": 20,
+          "token": " reached",
+          "prob": 3.082492e-8
+        },
+        {
+          "position": 21,
+          "token": " ",
+          "prob": 5.5125803e-8
+        }
+      ]
+    },
+    {
+      "strength": 1.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "She",
+          "prob": 3.0225138e-8
+        },
+        {
+          "position": 1,
+          "token": " counted",
+          "prob": 3.0185515e-8
+        },
+        {
+          "position": 2,
+          "token": " thirteen",
+          "prob": 3.3607424e-8
+        },
+        {
+          "position": 3,
+          "token": ",",
+          "prob": 2.923438e-8
+        },
+        {
+          "position": 4,
+          "token": " then",
+          "prob": 2.8667628e-8
+        },
+        {
+          "position": 5,
+          "token": " fourteen",
+          "prob": 2.7202317e-8
+        },
+        {
+          "position": 6,
+          "token": ",\n",
+          "prob": 3.0307756e-8
+        },
+        {
+          "position": 7,
+          "token": "Follow",
+          "prob": 2.8806816e-8
+        },
+        {
+          "position": 8,
+          "token": "ed",
+          "prob": 2.8935197e-8
+        },
+        {
+          "position": 9,
+          "token": " shortly",
+          "prob": 2.8270454e-8
+        },
+        {
+          "position": 10,
+          "token": " by",
+          "prob": 2.83669e-8
+        },
+        {
+          "position": 11,
+          "token": " fifteen",
+          "prob": 2.6564328e-8
+        },
+        {
+          "position": 12,
+          "token": ",\n",
+          "prob": 2.889625e-8
+        },
+        {
+          "position": 13,
+          "token": "And",
+          "prob": 2.9261273e-8
+        },
+        {
+          "position": 14,
+          "token": " carefully",
+          "prob": 2.8813695e-8
+        },
+        {
+          "position": 15,
+          "token": " whispered",
+          "prob": 2.9085605e-8
+        },
+        {
+          "position": 16,
+          "token": " sixteen",
+          "prob": 2.8614858e-8
+        },
+        {
+          "position": 17,
+          "token": ",\n",
+          "prob": 2.763153e-8
+        },
+        {
+          "position": 18,
+          "token": "Before",
+          "prob": 2.874728e-8
+        },
+        {
+          "position": 19,
+          "token": " she",
+          "prob": 2.8899118e-8
+        },
+        {
+          "position": 20,
+          "token": " reached",
+          "prob": 3.3644238e-8
+        },
+        {
+          "position": 21,
+          "token": " ",
+          "prob": 1.1292742e-7
+        }
+      ]
+    },
+    {
+      "strength": 2.5,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "She",
+          "prob": 3.2597463e-8
+        },
+        {
+          "position": 1,
+          "token": " counted",
+          "prob": 3.0662616e-8
+        },
+        {
+          "position": 2,
+          "token": " thirteen",
+          "prob": 3.8167688e-8
+        },
+        {
+          "position": 3,
+          "token": ",",
+          "prob": 2.9928373e-8
+        },
+        {
+          "position": 4,
+          "token": " then",
+          "prob": 2.8695647e-8
+        },
+        {
+          "position": 5,
+          "token": " fourteen",
+          "prob": 2.989387e-8
+        },
+        {
+          "position": 6,
+          "token": ",\n",
+          "prob": 3.3236425e-8
+        },
+        {
+          "position": 7,
+          "token": "Follow",
+          "prob": 2.8787861e-8
+        },
+        {
+          "position": 8,
+          "token": "ed",
+          "prob": 2.945325e-8
+        },
+        {
+          "position": 9,
+          "token": " shortly",
+          "prob": 2.7384624e-8
+        },
+        {
+          "position": 10,
+          "token": " by",
+          "prob": 2.8373856e-8
+        },
+        {
+          "position": 11,
+          "token": " fifteen",
+          "prob": 2.5735343e-8
+        },
+        {
+          "position": 12,
+          "token": ",\n",
+          "prob": 2.9605802e-8
+        },
+        {
+          "position": 13,
+          "token": "And",
+          "prob": 3.005095e-8
+        },
+        {
+          "position": 14,
+          "token": " carefully",
+          "prob": 2.8736615e-8
+        },
+        {
+          "position": 15,
+          "token": " whispered",
+          "prob": 2.9642264e-8
+        },
+        {
+          "position": 16,
+          "token": " sixteen",
+          "prob": 2.9238702e-8
+        },
+        {
+          "position": 17,
+          "token": ",\n",
+          "prob": 2.7130508e-8
+        },
+        {
+          "position": 18,
+          "token": "Before",
+          "prob": 2.9683441e-8
+        },
+        {
+          "position": 19,
+          "token": " she",
+          "prob": 2.8966165e-8
+        },
+        {
+          "position": 20,
+          "token": " reached",
+          "prob": 4.7330648e-8
+        },
+        {
+          "position": 21,
+          "token": " ",
+          "prob": 6.926561e-7
+        }
+      ]
+    },
+    {
+      "strength": 5.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "She",
+          "prob": 3.70301e-8
+        },
+        {
+          "position": 1,
+          "token": " counted",
+          "prob": 2.7808893e-8
+        },
+        {
+          "position": 2,
+          "token": " thirteen",
+          "prob": 3.2099337e-8
+        },
+        {
+          "position": 3,
+          "token": ",",
+          "prob": 3.0773613e-8
+        },
+        {
+          "position": 4,
+          "token": " then",
+          "prob": 2.870843e-8
+        },
+        {
+          "position": 5,
+          "token": " fourteen",
+          "prob": 4.1459057e-8
+        },
+        {
+          "position": 6,
+          "token": ",\n",
+          "prob": 3.2928057e-8
+        },
+        {
+          "position": 7,
+          "token": "Follow",
+          "prob": 2.873632e-8
+        },
+        {
+          "position": 8,
+          "token": "ed",
+          "prob": 3.0120415e-8
+        },
+        {
+          "position": 9,
+          "token": " shortly",
+          "prob": 2.6303434e-8
+        },
+        {
+          "position": 10,
+          "token": " by",
+          "prob": 2.9009149e-8
+        },
+        {
+          "position": 11,
+          "token": " fifteen",
+          "prob": 2.6654057e-8
+        },
+        {
+          "position": 12,
+          "token": ",\n",
+          "prob": 3.069084e-8
+        },
+        {
+          "position": 13,
+          "token": "And",
+          "prob": 3.022331e-8
+        },
+        {
+          "position": 14,
+          "token": " carefully",
+          "prob": 2.8395974e-8
+        },
+        {
+          "position": 15,
+          "token": " whispered",
+          "prob": 3.019995e-8
+        },
+        {
+          "position": 16,
+          "token": " sixteen",
+          "prob": 3.3541284e-8
+        },
+        {
+          "position": 17,
+          "token": ",\n",
+          "prob": 2.7308202e-8
+        },
+        {
+          "position": 18,
+          "token": "Before",
+          "prob": 3.0799388e-8
+        },
+        {
+          "position": 19,
+          "token": " she",
+          "prob": 2.8562603e-8
+        },
+        {
+          "position": 20,
+          "token": " reached",
+          "prob": 7.393676e-8
+        },
+        {
+          "position": 21,
+          "token": " ",
+          "prob": 0.0000013645272
+        }
+      ]
+    },
+    {
+      "strength": 10.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "She",
+          "prob": 4.86078e-8
+        },
+        {
+          "position": 1,
+          "token": " counted",
+          "prob": 2.4861766e-8
+        },
+        {
+          "position": 2,
+          "token": " thirteen",
+          "prob": 2.913277e-8
+        },
+        {
+          "position": 3,
+          "token": ",",
+          "prob": 2.9398622e-8
+        },
+        {
+          "position": 4,
+          "token": " then",
+          "prob": 2.8531424e-8
+        },
+        {
+          "position": 5,
+          "token": " fourteen",
+          "prob": 4.4253273e-8
+        },
+        {
+          "position": 6,
+          "token": ",\n",
+          "prob": 3.0923825e-8
+        },
+        {
+          "position": 7,
+          "token": "Follow",
+          "prob": 2.82028e-8
+        },
+        {
+          "position": 8,
+          "token": "ed",
+          "prob": 2.915939e-8
+        },
+        {
+          "position": 9,
+          "token": " shortly",
+          "prob": 2.535084e-8
+        },
+        {
+          "position": 10,
+          "token": " by",
+          "prob": 2.9207277e-8
+        },
+        {
+          "position": 11,
+          "token": " fifteen",
+          "prob": 2.6967676e-8
+        },
+        {
+          "position": 12,
+          "token": ",\n",
+          "prob": 3.193599e-8
+        },
+        {
+          "position": 13,
+          "token": "And",
+          "prob": 2.9664648e-8
+        },
+        {
+          "position": 14,
+          "token": " carefully",
+          "prob": 2.799687e-8
+        },
+        {
+          "position": 15,
+          "token": " whispered",
+          "prob": 2.8883745e-8
+        },
+        {
+          "position": 16,
+          "token": " sixteen",
+          "prob": 3.4473416e-8
+        },
+        {
+          "position": 17,
+          "token": ",\n",
+          "prob": 2.8272162e-8
+        },
+        {
+          "position": 18,
+          "token": "Before",
+          "prob": 3.0585273e-8
+        },
+        {
+          "position": 19,
+          "token": " she",
+          "prob": 2.7124182e-8
+        },
+        {
+          "position": 20,
+          "token": " reached",
+          "prob": 6.9406724e-8
+        },
+        {
+          "position": 21,
+          "token": " ",
+          "prob": 4.6573263e-7
+        }
+      ]
+    },
+    {
+      "strength": 25.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "She",
+          "prob": 1.2848825e-7
+        },
+        {
+          "position": 1,
+          "token": " counted",
+          "prob": 2.4751278e-8
+        },
+        {
+          "position": 2,
+          "token": " thirteen",
+          "prob": 2.8722267e-8
+        },
+        {
+          "position": 3,
+          "token": ",",
+          "prob": 2.8347488e-8
+        },
+        {
+          "position": 4,
+          "token": " then",
+          "prob": 2.922626e-8
+        },
+        {
+          "position": 5,
+          "token": " fourteen",
+          "prob": 4.260281e-8
+        },
+        {
+          "position": 6,
+          "token": ",\n",
+          "prob": 3.1438656e-8
+        },
+        {
+          "position": 7,
+          "token": "Follow",
+          "prob": 2.8259207e-8
+        },
+        {
+          "position": 8,
+          "token": "ed",
+          "prob": 2.8803013e-8
+        },
+        {
+          "position": 9,
+          "token": " shortly",
+          "prob": 2.5328168e-8
+        },
+        {
+          "position": 10,
+          "token": " by",
+          "prob": 2.9709055e-8
+        },
+        {
+          "position": 11,
+          "token": " fifteen",
+          "prob": 2.6306768e-8
+        },
+        {
+          "position": 12,
+          "token": ",\n",
+          "prob": 3.2419734e-8
+        },
+        {
+          "position": 13,
+          "token": "And",
+          "prob": 2.957073e-8
+        },
+        {
+          "position": 14,
+          "token": " carefully",
+          "prob": 2.8198704e-8
+        },
+        {
+          "position": 15,
+          "token": " whispered",
+          "prob": 2.8843472e-8
+        },
+        {
+          "position": 16,
+          "token": " sixteen",
+          "prob": 3.38158e-8
+        },
+        {
+          "position": 17,
+          "token": ",\n",
+          "prob": 2.958881e-8
+        },
+        {
+          "position": 18,
+          "token": "Before",
+          "prob": 3.1331965e-8
+        },
+        {
+          "position": 19,
+          "token": " she",
+          "prob": 2.7904417e-8
+        },
+        {
+          "position": 20,
+          "token": " reached",
+          "prob": 4.085625e-8
+        },
+        {
+          "position": 21,
+          "token": " ",
+          "prob": 3.797932e-7
+        }
+      ]
+    },
+    {
+      "strength": 50.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "She",
+          "prob": 2.9501234e-7
+        },
+        {
+          "position": 1,
+          "token": " counted",
+          "prob": 2.4729562e-8
+        },
+        {
+          "position": 2,
+          "token": " thirteen",
+          "prob": 2.851429e-8
+        },
+        {
+          "position": 3,
+          "token": ",",
+          "prob": 2.796041e-8
+        },
+        {
+          "position": 4,
+          "token": " then",
+          "prob": 2.933855e-8
+        },
+        {
+          "position": 5,
+          "token": " fourteen",
+          "prob": 4.2023473e-8
+        },
+        {
+          "position": 6,
+          "token": ",\n",
+          "prob": 3.1591174e-8
+        },
+        {
+          "position": 7,
+          "token": "Follow",
+          "prob": 2.8330104e-8
+        },
+        {
+          "position": 8,
+          "token": "ed",
+          "prob": 2.8796626e-8
+        },
+        {
+          "position": 9,
+          "token": " shortly",
+          "prob": 2.5457656e-8
+        },
+        {
+          "position": 10,
+          "token": " by",
+          "prob": 2.984496e-8
+        },
+        {
+          "position": 11,
+          "token": " fifteen",
+          "prob": 2.6090573e-8
+        },
+        {
+          "position": 12,
+          "token": ",\n",
+          "prob": 3.2539006e-8
+        },
+        {
+          "position": 13,
+          "token": "And",
+          "prob": 2.9570371e-8
+        },
+        {
+          "position": 14,
+          "token": " carefully",
+          "prob": 2.8266571e-8
+        },
+        {
+          "position": 15,
+          "token": " whispered",
+          "prob": 2.901132e-8
+        },
+        {
+          "position": 16,
+          "token": " sixteen",
+          "prob": 3.3855898e-8
+        },
+        {
+          "position": 17,
+          "token": ",\n",
+          "prob": 2.9864925e-8
+        },
+        {
+          "position": 18,
+          "token": "Before",
+          "prob": 3.1531254e-8
+        },
+        {
+          "position": 19,
+          "token": " she",
+          "prob": 2.7801107e-8
+        },
+        {
+          "position": 20,
+          "token": " reached",
+          "prob": 3.672347e-8
+        },
+        {
+          "position": 21,
+          "token": " ",
+          "prob": 3.0899096e-7
+        }
+      ]
+    },
+    {
+      "strength": 100.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "She",
+          "prob": 8.4366e-8
+        },
+        {
+          "position": 1,
+          "token": " counted",
+          "prob": 2.4565454e-8
+        },
+        {
+          "position": 2,
+          "token": " thirteen",
+          "prob": 2.8390307e-8
+        },
+        {
+          "position": 3,
+          "token": ",",
+          "prob": 2.7866284e-8
+        },
+        {
+          "position": 4,
+          "token": " then",
+          "prob": 2.9370499e-8
+        },
+        {
+          "position": 5,
+          "token": " fourteen",
+          "prob": 4.1889905e-8
+        },
+        {
+          "position": 6,
+          "token": ",\n",
+          "prob": 3.1659134e-8
+        },
+        {
+          "position": 7,
+          "token": "Follow",
+          "prob": 2.8311069e-8
+        },
+        {
+          "position": 8,
+          "token": "ed",
+          "prob": 2.8739379e-8
+        },
+        {
+          "position": 9,
+          "token": " shortly",
+          "prob": 2.5477997e-8
+        },
+        {
+          "position": 10,
+          "token": " by",
+          "prob": 2.9865046e-8
+        },
+        {
+          "position": 11,
+          "token": " fifteen",
+          "prob": 2.6066612e-8
+        },
+        {
+          "position": 12,
+          "token": ",\n",
+          "prob": 3.2560223e-8
+        },
+        {
+          "position": 13,
+          "token": "And",
+          "prob": 2.9511455e-8
+        },
+        {
+          "position": 14,
+          "token": " carefully",
+          "prob": 2.8199395e-8
+        },
+        {
+          "position": 15,
+          "token": " whispered",
+          "prob": 2.8988074e-8
+        },
+        {
+          "position": 16,
+          "token": " sixteen",
+          "prob": 3.3898367e-8
+        },
+        {
+          "position": 17,
+          "token": ",\n",
+          "prob": 2.9907117e-8
+        },
+        {
+          "position": 18,
+          "token": "Before",
+          "prob": 3.1528675e-8
+        },
+        {
+          "position": 19,
+          "token": " she",
+          "prob": 2.7669826e-8
+        },
+        {
+          "position": 20,
+          "token": " reached",
+          "prob": 3.5761474e-8
+        },
+        {
+          "position": 21,
+          "token": " ",
+          "prob": 1.3208115e-7
+        }
+      ]
+    }
+  ],
+  "best_ratio": 47.486176,
+  "best_position": 21
+}

@@ -1,0 +1,983 @@
+{
+  "model": "Qwen/Qwen3-0.6B-Base",
+  "clt_repo": "bluelightai/clt-qwen3-0.6b-base-20k",
+  "prompt": "At every grand celebration,\nEach careful preparation,\nBrings joy beyond expectation,\nAnd then the brief",
+  "tokens": [
+    "At",
+    " every",
+    " grand",
+    " celebration",
+    ",\n",
+    "Each",
+    " careful",
+    " preparation",
+    ",\n",
+    "Br",
+    "ings",
+    " joy",
+    " beyond",
+    " expectation",
+    ",\n",
+    "And",
+    " then",
+    " the",
+    " brief",
+    " "
+  ],
+  "suppress_word": "duration",
+  "inject_word": "myself",
+  "suppress_features": [],
+  "inject_feature": {
+    "layer": 22,
+    "index": 4081
+  },
+  "no_suppress": true,
+  "strength": 50.0,
+  "baseline_prob": 2.6931608e-7,
+  "sweep": [
+    {
+      "position": 0,
+      "token": "At",
+      "prob": 4.936502e-7
+    },
+    {
+      "position": 1,
+      "token": " every",
+      "prob": 2.714958e-7
+    },
+    {
+      "position": 2,
+      "token": " grand",
+      "prob": 2.742307e-7
+    },
+    {
+      "position": 3,
+      "token": " celebration",
+      "prob": 2.5026193e-7
+    },
+    {
+      "position": 4,
+      "token": ",\n",
+      "prob": 2.485913e-7
+    },
+    {
+      "position": 5,
+      "token": "Each",
+      "prob": 2.6967277e-7
+    },
+    {
+      "position": 6,
+      "token": " careful",
+      "prob": 2.703277e-7
+    },
+    {
+      "position": 7,
+      "token": " preparation",
+      "prob": 2.7076175e-7
+    },
+    {
+      "position": 8,
+      "token": ",\n",
+      "prob": 2.6285667e-7
+    },
+    {
+      "position": 9,
+      "token": "Br",
+      "prob": 2.7592483e-7
+    },
+    {
+      "position": 10,
+      "token": "ings",
+      "prob": 2.7196273e-7
+    },
+    {
+      "position": 11,
+      "token": " joy",
+      "prob": 2.7997376e-7
+    },
+    {
+      "position": 12,
+      "token": " beyond",
+      "prob": 2.7119108e-7
+    },
+    {
+      "position": 13,
+      "token": " expectation",
+      "prob": 2.7845527e-7
+    },
+    {
+      "position": 14,
+      "token": ",\n",
+      "prob": 3.0082094e-7
+    },
+    {
+      "position": 15,
+      "token": "And",
+      "prob": 3.0043466e-7
+    },
+    {
+      "position": 16,
+      "token": " then",
+      "prob": 2.8267482e-7
+    },
+    {
+      "position": 17,
+      "token": " the",
+      "prob": 3.1102556e-7
+    },
+    {
+      "position": 18,
+      "token": " brief",
+      "prob": 2.4351587e-7
+    },
+    {
+      "position": 19,
+      "token": " ",
+      "prob": 6.107145e-28
+    }
+  ],
+  "sweep_grid": [
+    {
+      "strength": 0.5,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "At",
+          "prob": 2.6099383e-7
+        },
+        {
+          "position": 1,
+          "token": " every",
+          "prob": 2.6778403e-7
+        },
+        {
+          "position": 2,
+          "token": " grand",
+          "prob": 2.6505182e-7
+        },
+        {
+          "position": 3,
+          "token": " celebration",
+          "prob": 2.6728722e-7
+        },
+        {
+          "position": 4,
+          "token": ",\n",
+          "prob": 2.5500603e-7
+        },
+        {
+          "position": 5,
+          "token": "Each",
+          "prob": 2.642633e-7
+        },
+        {
+          "position": 6,
+          "token": " careful",
+          "prob": 2.658784e-7
+        },
+        {
+          "position": 7,
+          "token": " preparation",
+          "prob": 2.603478e-7
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 2.5973378e-7
+        },
+        {
+          "position": 9,
+          "token": "Br",
+          "prob": 2.6955038e-7
+        },
+        {
+          "position": 10,
+          "token": "ings",
+          "prob": 2.6615356e-7
+        },
+        {
+          "position": 11,
+          "token": " joy",
+          "prob": 2.634582e-7
+        },
+        {
+          "position": 12,
+          "token": " beyond",
+          "prob": 2.66654e-7
+        },
+        {
+          "position": 13,
+          "token": " expectation",
+          "prob": 2.6721148e-7
+        },
+        {
+          "position": 14,
+          "token": ",\n",
+          "prob": 2.5867362e-7
+        },
+        {
+          "position": 15,
+          "token": "And",
+          "prob": 2.644803e-7
+        },
+        {
+          "position": 16,
+          "token": " then",
+          "prob": 2.4864266e-7
+        },
+        {
+          "position": 17,
+          "token": " the",
+          "prob": 1.8001658e-7
+        },
+        {
+          "position": 18,
+          "token": " brief",
+          "prob": 4.974022e-8
+        },
+        {
+          "position": 19,
+          "token": " ",
+          "prob": 1.5591326e-8
+        }
+      ]
+    },
+    {
+      "strength": 1.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "At",
+          "prob": 2.5309393e-7
+        },
+        {
+          "position": 1,
+          "token": " every",
+          "prob": 2.6677876e-7
+        },
+        {
+          "position": 2,
+          "token": " grand",
+          "prob": 2.6218058e-7
+        },
+        {
+          "position": 3,
+          "token": " celebration",
+          "prob": 2.6507084e-7
+        },
+        {
+          "position": 4,
+          "token": ",\n",
+          "prob": 2.437261e-7
+        },
+        {
+          "position": 5,
+          "token": "Each",
+          "prob": 2.5984303e-7
+        },
+        {
+          "position": 6,
+          "token": " careful",
+          "prob": 2.6295604e-7
+        },
+        {
+          "position": 7,
+          "token": " preparation",
+          "prob": 2.52494e-7
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 2.5268793e-7
+        },
+        {
+          "position": 9,
+          "token": "Br",
+          "prob": 2.698854e-7
+        },
+        {
+          "position": 10,
+          "token": "ings",
+          "prob": 2.6336394e-7
+        },
+        {
+          "position": 11,
+          "token": " joy",
+          "prob": 2.5888914e-7
+        },
+        {
+          "position": 12,
+          "token": " beyond",
+          "prob": 2.6418812e-7
+        },
+        {
+          "position": 13,
+          "token": " expectation",
+          "prob": 2.6670605e-7
+        },
+        {
+          "position": 14,
+          "token": ",\n",
+          "prob": 2.5233157e-7
+        },
+        {
+          "position": 15,
+          "token": "And",
+          "prob": 2.6160086e-7
+        },
+        {
+          "position": 16,
+          "token": " then",
+          "prob": 2.3357676e-7
+        },
+        {
+          "position": 17,
+          "token": " the",
+          "prob": 1.3317992e-7
+        },
+        {
+          "position": 18,
+          "token": " brief",
+          "prob": 1.2950955e-8
+        },
+        {
+          "position": 19,
+          "token": " ",
+          "prob": 9.522086e-10
+        }
+      ]
+    },
+    {
+      "strength": 2.5,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "At",
+          "prob": 2.3237028e-7
+        },
+        {
+          "position": 1,
+          "token": " every",
+          "prob": 2.6634893e-7
+        },
+        {
+          "position": 2,
+          "token": " grand",
+          "prob": 2.642272e-7
+        },
+        {
+          "position": 3,
+          "token": " celebration",
+          "prob": 2.595918e-7
+        },
+        {
+          "position": 4,
+          "token": ",\n",
+          "prob": 2.2946435e-7
+        },
+        {
+          "position": 5,
+          "token": "Each",
+          "prob": 2.5316308e-7
+        },
+        {
+          "position": 6,
+          "token": " careful",
+          "prob": 2.586988e-7
+        },
+        {
+          "position": 7,
+          "token": " preparation",
+          "prob": 2.3938208e-7
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 2.4497953e-7
+        },
+        {
+          "position": 9,
+          "token": "Br",
+          "prob": 2.7102493e-7
+        },
+        {
+          "position": 10,
+          "token": "ings",
+          "prob": 2.6043617e-7
+        },
+        {
+          "position": 11,
+          "token": " joy",
+          "prob": 2.5422224e-7
+        },
+        {
+          "position": 12,
+          "token": " beyond",
+          "prob": 2.6046447e-7
+        },
+        {
+          "position": 13,
+          "token": " expectation",
+          "prob": 2.6938102e-7
+        },
+        {
+          "position": 14,
+          "token": ",\n",
+          "prob": 2.528631e-7
+        },
+        {
+          "position": 15,
+          "token": "And",
+          "prob": 2.5906687e-7
+        },
+        {
+          "position": 16,
+          "token": " then",
+          "prob": 2.1357314e-7
+        },
+        {
+          "position": 17,
+          "token": " the",
+          "prob": 8.997329e-8
+        },
+        {
+          "position": 18,
+          "token": " brief",
+          "prob": 3.6994963e-9
+        },
+        {
+          "position": 19,
+          "token": " ",
+          "prob": 8.0479074e-14
+        }
+      ]
+    },
+    {
+      "strength": 5.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "At",
+          "prob": 2.0983941e-7
+        },
+        {
+          "position": 1,
+          "token": " every",
+          "prob": 2.659789e-7
+        },
+        {
+          "position": 2,
+          "token": " grand",
+          "prob": 2.7265247e-7
+        },
+        {
+          "position": 3,
+          "token": " celebration",
+          "prob": 2.527154e-7
+        },
+        {
+          "position": 4,
+          "token": ",\n",
+          "prob": 2.3257827e-7
+        },
+        {
+          "position": 5,
+          "token": "Each",
+          "prob": 2.5480932e-7
+        },
+        {
+          "position": 6,
+          "token": " careful",
+          "prob": 2.6060394e-7
+        },
+        {
+          "position": 7,
+          "token": " preparation",
+          "prob": 2.4768846e-7
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 2.519519e-7
+        },
+        {
+          "position": 9,
+          "token": "Br",
+          "prob": 2.7244175e-7
+        },
+        {
+          "position": 10,
+          "token": "ings",
+          "prob": 2.6233468e-7
+        },
+        {
+          "position": 11,
+          "token": " joy",
+          "prob": 2.5981714e-7
+        },
+        {
+          "position": 12,
+          "token": " beyond",
+          "prob": 2.6190548e-7
+        },
+        {
+          "position": 13,
+          "token": " expectation",
+          "prob": 2.7454345e-7
+        },
+        {
+          "position": 14,
+          "token": ",\n",
+          "prob": 2.7100728e-7
+        },
+        {
+          "position": 15,
+          "token": "And",
+          "prob": 2.6462305e-7
+        },
+        {
+          "position": 16,
+          "token": " then",
+          "prob": 2.2810639e-7
+        },
+        {
+          "position": 17,
+          "token": " the",
+          "prob": 1.2139671e-7
+        },
+        {
+          "position": 18,
+          "token": " brief",
+          "prob": 2.0953571e-8
+        },
+        {
+          "position": 19,
+          "token": " ",
+          "prob": 1.5620471e-21
+        }
+      ]
+    },
+    {
+      "strength": 10.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "At",
+          "prob": 2.1143288e-7
+        },
+        {
+          "position": 1,
+          "token": " every",
+          "prob": 2.688009e-7
+        },
+        {
+          "position": 2,
+          "token": " grand",
+          "prob": 2.7399824e-7
+        },
+        {
+          "position": 3,
+          "token": " celebration",
+          "prob": 2.4970285e-7
+        },
+        {
+          "position": 4,
+          "token": ",\n",
+          "prob": 2.423446e-7
+        },
+        {
+          "position": 5,
+          "token": "Each",
+          "prob": 2.6402103e-7
+        },
+        {
+          "position": 6,
+          "token": " careful",
+          "prob": 2.673664e-7
+        },
+        {
+          "position": 7,
+          "token": " preparation",
+          "prob": 2.6688622e-7
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 2.6022502e-7
+        },
+        {
+          "position": 9,
+          "token": "Br",
+          "prob": 2.7350063e-7
+        },
+        {
+          "position": 10,
+          "token": "ings",
+          "prob": 2.6606708e-7
+        },
+        {
+          "position": 11,
+          "token": " joy",
+          "prob": 2.7061694e-7
+        },
+        {
+          "position": 12,
+          "token": " beyond",
+          "prob": 2.6443323e-7
+        },
+        {
+          "position": 13,
+          "token": " expectation",
+          "prob": 2.7438077e-7
+        },
+        {
+          "position": 14,
+          "token": ",\n",
+          "prob": 2.852262e-7
+        },
+        {
+          "position": 15,
+          "token": "And",
+          "prob": 2.7811816e-7
+        },
+        {
+          "position": 16,
+          "token": " then",
+          "prob": 2.5721656e-7
+        },
+        {
+          "position": 17,
+          "token": " the",
+          "prob": 2.5354922e-7
+        },
+        {
+          "position": 18,
+          "token": " brief",
+          "prob": 2.1005309e-7
+        },
+        {
+          "position": 19,
+          "token": " ",
+          "prob": 6.907982e-27
+        }
+      ]
+    },
+    {
+      "strength": 25.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "At",
+          "prob": 2.6350108e-7
+        },
+        {
+          "position": 1,
+          "token": " every",
+          "prob": 2.7194054e-7
+        },
+        {
+          "position": 2,
+          "token": " grand",
+          "prob": 2.7445108e-7
+        },
+        {
+          "position": 3,
+          "token": " celebration",
+          "prob": 2.5009768e-7
+        },
+        {
+          "position": 4,
+          "token": ",\n",
+          "prob": 2.4780766e-7
+        },
+        {
+          "position": 5,
+          "token": "Each",
+          "prob": 2.690033e-7
+        },
+        {
+          "position": 6,
+          "token": " careful",
+          "prob": 2.7037956e-7
+        },
+        {
+          "position": 7,
+          "token": " preparation",
+          "prob": 2.7096257e-7
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 2.629613e-7
+        },
+        {
+          "position": 9,
+          "token": "Br",
+          "prob": 2.752012e-7
+        },
+        {
+          "position": 10,
+          "token": "ings",
+          "prob": 2.729289e-7
+        },
+        {
+          "position": 11,
+          "token": " joy",
+          "prob": 2.8041998e-7
+        },
+        {
+          "position": 12,
+          "token": " beyond",
+          "prob": 2.6989468e-7
+        },
+        {
+          "position": 13,
+          "token": " expectation",
+          "prob": 2.8058253e-7
+        },
+        {
+          "position": 14,
+          "token": ",\n",
+          "prob": 3.0299014e-7
+        },
+        {
+          "position": 15,
+          "token": "And",
+          "prob": 3.030172e-7
+        },
+        {
+          "position": 16,
+          "token": " then",
+          "prob": 2.8672028e-7
+        },
+        {
+          "position": 17,
+          "token": " the",
+          "prob": 3.1458174e-7
+        },
+        {
+          "position": 18,
+          "token": " brief",
+          "prob": 2.4646448e-7
+        },
+        {
+          "position": 19,
+          "token": " ",
+          "prob": 1.459307e-28
+        }
+      ]
+    },
+    {
+      "strength": 50.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "At",
+          "prob": 4.936502e-7
+        },
+        {
+          "position": 1,
+          "token": " every",
+          "prob": 2.714958e-7
+        },
+        {
+          "position": 2,
+          "token": " grand",
+          "prob": 2.742307e-7
+        },
+        {
+          "position": 3,
+          "token": " celebration",
+          "prob": 2.5026193e-7
+        },
+        {
+          "position": 4,
+          "token": ",\n",
+          "prob": 2.485913e-7
+        },
+        {
+          "position": 5,
+          "token": "Each",
+          "prob": 2.6967277e-7
+        },
+        {
+          "position": 6,
+          "token": " careful",
+          "prob": 2.703277e-7
+        },
+        {
+          "position": 7,
+          "token": " preparation",
+          "prob": 2.7076175e-7
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 2.6285667e-7
+        },
+        {
+          "position": 9,
+          "token": "Br",
+          "prob": 2.7592483e-7
+        },
+        {
+          "position": 10,
+          "token": "ings",
+          "prob": 2.7196273e-7
+        },
+        {
+          "position": 11,
+          "token": " joy",
+          "prob": 2.7997376e-7
+        },
+        {
+          "position": 12,
+          "token": " beyond",
+          "prob": 2.7119108e-7
+        },
+        {
+          "position": 13,
+          "token": " expectation",
+          "prob": 2.7845527e-7
+        },
+        {
+          "position": 14,
+          "token": ",\n",
+          "prob": 3.0082094e-7
+        },
+        {
+          "position": 15,
+          "token": "And",
+          "prob": 3.0043466e-7
+        },
+        {
+          "position": 16,
+          "token": " then",
+          "prob": 2.8267482e-7
+        },
+        {
+          "position": 17,
+          "token": " the",
+          "prob": 3.1102556e-7
+        },
+        {
+          "position": 18,
+          "token": " brief",
+          "prob": 2.4351587e-7
+        },
+        {
+          "position": 19,
+          "token": " ",
+          "prob": 6.107145e-28
+        }
+      ]
+    },
+    {
+      "strength": 100.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "At",
+          "prob": 2.994451e-7
+        },
+        {
+          "position": 1,
+          "token": " every",
+          "prob": 2.709729e-7
+        },
+        {
+          "position": 2,
+          "token": " grand",
+          "prob": 2.7377573e-7
+        },
+        {
+          "position": 3,
+          "token": " celebration",
+          "prob": 2.499731e-7
+        },
+        {
+          "position": 4,
+          "token": ",\n",
+          "prob": 2.4860103e-7
+        },
+        {
+          "position": 5,
+          "token": "Each",
+          "prob": 2.6981488e-7
+        },
+        {
+          "position": 6,
+          "token": " careful",
+          "prob": 2.7021915e-7
+        },
+        {
+          "position": 7,
+          "token": " preparation",
+          "prob": 2.705851e-7
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 2.625785e-7
+        },
+        {
+          "position": 9,
+          "token": "Br",
+          "prob": 2.7614246e-7
+        },
+        {
+          "position": 10,
+          "token": "ings",
+          "prob": 2.7026502e-7
+        },
+        {
+          "position": 11,
+          "token": " joy",
+          "prob": 2.7800434e-7
+        },
+        {
+          "position": 12,
+          "token": " beyond",
+          "prob": 2.7083559e-7
+        },
+        {
+          "position": 13,
+          "token": " expectation",
+          "prob": 2.760902e-7
+        },
+        {
+          "position": 14,
+          "token": ",\n",
+          "prob": 2.9637772e-7
+        },
+        {
+          "position": 15,
+          "token": "And",
+          "prob": 2.9319366e-7
+        },
+        {
+          "position": 16,
+          "token": " then",
+          "prob": 2.7499624e-7
+        },
+        {
+          "position": 17,
+          "token": " the",
+          "prob": 3.0310503e-7
+        },
+        {
+          "position": 18,
+          "token": " brief",
+          "prob": 2.410082e-7
+        },
+        {
+          "position": 19,
+          "token": " ",
+          "prob": 1.5455543e-28
+        }
+      ]
+    }
+  ],
+  "best_ratio": 1.832977,
+  "best_position": 0
+}

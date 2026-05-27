@@ -1,0 +1,1505 @@
+{
+  "model": "meta-llama/Llama-3.2-1B",
+  "clt_repo": "mntss/clt-llama-3.2-1b-524k",
+  "prompt": "The birds were singing in the tree,\nAnd everything was wild and free.\nThe river ran down to the sea,\nThere is so much we cannot",
+  "tokens": [
+    "<|begin_of_text|>",
+    "The",
+    " birds",
+    " were",
+    " singing",
+    " in",
+    " the",
+    " tree",
+    ",\n",
+    "And",
+    " everything",
+    " was",
+    " wild",
+    " and",
+    " free",
+    ".\n",
+    "The",
+    " river",
+    " ran",
+    " down",
+    " to",
+    " the",
+    " sea",
+    ",\n",
+    "There",
+    " is",
+    " so",
+    " much",
+    " we",
+    " cannot",
+    " "
+  ],
+  "suppress_word": "free",
+  "inject_word": "that",
+  "suppress_features": [
+    {
+      "layer": 13,
+      "index": 30985
+    },
+    {
+      "layer": 9,
+      "index": 5488
+    },
+    {
+      "layer": 14,
+      "index": 27874
+    },
+    {
+      "layer": 13,
+      "index": 32049
+    }
+  ],
+  "inject_feature": {
+    "layer": 14,
+    "index": 13043
+  },
+  "strength": 25.0,
+  "baseline_prob": 0.0000010573334,
+  "sweep": [
+    {
+      "position": 0,
+      "token": "<|begin_of_text|>",
+      "prob": 7.2869767e-7
+    },
+    {
+      "position": 1,
+      "token": "The",
+      "prob": 0.0000010013061
+    },
+    {
+      "position": 2,
+      "token": " birds",
+      "prob": 0.0000010527759
+    },
+    {
+      "position": 3,
+      "token": " were",
+      "prob": 0.0000010278735
+    },
+    {
+      "position": 4,
+      "token": " singing",
+      "prob": 0.0000010857767
+    },
+    {
+      "position": 5,
+      "token": " in",
+      "prob": 0.0000010450693
+    },
+    {
+      "position": 6,
+      "token": " the",
+      "prob": 0.0000010638443
+    },
+    {
+      "position": 7,
+      "token": " tree",
+      "prob": 0.0000010676304
+    },
+    {
+      "position": 8,
+      "token": ",\n",
+      "prob": 0.0000012197554
+    },
+    {
+      "position": 9,
+      "token": "And",
+      "prob": 0.0000012193294
+    },
+    {
+      "position": 10,
+      "token": " everything",
+      "prob": 0.0000010509015
+    },
+    {
+      "position": 11,
+      "token": " was",
+      "prob": 0.0000010548581
+    },
+    {
+      "position": 12,
+      "token": " wild",
+      "prob": 0.0000010319733
+    },
+    {
+      "position": 13,
+      "token": " and",
+      "prob": 0.0000010560225
+    },
+    {
+      "position": 14,
+      "token": " free",
+      "prob": 9.821788e-7
+    },
+    {
+      "position": 15,
+      "token": ".\n",
+      "prob": 0.0000013196282
+    },
+    {
+      "position": 16,
+      "token": "The",
+      "prob": 0.0000010561478
+    },
+    {
+      "position": 17,
+      "token": " river",
+      "prob": 0.0000010664571
+    },
+    {
+      "position": 18,
+      "token": " ran",
+      "prob": 0.0000010422044
+    },
+    {
+      "position": 19,
+      "token": " down",
+      "prob": 0.0000010270234
+    },
+    {
+      "position": 20,
+      "token": " to",
+      "prob": 0.0000010325045
+    },
+    {
+      "position": 21,
+      "token": " the",
+      "prob": 0.0000010374796
+    },
+    {
+      "position": 22,
+      "token": " sea",
+      "prob": 0.0000010348897
+    },
+    {
+      "position": 23,
+      "token": ",\n",
+      "prob": 0.000001035374
+    },
+    {
+      "position": 24,
+      "token": "There",
+      "prob": 0.0000010569245
+    },
+    {
+      "position": 25,
+      "token": " is",
+      "prob": 0.0000010387179
+    },
+    {
+      "position": 26,
+      "token": " so",
+      "prob": 0.0000011491101
+    },
+    {
+      "position": 27,
+      "token": " much",
+      "prob": 0.000001160437
+    },
+    {
+      "position": 28,
+      "token": " we",
+      "prob": 0.0000018874306
+    },
+    {
+      "position": 29,
+      "token": " cannot",
+      "prob": 0.008234028
+    },
+    {
+      "position": 30,
+      "token": " ",
+      "prob": 0.8524859
+    }
+  ],
+  "sweep_grid": [
+    {
+      "strength": 0.5,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "<|begin_of_text|>",
+          "prob": 0.000001049204
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "prob": 0.0000010557762
+        },
+        {
+          "position": 2,
+          "token": " birds",
+          "prob": 0.0000010567994
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "prob": 0.0000010565972
+        },
+        {
+          "position": 4,
+          "token": " singing",
+          "prob": 0.0000010579286
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "prob": 0.0000010570383
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "prob": 0.0000010573559
+        },
+        {
+          "position": 7,
+          "token": " tree",
+          "prob": 0.0000010570672
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 0.0000010588545
+        },
+        {
+          "position": 9,
+          "token": "And",
+          "prob": 0.0000010585507
+        },
+        {
+          "position": 10,
+          "token": " everything",
+          "prob": 0.0000010571015
+        },
+        {
+          "position": 11,
+          "token": " was",
+          "prob": 0.0000010571695
+        },
+        {
+          "position": 12,
+          "token": " wild",
+          "prob": 0.0000010567198
+        },
+        {
+          "position": 13,
+          "token": " and",
+          "prob": 0.0000010570849
+        },
+        {
+          "position": 14,
+          "token": " free",
+          "prob": 0.0000010531259
+        },
+        {
+          "position": 15,
+          "token": ".\n",
+          "prob": 0.0000010588329
+        },
+        {
+          "position": 16,
+          "token": "The",
+          "prob": 0.0000010571052
+        },
+        {
+          "position": 17,
+          "token": " river",
+          "prob": 0.0000010574093
+        },
+        {
+          "position": 18,
+          "token": " ran",
+          "prob": 0.0000010572332
+        },
+        {
+          "position": 19,
+          "token": " down",
+          "prob": 0.0000010569354
+        },
+        {
+          "position": 20,
+          "token": " to",
+          "prob": 0.0000010569247
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "prob": 0.000001057031
+        },
+        {
+          "position": 22,
+          "token": " sea",
+          "prob": 0.0000010549992
+        },
+        {
+          "position": 23,
+          "token": ",\n",
+          "prob": 0.0000010549549
+        },
+        {
+          "position": 24,
+          "token": "There",
+          "prob": 0.0000010562045
+        },
+        {
+          "position": 25,
+          "token": " is",
+          "prob": 0.0000010563771
+        },
+        {
+          "position": 26,
+          "token": " so",
+          "prob": 0.0000010587128
+        },
+        {
+          "position": 27,
+          "token": " much",
+          "prob": 0.000001058227
+        },
+        {
+          "position": 28,
+          "token": " we",
+          "prob": 0.0000010715215
+        },
+        {
+          "position": 29,
+          "token": " cannot",
+          "prob": 0.0000014486321
+        },
+        {
+          "position": 30,
+          "token": " ",
+          "prob": 0.0000028495617
+        }
+      ]
+    },
+    {
+      "strength": 1.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "<|begin_of_text|>",
+          "prob": 0.0000010411358
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "prob": 0.0000010543206
+        },
+        {
+          "position": 2,
+          "token": " birds",
+          "prob": 0.000001056351
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "prob": 0.0000010558954
+        },
+        {
+          "position": 4,
+          "token": " singing",
+          "prob": 0.0000010585632
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "prob": 0.0000010567294
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "prob": 0.0000010574581
+        },
+        {
+          "position": 7,
+          "token": " tree",
+          "prob": 0.0000010568575
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 0.0000010604516
+        },
+        {
+          "position": 9,
+          "token": "And",
+          "prob": 0.0000010598825
+        },
+        {
+          "position": 10,
+          "token": " everything",
+          "prob": 0.0000010568841
+        },
+        {
+          "position": 11,
+          "token": " was",
+          "prob": 0.0000010570053
+        },
+        {
+          "position": 12,
+          "token": " wild",
+          "prob": 0.0000010561329
+        },
+        {
+          "position": 13,
+          "token": " and",
+          "prob": 0.0000010568396
+        },
+        {
+          "position": 14,
+          "token": " free",
+          "prob": 0.0000010490539
+        },
+        {
+          "position": 15,
+          "token": ".\n",
+          "prob": 0.0000010604401
+        },
+        {
+          "position": 16,
+          "token": "The",
+          "prob": 0.0000010569184
+        },
+        {
+          "position": 17,
+          "token": " river",
+          "prob": 0.0000010574348
+        },
+        {
+          "position": 18,
+          "token": " ran",
+          "prob": 0.0000010571259
+        },
+        {
+          "position": 19,
+          "token": " down",
+          "prob": 0.0000010565572
+        },
+        {
+          "position": 20,
+          "token": " to",
+          "prob": 0.0000010565137
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "prob": 0.0000010568257
+        },
+        {
+          "position": 22,
+          "token": " sea",
+          "prob": 0.0000010528281
+        },
+        {
+          "position": 23,
+          "token": ",\n",
+          "prob": 0.0000010526157
+        },
+        {
+          "position": 24,
+          "token": "There",
+          "prob": 0.0000010550887
+        },
+        {
+          "position": 25,
+          "token": " is",
+          "prob": 0.0000010554899
+        },
+        {
+          "position": 26,
+          "token": " so",
+          "prob": 0.0000010601404
+        },
+        {
+          "position": 27,
+          "token": " much",
+          "prob": 0.0000010591856
+        },
+        {
+          "position": 28,
+          "token": " we",
+          "prob": 0.0000010864479
+        },
+        {
+          "position": 29,
+          "token": " cannot",
+          "prob": 0.000002000711
+        },
+        {
+          "position": 30,
+          "token": " ",
+          "prob": 0.000007827992
+        }
+      ]
+    },
+    {
+      "strength": 2.5,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "<|begin_of_text|>",
+          "prob": 0.000001017357
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "prob": 0.000001050361
+        },
+        {
+          "position": 2,
+          "token": " birds",
+          "prob": 0.0000010552841
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "prob": 0.0000010539568
+        },
+        {
+          "position": 4,
+          "token": " singing",
+          "prob": 0.000001060562
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "prob": 0.0000010559833
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "prob": 0.0000010576861
+        },
+        {
+          "position": 7,
+          "token": " tree",
+          "prob": 0.0000010563435
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 0.0000010658637
+        },
+        {
+          "position": 9,
+          "token": "And",
+          "prob": 0.0000010646635
+        },
+        {
+          "position": 10,
+          "token": " everything",
+          "prob": 0.0000010562887
+        },
+        {
+          "position": 11,
+          "token": " was",
+          "prob": 0.0000010566109
+        },
+        {
+          "position": 12,
+          "token": " wild",
+          "prob": 0.0000010545169
+        },
+        {
+          "position": 13,
+          "token": " and",
+          "prob": 0.0000010563496
+        },
+        {
+          "position": 14,
+          "token": " free",
+          "prob": 0.0000010375096
+        },
+        {
+          "position": 15,
+          "token": ".\n",
+          "prob": 0.0000010664359
+        },
+        {
+          "position": 16,
+          "token": "The",
+          "prob": 0.0000010565325
+        },
+        {
+          "position": 17,
+          "token": " river",
+          "prob": 0.0000010578428
+        },
+        {
+          "position": 18,
+          "token": " ran",
+          "prob": 0.0000010568402
+        },
+        {
+          "position": 19,
+          "token": " down",
+          "prob": 0.0000010554145
+        },
+        {
+          "position": 20,
+          "token": " to",
+          "prob": 0.0000010553426
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "prob": 0.000001056148
+        },
+        {
+          "position": 22,
+          "token": " sea",
+          "prob": 0.0000010471172
+        },
+        {
+          "position": 23,
+          "token": ",\n",
+          "prob": 0.0000010459926
+        },
+        {
+          "position": 24,
+          "token": "There",
+          "prob": 0.0000010520057
+        },
+        {
+          "position": 25,
+          "token": " is",
+          "prob": 0.000001052959
+        },
+        {
+          "position": 26,
+          "token": " so",
+          "prob": 0.0000010646011
+        },
+        {
+          "position": 27,
+          "token": " much",
+          "prob": 0.0000010622944
+        },
+        {
+          "position": 28,
+          "token": " we",
+          "prob": 0.0000011355968
+        },
+        {
+          "position": 29,
+          "token": " cannot",
+          "prob": 0.000005449571
+        },
+        {
+          "position": 30,
+          "token": " ",
+          "prob": 0.00017542597
+        }
+      ]
+    },
+    {
+      "strength": 5.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "<|begin_of_text|>",
+          "prob": 9.791405e-7
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "prob": 0.0000010446975
+        },
+        {
+          "position": 2,
+          "token": " birds",
+          "prob": 0.0000010543251
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "prob": 0.0000010509759
+        },
+        {
+          "position": 4,
+          "token": " singing",
+          "prob": 0.0000010642303
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "prob": 0.000001054836
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "prob": 0.0000010583062
+        },
+        {
+          "position": 7,
+          "token": " tree",
+          "prob": 0.000001055878
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 0.0000010765023
+        },
+        {
+          "position": 9,
+          "token": "And",
+          "prob": 0.0000010749978
+        },
+        {
+          "position": 10,
+          "token": " everything",
+          "prob": 0.0000010554569
+        },
+        {
+          "position": 11,
+          "token": " was",
+          "prob": 0.0000010562468
+        },
+        {
+          "position": 12,
+          "token": " wild",
+          "prob": 0.000001052163
+        },
+        {
+          "position": 13,
+          "token": " and",
+          "prob": 0.0000010557897
+        },
+        {
+          "position": 14,
+          "token": " free",
+          "prob": 0.0000010206819
+        },
+        {
+          "position": 15,
+          "token": ".\n",
+          "prob": 0.0000010796696
+        },
+        {
+          "position": 16,
+          "token": "The",
+          "prob": 0.0000010562195
+        },
+        {
+          "position": 17,
+          "token": " river",
+          "prob": 0.0000010588032
+        },
+        {
+          "position": 18,
+          "token": " ran",
+          "prob": 0.0000010564426
+        },
+        {
+          "position": 19,
+          "token": " down",
+          "prob": 0.0000010533719
+        },
+        {
+          "position": 20,
+          "token": " to",
+          "prob": 0.0000010536493
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "prob": 0.0000010551759
+        },
+        {
+          "position": 22,
+          "token": " sea",
+          "prob": 0.0000010400718
+        },
+        {
+          "position": 23,
+          "token": ",\n",
+          "prob": 0.0000010362913
+        },
+        {
+          "position": 24,
+          "token": "There",
+          "prob": 0.0000010475537
+        },
+        {
+          "position": 25,
+          "token": " is",
+          "prob": 0.0000010492406
+        },
+        {
+          "position": 26,
+          "token": " so",
+          "prob": 0.0000010725606
+        },
+        {
+          "position": 27,
+          "token": " much",
+          "prob": 0.0000010683215
+        },
+        {
+          "position": 28,
+          "token": " we",
+          "prob": 0.0000012299097
+        },
+        {
+          "position": 29,
+          "token": " cannot",
+          "prob": 0.000029367138
+        },
+        {
+          "position": 30,
+          "token": " ",
+          "prob": 0.0301024
+        }
+      ]
+    },
+    {
+      "strength": 10.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "<|begin_of_text|>",
+          "prob": 9.0783914e-7
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "prob": 0.0000010348496
+        },
+        {
+          "position": 2,
+          "token": " birds",
+          "prob": 0.0000010539586
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "prob": 0.0000010454459
+        },
+        {
+          "position": 4,
+          "token": " singing",
+          "prob": 0.0000010715802
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "prob": 0.0000010526496
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "prob": 0.0000010598797
+        },
+        {
+          "position": 7,
+          "token": " tree",
+          "prob": 0.0000010562946
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 0.0000011030722
+        },
+        {
+          "position": 9,
+          "token": "And",
+          "prob": 0.0000011032781
+        },
+        {
+          "position": 10,
+          "token": " everything",
+          "prob": 0.0000010540757
+        },
+        {
+          "position": 11,
+          "token": " was",
+          "prob": 0.000001055794
+        },
+        {
+          "position": 12,
+          "token": " wild",
+          "prob": 0.0000010480886
+        },
+        {
+          "position": 13,
+          "token": " and",
+          "prob": 0.0000010554955
+        },
+        {
+          "position": 14,
+          "token": " free",
+          "prob": 9.958231e-7
+        },
+        {
+          "position": 15,
+          "token": ".\n",
+          "prob": 0.000001119033
+        },
+        {
+          "position": 16,
+          "token": "The",
+          "prob": 0.0000010562669
+        },
+        {
+          "position": 17,
+          "token": " river",
+          "prob": 0.0000010616719
+        },
+        {
+          "position": 18,
+          "token": " ran",
+          "prob": 0.0000010551584
+        },
+        {
+          "position": 19,
+          "token": " down",
+          "prob": 0.0000010486286
+        },
+        {
+          "position": 20,
+          "token": " to",
+          "prob": 0.000001050223
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "prob": 0.0000010529432
+        },
+        {
+          "position": 22,
+          "token": " sea",
+          "prob": 0.0000010327924
+        },
+        {
+          "position": 23,
+          "token": ",\n",
+          "prob": 0.0000010234768
+        },
+        {
+          "position": 24,
+          "token": "There",
+          "prob": 0.0000010419253
+        },
+        {
+          "position": 25,
+          "token": " is",
+          "prob": 0.0000010437134
+        },
+        {
+          "position": 26,
+          "token": " so",
+          "prob": 0.0000010901559
+        },
+        {
+          "position": 27,
+          "token": " much",
+          "prob": 0.0000010840888
+        },
+        {
+          "position": 28,
+          "token": " we",
+          "prob": 0.0000014445869
+        },
+        {
+          "position": 29,
+          "token": " cannot",
+          "prob": 0.00049461675
+        },
+        {
+          "position": 30,
+          "token": " ",
+          "prob": 0.6865558
+        }
+      ]
+    },
+    {
+      "strength": 25.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "<|begin_of_text|>",
+          "prob": 7.2869767e-7
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "prob": 0.0000010013061
+        },
+        {
+          "position": 2,
+          "token": " birds",
+          "prob": 0.0000010527759
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "prob": 0.0000010278735
+        },
+        {
+          "position": 4,
+          "token": " singing",
+          "prob": 0.0000010857767
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "prob": 0.0000010450693
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "prob": 0.0000010638443
+        },
+        {
+          "position": 7,
+          "token": " tree",
+          "prob": 0.0000010676304
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 0.0000012197554
+        },
+        {
+          "position": 9,
+          "token": "And",
+          "prob": 0.0000012193294
+        },
+        {
+          "position": 10,
+          "token": " everything",
+          "prob": 0.0000010509015
+        },
+        {
+          "position": 11,
+          "token": " was",
+          "prob": 0.0000010548581
+        },
+        {
+          "position": 12,
+          "token": " wild",
+          "prob": 0.0000010319733
+        },
+        {
+          "position": 13,
+          "token": " and",
+          "prob": 0.0000010560225
+        },
+        {
+          "position": 14,
+          "token": " free",
+          "prob": 9.821788e-7
+        },
+        {
+          "position": 15,
+          "token": ".\n",
+          "prob": 0.0000013196282
+        },
+        {
+          "position": 16,
+          "token": "The",
+          "prob": 0.0000010561478
+        },
+        {
+          "position": 17,
+          "token": " river",
+          "prob": 0.0000010664571
+        },
+        {
+          "position": 18,
+          "token": " ran",
+          "prob": 0.0000010422044
+        },
+        {
+          "position": 19,
+          "token": " down",
+          "prob": 0.0000010270234
+        },
+        {
+          "position": 20,
+          "token": " to",
+          "prob": 0.0000010325045
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "prob": 0.0000010374796
+        },
+        {
+          "position": 22,
+          "token": " sea",
+          "prob": 0.0000010348897
+        },
+        {
+          "position": 23,
+          "token": ",\n",
+          "prob": 0.000001035374
+        },
+        {
+          "position": 24,
+          "token": "There",
+          "prob": 0.0000010569245
+        },
+        {
+          "position": 25,
+          "token": " is",
+          "prob": 0.0000010387179
+        },
+        {
+          "position": 26,
+          "token": " so",
+          "prob": 0.0000011491101
+        },
+        {
+          "position": 27,
+          "token": " much",
+          "prob": 0.000001160437
+        },
+        {
+          "position": 28,
+          "token": " we",
+          "prob": 0.0000018874306
+        },
+        {
+          "position": 29,
+          "token": " cannot",
+          "prob": 0.008234028
+        },
+        {
+          "position": 30,
+          "token": " ",
+          "prob": 0.8524859
+        }
+      ]
+    },
+    {
+      "strength": 50.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "<|begin_of_text|>",
+          "prob": 5.184352e-7
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "prob": 9.861245e-7
+        },
+        {
+          "position": 2,
+          "token": " birds",
+          "prob": 0.0000010399516
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "prob": 0.0000010038254
+        },
+        {
+          "position": 4,
+          "token": " singing",
+          "prob": 0.000001089318
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "prob": 0.0000010351386
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "prob": 0.0000010690019
+        },
+        {
+          "position": 7,
+          "token": " tree",
+          "prob": 0.000001104309
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 0.0000014002619
+        },
+        {
+          "position": 9,
+          "token": "And",
+          "prob": 0.0000013687705
+        },
+        {
+          "position": 10,
+          "token": " everything",
+          "prob": 0.0000010544625
+        },
+        {
+          "position": 11,
+          "token": " was",
+          "prob": 0.0000010598585
+        },
+        {
+          "position": 12,
+          "token": " wild",
+          "prob": 9.902802e-7
+        },
+        {
+          "position": 13,
+          "token": " and",
+          "prob": 0.0000010559991
+        },
+        {
+          "position": 14,
+          "token": " free",
+          "prob": 0.0000010345772
+        },
+        {
+          "position": 15,
+          "token": ".\n",
+          "prob": 0.0000015867143
+        },
+        {
+          "position": 16,
+          "token": "The",
+          "prob": 0.0000010634236
+        },
+        {
+          "position": 17,
+          "token": " river",
+          "prob": 0.0000010584099
+        },
+        {
+          "position": 18,
+          "token": " ran",
+          "prob": 0.0000010083609
+        },
+        {
+          "position": 19,
+          "token": " down",
+          "prob": 9.919643e-7
+        },
+        {
+          "position": 20,
+          "token": " to",
+          "prob": 9.965474e-7
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "prob": 9.964352e-7
+        },
+        {
+          "position": 22,
+          "token": " sea",
+          "prob": 0.000001044103
+        },
+        {
+          "position": 23,
+          "token": ",\n",
+          "prob": 0.0000011078803
+        },
+        {
+          "position": 24,
+          "token": "There",
+          "prob": 0.0000011162764
+        },
+        {
+          "position": 25,
+          "token": " is",
+          "prob": 0.0000010442157
+        },
+        {
+          "position": 26,
+          "token": " so",
+          "prob": 0.0000012256264
+        },
+        {
+          "position": 27,
+          "token": " much",
+          "prob": 0.0000013062368
+        },
+        {
+          "position": 28,
+          "token": " we",
+          "prob": 0.000002224381
+        },
+        {
+          "position": 29,
+          "token": " cannot",
+          "prob": 0.004098201
+        },
+        {
+          "position": 30,
+          "token": " ",
+          "prob": 0.8180055
+        }
+      ]
+    },
+    {
+      "strength": 100.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "<|begin_of_text|>",
+          "prob": 2.9154558e-7
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "prob": 0.0000010848216
+        },
+        {
+          "position": 2,
+          "token": " birds",
+          "prob": 0.0000010045164
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "prob": 0.0000010061017
+        },
+        {
+          "position": 4,
+          "token": " singing",
+          "prob": 0.0000010899714
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "prob": 0.0000010421564
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "prob": 0.0000010801285
+        },
+        {
+          "position": 7,
+          "token": " tree",
+          "prob": 0.0000011632204
+        },
+        {
+          "position": 8,
+          "token": ",\n",
+          "prob": 0.0000012960427
+        },
+        {
+          "position": 9,
+          "token": "And",
+          "prob": 0.0000013945321
+        },
+        {
+          "position": 10,
+          "token": " everything",
+          "prob": 0.0000010628163
+        },
+        {
+          "position": 11,
+          "token": " was",
+          "prob": 0.000001053242
+        },
+        {
+          "position": 12,
+          "token": " wild",
+          "prob": 9.196693e-7
+        },
+        {
+          "position": 13,
+          "token": " and",
+          "prob": 0.0000010047909
+        },
+        {
+          "position": 14,
+          "token": " free",
+          "prob": 0.0000011052371
+        },
+        {
+          "position": 15,
+          "token": ".\n",
+          "prob": 0.0000015505296
+        },
+        {
+          "position": 16,
+          "token": "The",
+          "prob": 0.000001089697
+        },
+        {
+          "position": 17,
+          "token": " river",
+          "prob": 0.0000010582746
+        },
+        {
+          "position": 18,
+          "token": " ran",
+          "prob": 9.765398e-7
+        },
+        {
+          "position": 19,
+          "token": " down",
+          "prob": 9.545001e-7
+        },
+        {
+          "position": 20,
+          "token": " to",
+          "prob": 9.635153e-7
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "prob": 9.677256e-7
+        },
+        {
+          "position": 22,
+          "token": " sea",
+          "prob": 0.0000011011813
+        },
+        {
+          "position": 23,
+          "token": ",\n",
+          "prob": 0.0000012127972
+        },
+        {
+          "position": 24,
+          "token": "There",
+          "prob": 0.0000011129455
+        },
+        {
+          "position": 25,
+          "token": " is",
+          "prob": 8.9452254e-7
+        },
+        {
+          "position": 26,
+          "token": " so",
+          "prob": 0.0000010737909
+        },
+        {
+          "position": 27,
+          "token": " much",
+          "prob": 0.0000013032167
+        },
+        {
+          "position": 28,
+          "token": " we",
+          "prob": 0.0000019918261
+        },
+        {
+          "position": 29,
+          "token": " cannot",
+          "prob": 0.001293025
+        },
+        {
+          "position": 30,
+          "token": " ",
+          "prob": 0.83594435
+        }
+      ]
+    }
+  ],
+  "best_ratio": 806260.25,
+  "best_position": 30
+}
