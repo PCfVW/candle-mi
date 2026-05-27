@@ -211,6 +211,37 @@ downloaded (`python -c "import nltk; nltk.download('cmudict')"`).  On
 this machine it ships pre-cached at
 `~/AppData/Roaming/nltk_data/corpora/cmudict/cmudict`.
 
+## Maar replication helpers (v0.1.12)
+
+Helpers for the Maar et al. (2026) contrastive activation steering
+replication (`examples/maar_contrastive_steering`).
+
+| File | Purpose |
+|------|---------|
+| `maar_supplementary_fetch.py` | Attempt to download Maar's supplementary `.zip` from OpenReview `Z10pxu0Q7X`.  The OpenReview attachment endpoint typically requires a logged-in session, so this script will often print a manual-download URL the user opens in a browser.  After download, the supplementary's `paper_experiments/` directory contains the per-model layer + position + strength specs not documented in the paper text. |
+| `regenerate_rhyme_prompts.py` | Step B fallback: when Maar's supplementary is unavailable, generate candle-mi-authored prompt sets following Maar's described structure (85 positive + 85 negative + 20 held-out eval per rhyme family, template `"A rhyming couplet:\n{line}"`).  Uses hand-curated couplet-stem templates and CMUdict-validated rhyme word lists.  Output JSON matches the schema `examples/maar_contrastive_steering` expects. |
+
+**Typical pipeline**:
+
+```bash
+# 1. Try to fetch Maar's supplementary (Step A).
+python scripts/maar_supplementary_fetch.py \
+    --output examples/results/maar_contrastive_steering/maar_supplementary.zip
+
+# 2. If Step A failed, generate prompts ourselves (Step B fallback).
+python scripts/regenerate_rhyme_prompts.py \
+    --family -ee --contrast -out \
+    --output examples/results/maar_contrastive_steering/prompts/llama32_3b_rhyme_ee.json
+
+# 3. Run the example.
+cargo run --release --features transformer,mmap --example maar_contrastive_steering -- \
+    --preset llama32-3b-rhyme-ee \
+    --output docs/experiments/maar-replication/llama32_3b_rhyme_ee_grid.json
+```
+
+CMUdict is loaded via `nltk.corpus.cmudict` (same dependency as
+`vocab_scan_cmudict_filter.py`).
+
 ## Integration Test Commands
 
 All integration tests require models cached in `~/.cache/huggingface/hub/`
