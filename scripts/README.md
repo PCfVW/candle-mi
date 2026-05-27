@@ -165,6 +165,52 @@ CPU with max abs-diff 4.20e-5):
 cargo test --test validate_plt_gemma --features clt,sae,transformer -- --ignored
 ```
 
+## Vocab scan and figure13 helpers (v0.1.11)
+
+Helpers for the [Anthropic Appendix B vocabulary-scan protocol](https://transformer-circuits.pub/2025/attribution-graphs/biology.html)
++ figure13 preset construction.  All four scripts are pure Python (no
+`torch` dependency) and operate on the JSON output of the
+`vocab_scan` Rust example.
+
+| File | Purpose |
+|------|---------|
+| `vocab_scan_cmudict_filter.py` | Filter the raw `vocab_scan` JSON (gitignored, ~500 MB to 1.5 GB) through `nltk.corpus.cmudict`.  For each feature, look up the CMUdict pronunciation of each top-K token, deduplicate by normalised English word, and flag features whose deduplicated tokens share a single ARPABET rime (cluster size ≥ 3, share ≥ 0.5 of CMU-resolvable words).  Emits a phonologically-clean subset JSON (~2 MB, committable) plus a rhyme-group histogram. |
+| `pick_features.py` | Read a clean-subset JSON and print the top-5 features per requested rime, sorted by `max_cosine`.  Used to choose **suppress** features for `figure13_planning_poems` presets (we want broad rime-cluster coverage). |
+| `pick_inject_feature.py` | Read a raw scan JSON and rank all features by the cosine they assign to a specific target word in their top-K.  Used to choose **inject** features when the target word's identity matters more than its rime-cluster membership (e.g., `" myself"` for `-ation` poems where the prompt has no natural `-self` prior). |
+| `inspect_grid.py` | Pretty-print the per-strength max-ratio profile of a `figure13_planning_poems --strength-grid` output JSON.  Quick sanity-check for the 2D position × strength sweeps; shows planning-site probability per strength alongside the per-strength max. |
+
+**Typical pipeline** (regenerate any cell in the
+[cross-size sweep](../docs/experiments/figure13-qwen3-cross-size.md)):
+
+```bash
+# 1. Vocab scan (Rust; outputs ~500 MB–1.5 GB raw JSON, gitignored).
+cargo run --release --features clt,transformer,mmap --example vocab_scan -- \
+    --model <model_id> --clt-repo <clt_repo> --output <raw_json>
+
+# 2. Filter through CMUdict (Python; outputs ~1–2 MB clean JSON, committable).
+python scripts/vocab_scan_cmudict_filter.py <raw_json> --clean-only-output \
+    --output <clean_json>
+
+# 3a. Pick suppress features (top-5 per rime cluster).
+python scripts/pick_features.py             # edit `rimes` list inline
+
+# 3b. Pick inject features (top-5 by cosine to a target word).
+python scripts/pick_inject_feature.py <raw_json> " myself" " duration"
+
+# 4. Run figure13 sweep (2D grid; outputs ~10–50 KB committable JSON).
+cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- \
+    --preset <preset_name> --strength-grid 0.5,1,2.5,5,10,25,50,100 \
+    --output <grid_json>
+
+# 5. Quick inspect.
+python scripts/inspect_grid.py <grid_json>
+```
+
+CMUdict is loaded via `nltk.corpus.cmudict` and assumed already
+downloaded (`python -c "import nltk; nltk.download('cmudict')"`).  On
+this machine it ships pre-cached at
+`~/AppData/Roaming/nltk_data/corpora/cmudict/cmudict`.
+
 ## Integration Test Commands
 
 All integration tests require models cached in `~/.cache/huggingface/hub/`

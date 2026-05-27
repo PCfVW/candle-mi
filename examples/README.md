@@ -48,10 +48,11 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
 | `rwkv_inference` | `rwkv` | RWKV-7 linear RNN inference with state hook capture and state knockout |
 | `recurrent_feedback` | `transformer` | Anacrousis / recurrent passes for rhyme completion (Taufeeque et al., 2024) |
 | `character_count_helix` | `transformer` | Replicate the character count helix from [Gurnee et al. (2025)](https://transformer-circuits.pub/2025/linebreaks/index.html) via PCA on residual stream activations |
-| `figure13_planning_poems` | `clt`, `transformer` | Replication of [Anthropic's Figure 13](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poem-location) (suppress + inject position sweep) |
+| `figure13_planning_poems` | `clt`, `transformer` | Replication of [Anthropic's Figure 13](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poem-location) (suppress + inject position sweep).  Since v0.1.11: `--strength-grid` for 2D position × strength sweeps, `--no-suppress` for inject-only ablations, and five `qwen3-*` presets (`Qwen3-{0.6B, 1.7B}-Base` × `BlueLightAI` 20K and 16K-dev CLTs) |
 | `attention_routing` | `clt`, `transformer` | Measure how CLT suppress+inject changes attention routing from output position to planning site — identifies specific heads involved in rhyme planning |
 | `clt_probe` | `clt`, `transformer` | Probe CLT feature activations at a token position — find suppress/inject candidates for `figure13_planning_poems` and `attention_routing` |
 | `correction_test` | `clt`, `transformer` | Test whether downstream layers can reverse a prolepsis commitment — injects a contradictory feature at late layers and measures whether the output redirects |
+| `vocab_scan` | `clt`, `transformer` | (v0.1.11) Anthropic Appendix B vocabulary scan: enumerate CLT features by decoder-cosine against the model embedding matrix, top-K tokens per feature.  Pair with `scripts/vocab_scan_cmudict_filter.py` for CMUdict-clustered rhyme-group discovery and `scripts/pick_inject_feature.py` for `figure13_planning_poems` preset construction |
 | `stoicheia_inference` | `stoicheia` | Run an AlgZoo RNN or transformer, compare predictions against ground-truth task function |
 | `stoicheia_analysis` | `stoicheia` | Full Phase B MI pipeline: standardize weights, ablate neurons, probe roles, enumerate regions, run surprise accounting |
 
@@ -219,6 +220,22 @@ cargo run --release --features clt,transformer,mmap --example figure13_planning_
 
 # Figure 13 replication — Gemma 2 2B, 2.5M CLT (word-level features)
 cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset gemma2-2b-2.5m
+
+# Figure 13 — Qwen3 family (v0.1.11; one preset per (model, CLT width, rhyme group))
+cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-1.7b-20k-ation
+cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-1.7b-20k-teen
+cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-0.6b-20k-ation
+cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-0.6b-20k-teen
+cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-0.6b-16k-ation
+
+# Figure 13 — 2D position × strength grid sweep (v0.1.11; gives best (strength, position) per cell)
+cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-0.6b-20k-teen --strength-grid 0.5,1,2.5,5,10,25,50,100
+
+# Figure 13 — inject-only ablation (v0.1.11; skip the suppress half to isolate the CLT decoder vector's effect)
+cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-0.6b-20k-teen --no-suppress --strength-grid 0.5,1,2.5,5,10,25,50,100
+
+# Vocab scan — enumerate CLT features by decoder cosine against the model embedding (v0.1.11)
+cargo run --release --features clt,transformer,mmap --example vocab_scan -- --model Qwen/Qwen3-0.6B-Base --clt-repo bluelightai/clt-qwen3-0.6b-base-20k --output docs/experiments/figure13-qwen3-0.6b-20k/vocab_scan_qwen3_raw.json
 
 # Attention routing — 426K CLT, suppress+inject (Figure 13 paradigm)
 cargo run --release --features clt,transformer,mmap --example attention_routing -- --suppress L16:13725 --suppress L25:9385

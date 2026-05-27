@@ -2165,13 +2165,13 @@ impl CrossLayerTranscoder {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Config`](crate::MIError::Config) if `source_layer`
+    /// Returns [`MIError::Config`] if `source_layer`
     /// or `target_layer` is out of range, or if `target_layer < source_layer`
     /// (cross-layer schemas), or if `target_layer != source_layer` for
     /// per-layer schemas.
-    /// Returns [`MIError::Download`](crate::MIError::Download) if the
+    /// Returns [`MIError::Download`] if the
     /// decoder file cannot be fetched.
-    /// Returns [`MIError::Model`](crate::MIError::Model) on tensor operation
+    /// Returns [`MIError::Model`] on tensor operation
     /// failure.
     ///
     /// # Memory
