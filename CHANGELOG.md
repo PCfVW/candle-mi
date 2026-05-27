@@ -9,11 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Bumped `hf-fetch-model` from `0.9` to `0.10`. No source changes required;
-  consumed API surface (`FetchConfig::builder`, `.token_from_env()`,
-  `.on_progress()`, `download_with_config`, `DownloadOutcome::into_inner`,
-  `progress::IndicatifProgress`) is unchanged.
-- Bumped `anamnesis` from `0.4.3` to `0.4.5`.
+### Fixed
+
+### Added
+
+## [0.1.11] - 2026-05-27
+
+### Changed
+
+- Bumped `hf-fetch-model` from `0.9` to `0.10` (now `0.10.3`).  No source
+  changes required; consumed API surface (`FetchConfig::builder`,
+  `.token_from_env()`, `.on_progress()`, `download_with_config`,
+  `DownloadOutcome::into_inner`, `progress::IndicatifProgress`) is unchanged.
+- Bumped `anamnesis` from `0.4.3` to `0.6.0` (jumps minor `0.5`).  Audited
+  for the `sae` and `stoicheia` feature builds; no source changes required
+  at the call sites in `src/sae/npz.rs` and `src/stoicheia/`.
+- **`examples/figure13_planning_poems`** preset table extended from 4 to 8
+  presets: 3 paper-reference cells (`llama3.2-1b-524k`, `gemma2-2b-426k`,
+  `gemma2-2b-2.5m`) plus 5 new `Qwen3` cells across `Qwen3-{0.6B, 1.7B}-Base`
+  with `BlueLightAI` 20K and `BlueLightAI`-dev 16K `CLT`s, two rhyme groups
+  each (`-ation` and `-teen`).  Each preset's `inject_feature` is
+  individually picked from the vocab-scan output (see new
+  `scripts/pick_inject_feature.py`); the picking strategy is documented
+  inline per-preset (rime-cluster-broad vs `cos→target-word`-specific).
 
 ### Fixed
 
@@ -25,6 +43,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   on a ~35.82 ms forward — about 0.6%. The previously cited "+11.5%" /
   "+17.5%" overheads were 10-run noise artifacts. See
   `docs/hook-architecture-diagnostic.md` for the full diagnostic.
+- **`Tokenizer::find_token_id`** previously assumed `BOS` was always
+  prepended (`Llama` / `Gemma` convention), silently fell through on
+  `Qwen3` (`add_bos_token = false`), and returned the wrong sub-token for
+  multi-token words.  E.g. `find_token_id("myself")` returned the bare
+  `"self"` sub-token (id `721`) on `Qwen3` instead of `" myself"`
+  (id `7037`).  Switched to [`Self::encode_raw`] (no special tokens) and
+  added an explicit `MIError::Tokenizer` for multi-token words so the
+  caller gets a clear error rather than a silently-wrong sub-token.
+  Affects [`src/tokenizer/mod.rs`](src/tokenizer/mod.rs) `find_token_id`.
 
 ### Added
 
@@ -84,6 +111,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   not a performance bottleneck; do not refactor for speed.
 - `tests/bench_hook_diagnostic.rs` — micro-bench backing the diagnostic
   (5 sub-benches A-E on Llama-3.2-1B).
+- **`CrossLayerTranscoder::decoder_matrix`** — new `pub` accessor that
+  returns the per-layer `[n_features, d_model]` decoder matrix slice as
+  a contiguous `Tensor`.  Library prerequisite for the new `vocab_scan`
+  example (decoder-cosine enumeration without per-token forward passes).
+- **`examples/vocab_scan`** — Anthropic Appendix B vocabulary scan:
+  enumerate `CLT` features by projecting each feature's decoder vector
+  (at the last target layer) against the model's normalised embedding
+  matrix; top-K tokens per feature.  Chunked GPU matmul at 4096-feature
+  chunks fits 16 GiB VRAM alongside one `CLT` layer's `W_dec`.  Output:
+  per-feature JSON with `{ feature, max_cosine, top_tokens: [{ token_id,
+  text, cosine }] }`.  Runtime: 176 s (16K, 28 × 16384 features) to
+  234 s (20K, 28 × 20480 features) on `RTX 5060 Ti` at `F32`.
+- **`scripts/vocab_scan_cmudict_filter.py`** — `CMUdict`-based
+  phonological clustering of `vocab_scan` output.  For each feature,
+  looks up the `nltk.corpus.cmudict` pronunciation of each top-K token,
+  deduplicates by normalised English word, and flags features whose
+  deduplicated tokens share a single `ARPABET` rime (cluster size ≥ 3,
+  share ≥ 0.5 of CMU-resolvable words).  Default outputs both the full
+  annotated JSON and a `--clean-only-output` subset (committable,
+  ~1–2 MB) plus a per-rime feature-count histogram.
+- **`scripts/pick_features.py`** — read a clean-subset JSON and print
+  the top-5 features per requested rime, sorted by `max_cosine`.  Used
+  to choose **suppress** features for `figure13_planning_poems` presets
+  (broad rime-cluster coverage).
+- **`scripts/pick_inject_feature.py`** — read a raw vocab-scan JSON
+  and rank all features by the cosine they assign to a specific target
+  word in their top-K.  Used to choose **inject** features when the
+  target word's identity matters more than its rime-cluster membership
+  (e.g. `" myself"` for `-ation` poems where the prompt has no natural
+  `-self` prior).
+- **`scripts/inspect_grid.py`** — pretty-print the per-strength
+  max-ratio profile of a `figure13_planning_poems --strength-grid`
+  output JSON.  Quick sanity-check for 2D position × strength sweeps.
+- **`figure13_planning_poems --strength-grid`** — new CLI flag accepts
+  a comma-separated list of strengths (e.g.
+  `--strength-grid 0.5,1,2.5,5,10,25,50,100`) and runs the position
+  sweep for each strength.  Output JSON gains a `sweep_grid` field
+  with the full 2D grid and `best_ratio` / `best_position` metadata;
+  the top-level `sweep` field is populated from the best-row positions
+  (backward-compatible with `Mathematica` `Import`).
+- **`figure13_planning_poems --no-suppress`** — new CLI flag that
+  skips the suppress half of the intervention.  Tests whether the
+  redirect requires both suppress + inject or whether the `CLT`
+  decoder vector suffices as a pure additive steering direction
+  (addresses Reviewer L1Vb02's critique 4 on the COLM 2026 paper).
+  Recorded in the output JSON as `no_suppress: true`.
+- **`docs/experiments/figure13-qwen3-{1.7b,0.6b}-20k/`** and
+  **`docs/experiments/figure13-qwen3-0.6b-16k/`** — three new
+  experiment directories with committed phonological-feature subsets
+  (1.7–1.9 MB each), 2D figure13 grid sweeps (one per preset, ~25 KB
+  each), and per-experiment `findings.md` documenting the vocab scan
+  results, sweep profiles, and headline cells.  Strongest single
+  redirect: **33,860× at the trailing-space planning site for
+  `Qwen3-0.6B-Base × BlueLightAI`-dev 16K `CLT` on the `-ation` prompt
+  at strength 25**.
+- **`docs/experiments/figure13-{llama-524k,gemma-426k}/`** — two
+  apples-to-apples reference cells run through the same harness as the
+  `Qwen3` cells (full 2D position × strength grid).  Documents `s = 25`
+  as the empirical optimum (slightly above the paper's `s = 10`
+  convention).  `Llama 3.2 1B 524 K -ee`: P(`" that"`) = 0.8525 at
+  position 30, ratio 806,260×.  `Gemma 2 2B 426 K -out`:
+  P(`" around"`) = 0.4824 at position 31, ratio 9,974,880×.
+- **`docs/experiments/figure13-qwen3-cross-size.md`** — load-bearing
+  cross-cell aggregation for the COLM 2026 rebuttal: 7-cell headline
+  table, six findings (including within-`Qwen3` inverse scaling
+  0.6B → 1.7B, contra Hanna & Ameisen 2026), `CLT`-decoder-as-direction
+  inject-only ablation (addresses Reviewer L1Vb02), Maar et al.
+  protocol-documentation gap analysis (addresses Reviewer UvuC13
+  and L1Vb02), and a `Maar` replication plan for `v0.1.12`.
 
 ## [0.1.10] - 2026-05-01
 

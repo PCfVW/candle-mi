@@ -39,9 +39,9 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "anamnesis"
-version = "0.4.6"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "368500abc341bf1226e22b7a6619eb473ba88c77a466b7b08946bcb3c52f8601"
+checksum = "2458b74040c00c417ae2fd884bd6ee3c4141a7fe1436a772272d22a52e3a50a8"
 dependencies = [
  "float8 0.7.0",
  "half",
@@ -55,9 +55,9 @@ dependencies = [
 
 [[package]]
 name = "anamnesis"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2458b74040c00c417ae2fd884bd6ee3c4141a7fe1436a772272d22a52e3a50a8"
+checksum = "e6fc7119ff14d7bc4f2b22ec84feeecd759ffb54b42712b929e2b63feaf9fc5e"
 dependencies = [
  "float8 0.7.0",
  "half",
@@ -364,9 +364,9 @@ dependencies = [
 
 [[package]]
 name = "candle-mi"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
- "anamnesis 0.4.6",
+ "anamnesis 0.6.0",
  "anyhow",
  "candle-core",
  "candle-nn",
