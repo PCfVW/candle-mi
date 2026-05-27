@@ -226,6 +226,7 @@ pub mod rwkv;
 #[cfg(feature = "sae")]
 pub mod sae;
 pub mod sparse;
+pub mod steering;
 #[cfg(feature = "stoicheia")]
 pub mod stoicheia;
 pub mod tokenizer;
@@ -308,6 +309,12 @@ pub use interp::logit_lens::{LogitLensAnalysis, LogitLensResult, TokenPrediction
 
 // Interpretability — steering calibration
 pub use interp::steering::{DoseResponseCurve, DoseResponsePoint, SteeringCalibration};
+
+// Steering — contrastive activation steering (Maar et al. 2026)
+pub use steering::contrastive::{
+    ContrastiveDirection, PositionStrategy, build_contrastive_direction, contrastive_intervention,
+    position_delta,
+};
 
 // Utility — masks
 pub use util::masks::{clear_mask_caches, create_causal_mask, create_generation_mask};
