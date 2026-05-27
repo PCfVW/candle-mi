@@ -196,35 +196,45 @@ impl MITokenizer {
     /// This handles BPE tokenizers that represent word-initial tokens with a
     /// leading space (e.g., `" cat"` → single token).
     ///
+    /// Uses [`Self::encode_raw`] (no special tokens) so the result is
+    /// independent of whether the tokenizer auto-prepends `BOS` (Llama, Gemma)
+    /// or not (`Qwen2`, `Qwen3`).  Previously this method asserted
+    /// `len == 2` assuming a `BOS` token was always present, which silently
+    /// fell through to "last token" for `BOS`-free tokenizers and returned a
+    /// sub-token (e.g. `" myself"` → `"self"` for Qwen3).
+    ///
     /// # Errors
     ///
-    /// Returns [`MIError::Tokenizer`] if the word cannot be resolved to a
-    /// single token in either form.
+    /// Returns [`MIError::Tokenizer`] if the word is multi-token in both the
+    /// space-prefixed and bare forms — surfacing the genuine multi-token case
+    /// to the caller rather than silently picking a sub-token.
     pub fn find_token_id(&self, word: &str) -> Result<u32> {
         // Try with leading space first (most BPE tokenizers).
         let with_space = format!(" {word}");
-        let ids = self.encode(&with_space)?;
-        // ids[0] is BOS (if present), ids[1] would be the word token.
-        if ids.len() == 2 {
-            return ids
-                .get(1)
-                .copied()
-                .ok_or_else(|| MIError::Tokenizer(format!("unexpected encoding for \" {word}\"")));
+        let raw_ids = self.encode_raw(&with_space)?;
+        if raw_ids.len() == 1 {
+            // SAFE_INDEX: `.first()` cannot fail when len == 1.
+            if let Some(&id) = raw_ids.first() {
+                return Ok(id);
+            }
         }
 
         // Try bare word.
-        let bare_ids = self.encode(word)?;
-        if bare_ids.len() == 2 {
-            return bare_ids
-                .get(1)
-                .copied()
-                .ok_or_else(|| MIError::Tokenizer(format!("unexpected encoding for \"{word}\"")));
+        let bare_ids = self.encode_raw(word)?;
+        if bare_ids.len() == 1 {
+            // SAFE_INDEX: `.first()` cannot fail when len == 1.
+            if let Some(&id) = bare_ids.first() {
+                return Ok(id);
+            }
         }
 
-        // Last resort: return last token.
-        ids.last().copied().ok_or_else(|| {
-            MIError::Tokenizer(format!("could not find single token ID for \"{word}\""))
-        })
+        Err(MIError::Tokenizer(format!(
+            "\"{word}\" is multi-token in this vocabulary (\" {word}\" → {} \
+             tokens, \"{word}\" → {} tokens); pick a synonym that is a single \
+             token, or sum probabilities across the multi-token encoding",
+            raw_ids.len(),
+            bare_ids.len()
+        )))
     }
 
     /// Decode a single token ID to its string representation.
