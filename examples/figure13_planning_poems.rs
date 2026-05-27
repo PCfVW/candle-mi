@@ -7,21 +7,33 @@
 //! feature, sweeping the injection position across the prompt to locate
 //! planning sites.
 //!
-//! Four built-in presets select model, CLT, prompt, features, and strength:
+//! Eight built-in presets select model, CLT, prompt, features, and strength:
 //!
 //! | Preset | Model | CLT | Suppress | Inject |
 //! |--------|-------|-----|----------|--------|
-//! | `llama3.2-1b-524k` | Llama 3.2 1B | 524K | -ee group: L13:30985 + L9:5488 + L14:27874 + L13:32049 | L14:13043 ("that") |
-//! | `gemma2-2b-426k` | Gemma 2 2B | 426K | L16:13725 + L25:9385 ("-out") | L22:10243 ("around") |
-//! | `gemma2-2b-2.5m` | Gemma 2 2B | 2.5M | L25:57092 + L23:49923 + L20:77102 ("-out") | L25:82839 ("can") |
-//! | `qwen3-1.7b-20k` | Qwen3 1.7B Base | 20K | (populated after vocab scan) | (populated after vocab scan) |
+//! | `llama3.2-1b-524k` | Llama 3.2 1B | mntss 524K | -ee group: L13:30985 + L9:5488 + L14:27874 + L13:32049 | L14:13043 (`that`) |
+//! | `gemma2-2b-426k` | Gemma 2 2B | mntss 426K | L16:13725 + L25:9385 (-out) | L22:10243 (`around`) |
+//! | `gemma2-2b-2.5m` | Gemma 2 2B | mntss 2.5M | L25:57092 + L23:49923 + L20:77102 (-out) | L25:82839 (`can`) |
+//! | `qwen3-1.7b-20k-ation` | `Qwen3-1.7B-Base` | `BlueLightAI` 20K | L15:263 + L18:3801 + L18:4404 (-ation) | L21:3908 (-self, `cos→" myself"` = 0.39) |
+//! | `qwen3-1.7b-20k-teen`  | `Qwen3-1.7B-Base` | `BlueLightAI` 20K | L27:16975 + L20:3668 + L18:10986 (-teen) | L15:263 (-ation cluster-broad) |
+//! | `qwen3-0.6b-20k-ation` | `Qwen3-0.6B-Base` | `BlueLightAI` 20K | L19:9578 + L0:8867 + L25:4979 (-ation) | L22:4081 (-self, `cos→" myself"` = 0.42) |
+//! | `qwen3-0.6b-20k-teen`  | `Qwen3-0.6B-Base` | `BlueLightAI` 20K | L27:16425 + L23:15839 + L26:6308 (-teen) | L19:9578 (-ation cluster-broad) |
+//! | `qwen3-0.6b-16k-ation` | `Qwen3-0.6B-Base` | `BlueLightAI`-dev 16K | L23:11154 + L20:10987 + L14:10719 (-ation) | L22:8011 (-self, `cos→" myself"` = 0.30) |
 //!
-//! The `qwen3-1.7b-20k` preset ships as a **placeholder** — the
-//! `suppress_features` / `inject_feature` slots are filled in only after the
-//! Appendix B vocabulary scan runs (`examples/vocab_scan` +
-//! `scripts/vocab_scan_cmudict_filter.py`).  Running the preset with empty
-//! placeholders surfaces an early error; once the scan picks a clean
-//! rhyme group, the preset is updated in a separate commit.
+//! The five `qwen3-*` presets are populated from `JumpReLU` `CltSplit`
+//! vocabulary scans against `BlueLightAI`'s `Qwen3` `CLT`s
+//! (`bluelightai/clt-qwen3-{1.7b,0.6b}-base-20k`,
+//! `bluelightai-dev/clt-Qwen3-0.6B-Base-16k-test`).  Per pairing, suppress
+//! is the top-3 features (by `max_cosine`) of the prompt's natural rhyme
+//! group.  Inject is one of two complementary picks: for `-ation` poems the
+//! inject feature targets `" myself"`-cosine specifically (a narrow,
+//! word-level inject works because the prompt has no natural `-self`
+//! prior to displace); for `-teen` poems the inject feature is the
+//! cluster-broad top-1 `EY1 SH AH0 N` feature (which empirically beat the
+//! word-narrow `" duration"` pick by 3–14× because the suppress side
+//! already clears the natural `-teen` prior).  Regenerate picks with
+//! `examples/vocab_scan` + `scripts/vocab_scan_cmudict_filter.py` +
+//! `scripts/pick_features.py` + `scripts/pick_inject_feature.py`.
 //!
 //! ```bash
 //! # Llama 3.2 1B (default)
@@ -33,8 +45,11 @@
 //! # Gemma 2 2B, 2.5M CLT (word-level features)
 //! cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset gemma2-2b-2.5m
 //!
-//! # Qwen3 1.7B Base, BlueLightAI 20K CLT (after vocab scan populates features)
-//! cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-1.7b-20k
+//! # Qwen3 1.7B Base, BlueLightAI 20K CLT, -ation suppress + -self inject
+//! cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-1.7b-20k-ation
+//!
+//! # Qwen3 0.6B Base, BlueLightAI-dev 16K CLT, -ation suppress + -self inject
+//! cargo run --release --features clt,transformer,mmap --example figure13_planning_poems -- --preset qwen3-0.6b-16k-ation
 //! ```
 //!
 //! Outputs JSON suitable for direct import into Mathematica via
@@ -60,7 +75,10 @@ use candle_mi::{HookSpec, MIModel, extract_token_prob};
 #[command(name = "figure13_planning_poems")]
 #[command(about = "Anthropic Figure 13 replication: suppress + inject position sweep")]
 struct Args {
-    /// Preset: "llama3.2-1b-524k", "gemma2-2b-426k", or "gemma2-2b-2.5m"
+    /// Preset name: one of `llama3.2-1b-524k`, `gemma2-2b-426k`,
+    /// `gemma2-2b-2.5m`, `qwen3-1.7b-20k-ation`, `qwen3-1.7b-20k-teen`,
+    /// `qwen3-0.6b-20k-ation`, `qwen3-0.6b-20k-teen`, or
+    /// `qwen3-0.6b-16k-ation`.
     #[arg(long, default_value = "llama3.2-1b-524k")]
     preset: String,
 
@@ -92,9 +110,27 @@ struct Args {
     #[arg(long)]
     inject_feature: Option<String>,
 
-    /// Steering strength (overrides preset)
+    /// Steering strength (overrides preset).  Ignored when `--strength-grid`
+    /// is set.
     #[arg(long)]
     strength: Option<f32>,
+
+    /// Strength grid (comma-separated `f32`s) for a 2D position × strength
+    /// sweep, e.g. `--strength-grid 0.5,1,2.5,5,10,25,50,100`.  When set,
+    /// `--strength` is ignored, the position sweep is rerun for each
+    /// strength, and the output gains `sweep_grid` + `best_*` fields; the
+    /// top-level `sweep` is populated from the best (strength, position)
+    /// row in the grid (for `Mathematica` `Import` backward compat).
+    #[arg(long, value_delimiter = ',')]
+    strength_grid: Vec<f32>,
+
+    /// Skip the suppress side of the intervention; inject the inject feature
+    /// alone at each position.  Tests whether the redirect requires both
+    /// halves (suppress + inject) or whether the inject decoder vector
+    /// suffices as a pure additive steering direction.  Recorded in the
+    /// output JSON as `no_suppress: true`.
+    #[arg(long, default_value_t = false)]
+    no_suppress: bool,
 
     /// Output file path (defaults to stdout)
     #[arg(long)]
@@ -113,16 +149,44 @@ struct SweepOutput {
     inject_word: String,
     suppress_features: Vec<CltFeatureId>,
     inject_feature: CltFeatureId,
+    /// `true` when `--no-suppress` was passed; suppression skipped, inject
+    /// applied alone.
+    #[serde(default)]
+    no_suppress: bool,
+    /// In single-strength mode this is the chosen strength; in `sweep_grid`
+    /// mode it is the *best* strength (the one yielding the highest
+    /// `prob / baseline_prob` across all positions).
     strength: f32,
     baseline_prob: f32,
+    /// Per-position results at `strength` above (i.e. the best strength's
+    /// row when `sweep_grid` is `Some`).  Kept at the top level for
+    /// backwards-compatible `Mathematica` `Import` of legacy single-strength
+    /// outputs.
     sweep: Vec<PositionResult>,
+    /// Full 2D grid present only when `--strength-grid` was passed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sweep_grid: Option<Vec<StrengthRow>>,
+    /// Top-position probability ratio (`prob / baseline_prob`) at the best
+    /// (strength, position) cell.  Present only in grid mode.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    best_ratio: Option<f32>,
+    /// Position index of the best cell in the grid.  Present only in grid
+    /// mode.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    best_position: Option<usize>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct PositionResult {
     position: usize,
     token: String,
     prob: f32,
+}
+
+#[derive(Serialize, Clone)]
+struct StrengthRow {
+    strength: f32,
+    sweep: Vec<PositionResult>,
 }
 
 // ── Presets ──────────────────────────────────────────────────────────────────
@@ -195,28 +259,121 @@ const GEMMA_2M: Preset = Preset {
     strength: 10.0,
 };
 
-/// `Qwen3-1.7B-Base` with `BlueLightAI` 20K CLT
-/// (`bluelightai/clt-qwen3-1.7b-base-20k`).
-///
-/// **Placeholder** — the `suppress_features` slot is empty (`&[]`) and
-/// `inject_feature` is set to a sentinel `(0, 0)` until the Appendix B
-/// vocabulary scan picks a clean rhyme group.  `select_preset` rejects
-/// the preset with a clear error pointing at the scan workflow when the
-/// placeholders are still in place.
-///
-/// `prompt` mirrors the four-line rhyming-couplet structure of the
-/// `LLAMA` / `GEMMA` presets, ending mid-fourth-line so the planning
-/// site sits at the trailing-space spike before the rhyme word.  The
-/// `suppress_word` / `inject_word` are TBD on the same schedule as
-/// the feature IDs.
-const QWEN3: Preset = Preset {
+// ── Shared `Qwen3` prompts ──────────────────────────────────────────────────
+//
+// Each `Qwen3` preset reuses one of two four-line rhyming-couplet prompts,
+// each ending mid-fourth-line so the planning site sits at the trailing-space
+// spike before the natural rhyme word.
+
+/// Four-line `-ation` poem; natural last word is *duration* (or another
+/// `EY1 SH AH0 N`-rime word).  Used by all three `qwen3-*-ation` presets.
+const QWEN3_ATION_PROMPT: &str = "At every grand celebration,\n\
+                                  Each careful preparation,\n\
+                                  Brings joy beyond expectation,\n\
+                                  And then the brief";
+
+/// Four-line `-teen` poem; natural last word is *seventeen* (a `-teen`
+/// numeral not yet present in the prompt).  Used by both `qwen3-*-teen`
+/// presets.
+const QWEN3_TEEN_PROMPT: &str = "She counted thirteen, then fourteen,\n\
+                                 Followed shortly by fifteen,\n\
+                                 And carefully whispered sixteen,\n\
+                                 Before she reached";
+
+/// `Qwen3-1.7B-Base` × `BlueLightAI` 20K `CLT`, `-ation` suppress + `-self`
+/// inject.  Suppress features = top 3 `EY1 SH AH0 N` features by `max_cosine`
+/// (broad rime coverage).  Inject feature = `L21:3908`, picked by
+/// **highest cosine to `" myself"` directly** (`cos = 0.39`) rather than
+/// by overall `max_cosine`; the original top-`EH1 L F` pick `L23:11747`
+/// only had `cos = 0.25` to `" myself"` even though its rime-membership
+/// score was higher.  Vocab scan summary: 84 clean `-ation` features,
+/// 7 clean `-self` features.
+const QWEN3_1_7B_20K_ATION: Preset = Preset {
     model: "Qwen/Qwen3-1.7B-Base",
     clt_repo: "bluelightai/clt-qwen3-1.7b-base-20k",
-    prompt: "(placeholder prompt — populate after vocab scan picks rhyme group)",
-    suppress_word: "",
-    inject_word: "",
-    suppress_features: &[],
-    inject_feature: (0, 0),
+    prompt: QWEN3_ATION_PROMPT,
+    suppress_word: "duration",
+    inject_word: "myself",
+    suppress_features: &[(15, 263), (18, 3801), (18, 4404)],
+    inject_feature: (21, 3908),
+    strength: 10.0,
+};
+
+/// `Qwen3-1.7B-Base` × `BlueLightAI` 20K `CLT`, `-teen` suppress + `-ation`
+/// inject.  Suppress features = top 3 `IY1 N` features by `max_cosine`.
+/// Inject feature = `L15:263`, the top **`EY1 SH AH0 N`-rime feature by
+/// `max_cosine`** (i.e. the *cluster-broad* pick).  We empirically compared
+/// against a `" duration"`-cosine-specific pick (`L24:17759`, `cos = 0.22`)
+/// and found the cluster-broad feature gives a 14× larger planning-site
+/// redirect (16.42× at `s = 5` vs 1.17× at `s = 25`).  Interpretation: the
+/// duration-specific feature is too narrow to displace the model's strong
+/// `-teen` prior; the broad `-ation`-cluster feature offers the model a
+/// well-defined alternative *region* of token space to commit to instead.
+/// Vocab scan summary: 30 clean `-teen` features, 84 clean `-ation` features.
+const QWEN3_1_7B_20K_TEEN: Preset = Preset {
+    model: "Qwen/Qwen3-1.7B-Base",
+    clt_repo: "bluelightai/clt-qwen3-1.7b-base-20k",
+    prompt: QWEN3_TEEN_PROMPT,
+    suppress_word: "seventeen",
+    inject_word: "duration",
+    suppress_features: &[(27, 16975), (20, 3668), (18, 10986)],
+    inject_feature: (15, 263),
+    strength: 10.0,
+};
+
+/// `Qwen3-0.6B-Base` × `BlueLightAI` 20K `CLT`, `-ation` suppress + `-self`
+/// inject.  Suppress features = top 3 `EY1 SH AH0 N` features by `max_cosine`.
+/// Inject feature = `L22:4081`, which happens to be **both** the top
+/// `EH1 L F` feature by overall `max_cosine` **and** the feature with the
+/// highest cosine to `" myself"` (`cos = 0.42`) — no swap needed.  Vocab
+/// scan summary: 71 clean `-ation` features, 8 clean `-self` features.
+const QWEN3_0_6B_20K_ATION: Preset = Preset {
+    model: "Qwen/Qwen3-0.6B-Base",
+    clt_repo: "bluelightai/clt-qwen3-0.6b-base-20k",
+    prompt: QWEN3_ATION_PROMPT,
+    suppress_word: "duration",
+    inject_word: "myself",
+    suppress_features: &[(19, 9578), (0, 8867), (25, 4979)],
+    inject_feature: (22, 4081),
+    strength: 10.0,
+};
+
+/// `Qwen3-0.6B-Base` × `BlueLightAI` 20K `CLT`, `-teen` suppress + `-ation`
+/// inject.  Suppress features = top 3 `IY1 N` features by `max_cosine`.
+/// Inject feature = `L19:9578`, the top **`EY1 SH AH0 N`-rime feature by
+/// `max_cosine`** (cluster-broad pick).  We empirically compared against a
+/// `" duration"`-cosine-specific pick (`L15:2229`, `cos = 0.19`) and found
+/// the cluster-broad feature gives a 3× larger planning-site redirect
+/// (157× at `s = 1` vs 49.5× at `s = 0.5`).  Same conclusion as the
+/// 1.7B sibling: narrow features ≠ better inject targets when the
+/// suppress side is doing the heavy lifting on the natural rhyme prior.
+/// Vocab scan summary: 33 clean `-teen` features, 71 clean `-ation` features.
+const QWEN3_0_6B_20K_TEEN: Preset = Preset {
+    model: "Qwen/Qwen3-0.6B-Base",
+    clt_repo: "bluelightai/clt-qwen3-0.6b-base-20k",
+    prompt: QWEN3_TEEN_PROMPT,
+    suppress_word: "seventeen",
+    inject_word: "duration",
+    suppress_features: &[(27, 16425), (23, 15839), (26, 6308)],
+    inject_feature: (19, 9578),
+    strength: 10.0,
+};
+
+/// `Qwen3-0.6B-Base` × `BlueLightAI`-dev 16K `CLT`, `-ation` suppress +
+/// `-self` inject.  Suppress features = top 3 `EY1 SH AH0 N` features by
+/// `max_cosine`.  Inject feature = `L22:8011`, picked by **highest cosine
+/// to `" myself"` directly** (`cos = 0.30`, top tokens all `my` variants);
+/// the previous top-`EH1 L F` pick `L15:6772` had no `" myself"` in its
+/// top-20 at all.  Vocab scan summary: 27 clean `-ation` features, 3 clean
+/// `-self` features.
+const QWEN3_0_6B_16K_ATION: Preset = Preset {
+    model: "Qwen/Qwen3-0.6B-Base",
+    clt_repo: "bluelightai-dev/clt-Qwen3-0.6B-Base-16k-test",
+    prompt: QWEN3_ATION_PROMPT,
+    suppress_word: "duration",
+    inject_word: "myself",
+    suppress_features: &[(23, 11154), (20, 10987), (14, 10719)],
+    inject_feature: (22, 8011),
     strength: 10.0,
 };
 
@@ -274,7 +431,10 @@ fn run() -> candle_mi::Result<()> {
         .unwrap_or_else(|| preset.inject_word.to_owned());
     let strength = args.strength.unwrap_or(preset.strength);
 
-    let suppress_features: Vec<CltFeatureId> = if args.suppress_feature.is_empty() {
+    let suppress_features: Vec<CltFeatureId> = if args.no_suppress {
+        // EXPLICIT: empty Vec disables the suppress half of the intervention.
+        Vec::new()
+    } else if args.suppress_feature.is_empty() {
         preset
             .suppress_features
             .iter()
@@ -297,9 +457,17 @@ fn run() -> candle_mi::Result<()> {
     eprintln!("Preset:   {}", args.preset);
     eprintln!("Model:    {model_id}");
     eprintln!("CLT:      {clt_repo}");
-    eprintln!("Suppress: \"{suppress_word}\" features {suppress_features:?}");
+    if args.no_suppress {
+        eprintln!("Suppress: SKIPPED (--no-suppress; inject-only mode)");
+    } else {
+        eprintln!("Suppress: \"{suppress_word}\" features {suppress_features:?}");
+    }
     eprintln!("Inject:   \"{inject_word}\" feature {inject_feature}");
-    eprintln!("Strength: {strength}\n");
+    if args.strength_grid.is_empty() {
+        eprintln!("Strength: {strength} (single-strength mode)\n");
+    } else {
+        eprintln!("Strength: grid {:?} (2D sweep mode)\n", args.strength_grid);
+    }
 
     run_experiment(
         &model_id,
@@ -310,38 +478,36 @@ fn run() -> candle_mi::Result<()> {
         &suppress_features,
         inject_feature,
         strength,
+        &args.strength_grid,
+        args.no_suppress,
         args.output.as_deref(),
     )
 }
 
-/// Select a built-in preset by name.  Rejects the `qwen3-1.7b-20k`
-/// placeholder until the vocab-scan-driven features are filled in.
+/// Select a built-in preset by name.
 fn select_preset(name: &str) -> candle_mi::Result<&'static Preset> {
     match name {
         "llama3.2-1b-524k" => Ok(&LLAMA),
         "gemma2-2b-426k" => Ok(&GEMMA),
         "gemma2-2b-2.5m" => Ok(&GEMMA_2M),
-        "qwen3-1.7b-20k" => {
-            if QWEN3.suppress_features.is_empty() || QWEN3.inject_feature == (0, 0) {
-                Err(candle_mi::MIError::Config(
-                    "preset 'qwen3-1.7b-20k' is a placeholder — run the \
-                     vocabulary scan first (`examples/vocab_scan` + \
-                     `scripts/vocab_scan_cmudict_filter.py`) and populate \
-                     the QWEN3 const with the chosen suppress/inject features"
-                        .into(),
-                ))
-            } else {
-                Ok(&QWEN3)
-            }
-        }
+        "qwen3-1.7b-20k-ation" => Ok(&QWEN3_1_7B_20K_ATION),
+        "qwen3-1.7b-20k-teen" => Ok(&QWEN3_1_7B_20K_TEEN),
+        "qwen3-0.6b-20k-ation" => Ok(&QWEN3_0_6B_20K_ATION),
+        "qwen3-0.6b-20k-teen" => Ok(&QWEN3_0_6B_20K_TEEN),
+        "qwen3-0.6b-16k-ation" => Ok(&QWEN3_0_6B_16K_ATION),
         other => Err(candle_mi::MIError::Config(format!(
-            "unknown preset '{other}' (expected 'llama3.2-1b-524k', \
-             'gemma2-2b-426k', 'gemma2-2b-2.5m', or 'qwen3-1.7b-20k')"
+            "unknown preset '{other}' (expected one of: 'llama3.2-1b-524k', \
+             'gemma2-2b-426k', 'gemma2-2b-2.5m', 'qwen3-1.7b-20k-ation', \
+             'qwen3-1.7b-20k-teen', 'qwen3-0.6b-20k-ation', \
+             'qwen3-0.6b-20k-teen', 'qwen3-0.6b-16k-ation')"
         ))),
     }
 }
 
 /// Load model + CLT, run the position sweep, print summary, and write output.
+///
+/// `strength` is the single-strength choice; `strength_grid` selects 2D mode
+/// when non-empty (and `strength` is ignored).
 #[allow(clippy::too_many_arguments)]
 fn run_experiment(
     model_id: &str,
@@ -352,6 +518,8 @@ fn run_experiment(
     suppress_features: &[CltFeatureId],
     inject_feature: CltFeatureId,
     strength: f32,
+    strength_grid: &[f32],
+    no_suppress: bool,
     output_path: Option<&Path>,
 ) -> candle_mi::Result<()> {
     let t_start = std::time::Instant::now();
@@ -422,23 +590,77 @@ fn run_experiment(
     let baseline_prob = extract_token_prob(result.output(), inject_token_id)?;
     eprintln!("Baseline P(\"{inject_token_str}\") = {baseline_prob:.6e}");
 
-    // --- Position sweep ---
-    let positions = sweep_positions(
-        &model,
-        &clt,
-        &input,
-        seq_len,
-        &token_strs,
-        &suppress_entries,
-        &inject_entries,
-        strength,
-        inject_token_id,
-        baseline_prob,
-        &device,
-    )?;
+    // --- Position sweep (single-strength) or 2D grid (position × strength) ---
+    let (final_strength, best_positions, sweep_grid_opt, best_meta) = if strength_grid.is_empty() {
+        let positions = sweep_positions(
+            &model,
+            &clt,
+            &input,
+            seq_len,
+            &token_strs,
+            &suppress_entries,
+            &inject_entries,
+            strength,
+            inject_token_id,
+            baseline_prob,
+            &device,
+        )?;
+        (strength, positions, None, None)
+    } else {
+        let mut rows: Vec<StrengthRow> = Vec::with_capacity(strength_grid.len());
+        // (strength, position, ratio) of the best cell across the grid.
+        let mut best: (f32, usize, f32) = (0.0, 0, 0.0);
+        for &s in strength_grid {
+            eprintln!("\n--- Strength {s} ---");
+            let positions = sweep_positions(
+                &model,
+                &clt,
+                &input,
+                seq_len,
+                &token_strs,
+                &suppress_entries,
+                &inject_entries,
+                s,
+                inject_token_id,
+                baseline_prob,
+                &device,
+            )?;
+            for p in &positions {
+                let ratio = if baseline_prob > 0.0 {
+                    p.prob / baseline_prob
+                } else {
+                    0.0
+                };
+                if ratio > best.2 {
+                    best = (s, p.position, ratio);
+                }
+            }
+            // BORROW: positions moves into the row; no clone.
+            rows.push(StrengthRow {
+                strength: s,
+                sweep: positions,
+            });
+        }
+        // EXPLICIT: linear search across at most ~10 rows; building an index
+        // would obscure intent.
+        // BORROW: r.sweep.clone() — `rows` is still needed below for the
+        // `sweep_grid` field; we need the best row's positions duplicated at
+        // the top level for Mathematica `Import` backward compat.
+        let best_row_sweep = rows
+            .iter()
+            .find(|r| (r.strength - best.0).abs() < f32::EPSILON)
+            .map_or_else(Vec::new, |r| r.sweep.clone());
+        (best.0, best_row_sweep, Some(rows), Some((best.2, best.1)))
+    };
 
-    // --- Summary ---
-    print_sweep_summary(&positions, baseline_prob, &token_strs);
+    // --- Summary (best row in grid mode; the only row in single mode) ---
+    if let Some((ratio, pos)) = best_meta {
+        eprintln!(
+            "\n=== Best cell across the strength grid: strength={final_strength}, \
+             position={pos}, ratio={ratio:.2}x ===",
+        );
+    }
+    print_sweep_summary(&best_positions, baseline_prob, &token_strs);
 
     // --- JSON output ---
     let output = SweepOutput {
@@ -450,9 +672,13 @@ fn run_experiment(
         inject_word: inject_word.into(),
         suppress_features: suppress_features.to_vec(),
         inject_feature,
-        strength,
+        no_suppress,
+        strength: final_strength,
         baseline_prob,
-        sweep: positions,
+        sweep: best_positions,
+        sweep_grid: sweep_grid_opt,
+        best_ratio: best_meta.map(|(r, _)| r),
+        best_position: best_meta.map(|(_, p)| p),
     };
     write_sweep_output(&output, output_path)?;
 
