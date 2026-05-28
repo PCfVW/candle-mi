@@ -33,6 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`scripts/convert_maar_prompts.py`** — converts Maar et al. (2026)'s
+  supplementary `rhyme_family_lines.json` (train + test) plus the
+  `rhyme_family_words` dict embedded in `shared_utils.py` into the
+  candle-mi prompts schema consumed by
+  `examples/maar_contrastive_steering`.  Round-trip-verified against
+  the four committed `*_maar.json` prompts files (byte-identical).
+  Uses `ast.literal_eval` (not `eval`) on the rewritten `set([...])`
+  literals for safety.
+
 ## [0.1.11] - 2026-05-27
 
 ### Changed

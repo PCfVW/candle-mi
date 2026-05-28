@@ -220,23 +220,32 @@ replication (`examples/maar_contrastive_steering`).
 |------|---------|
 | `maar_supplementary_fetch.py` | Attempt to download Maar's supplementary `.zip` from OpenReview `Z10pxu0Q7X`.  The OpenReview attachment endpoint typically requires a logged-in session, so this script will often print a manual-download URL the user opens in a browser.  After download, the supplementary's `paper_experiments/` directory contains the per-model layer + position + strength specs not documented in the paper text. |
 | `regenerate_rhyme_prompts.py` | Step B fallback: when Maar's supplementary is unavailable, generate candle-mi-authored prompt sets following Maar's described structure (85 positive + 85 negative + 20 held-out eval per rhyme family, template `"A rhyming couplet:\n{line}"`).  Uses hand-curated couplet-stem templates and CMUdict-validated rhyme word lists.  Output JSON matches the schema `examples/maar_contrastive_steering` expects. |
+| `convert_maar_prompts.py` | Step A continuation: when Maar's supplementary IS available (downloaded by `maar_supplementary_fetch.py` and extracted to `examples/results/maar_contrastive_steering/maar_supp/`), parse `paper_experiments/data/{train,test}/rhyme_family_lines.json` plus the `rhyme_family_words` dict embedded in `shared_utils.py`, and emit the four `*_maar.json` files the `maar_contrastive_steering` example consumes (one per cell).  The output JSONs carry `"source": "maar-supplementary"` and a `"source_url"` so reviewers can audit provenance without us committing Maar's 60 MB code drop.  Round-trip-verified: rerunning the script reproduces the committed prompts JSONs byte-identically. |
 
 **Typical pipeline**:
 
 ```bash
-# 1. Try to fetch Maar's supplementary (Step A).
+# 1a. Try to fetch Maar's supplementary (Step A).
 python scripts/maar_supplementary_fetch.py \
     --output examples/results/maar_contrastive_steering/maar_supplementary.zip
+
+# 1b. If Step A succeeded, convert Maar's prompts to candle-mi schema.
+python scripts/convert_maar_prompts.py
 
 # 2. If Step A failed, generate prompts ourselves (Step B fallback).
 python scripts/regenerate_rhyme_prompts.py \
     --family -ee --contrast -out \
     --output examples/results/maar_contrastive_steering/prompts/llama32_3b_rhyme_ee.json
 
-# 3. Run the example.
+# 3. Run the example with Maar-faithful protocol (Maar-supplementary prompts
+#    + raw direction + generated-couplet metric + 25 new tokens).
 cargo run --release --features transformer,mmap --example maar_contrastive_steering -- \
     --preset llama32-3b-rhyme-ee \
-    --output docs/experiments/maar-replication/llama32_3b_rhyme_ee_grid.json
+    --prompt-file examples/results/maar_contrastive_steering/prompts/llama32_3b_rhyme_ee_maar.json \
+    --layer-grid 22 --strength-grid 1.5 \
+    --normalise=false --position-strategy last \
+    --metric generated-couplet --max-new-tokens 25 \
+    --output docs/experiments/maar-replication/llama32_3b_rhyme_ee_maar_prompts.json
 ```
 
 CMUdict is loaded via `nltk.corpus.cmudict` (same dependency as
