@@ -59,12 +59,14 @@ generation and question answering*. ICLR 2026 (poster). arXiv 2601.20164.
 
 | Cell | Model | `n_layers` | `hidden` | Layer | `‖d‖` | `m=1.5` baseline | `m=1.5` steered | Δpp | Effect | Best cell (sweep) |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
-| 1 | `meta-llama/Llama-3.2-3B` | 28 | 3072 | 22 | 11.47 | **60%** | **30%** | **−30** | inhibits | `m = 1.5` (saturated plateau) |
-| 2 | `meta-llama/Llama-3.2-1B` | 16 | 2048 | 12 | 4.01  | 50% | 45% | −5 | weakly inhibits | `m = 3.0` (−25 pp) |
-| 3 | `google/gemma-2-2b`       | 26 | 2304 | 20 | 116.09 | 25% | 35% | **+10** | **enhances** | `m = 1.0` (+20 pp) |
+| 1 | `meta-llama/Llama-3.2-3B` | 28 | 3072 | 22 | 11.47 | **60%** | **30%** | **−30** | inhibits | `m ≥ 1.5` (plateau at −30 pp) |
+| 2 | `meta-llama/Llama-3.2-1B` | 16 | 2048 | 12 | 4.01  | 50% | 45% | −5 | weakly inhibits | `m ≥ 3.0` (plateau at −25 pp) |
+| 3 | `google/gemma-2-2b`       | 26 | 2304 | 20 | 116.09 | 25% | 35% | **+10** | **enhances** | `m = 1.0` (single peak at +20 pp) |
 
 `Layer` = `floor(0.8 × n_layers)` (Maar's `LAYER_FRACTION = 0.8` from
-[`shared_utils.py:25`](../../../examples/results/maar_contrastive_steering/maar_supp/supplementary_material/paper_experiments/shared_utils.py)).
+`paper_experiments/shared_utils.py:25` — gitignored under
+`examples/results/maar_contrastive_steering/maar_supp/`, redownload via
+[`scripts/maar_supplementary_fetch.py`](../../../scripts/maar_supplementary_fetch.py)).
 `m = 1.5` = Maar's `STEERING_MULTIPLIER` from the same file.
 `‖d‖` = L2 norm of the raw `mean(positive) − mean(negative)` direction
 (NOT normalised; matches Maar's supplementary code, which differs
@@ -116,16 +118,22 @@ cargo run --release --features transformer,mmap --example maar_contrastive_steer
 | Metric | Baseline | Steered | Δ |
 |---|---:|---:|---:|
 | Hit-rate (`-ee` family) | 12 / 20 = 60% | 6 / 20 = 30% | **−30 pp** |
-| Texts changed under steering | — | 12 / 20 = 60% | — |
+| Generated texts differ from baseline (any token) | — | 12 / 20 = 60% | — |
+| Hit-status flips (`HIT→MISS` + `MISS→HIT`) | — | 6 / 20 = 30% | — |
 | HIT → HIT  | — | 6 | — |
 | HIT → MISS | — | **6** | (all flips inhibitory) |
 | MISS → HIT | — | **0** | (zero rhyme creation) |
 | MISS → MISS | — | 8 | — |
 
+Note the distinction between "generated texts differ" (12/20: many
+texts change at the token level without the rhyme-family classification
+flipping) and "hit-status flips" (6/20: the subset of changes that
+actually move the prompt across the family-membership boundary).
 `hit_rate` is exactly Maar's `correct_fraction` metric from
-`stage_standard_metrics.py`.  The all-HIT→MISS, zero-MISS→HIT
-asymmetry is precisely what Maar reports qualitatively for the
-"smaller models" subset of their 23-model sweep (Maar §5).
+`paper_experiments/rhyme_steering_stages/stage_standard_metrics.py`.
+The all-HIT→MISS, zero-MISS→HIT asymmetry on this cell is precisely
+what Maar reports qualitatively for the "smaller models" subset of
+their 23-model sweep (Maar §5).
 
 **Effective magnitude**: `m × ‖d‖ = 1.5 × 11.47 = 17.21` — roughly
 25% of the typical mid-layer residual norm at L22 on Llama 3.2 3B.
@@ -341,8 +349,8 @@ ours is a fair point to make in the rebuttal.
 
 ## 7. Bookkeeping — runs that informed but did not REPRODUCE Maar
 
-Two earlier runs on disk (also committed; see
-[Commit 93be44d](https://github.com/PCfVW/candle-mi/commit/93be44d)):
+Two earlier runs on disk (also committed in `93be44d`; inspect via
+`git show 93be44d`):
 
 **Run #1**: `llama32_3b_rhyme_ee_grid.json` (474 KB).  28-layer × 3-strength
 single-forward sweep (84 cells, candle-mi-authored prompts,
@@ -368,8 +376,11 @@ the paper's exposition doesn't surface.
 - **N = 20 eval prompts per cell**.  This matches Maar's `len(test_set)`
   per family from `data/test/rhyme_family_lines.json`, so we report
   on the same denominator they do.  The 2×2 contingencies report
-  raw counts; the asymmetries (e.g., 6/6 HIT→MISS vs 0/6 MISS→HIT on
-  Llama 3B) are signal, not noise at this N.
+  raw counts; the asymmetries on Llama 3B (of the 6 prompts whose
+  hit-status flipped under steering, **all 6** went HIT→MISS and
+  **0** went MISS→HIT) are signal, not noise at this N — even with
+  the most adversarial chance prior `(p = 0.5)`, the probability of
+  observing 6/6 inhibitory flips by chance is `(1/2)⁶ = 1/64 ≈ 0.016`.
 - **One rhyme family per cell** (`-ee` for all three).  Maar reports
   per-family results across 10 families × 23 models; we replicate
   on `-ee` only.  Extending to other families is straightforward via
@@ -470,13 +481,51 @@ cargo run --release --features transformer,mmap --example maar_contrastive_steer
     --metric generated-couplet --max-new-tokens 25 \
     --output docs/experiments/maar-replication/gemma2_rhyme_ee_maar_prompts.json
 
-# 4. Strength sweeps (the three *_strength_sweep.json files).
-#    Replace --layer-grid + --strength-grid per the §3 tables above.
+# 4a. Llama 3.2 3B strength sweep at L22.
+cargo run --release --features transformer,mmap --example maar_contrastive_steering -- \
+    --preset llama32-3b-rhyme-ee \
+    --prompt-file examples/results/maar_contrastive_steering/prompts/llama32_3b_rhyme_ee_maar.json \
+    --layer-grid 22 --strength-grid 0.1,0.3,0.5,1,1.5,2,3,5 \
+    --normalise=false --position-strategy last \
+    --metric generated-couplet --max-new-tokens 25 \
+    --output docs/experiments/maar-replication/llama32_3b_rhyme_ee_maar_strength_sweep.json
+
+# 4b. Llama 3.2 1B strength sweep at L12.
+cargo run --release --features transformer,mmap --example maar_contrastive_steering -- \
+    --preset llama32-1b-rhyme-ee \
+    --prompt-file examples/results/maar_contrastive_steering/prompts/llama32_1b_rhyme_ee_maar.json \
+    --layer-grid 12 --strength-grid 0.1,0.3,0.5,1,1.5,2,3,5 \
+    --normalise=false --position-strategy last \
+    --metric generated-couplet --max-new-tokens 25 \
+    --output docs/experiments/maar-replication/llama32_1b_rhyme_ee_maar_strength_sweep.json
+
+# 4c. Gemma 2 2B strength sweep at L20.
+#     Strength range is smaller because ‖d‖ = 116 (10× Llama 3B's 11.47).
+cargo run --release --features transformer,mmap --example maar_contrastive_steering -- \
+    --preset gemma2-2b-rhyme-ee \
+    --prompt-file examples/results/maar_contrastive_steering/prompts/gemma2_rhyme_ee_maar.json \
+    --layer-grid 20 --strength-grid 0.01,0.05,0.1,0.3,0.5,1,1.5,2 \
+    --normalise=false --position-strategy last \
+    --metric generated-couplet --max-new-tokens 25 \
+    --output docs/experiments/maar-replication/gemma2_rhyme_ee_maar_strength_sweep.json
 ```
 
-Total GPU time on RTX 5060 Ti 16 GB: ~3 min for the three
-single-cell calibrations, ~60 min for the three strength sweeps
-combined.  All outputs deterministic (greedy decoding, no sampling).
+Total GPU time on RTX 5060 Ti 16 GB (measured, including model load
+but excluding cargo build):
+
+| Run | Time |
+|---|---:|
+| Llama 3.2 1B single-cell calibration | 52 s |
+| Gemma 2 2B single-cell calibration | 191 s |
+| Llama 3.2 3B single-cell calibration | ~52 s (extrapolated from per-cell sweep rate) |
+| Llama 3.2 1B strength sweep (8 cells) | 200 s |
+| Gemma 2 2B strength sweep (8 cells) | 737 s |
+| Llama 3.2 3B strength sweep (8 cells) | 413 s |
+| **Total** | **~28 min** |
+
+All outputs deterministic (greedy decoding, no sampling).
+First-time runs additionally require ~2 min of `cargo build --release`
+and 0–10 min of model weights download (`hf-fm`) per cold model.
 
 ---
 
