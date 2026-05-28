@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+### Fixed
+
+### Added
+
+## [0.1.12] - 2026-05-28
+
+### Changed
+
 - **`examples/maar_contrastive_steering`** — extended with two new CLI
   flags to make the Maar et al. (2026) replication faithful to their
   supplementary code rather than the paper text alone:

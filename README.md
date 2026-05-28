@@ -10,7 +10,7 @@
 
 *Mechanistic Interpretability for the Rust of us.*
 
-> **Note:** v0.1.11 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
+> **Note:** v0.1.12 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
 
 ## Supported model families
 
@@ -162,6 +162,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 |-------|------------------|---------|
 | Anthropic, [*On the Biology of a Large Language Model*](https://transformer-circuits.pub/2025/attribution-graphs/biology.html) (2025) | Figure 13 — suppress natural rhyme features and inject an alternative via CLT, sweeping injection position | [`figure13_planning_poems`](examples/README.md#example-output-figure13_planning_poems) |
 | Hanna & Ameisen, [*Latent Planning Emerges with Scale*](https://arxiv.org/abs/2604.12493) (ICLR 2026) | CLT vs PLT method-matched comparison on the Llama 3.2 1B rhyming-couplet planning site — both transcoder classes detect at comparable ΔP when ranked via decoder-topology-respecting methods. Llama arm complete; Gemma arm in v0.1.10; **Qwen-3 scale sweep complete in v0.1.11** (Qwen3-0.6B + 1.7B with `BlueLightAI` 20K + 16K-dev CLTs; within-family inverse scaling at 0.6B → 1.7B). | [`clt_vs_plt_planning_site`](docs/experiments/clt-vs-plt-planning-site/findings.md), [`figure13-qwen3-cross-size`](docs/experiments/figure13-qwen3-cross-size.md) |
+| Maar, Paperno, McDougall, Nanda, [*What's the plan? Metrics for implicit planning in LLMs and their application to rhyme generation and question answering*](https://arxiv.org/abs/2601.20164) (ICLR 2026) | Contrastive activation steering on three open-weights models (Llama 3.2 3B / 1B, Gemma 2 2B) with Maar's verbatim prompts + exact protocol (raw mean-diff direction, generated-couplet last-word family-membership metric, 25 greedy tokens).  **REPRODUCES** Maar's published "smaller-models" claim on Llama 3.2 3B (60% → 30%, all 6 binary flips are HIT→MISS); strength-sweep surface shows the protocol's effect direction is family-dependent (Llama monotonic inhibition vs Gemma non-monotonic enhancement with peak at m=1.0), with `‖d‖` varying 10× across architectures — Maar's global m=1.5 is not cross-architecture-transferable. **New in v0.1.12.** | [`maar_contrastive_steering`](examples/README.md#example-output-maar_contrastive_steering), [`maar-replication/findings.md`](docs/experiments/maar-replication/findings.md) |
 | Anthropic, [*When Models Manipulate Manifolds*](https://transformer-circuits.pub/2025/linebreaks/index.html) (2025) | Character count helix — residual stream encodes line position as a helical manifold; reproduced on Gemma 2 2B with 30 Dickens chapters | [`character_count_helix`](examples/README.md#example-output-character_count_helix) |
 | Meng et al., [*Locating and Editing Factual Associations in GPT*](https://arxiv.org/abs/2202.05262) (2022) | Causal tracing via position-specific activation patching | [`activation_patching`](examples/README.md#example-output-activation_patching) |
 | Taufeeque et al., [*Recurrent Feedback*](https://arxiv.org/abs/2407.15421) (2024) | Anacrousis — recurrent steering passes for rhyme completion | [`recurrent_feedback`](examples/README.md#example-output-recurrent_feedback) |
