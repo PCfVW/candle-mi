@@ -19,3 +19,11 @@ examples/figure13/llama_output_old_hallucinated.json
 docs/experiments/**/vocab_scan_*_raw.json
 docs/experiments/**/vocab_scan_*_phonological.json
 !docs/experiments/**/vocab_scan_*_phonological_clean.json
+
+# Maar replication: keep prompts JSONs committed (small, audit-relevant);
+# ignore the downloaded supplementary .zip (large, license-uncertain) and
+# the extracted supplementary tree (60 MB of Maar's code; redownload via
+# scripts/maar_supplementary_fetch.py if needed).
+!examples/results/maar_contrastive_steering/prompts/*.json
+examples/results/maar_contrastive_steering/*.zip
+examples/results/maar_contrastive_steering/maar_supp/
