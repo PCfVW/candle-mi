@@ -41,6 +41,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the four committed `*_maar.json` prompts files (byte-identical).
   Uses `ast.literal_eval` (not `eval`) on the rewritten `set([...])`
   literals for safety.
+- **`docs/experiments/maar-replication/findings.md`** — load-bearing
+  rebuttal artefact for COLM 2026 Q1.  Documents the 3-cell
+  replication of Maar et al. (2026), the 3-cell strength-sweep
+  surface, the H3 rejection (architectural family-dependence of
+  effect direction is not a perturbation-magnitude artefact), the
+  paper-vs-supplementary-code documentation gap (15-row table), and
+  the Marr-three-levels methodological reframing of
+  behavioural-vs-mechanistic methods for intra-planning questions.
+- **`docs/experiments/figure13-qwen3-cross-size.md`** updated: the
+  "Future work — Maar replication" section is replaced by a
+  "completed in v0.1.12" cross-link to the new findings.md.
 - **Maar replication artefacts** committed under
   `examples/results/maar_contrastive_steering/prompts/` (8 prompts
   JSONs: 4 candle-mi-authored + 4 maar-supplementary verbatim) and

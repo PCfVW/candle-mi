@@ -166,17 +166,32 @@ ZIP would resolve this.  Until then, the claim that Maar's positive result
 directly contradicts our `Q1` negative result on `Gemma 2 2B` rests on an
 unverified same-protocol assumption.
 
-## Future work — Maar replication
+## Maar replication — completed in v0.1.12
 
-Slated for `v0.1.12` (post-`v0.1.11` ship; before arXiv v2):
+The Maar et al. (2026) replication is now in
+[`docs/experiments/maar-replication/findings.md`](maar-replication/findings.md).
+Headline:
 
-1. Download Maar's supplementary `.zip` from [OpenReview](https://openreview.net/forum?id=Z10pxu0Q7X)
-2. Extract the per-model protocol for `Gemma 2 2B` and `Llama 3.2 1B`
-3. Port to `candle-mi`'s hook system (~1 day; library is hook-ready
-   via `HookSpec` + `Intervention::Steer`)
-4. Run on both models with Maar's documented strengths `m = 1.5` and `m = 2`
-5. Report the outcome in `docs/experiments/maar-replication-2b-1b/`
-   — both outcomes (positive / negative) are publishable for arXiv v2
+- **Llama 3.2 3B** + Maar's exact protocol + Maar's verbatim prompts:
+  baseline 60% → steered 30% at `L = 22`, `m = 1.5`.  All 6 binary
+  flips are HIT→MISS, zero MISS→HIT.  **REPRODUCES** Maar's published
+  "smaller-models" claim on this model.
+- **Llama 3.2 1B** at `L = 12`, `m = 1.5`: 50% → 45%, weak monotonic
+  inhibition (saturates at −25 pp at `m = 3.0`).
+- **Gemma 2 2B** at `L = 20`, `m = 1.5`: 25% → 35%, **non-monotonic
+  ENHANCEMENT** with peak at `m = 1.0` (+20 pp).
+- The effect-direction split (Llama inhibits, Gemma enhances) is NOT
+  a perturbation-magnitude artefact (`H3` rejected per strength sweeps
+  at equivalent effective perturbations `m × ‖d‖`).  Architectural
+  family dependence is the leading hypothesis at `N = 2` families
+  tested.
+- `‖d‖` varies 10× across architectures (Llama 1B: 4.01; Llama 3B:
+  11.47; Gemma 2B: 116.09), confirming that Maar's single global
+  `m = 1.5` is not cross-architecture-transferable; their cross-23-
+  model rhyming-rate table is contaminated by this scaling confound.
+
+See [`maar-replication/findings.md`](maar-replication/findings.md) §5 for
+the Marr-three-levels methodological reframing.
 
 ## Reproducibility
 
