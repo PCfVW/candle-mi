@@ -1,0 +1,441 @@
+{
+  "model": "meta-llama/Llama-3.2-3B",
+  "preset": "llama32-3b-rhyme-ee",
+  "rhyme_family": "-ee",
+  "n_layers": 28,
+  "hidden_size": 3072,
+  "n_positive_prompts": 85,
+  "n_negative_prompts": 85,
+  "n_eval_prompts": 20,
+  "position_strategy": "Last",
+  "normalise": false,
+  "metric": "GeneratedCouplet",
+  "max_new_tokens": 25,
+  "prompts_source": "candle-mi-authored",
+  "prompts_source_url": null,
+  "baseline": {
+    "mean_p_target": 0.0,
+    "hit_rate": 0.25,
+    "per_prompt": [
+      {
+        "prompt": "A rhyming couplet:\nWe danced beneath the stars, our spirits",
+        "target_token": " knee",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": " soaring\nAs we twirled and spun, our hearts beating faster.\nThe night was alive with laughter and joy\nAs",
+        "last_word": "joy"
+      },
+      {
+        "prompt": "A rhyming couplet:\nHe longed to roam the world and to be",
+        "target_token": " key",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": " free.\nHe longed to roam the world and to be free.\nHe longed to roam the world and to be free",
+        "last_word": "free"
+      },
+      {
+        "prompt": "A rhyming couplet:\nHe pruned the lowest limb upon the",
+        "target_token": " free",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " tree,\nAnd then he cut the branch that grew beside it.\nThe first line of the couplet is a simile,",
+        "last_word": "simile"
+      },
+      {
+        "prompt": "A rhyming couplet:\nI saw a robin in the apple",
+        "target_token": " she",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " tree\nAnd I thought of you, my love for me.\nA couplet is a pair of lines of poetry that rhyme",
+        "last_word": "rhyme"
+      },
+      {
+        "prompt": "A rhyming couplet:\nShe climbed the highest, most majestic",
+        "target_token": " me",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " mountain\nAnd she saw the most beautiful view\nShe climbed the highest, most majestic mountain\nAnd she saw the most beautiful",
+        "last_word": "mountain"
+      },
+      {
+        "prompt": "A rhyming couplet:\nWe watched the waves crash on the open",
+        "target_token": " three",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": " sea,\nAnd the wind blew through the trees.\nThe waves crashed on the open sea,\nAnd the wind blew through the trees",
+        "last_word": "sea"
+      },
+      {
+        "prompt": "A rhyming couplet:\nWe rested in the shade of one wide",
+        "target_token": " sea",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " tree,\nAnd watched the sun go down.\nThe sun went down, and the moon came up,\nAnd we rested in the",
+        "last_word": "up"
+      },
+      {
+        "prompt": "A rhyming couplet:\nShe turned the corner, then she counted",
+        "target_token": " bee",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "\nThe steps to the door.\nShe turned the corner, then she counted\nThe steps to the door.\nShe turned the",
+        "last_word": "counted"
+      },
+      {
+        "prompt": "A rhyming couplet:\nThe captive bird at long last was set",
+        "target_token": " agree",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " free.\nThe bird was a sparrow, and the captive was me.\nThe bird was a sparrow, and the captive",
+        "last_word": "captive"
+      },
+      {
+        "prompt": "A rhyming couplet:\nThe little boat sailed gently on the",
+        "target_token": " tree",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": " sea,\nThe little boat sailed gently on the sea.\nThe little boat sailed gently on the sea,\nThe little boat sailed gently",
+        "last_word": "sea"
+      },
+      {
+        "prompt": "A rhyming couplet:\nI counted one and two and then said",
+        "target_token": " he",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " three.\nI counted three and four and then said five.\nI counted five and six and then said seven.\nI counted seven",
+        "last_word": "seven"
+      },
+      {
+        "prompt": "A rhyming couplet:\nHe had not slept for two whole nights, but",
+        "target_token": " degree",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " he was not tired.\nHe had not slept for two whole nights, but he was not tired.\nHe had not slept for",
+        "last_word": "for"
+      },
+      {
+        "prompt": "A rhyming couplet:\nThe chorus had to sing the part in",
+        "target_token": " knee",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " the middle.\nThe chorus had to sing the part in the middle.\nThe chorus had to sing the part in the middle.\n",
+        "last_word": "middle"
+      },
+      {
+        "prompt": "A rhyming couplet:\nWe waited until I had finished counting to",
+        "target_token": " key",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " three\nAnd then we all jumped up and down and shouted “Yay!”\nA couplet is a pair of rh",
+        "last_word": "rh"
+      },
+      {
+        "prompt": "A rhyming couplet:\nShe wrote a letter from across the",
+        "target_token": " free",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": " sea\nTo her dear friend, who was far away\nThe letter was written in a hurry\nAnd the words were not",
+        "last_word": "hurry"
+      },
+      {
+        "prompt": "A rhyming couplet:\nThe horses ran across the wild and",
+        "target_token": " she",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " windy moor\nThe horses ran across the wild and windy moor\nThe horses ran across the wild and windy moor",
+        "last_word": "moor"
+      },
+      {
+        "prompt": "A rhyming couplet:\nA heron stood beside the silver",
+        "target_token": " me",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " lake,\nAnd watched the water lilies float and shake.\nA heron stood beside the silver lake,\nAnd watched the water",
+        "last_word": "lake"
+      },
+      {
+        "prompt": "A rhyming couplet:\nThe branches whispered through the tall oak",
+        "target_token": " three",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " trees\nThe leaves rustled in the breeze\nThe branches whispered through the tall oak trees\nThe leaves rustled in the",
+        "last_word": "trees"
+      },
+      {
+        "prompt": "A rhyming couplet:\nShe felt at last completely safe and",
+        "target_token": " sea",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " sound.\nShe felt at last completely safe and sound.\nShe felt at last completely safe and sound.\nShe felt at last completely",
+        "last_word": "sound"
+      },
+      {
+        "prompt": "A rhyming couplet:\nThe sailors set their course out toward the",
+        "target_token": " bee",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": " sea,\nAnd the ship sailed on, and on, and on, and on.\nThe sailors set their course out toward the",
+        "last_word": "the"
+      }
+    ]
+  },
+  "grid": [
+    {
+      "layer": 22,
+      "strength": 1.5,
+      "mean_p_target": 0.0,
+      "hit_rate": 0.25,
+      "direction_norm": 14.252532,
+      "per_prompt": [
+        {
+          "prompt": "A rhyming couplet:\nWe danced beneath the stars, our spirits",
+          "target_token": " knee",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " soaring\nAs we twirled and spun, our hearts beating faster.\nThe music played on, our feet moving in time",
+          "last_word": "time"
+        },
+        {
+          "prompt": "A rhyming couplet:\nHe longed to roam the world and to be",
+          "target_token": " key",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": " free.\nHe longed to roam the world and to be free.\nHe longed to roam the world and to be free",
+          "last_word": "free"
+        },
+        {
+          "prompt": "A rhyming couplet:\nHe pruned the lowest limb upon the",
+          "target_token": " free",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " tree,\nAnd then he cut the branch that grew beside it.\nThe branch that grew beside it was the one\nThat he",
+          "last_word": "one"
+        },
+        {
+          "prompt": "A rhyming couplet:\nI saw a robin in the apple",
+          "target_token": " she",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " tree\nAnd I thought of you, my love for you\nA couplet is a pair of lines of poetry that rhyme",
+          "last_word": "rhyme"
+        },
+        {
+          "prompt": "A rhyming couplet:\nShe climbed the highest, most majestic",
+          "target_token": " me",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " mountain\nAnd she saw the most beautiful view\nShe climbed the highest, most majestic mountain\nAnd she saw the most beautiful",
+          "last_word": "mountain"
+        },
+        {
+          "prompt": "A rhyming couplet:\nWe watched the waves crash on the open",
+          "target_token": " three",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": " sea,\nAnd the wind blew through the trees.\nThe waves crashed on the open sea,\nAnd the wind blew through the trees",
+          "last_word": "sea"
+        },
+        {
+          "prompt": "A rhyming couplet:\nWe rested in the shade of one wide",
+          "target_token": " sea",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " tree,\nAnd watched the sun go down.\nThe sun went down, and the moon came up,\nAnd we rested in the",
+          "last_word": "up"
+        },
+        {
+          "prompt": "A rhyming couplet:\nShe turned the corner, then she counted",
+          "target_token": " bee",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "\nThe steps to the door.\nShe turned the corner, then she counted\nThe steps to the door.\nShe turned the",
+          "last_word": "counted"
+        },
+        {
+          "prompt": "A rhyming couplet:\nThe captive bird at long last was set",
+          "target_token": " agree",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " free.\nThe bird was a sparrow, and the captive was me.\nThe bird was a sparrow, and the captive",
+          "last_word": "captive"
+        },
+        {
+          "prompt": "A rhyming couplet:\nThe little boat sailed gently on the",
+          "target_token": " tree",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": " sea,\nThe little boat sailed gently on the sea.\nThe little boat sailed gently on the sea,\nThe little boat sailed gently",
+          "last_word": "sea"
+        },
+        {
+          "prompt": "A rhyming couplet:\nI counted one and two and then said",
+          "target_token": " he",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": ", \"I'm done.\"\nI counted one and two and then said, \"I'm done.\"\nI counted one and two",
+          "last_word": "two"
+        },
+        {
+          "prompt": "A rhyming couplet:\nHe had not slept for two whole nights, but",
+          "target_token": " degree",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " he was not tired.\nHe had not slept for two whole nights, but he was not tired.\nHe had not slept for",
+          "last_word": "for"
+        },
+        {
+          "prompt": "A rhyming couplet:\nThe chorus had to sing the part in",
+          "target_token": " knee",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " the song\nThe chorus had to sing the part in the song\nThe chorus had to sing the part in the song\n",
+          "last_word": "song"
+        },
+        {
+          "prompt": "A rhyming couplet:\nWe waited until I had finished counting to",
+          "target_token": " key",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " 10 before we could go out to play.\nA couplet is a pair of rhyming lines. The first line",
+          "last_word": "line"
+        },
+        {
+          "prompt": "A rhyming couplet:\nShe wrote a letter from across the",
+          "target_token": " free",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " sea\nTo her friend, who was in a faraway land.\nThe letter was written in a foreign tongue\nAnd the",
+          "last_word": "tongue"
+        },
+        {
+          "prompt": "A rhyming couplet:\nThe horses ran across the wild and",
+          "target_token": " she",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " windy moor\nThe horses ran across the wild and windy moor\nThe horses ran across the wild and windy moor",
+          "last_word": "moor"
+        },
+        {
+          "prompt": "A rhyming couplet:\nA heron stood beside the silver",
+          "target_token": " me",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": " sea,\nAnd watched the waves with eyes of blue.\nThe heron stood beside the silver sea,\nAnd watched the waves with",
+          "last_word": "sea"
+        },
+        {
+          "prompt": "A rhyming couplet:\nThe branches whispered through the tall oak",
+          "target_token": " three",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " trees\nThe branches whispered through the tall oak trees\nThe branches whispered through the tall oak trees\nThe branches whispered through the",
+          "last_word": "trees"
+        },
+        {
+          "prompt": "A rhyming couplet:\nShe felt at last completely safe and",
+          "target_token": " sea",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": " secure\nShe felt at last completely safe and secure\nShe felt at last completely safe and secure\nShe felt at last completely",
+          "last_word": "secure"
+        },
+        {
+          "prompt": "A rhyming couplet:\nThe sailors set their course out toward the",
+          "target_token": " bee",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": " sea,\nAnd the ship sailed on, and the sailors sailed with it.\nThe sailors set their course out toward the sea,\n",
+          "last_word": "sea"
+        }
+      ]
+    }
+  ],
+  "best_cell": {
+    "layer": 22,
+    "strength": 1.5,
+    "mean_p_target": 0.0,
+    "hit_rate": 0.25,
+    "hit_rate_ratio": 1.0
+  },
+  "elapsed_seconds": 109.4943752
+}

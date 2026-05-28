@@ -1,0 +1,441 @@
+{
+  "model": "meta-llama/Llama-3.2-1B",
+  "preset": "llama32-1b-rhyme-ee",
+  "rhyme_family": "-ee",
+  "n_layers": 16,
+  "hidden_size": 2048,
+  "n_positive_prompts": 85,
+  "n_negative_prompts": 85,
+  "n_eval_prompts": 20,
+  "position_strategy": "Last",
+  "normalise": false,
+  "metric": "GeneratedCouplet",
+  "max_new_tokens": 25,
+  "prompts_source": "maar-supplementary",
+  "prompts_source_url": "https://openreview.net/attachment?id=Z10pxu0Q7X&name=supplementary_material",
+  "baseline": {
+    "mean_p_target": 0.0,
+    "hit_rate": 0.5,
+    "per_prompt": [
+      {
+        "prompt": "The stars above shine bright and free\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": "The stars above shine bright and free\nThe stars above shine bright and free\nThe stars above shine bright and free\nThe",
+        "last_word": "free"
+      },
+      {
+        "prompt": "With gentle hands I plant the tree\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "I am the tree, I am the soil\nI am the water, I am the sun\nI am the wind,",
+        "last_word": "wind"
+      },
+      {
+        "prompt": "The buzzing sound comes from the bee\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": "The buzzing sound comes from the bee\nThe buzzing sound comes from the bee\nThe buzzing sound comes from the bee\nThe",
+        "last_word": "bee"
+      },
+      {
+        "prompt": "I dropped my phone upon my knee\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "And it was a miracle\nI dropped my phone upon my knee\nAnd it was a miracle\nI dropped my phone upon",
+        "last_word": "miracle"
+      },
+      {
+        "prompt": "The lock won't open with this key\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "The lock won't open with this key\nPost by jay » 2018-01-31 11:00",
+        "last_word": "11:00"
+      },
+      {
+        "prompt": "The child climbed high up in the tree\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "And he saw the sun and the moon\nAnd he saw the stars and the planets\nAnd he saw the earth and the",
+        "last_word": "the"
+      },
+      {
+        "prompt": "The pirate sailed across the sea\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "And he was a very brave man\nHe was a very brave man\nHe was a very brave man\nHe was a",
+        "last_word": "man"
+      },
+      {
+        "prompt": "The morning sun I love to see\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": "The morning sun I love to see\nThe morning sun I love to see\nThe morning sun I love to see\nThe",
+        "last_word": "see"
+      },
+      {
+        "prompt": "I cannot charge a service fee\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": "I cannot charge a service fee\nI cannot charge a service fee\nI cannot charge a service fee\nI cannot charge a",
+        "last_word": "fee"
+      },
+      {
+        "prompt": "The arrow flew right past the tree\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "The arrow flew right past the tree\nPost by The Arrow » Tue Jan 29, 2013 11:57",
+        "last_word": "11:57"
+      },
+      {
+        "prompt": "The cat that purred upon my knee\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": "The cat that purred upon my knee\nThe cat that purred upon my knee\nThe cat that purred upon my",
+        "last_word": "my"
+      },
+      {
+        "prompt": "I spilled some honey from the bee\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": "I spilled some honey from the bee\nI spilled some honey from the bee\nI spilled some honey from the bee\nI",
+        "last_word": "bee"
+      },
+      {
+        "prompt": "The blind man wished that he could see\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "The blind man wished that he could see\nThe blind man wished that he could see\nThe blind man wished that he could",
+        "last_word": "could"
+      },
+      {
+        "prompt": "The captive longed to be set free\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "The captive longed to be set free\nThe captive longed to be set free\nThe captive longed to be set",
+        "last_word": "set"
+      },
+      {
+        "prompt": "I found a shell beside the sea\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": "I found a shell beside the sea\nI found a shell beside the sea\nI found a shell beside the sea\nI",
+        "last_word": "sea"
+      },
+      {
+        "prompt": "The mountain peak I long to see\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": "The mountain peak I long to see\nThe mountain peak I long to see\nThe mountain peak I long to see\nThe",
+        "last_word": "see"
+      },
+      {
+        "prompt": "The ancient scroll contained a plea\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "for help from the people of Israel\nto the God of Israel.\nThe scroll was found in the ruins of\nthe Temple",
+        "last_word": "of"
+      },
+      {
+        "prompt": "The winter frost adorned the tree\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": "The winter frost adorned the tree\nThe winter frost adorned the tree\nThe winter frost adorned the tree\nThe winter frost adorned",
+        "last_word": "tree"
+      },
+      {
+        "prompt": "The secret path leads to the sea\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": true,
+        "generated_text": "The secret path leads to the sea\nThe secret path leads to the sea\nThe secret path leads to the sea\nThe",
+        "last_word": "sea"
+      },
+      {
+        "prompt": "I bent my aging, creaking knee\n",
+        "target_token": " 'e",
+        "p_target": 0.0,
+        "top1_token_id": 0,
+        "top1_token_text": "",
+        "is_hit": false,
+        "generated_text": "and I walked into the kitchen\nto make a cup of tea\nand I saw the light\nand I saw the light",
+        "last_word": "light"
+      }
+    ]
+  },
+  "grid": [
+    {
+      "layer": 12,
+      "strength": 1.5,
+      "mean_p_target": 0.0,
+      "hit_rate": 0.45,
+      "direction_norm": 4.0078607,
+      "per_prompt": [
+        {
+          "prompt": "The stars above shine bright and free\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": "The stars above shine bright and free\nThe stars above shine bright and free\nThe stars above shine bright and free\nThe",
+          "last_word": "free"
+        },
+        {
+          "prompt": "With gentle hands I plant the tree\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": "I am the tree, I am the tree\nI am the tree, I am the tree\nI am the tree,",
+          "last_word": "tree"
+        },
+        {
+          "prompt": "The buzzing sound comes from the bee\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": "The buzzing sound comes from the bee\nThe buzzing sound comes from the bee\nThe buzzing sound comes from the bee\nThe",
+          "last_word": "bee"
+        },
+        {
+          "prompt": "I dropped my phone upon my knee\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "And it was broken, and I cried\nI dropped my phone upon my knee\nAnd it was broken, and I cried",
+          "last_word": "cried"
+        },
+        {
+          "prompt": "The lock won't open with this key\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "I have a 2003 Ford F-150 with a 5.4L V8 engine. I have a ",
+          "last_word": "a"
+        },
+        {
+          "prompt": "The child climbed high up in the tree\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "And he saw the sun and the moon\nAnd he saw the stars and the planets\nAnd he saw the earth and the",
+          "last_word": "the"
+        },
+        {
+          "prompt": "The pirate sailed across the sea\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "And he was a very brave man\nHe was a very brave man\nHe was a very brave man\nHe was a",
+          "last_word": "man"
+        },
+        {
+          "prompt": "The morning sun I love to see\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": "The morning sun I love to see\nThe morning sun I love to see\nThe morning sun I love to see\nThe",
+          "last_word": "see"
+        },
+        {
+          "prompt": "I cannot charge a service fee\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": "I cannot charge a service fee\nI cannot charge a service fee\nI cannot charge a service fee\nI cannot charge a",
+          "last_word": "fee"
+        },
+        {
+          "prompt": "The arrow flew right past the tree\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "I was walking down the street, and I saw a man walking down the street. He was wearing a black jacket and a",
+          "last_word": "a"
+        },
+        {
+          "prompt": "The cat that purred upon my knee\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "I was sitting in the living room, watching the news, when I saw a picture of a cat. It was a picture",
+          "last_word": "picture"
+        },
+        {
+          "prompt": "I spilled some honey from the bee\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": "I spilled some honey from the bee\nI spilled some honey from the bee\nI spilled some honey from the bee\nI",
+          "last_word": "bee"
+        },
+        {
+          "prompt": "The blind man wished that he could see\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "The blind man wished that he could see\nThe blind man wished that he could see\nThe blind man wished that he could",
+          "last_word": "could"
+        },
+        {
+          "prompt": "The captive longed to be set free\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "I was born in a small village in the north of India. My father was a farmer and my mother was a housewife",
+          "last_word": "housewife"
+        },
+        {
+          "prompt": "I found a shell beside the sea\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": "I found a shell beside the sea\nI found a shell beside the sea\nI found a shell beside the sea\nI",
+          "last_word": "sea"
+        },
+        {
+          "prompt": "The mountain peak I long to see\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "The mountain peak I long to see\nAuthor: John Newton\nNewton, John, the son of a poor farmer, was",
+          "last_word": "was"
+        },
+        {
+          "prompt": "The ancient scroll contained a plea\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "For the return of the stolen scroll\nThe scroll was stolen from the temple\nAnd the temple was destroyed\nThe scroll was",
+          "last_word": "destroyed"
+        },
+        {
+          "prompt": "The winter frost adorned the tree\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": "And the snow fell from the sky\nThe wind blew and the rain fell\nAnd the sun shone on the day\n",
+          "last_word": "day"
+        },
+        {
+          "prompt": "The secret path leads to the sea\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": true,
+          "generated_text": "The secret path leads to the sea\nThe secret path leads to the sea\nThe secret path leads to the sea\nThe",
+          "last_word": "sea"
+        },
+        {
+          "prompt": "I bent my aging, creaking knee\n",
+          "target_token": " 'e",
+          "p_target": 0.0,
+          "top1_token_id": 0,
+          "top1_token_text": "",
+          "is_hit": false,
+          "generated_text": "And I was in pain.\nI was in pain.\nI was in pain.\nI was in pain.\nI was in pain",
+          "last_word": "pain"
+        }
+      ]
+    }
+  ],
+  "best_cell": {
+    "layer": 12,
+    "strength": 1.5,
+    "mean_p_target": 0.0,
+    "hit_rate": 0.45,
+    "hit_rate_ratio": 0.9
+  },
+  "elapsed_seconds": 52.1607369
+}

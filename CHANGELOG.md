@@ -41,6 +41,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the four committed `*_maar.json` prompts files (byte-identical).
   Uses `ast.literal_eval` (not `eval`) on the rewritten `set([...])`
   literals for safety.
+- **Maar replication artefacts** committed under
+  `examples/results/maar_contrastive_steering/prompts/` (8 prompts
+  JSONs: 4 candle-mi-authored + 4 maar-supplementary verbatim) and
+  `docs/experiments/maar-replication/` (8 grid JSONs).  Headline runs:
+  - **Llama 3.2 3B + Maar protocol + Maar prompts**: baseline 60% →
+    steered 30% at `L = 22`, `m = 1.5` (Maar's documented cell).
+    All 6 binary flips are HIT→MISS, zero MISS→HIT.  REPRODUCES
+    Maar's published "smaller-models" claim on this model.
+  - **Llama 3.2 1B**: baseline 50% → steered 45% at Maar's
+    documented cell; monotonic inhibition curve, saturates at
+    −25 pp at `m = 3.0`.
+  - **Gemma 2 2B**: baseline 25% → steered 35% at Maar's documented
+    cell; non-monotonic ENHANCEMENT curve with peak at `m = 1.0`
+    (+20 pp).  Effect direction is OPPOSITE to Llama at the
+    perturbation-matched strength.  Maar's global `m = 1.5` is
+    therefore non-transferable across architectures.
+  - Three strength sweeps (~8 strengths × the documented layer per
+    cell) confirm the family-level effect-direction split is not a
+    perturbation-magnitude artefact (`H3` rejected in
+    [`findings.md`](docs/experiments/maar-replication/findings.md)).
 
 ## [0.1.11] - 2026-05-27
 
