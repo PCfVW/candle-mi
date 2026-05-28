@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **`examples/maar_contrastive_steering`** — extended with two new CLI
+  flags to make the Maar et al. (2026) replication faithful to their
+  supplementary code rather than the paper text alone:
+  - `--metric {single-forward, generated-couplet}` (default
+    `generated-couplet`) — selects between the fast top-1-at-last-token
+    metric (single-forward) and Maar's 25-token greedy generation +
+    last-word-of-couplet family-membership metric (generated-couplet).
+  - `--max-new-tokens N` (default `25`) — matches Maar's
+    `MAX_NEW_TOKENS = 25`.
+  - `--normalise` default flipped from `true` to `false` — matches
+    Maar's supplementary code which uses the raw
+    `mean(positive) − mean(negative)` direction, contradicting the
+    paper text's `m = 1.5` "magnitude" phrasing.
+  - Maar's text-cleanup pipeline (`get_cleaned_up_text` first-3-lines,
+    `remove_non_alphanumeric_characters_from_right`,
+    `get_last_word_correct` split-on-single-space) is ported as
+    `extract_last_word_maar`; the family-membership check
+    (`get_word_correct` with `-ee` / `-ing` / `-air` extensions) is
+    `is_rhyme_hit`.
+
 ### Fixed
 
 ### Added

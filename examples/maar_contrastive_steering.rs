@@ -61,6 +61,7 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::cast_lossless)]
+#![allow(clippy::similar_names)]
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -70,9 +71,34 @@ use clap::Parser;
 use serde::{Deserialize, Serialize};
 
 use candle_mi::{
-    HookPoint, HookSpec, MIModel, PositionStrategy, build_contrastive_direction,
-    contrastive_intervention, extract_token_prob,
+    ContrastiveDirection, HookPoint, HookSpec, Intervention, MIModel, PositionStrategy,
+    build_contrastive_direction, contrastive_intervention, extract_token_prob, position_delta,
 };
+
+// ── Metric ──────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Metric {
+    /// Top-1 token at the prompt's last position (single forward pass per
+    /// eval prompt; fast but does NOT match Maar's protocol).
+    SingleForward,
+    /// Maar's metric: greedy-generate `--max-new-tokens`, then split the
+    /// generated text on " ", take the last word, lowercase, check
+    /// membership in the rhyme-family word list (with special cases for
+    /// `-ee`: also matches words ending in `"y"` or `"ee"`).
+    GeneratedCouplet,
+}
+
+fn parse_metric(s: &str) -> candle_mi::Result<Metric> {
+    match s {
+        "single-forward" => Ok(Metric::SingleForward),
+        "generated-couplet" => Ok(Metric::GeneratedCouplet),
+        other => Err(candle_mi::MIError::Config(format!(
+            "parse_metric: unknown metric '{other}' \
+             (expected 'single-forward' or 'generated-couplet')"
+        ))),
+    }
+}
 
 // ── CLI ─────────────────────────────────────────────────────────────────────
 
@@ -113,11 +139,27 @@ struct Args {
     #[arg(long, default_value = "first-newline")]
     position_strategy: String,
 
-    /// L2-normalise the contrastive direction to a unit vector (default
-    /// `true`).  Pass `--no-normalise` to use the raw `mean(pos) − mean(neg)`
-    /// difference without normalisation.
-    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
+    /// L2-normalise the contrastive direction to a unit vector
+    /// (default `false`, matching Maar's supplementary code which uses
+    /// raw `mean(pos) − mean(neg)`).  Pass `--normalise=true` to opt into
+    /// the unit-vector convention (which then makes `m = 1.5` a literal
+    /// magnitude).
+    #[arg(long, default_value_t = false, action = clap::ArgAction::Set)]
     normalise: bool,
+
+    /// Evaluation metric: `single-forward` (top-1 token at the prompt's
+    /// last position, fast but does NOT match Maar's protocol) or
+    /// `generated-couplet` (Maar's metric: greedy-generate
+    /// `--max-new-tokens` and check whether the last word of the
+    /// generated text is in the rhyme family).  Default `generated-couplet`.
+    #[arg(long, default_value = "generated-couplet")]
+    metric: String,
+
+    /// Number of new tokens to greedy-generate per eval prompt when
+    /// `--metric generated-couplet`.  Default 25 matches Maar's
+    /// `MAX_NEW_TOKENS = 25`.
+    #[arg(long, default_value_t = 25)]
+    max_new_tokens: usize,
 
     /// Output JSON path (required for committed grid runs).
     #[arg(long)]
@@ -212,6 +254,11 @@ struct MaarOutput {
     n_eval_prompts: usize,
     position_strategy: String,
     normalise: bool,
+    /// Evaluation metric used: `"SingleForward"` or `"GeneratedCouplet"`.
+    metric: String,
+    /// Number of greedy-generated tokens per eval prompt when
+    /// `metric == GeneratedCouplet`; unused otherwise.
+    max_new_tokens: usize,
     prompts_source: String,
     prompts_source_url: Option<String>,
     baseline: BaselineSummary,
@@ -241,10 +288,28 @@ struct CellResult {
 struct EvalResult {
     prompt: String,
     target_token: String,
+    /// `single-forward` metric only: probability of `target_token` at the
+    /// prompt's last position.  Zero in `generated-couplet` mode.
     p_target: f32,
+    /// `single-forward` metric only: top-1 token id at the prompt's last
+    /// position.  Zero in `generated-couplet` mode.
     top1_token_id: u32,
+    /// `single-forward` metric only: top-1 token text.  Empty in
+    /// `generated-couplet` mode.
     top1_token_text: String,
+    /// `single-forward`: top-1 in `target_rhyme_words`.
+    /// `generated-couplet`: cleaned last word of the generated text is in
+    /// the rhyme family (Maar's `get_last_word_correct` + `get_word_correct`).
     is_hit: bool,
+    /// `generated-couplet` metric only: full greedy-generated text after
+    /// the prompt (`--max-new-tokens` tokens, decoded).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    generated_text: Option<String>,
+    /// `generated-couplet` metric only: extracted last word (Maar's
+    /// cleanup pipeline: first 3 lines, strip right non-alphanumeric,
+    /// split on " ", take last, lowercase).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    last_word: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -295,6 +360,7 @@ fn run() -> candle_mi::Result<()> {
     }
 
     let position_strategy = parse_position_strategy(&args.position_strategy)?;
+    let metric = parse_metric(&args.metric)?;
 
     eprintln!("=== Maar contrastive activation steering ===");
     eprintln!("Preset:           {}", args.preset);
@@ -309,6 +375,10 @@ fn run() -> candle_mi::Result<()> {
     );
     eprintln!("Position:         {position_strategy:?}");
     eprintln!("Normalise:        {}", args.normalise);
+    eprintln!("Metric:           {metric:?}");
+    if metric == Metric::GeneratedCouplet {
+        eprintln!("Max new tokens:   {}", args.max_new_tokens);
+    }
     eprintln!("Strength grid:    {:?}", args.strength_grid);
     if args.layer_grid.is_empty() {
         eprintln!("Layer grid:       (all layers)");
@@ -331,37 +401,61 @@ fn run() -> candle_mi::Result<()> {
     let positive_refs: Vec<&str> = prompts.positive.iter().map(String::as_str).collect();
     let negative_refs: Vec<&str> = prompts.negative.iter().map(String::as_str).collect();
 
-    // Resolve target token IDs for each eval prompt.
-    let eval_token_ids = prompts
-        .eval
-        .iter()
-        .map(|e| {
-            tokenizer
-                .find_token_id(&e.target_token)
-                .map(|id| (id, e.target_token.clone()))
-        })
-        .collect::<candle_mi::Result<Vec<_>>>()?;
-    let eval_rhyme_token_ids: Vec<Vec<u32>> = prompts
-        .eval
-        .iter()
-        .map(|e| {
-            e.target_rhyme_words
-                .iter()
-                .map(|w| tokenizer.find_token_id(w))
-                .collect::<candle_mi::Result<Vec<_>>>()
-        })
-        .collect::<candle_mi::Result<Vec<_>>>()?;
+    // Resolve target token IDs for each eval prompt.  Only needed for
+    // `single-forward` metric; for `generated-couplet` the per-prompt
+    // string-based `is_rhyme_hit` does not need token ids and tolerates
+    // multi-token rhyme words (e.g. Maar's `-ee` list contains `"'e"`
+    // which Llama 3.2 tokenises as 2 tokens).  Build lazily.
+    let (eval_token_ids, eval_rhyme_token_ids) = if metric == Metric::SingleForward {
+        let eti = prompts
+            .eval
+            .iter()
+            .map(|e| {
+                tokenizer
+                    .find_token_id(&e.target_token)
+                    .map(|id| (id, e.target_token.clone()))
+            })
+            .collect::<candle_mi::Result<Vec<_>>>()?;
+        let erti: Vec<Vec<u32>> = prompts
+            .eval
+            .iter()
+            .map(|e| {
+                e.target_rhyme_words
+                    .iter()
+                    .map(|w| tokenizer.find_token_id(w))
+                    .collect::<candle_mi::Result<Vec<_>>>()
+            })
+            .collect::<candle_mi::Result<Vec<_>>>()?;
+        (eti, erti)
+    } else {
+        // EXPLICIT: generated-couplet metric does not consult these arrays;
+        // empty Vecs are passed through to the single-forward helper paths
+        // (which are not invoked in this mode), satisfying the function
+        // signatures without an Option wrapper.
+        (Vec::new(), Vec::new())
+    };
 
-    // Baseline pass (no intervention).
+    // Baseline pass (no intervention) — dispatch on metric.
     eprintln!("\nRunning baseline (no intervention)...");
-    let baseline = run_eval_pass(
-        &model,
-        tokenizer,
-        &prompts.eval,
-        &eval_token_ids,
-        &eval_rhyme_token_ids,
-        None,
-    )?;
+    let baseline = match metric {
+        Metric::SingleForward => run_eval_pass_single_forward(
+            &model,
+            tokenizer,
+            &prompts.eval,
+            &eval_token_ids,
+            &eval_rhyme_token_ids,
+            None,
+        )?,
+        Metric::GeneratedCouplet => run_eval_pass_generation(
+            &model,
+            tokenizer,
+            &prompts.eval,
+            &prompts.family,
+            args.max_new_tokens,
+            None,
+            0.0,
+        )?,
+    };
     eprintln!(
         "Baseline: mean_p_target = {:.4e}, hit_rate = {:.2}%",
         baseline.0,
@@ -404,19 +498,31 @@ fn run() -> candle_mi::Result<()> {
             .sqrt();
 
         for &strength in &args.strength_grid {
-            let intervention = contrastive_intervention(&direction, strength)?;
-            let hook = HookPoint::ResidPost(layer);
-            let mut hooks = HookSpec::new();
-            hooks.intervene(hook, intervention);
-
-            let cell = run_eval_pass(
-                &model,
-                tokenizer,
-                &prompts.eval,
-                &eval_token_ids,
-                &eval_rhyme_token_ids,
-                Some(&hooks),
-            )?;
+            let cell = match metric {
+                Metric::SingleForward => {
+                    let intervention = contrastive_intervention(&direction, strength)?;
+                    let hook = HookPoint::ResidPost(layer);
+                    let mut hooks = HookSpec::new();
+                    hooks.intervene(hook, intervention);
+                    run_eval_pass_single_forward(
+                        &model,
+                        tokenizer,
+                        &prompts.eval,
+                        &eval_token_ids,
+                        &eval_rhyme_token_ids,
+                        Some(&hooks),
+                    )?
+                }
+                Metric::GeneratedCouplet => run_eval_pass_generation(
+                    &model,
+                    tokenizer,
+                    &prompts.eval,
+                    &prompts.family,
+                    args.max_new_tokens,
+                    Some(&direction),
+                    strength,
+                )?,
+            };
 
             eprintln!(
                 "  s={strength:>5.1}  mean_p_target={:.4e}  hit_rate={:.2}%  dir_norm={:.4}",
@@ -479,6 +585,8 @@ fn run() -> candle_mi::Result<()> {
         n_eval_prompts: prompts.eval.len(),
         position_strategy: format!("{position_strategy:?}"),
         normalise: args.normalise,
+        metric: format!("{metric:?}"),
+        max_new_tokens: args.max_new_tokens,
         prompts_source: prompts.source.clone(),
         prompts_source_url: prompts.source_url.clone(),
         baseline: baseline_summary,
@@ -549,10 +657,11 @@ fn parse_position_strategy(s: &str) -> candle_mi::Result<PositionStrategy> {
     )))
 }
 
-/// Run the model on each eval prompt (optionally with hooks), measure
-/// `P(target_token)` and the top-1 token, return `(mean_p_target, hit_rate,
+/// `single-forward` metric: run the model on each eval prompt (optionally
+/// with hooks), measure `P(target_token)` and the top-1 token at the
+/// prompt's last position.  Returns `(mean_p_target, hit_rate,
 /// per_prompt_results)`.
-fn run_eval_pass(
+fn run_eval_pass_single_forward(
     model: &MIModel,
     tokenizer: &candle_mi::MITokenizer,
     eval_prompts: &[EvalPrompt],
@@ -569,7 +678,7 @@ fn run_eval_pass(
         let tokens = tokenizer.encode(&eval.prompt)?;
         if tokens.is_empty() {
             return Err(candle_mi::MIError::Config(format!(
-                "run_eval_pass: eval prompt #{i} encoded to zero tokens"
+                "run_eval_pass_single_forward: eval prompt #{i} encoded to zero tokens"
             )));
         }
         let input = Tensor::new(&tokens[..], model.device())?.unsqueeze(0)?;
@@ -600,6 +709,8 @@ fn run_eval_pass(
             top1_token_id: top1_id,
             top1_token_text: top1_text,
             is_hit,
+            generated_text: None,
+            last_word: None,
         });
     }
 
@@ -608,6 +719,151 @@ fn run_eval_pass(
     let mean_p = if n > 0.0 { sum_p_target / n } else { 0.0 };
     let hit_rate = if n > 0.0 { hits as f32 / n } else { 0.0 };
     Ok((mean_p, hit_rate, per_prompt))
+}
+
+/// `generated-couplet` metric (Maar's `stage_standard_metrics` +
+/// `get_last_word_correct`): for each eval prompt, greedy-generate
+/// `max_new_tokens` tokens with steering applied at the prompt's last
+/// position at every forward pass (replicates Maar's
+/// `TOKEN_POS_TO_STEER=-1` during HF prefill; in candle-mi's KV-cache-free
+/// design, we re-apply the modification at every forward step at the
+/// FIXED original-prompt-last position to reproduce the same effective
+/// state on the model's residual stream).  Then clean up the generated
+/// text (Maar's `get_cleaned_up_text`), split on `' '`, take the last
+/// word, lowercase, and check membership in the rhyme-family word list
+/// (with Maar's `-ee` special case for words ending in `"y"` or `"ee"`).
+fn run_eval_pass_generation(
+    model: &MIModel,
+    tokenizer: &candle_mi::MITokenizer,
+    eval_prompts: &[EvalPrompt],
+    rhyme_family: &str,
+    max_new_tokens: usize,
+    direction: Option<&ContrastiveDirection>,
+    strength: f32,
+) -> candle_mi::Result<(f32, f32, Vec<EvalResult>)> {
+    let mut per_prompt: Vec<EvalResult> = Vec::with_capacity(eval_prompts.len());
+    let mut hits: usize = 0;
+    let empty_hooks = HookSpec::new();
+
+    // Pre-scale the direction once (avoids per-step tensor allocation of the
+    // scaled vector).  Steering layer + scaled direction are None when
+    // direction is None (baseline pass).
+    let scaled_direction: Option<Tensor> = match direction {
+        Some(d) => Some((&d.vector * f64::from(strength))?),
+        None => None,
+    };
+    let steer_layer: Option<usize> = direction.map(|d| d.layer);
+
+    for (i, eval) in eval_prompts.iter().enumerate() {
+        let initial_tokens = tokenizer.encode(&eval.prompt)?;
+        if initial_tokens.is_empty() {
+            return Err(candle_mi::MIError::Config(format!(
+                "run_eval_pass_generation: eval prompt #{i} encoded to zero tokens"
+            )));
+        }
+        // FIXED position throughout generation: the original prompt's last
+        // token index.  Mirrors Maar's prefill-only steering: that hook fires
+        // when `output.shape[1] != 1` (i.e., during prefill), at
+        // `TOKEN_POS_TO_STEER = -1`.  In candle-mi without KV cache, every
+        // step re-computes from scratch; applying the modification at the
+        // fixed prompt-last index every step reproduces the same effective
+        // state Maar's KV cache carries forward.
+        let prompt_last_pos = initial_tokens.len() - 1;
+        let mut current_tokens: Vec<u32> = initial_tokens;
+
+        for _step in 0..max_new_tokens {
+            let seq_len = current_tokens.len();
+            let input = Tensor::new(&current_tokens[..], model.device())?.unsqueeze(0)?;
+
+            let cache = match (scaled_direction.as_ref(), steer_layer) {
+                (Some(d), Some(layer)) => {
+                    let delta = position_delta(d, prompt_last_pos, seq_len)?;
+                    let mut hooks = HookSpec::new();
+                    hooks.intervene(HookPoint::ResidPost(layer), Intervention::Add(delta));
+                    model.forward(&input, &hooks)?
+                }
+                _ => model.forward(&input, &empty_hooks)?,
+            };
+
+            let last_logits = last_position_logits(cache.output())?;
+            let next_token = argmax_token(&last_logits)?;
+            current_tokens.push(next_token);
+        }
+
+        // BORROW: slice from initial prompt length onward for decoded
+        // generation only.  current_tokens still owns the full sequence.
+        // INDEX: prompt_last_pos + 1 <= current_tokens.len() because we
+        // pushed at least one token if max_new_tokens > 0, and prompt was
+        // non-empty (checked above).
+        let generated_ids = &current_tokens[prompt_last_pos + 1..];
+        let generated_text = tokenizer.decode(generated_ids).unwrap_or_default();
+
+        let last_word = extract_last_word_maar(&generated_text);
+        let is_hit = is_rhyme_hit(&last_word, &eval.target_rhyme_words, rhyme_family);
+        if is_hit {
+            hits += 1;
+        }
+
+        per_prompt.push(EvalResult {
+            prompt: eval.prompt.clone(),
+            target_token: eval.target_token.clone(),
+            p_target: 0.0,
+            top1_token_id: 0,
+            top1_token_text: String::new(),
+            is_hit,
+            generated_text: Some(generated_text),
+            last_word: Some(last_word),
+        });
+    }
+
+    // CAST: usize → f32, lossless for small N.
+    let n = eval_prompts.len() as f32;
+    let hit_rate = if n > 0.0 { hits as f32 / n } else { 0.0 };
+    Ok((0.0_f32, hit_rate, per_prompt))
+}
+
+/// Maar's `get_cleaned_up_text` + `get_last_word_correct` text-extraction
+/// pipeline: take the first `num_lines = 3` lines, strip right-side
+/// non-alphanumeric characters, split on `' '`, take the last word,
+/// lowercase.
+fn extract_last_word_maar(text: &str) -> String {
+    const NUM_LINES: usize = 3;
+    let lines: Vec<&str> = text.split('\n').collect();
+    let kept: String = if lines.len() < NUM_LINES {
+        text.to_owned()
+    } else {
+        lines[..NUM_LINES].join("\n")
+    };
+    // Strip non-alphanumeric chars from the right (Maar's
+    // `remove_non_alphanumeric_characters_from_right`).
+    let trimmed = kept.trim_end_matches(|c: char| !c.is_alphanumeric());
+    // Split on ' ' (exact space, NOT whitespace; matches Maar's `.split(" ")`).
+    let last = trimmed.split(' ').next_back().unwrap_or("");
+    last.to_lowercase()
+}
+
+/// Maar's `get_word_correct`: `last_word` (already lowercased) is a hit
+/// iff it equals any word in `target_rhyme_words` (case-folded, leading
+/// space stripped), OR matches one of the family-specific extensions
+/// (`-ee` extends to words ending in `"y"` or `"ee"`).
+fn is_rhyme_hit(last_word: &str, target_rhyme_words: &[String], rhyme_family: &str) -> bool {
+    let normalised: Vec<String> = target_rhyme_words
+        .iter()
+        .map(|w| w.trim_start().to_lowercase())
+        .collect();
+    if normalised.iter().any(|w| w == last_word) {
+        return true;
+    }
+    // Maar's family-specific extensions (shared_utils.py lines 1375-1380):
+    //   -ing: any word ending in "ing"
+    //   -air: any word ending in "where"
+    //   -ee:  any word ending in "y" or "ee"
+    match rhyme_family {
+        "-ing" => last_word.ends_with("ing"),
+        "-air" => last_word.ends_with("where"),
+        "-ee" => last_word.ends_with('y') || last_word.ends_with("ee"),
+        _ => false,
+    }
 }
 
 /// Slice the last-position logits from a `[1, seq, vocab]` tensor → `[vocab]`.
