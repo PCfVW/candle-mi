@@ -30,6 +30,16 @@ tokenizer fix); the prior implementation silently resolved
 the lookup assumed `BOS` was always prepended — see
 [`src/tokenizer/mod.rs`](../../src/tokenizer/mod.rs) `find_token_id` docstring.
 
+**Note on the 2.5 M Gemma `CLT`**: the `mntss/clt-gemma-2-2b-2.5m`
+`CLT` is also used in the paper (§Q2 / §5 word-level analyses; best
+`P("black") = 0.522` at L25, best ratio `P("kind") = 3.78 × 10¹²×`).
+It does not appear as a separate row in this table because it tests
+the same `Gemma 2 2B` base model as the 426K row above and so is not
+a new cross-size cell.  See
+[§"In-scope vs deferred CLT universe"](#in-scope-vs-deferred-clt-universe)
+below for the full `CLT` inventory across the paper and this
+supporting document.
+
 ## Six findings
 
 ### 1. Planning is observable across all 7 cells
@@ -139,6 +149,14 @@ the inject-only sweep confirms it does (with reduced magnitude).
 
 ## On Maar et al. (2026) "What's the plan?" (Reviewer L1Vb02 critique 2, Reviewer UvuC13)
 
+**Status note (added after v0.1.12 shipped)**: this section was
+written before the v0.1.12 replication was complete; it analyses the
+documentation gap between Maar's paper and supplementary code, and
+was correct as of that point.  The actual replication is in the
+*next* section ("Maar replication — completed in v0.1.12") and
+supersedes the "unverified same-protocol assumption" caveat at the
+end of this section.  Preserved here as provenance.
+
 Both negative reviews cite Maar et al. as a counter-example to our `Q1`
 ("all six steering methods fail").  We checked Maar et al.'s paper
 methodology section carefully:
@@ -231,13 +249,27 @@ Helper scripts: [`scripts/pick_features.py`](../../scripts/pick_features.py)
 
 ## In-scope vs deferred `CLT` universe
 
-In-scope for `v0.1.11`:
+`CLT`s tested in this cross-size sweep (the seven cells in the
+headline table above):
 
 - `mntss/clt-llama-3.2-1b-524k` (paper reference) ✓
 - `mntss/clt-gemma-2-2b-426k` (paper reference) ✓
 - `bluelightai/clt-qwen3-1.7b-base-20k` (rebuttal extension) ✓
 - `bluelightai/clt-qwen3-0.6b-base-20k` (rebuttal extension) ✓
 - `bluelightai-dev/clt-Qwen3-0.6B-Base-16k-test` (`CLT`-width ablation) ✓
+
+Additional `CLT` used in the paper's word-level §Q2 / §5 analyses,
+in-scope for the paper but not a separate cross-size cell here since
+the base model is the same as the 426K row above:
+
+- `mntss/clt-gemma-2-2b-2.5m` (paper word-level reference) ✓ — best
+  redirect `P("black") = 0.522` at L25; best ratio
+  `P("kind") = 3.78 × 10¹²×`.
+
+Total in-scope `CLT` inventory across the paper and this supporting
+document: **6 `CLT`s across 4 base models with `CLT`** (`Llama 3.2 1B`;
+`Gemma 2 2B` with two `CLT` widths; `Qwen3-0.6B-Base` with two `CLT`
+widths; `Qwen3-1.7B-Base`).
 
 Deferred (cited as future work):
 

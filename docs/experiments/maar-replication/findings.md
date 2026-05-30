@@ -47,11 +47,14 @@ generation and question answering*. ICLR 2026 (poster). arXiv 2601.20164.
    that *behavioural* protocols at Marr's Level 1 cannot answer
    intra-planning questions on their own.  Even a *properly done*
    per-architecture strength sweep at Level 1 produces qualitatively
-   different curves across families with no algorithmic explanation
-   available.  Level-2/3 mechanistic methods (CLT features at
-   specific positions at specific layers — our COLM paper's Q2/Q3
-   protocol) are *necessary*, not merely *alternative*, for the
-   "where/when does the model commit?" question.
+   different curves across families; these per-architecture curves
+   are not explained by `‖d‖` scaling or baseline asymmetry alone
+   (§4 H3 rejected, H4 only partial), so an algorithmic explanation
+   requires Level-2/3 tools.  Level-2/3 mechanistic methods (CLT
+   features at specific positions at specific layers, our COLM
+   paper's Q2/Q3 protocol) are *necessary*, not merely
+   *alternative*, for the "where/when does the model commit?"
+   question.
 
 ---
 
@@ -232,8 +235,10 @@ Llama (`m × ‖d‖ ≈ 174` on Gemma vs ≈ 17 on Llama 3B), Gemma
 
 The architectural family difference is qualitative
 (monotonic-inhibition vs non-monotonic-enhancement curve shapes),
-not just quantitative.  This is more than noise at `N = 20` eval
-prompts per cell.
+not just quantitative.  The §8 chance-prior calculation bounds
+the noise contribution at this `N` for the Llama 3B 6/0 flip
+asymmetry; the cross-architecture curve-shape difference is
+correspondingly above that bound.
 
 ### Remaining hypotheses (not testable in v0.1.12 scope)
 
@@ -358,6 +363,23 @@ unit-normalised direction).  Pre-`--metric`-flag schema.  Best L2/s=2
 hit_rate 70%, baseline 60%.  Useful as exploration of the
 candle-mi-internal steering surface; **NOT Maar's protocol** (single-
 forward metric, unit-normalised direction, candle-mi prompts).
+
+**Important — what Run #1's two metrics measure, and what they do
+not refute.**  Run #1's `hit_rate` is a *family-rate* measurement
+(whether the top-1 token at the prompt's last position is in the
+per-prompt rhyme-word *list*), not specific-word top-1.  Run #1's
+`mean_p_target` (probability of a *specific* target word at the
+last position) peaks at P ≈ 7.13 × 10⁻³ at L0/s=1.5: a ~39×
+lift over baseline 1.82 × 10⁻⁴, but still well below top-1
+ranking.  Neither metric contradicts the paper's Appendix A
+"0% target hit" claim, which measures *specific-word* top-1
+redirection at the planning site.  In the Marr-three-levels frame
+introduced in §5, Run #1 sits at Marr Level 1 (family-rate at
+the prompt's last position); the paper's six Appendix A methods
+all measure Level 2/3 (specific-word redirection).  Run #1 is
+therefore a Level-1 exploration of the candle-mi-internal steering
+surface, parallel in epistemic level to Maar's protocol (Run #3),
+not a counter-example to the paper's Level-2/3 negative result.
 
 **Run #2**: `llama32_3b_rhyme_ee_maar_faithful.json` (17 KB).
 Maar's exact protocol (raw direction, generated-couplet metric,
