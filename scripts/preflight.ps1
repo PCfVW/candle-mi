@@ -6,9 +6,19 @@
 # can pass while CI fails on a lint that only the newer compiler knows about
 # (e.g. clippy::suboptimal_flops, added in Rust 1.96). Freshen first, then lint.
 #
-# Usage:  ./scripts/preflight.ps1
+# Usage:  ./scripts/preflight.ps1          # fast: skips the ~90 min hook benches
+#         ./scripts/preflight.ps1 -Full    # full: includes bench_hook_* CPU benches
+#
+# Run the fast path before every push. Run -Full only when adding a new model
+# family — that is the change that can affect the benchmarked forward/hook paths,
+# so the heavy `bench_hook_*` CPU benches (≈90 min) are worth paying for then.
+#
 # Bypass: not recommended — if you must, just don't run it (it is convention,
 #         not an enforced git hook).
+
+param(
+    [switch]$Full
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -50,8 +60,12 @@ Invoke-Step "Clippy (clt)" {
     cargo clippy --no-default-features --features "clt,transformer" -- -W clippy::pedantic
 }
 
+# The bench_hook_* tests are timing benchmarks (~90 min on CPU), not correctness
+# checks. Skip them on the fast path; -Full runs them when a new model family
+# could have shifted the benchmarked forward/hook paths.
+$benchArgs = if ($Full) { @() } else { @("--", "--skip", "bench_hook") }
 Invoke-Step "Tests (transformer)" {
-    cargo test --no-default-features --features transformer
+    cargo test --no-default-features --features transformer @benchArgs
 }
 Invoke-Step "Tests (stoicheia)" {
     cargo test --no-default-features --features stoicheia --lib --test stoicheia_analysis --test validate_stoicheia
