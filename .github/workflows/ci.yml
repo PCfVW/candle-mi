@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # Weekly canary: catches rolling-stable lint breakage between pushes,
+    # so a new compiler emails you instead of ambushing a feature push.
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch: # run the canary on demand
 
 env:
   CARGO_TERM_COLOR: always
@@ -27,6 +32,13 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
           components: clippy, rustfmt
+
+      - name: Record toolchain versions
+        run: |
+          { echo "### Toolchain — ${{ matrix.name }}";
+            echo '```';
+            rustc --version; cargo clippy --version;
+            echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: Swatinem/rust-cache@v2
 
