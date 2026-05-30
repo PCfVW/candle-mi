@@ -318,7 +318,7 @@ fn pearson_abs(a: &[f32], b: &[f32]) -> f32 {
         {
             let da = a[i] - mean_a;
             let db = b[i] - mean_b;
-            cov += da * db;
+            cov = da.mul_add(db, cov);
             var_a = da.mul_add(da, var_a);
             var_b = db.mul_add(db, var_b);
         }
