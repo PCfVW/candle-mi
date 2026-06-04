@@ -13,6 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Gridworld prolepsis experiment — Step 0 scaffolding** (per
+  `docs/roadmaps/PLAN-GRIDWORLD-PROLEPSIS.md`): infrastructure for testing
+  whether the rhyme-planning prolepsis pattern transfers to 2D-gridworld action
+  planning.
+  - `scripts/gridworld_generator.py` — emits gridworld instances with a single
+    unambiguous (Manhattan-distance-dominant) correct first move; balanced
+    across the four cardinal actions by default.
+  - `examples/gridworld_prolepsis` — Step-0 scaffolding: a CLI-selectable
+    action-to-token mapping (`baseline` / `permuted`), the planning-prompt
+    formatter, and a tokenization sanity check confirming the mapped action
+    tokens (`black`, `kind`, `well`, `round`) are single tokens in the
+    Gemma 2 2B vocabulary.
+
 ## [0.1.12] - 2026-05-28
 
 ### Changed
