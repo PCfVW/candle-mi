@@ -158,6 +158,10 @@ name = "means_ends_prolepsis"
 required-features = ["transformer"]
 
 [[example]]
+name = "means_ends_sweep"
+required-features = ["clt", "transformer"]
+
+[[example]]
 name = "maar_contrastive_steering"
 required-features = ["transformer"]
 

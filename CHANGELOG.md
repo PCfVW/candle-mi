@@ -65,6 +65,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     (≥ 0.84 both models); the strict full-vocab top-1 is gated by lexical
     realizability (the model prefers `closed`/`opened` over `shut`). So prolepsis
     transfer is *not* rhyme-only — the gridworld failure was modality.
+  - **Step B — suppress-plus-inject planning-site sweep.**
+    `scripts/means_ends_generator.py --controlled` emits a device-once,
+    order-tagged (`initial_goal` / `goal_initial`), clause-segment-annotated
+    `on_off` set; `examples/means_ends_sweep` runs the figure13-style position ×
+    strength sweep (suppress the committed action feature, inject the alternative;
+    defaults inject `on` = L25:78640 / suppress `off` = L24:92568 from the vocab
+    scan), locating the planning-site spike and anchoring it to clause landmarks
+    via `encode_with_offsets`. Permuting the Initial/Goal order dissociates a
+    goal-bound vs information-completion (STRIPS precondition antecedent) vs
+    output-adjacent planning site.
 
 ## [0.1.12] - 2026-05-28
 

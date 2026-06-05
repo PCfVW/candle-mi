@@ -1,0 +1,674 @@
+[
+  {
+    "id": 0,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "lamp",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The room is dark.",
+      "goal": "We want the room to be bright.",
+      "stem": "Turn the lamp"
+    },
+    "prompt": "The room is dark. We want the room to be bright. Turn the lamp"
+  },
+  {
+    "id": 1,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "lamp",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The room is dark.",
+      "goal": "We want the room to be bright.",
+      "stem": "Turn the lamp"
+    },
+    "prompt": "We want the room to be bright. The room is dark. Turn the lamp"
+  },
+  {
+    "id": 2,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "lamp",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The room is bright.",
+      "goal": "We want the room to be dark.",
+      "stem": "Turn the lamp"
+    },
+    "prompt": "The room is bright. We want the room to be dark. Turn the lamp"
+  },
+  {
+    "id": 3,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "lamp",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The room is bright.",
+      "goal": "We want the room to be dark.",
+      "stem": "Turn the lamp"
+    },
+    "prompt": "We want the room to be dark. The room is bright. Turn the lamp"
+  },
+  {
+    "id": 4,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "heater",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The room is cold.",
+      "goal": "We want the room to be warm.",
+      "stem": "Turn the heater"
+    },
+    "prompt": "The room is cold. We want the room to be warm. Turn the heater"
+  },
+  {
+    "id": 5,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "heater",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The room is cold.",
+      "goal": "We want the room to be warm.",
+      "stem": "Turn the heater"
+    },
+    "prompt": "We want the room to be warm. The room is cold. Turn the heater"
+  },
+  {
+    "id": 6,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "heater",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The room is hot.",
+      "goal": "We want the room to be cool.",
+      "stem": "Turn the heater"
+    },
+    "prompt": "The room is hot. We want the room to be cool. Turn the heater"
+  },
+  {
+    "id": 7,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "heater",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The room is hot.",
+      "goal": "We want the room to be cool.",
+      "stem": "Turn the heater"
+    },
+    "prompt": "We want the room to be cool. The room is hot. Turn the heater"
+  },
+  {
+    "id": 8,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "fan",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The air is stuffy.",
+      "goal": "We want the air to keep moving.",
+      "stem": "Turn the fan"
+    },
+    "prompt": "The air is stuffy. We want the air to keep moving. Turn the fan"
+  },
+  {
+    "id": 9,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "fan",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The air is stuffy.",
+      "goal": "We want the air to keep moving.",
+      "stem": "Turn the fan"
+    },
+    "prompt": "We want the air to keep moving. The air is stuffy. Turn the fan"
+  },
+  {
+    "id": 10,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "fan",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The air is too windy.",
+      "goal": "We want the air to be still.",
+      "stem": "Turn the fan"
+    },
+    "prompt": "The air is too windy. We want the air to be still. Turn the fan"
+  },
+  {
+    "id": 11,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "fan",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The air is too windy.",
+      "goal": "We want the air to be still.",
+      "stem": "Turn the fan"
+    },
+    "prompt": "We want the air to be still. The air is too windy. Turn the fan"
+  },
+  {
+    "id": 12,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "radio",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The room is silent.",
+      "goal": "We want to hear some music.",
+      "stem": "Turn the radio"
+    },
+    "prompt": "The room is silent. We want to hear some music. Turn the radio"
+  },
+  {
+    "id": 13,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "radio",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The room is silent.",
+      "goal": "We want to hear some music.",
+      "stem": "Turn the radio"
+    },
+    "prompt": "We want to hear some music. The room is silent. Turn the radio"
+  },
+  {
+    "id": 14,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "radio",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The room is noisy.",
+      "goal": "We want some silence.",
+      "stem": "Turn the radio"
+    },
+    "prompt": "The room is noisy. We want some silence. Turn the radio"
+  },
+  {
+    "id": 15,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "radio",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The room is noisy.",
+      "goal": "We want some silence.",
+      "stem": "Turn the radio"
+    },
+    "prompt": "We want some silence. The room is noisy. Turn the radio"
+  },
+  {
+    "id": 16,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "television",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "There is news to catch up on.",
+      "goal": "We want to watch the news.",
+      "stem": "Turn the television"
+    },
+    "prompt": "There is news to catch up on. We want to watch the news. Turn the television"
+  },
+  {
+    "id": 17,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "television",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "There is news to catch up on.",
+      "goal": "We want to watch the news.",
+      "stem": "Turn the television"
+    },
+    "prompt": "We want to watch the news. There is news to catch up on. Turn the television"
+  },
+  {
+    "id": 18,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "television",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The show is over.",
+      "goal": "We want some quiet.",
+      "stem": "Turn the television"
+    },
+    "prompt": "The show is over. We want some quiet. Turn the television"
+  },
+  {
+    "id": 19,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "television",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The show is over.",
+      "goal": "We want some quiet.",
+      "stem": "Turn the television"
+    },
+    "prompt": "We want some quiet. The show is over. Turn the television"
+  },
+  {
+    "id": 20,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "oven",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The dough is raw.",
+      "goal": "We want to bake the bread.",
+      "stem": "Turn the oven"
+    },
+    "prompt": "The dough is raw. We want to bake the bread. Turn the oven"
+  },
+  {
+    "id": 21,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "oven",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The dough is raw.",
+      "goal": "We want to bake the bread.",
+      "stem": "Turn the oven"
+    },
+    "prompt": "We want to bake the bread. The dough is raw. Turn the oven"
+  },
+  {
+    "id": 22,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "oven",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The bread is baked.",
+      "goal": "We want to stop the heat.",
+      "stem": "Turn the oven"
+    },
+    "prompt": "The bread is baked. We want to stop the heat. Turn the oven"
+  },
+  {
+    "id": 23,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "oven",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The bread is baked.",
+      "goal": "We want to stop the heat.",
+      "stem": "Turn the oven"
+    },
+    "prompt": "We want to stop the heat. The bread is baked. Turn the oven"
+  },
+  {
+    "id": 24,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "kettle",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The water is cold.",
+      "goal": "We want to boil the water.",
+      "stem": "Turn the kettle"
+    },
+    "prompt": "The water is cold. We want to boil the water. Turn the kettle"
+  },
+  {
+    "id": 25,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "kettle",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The water is cold.",
+      "goal": "We want to boil the water.",
+      "stem": "Turn the kettle"
+    },
+    "prompt": "We want to boil the water. The water is cold. Turn the kettle"
+  },
+  {
+    "id": 26,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "kettle",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The water is boiling.",
+      "goal": "We want to stop the boiling.",
+      "stem": "Turn the kettle"
+    },
+    "prompt": "The water is boiling. We want to stop the boiling. Turn the kettle"
+  },
+  {
+    "id": 27,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "kettle",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The water is boiling.",
+      "goal": "We want to stop the boiling.",
+      "stem": "Turn the kettle"
+    },
+    "prompt": "We want to stop the boiling. The water is boiling. Turn the kettle"
+  },
+  {
+    "id": 28,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "computer",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "There is work to do.",
+      "goal": "We want to start working.",
+      "stem": "Turn the computer"
+    },
+    "prompt": "There is work to do. We want to start working. Turn the computer"
+  },
+  {
+    "id": 29,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "computer",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "There is work to do.",
+      "goal": "We want to start working.",
+      "stem": "Turn the computer"
+    },
+    "prompt": "We want to start working. There is work to do. Turn the computer"
+  },
+  {
+    "id": 30,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "computer",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The work is done.",
+      "goal": "We want to save power.",
+      "stem": "Turn the computer"
+    },
+    "prompt": "The work is done. We want to save power. Turn the computer"
+  },
+  {
+    "id": 31,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "computer",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The work is done.",
+      "goal": "We want to save power.",
+      "stem": "Turn the computer"
+    },
+    "prompt": "We want to save power. The work is done. Turn the computer"
+  },
+  {
+    "id": 32,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "printer",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "A page needs printing.",
+      "goal": "We want to print the page.",
+      "stem": "Turn the printer"
+    },
+    "prompt": "A page needs printing. We want to print the page. Turn the printer"
+  },
+  {
+    "id": 33,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "printer",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "A page needs printing.",
+      "goal": "We want to print the page.",
+      "stem": "Turn the printer"
+    },
+    "prompt": "We want to print the page. A page needs printing. Turn the printer"
+  },
+  {
+    "id": 34,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "printer",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The printing is finished.",
+      "goal": "We want to save power.",
+      "stem": "Turn the printer"
+    },
+    "prompt": "The printing is finished. We want to save power. Turn the printer"
+  },
+  {
+    "id": 35,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "printer",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The printing is finished.",
+      "goal": "We want to save power.",
+      "stem": "Turn the printer"
+    },
+    "prompt": "We want to save power. The printing is finished. Turn the printer"
+  },
+  {
+    "id": 36,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "speaker",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The room is quiet.",
+      "goal": "We want to play some music.",
+      "stem": "Turn the speaker"
+    },
+    "prompt": "The room is quiet. We want to play some music. Turn the speaker"
+  },
+  {
+    "id": 37,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "speaker",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The room is quiet.",
+      "goal": "We want to play some music.",
+      "stem": "Turn the speaker"
+    },
+    "prompt": "We want to play some music. The room is quiet. Turn the speaker"
+  },
+  {
+    "id": 38,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "speaker",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The music is too loud.",
+      "goal": "We want some quiet.",
+      "stem": "Turn the speaker"
+    },
+    "prompt": "The music is too loud. We want some quiet. Turn the speaker"
+  },
+  {
+    "id": 39,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "speaker",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The music is too loud.",
+      "goal": "We want some quiet.",
+      "stem": "Turn the speaker"
+    },
+    "prompt": "We want some quiet. The music is too loud. Turn the speaker"
+  },
+  {
+    "id": 40,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "projector",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The screen is blank.",
+      "goal": "We want to show the slides.",
+      "stem": "Turn the projector"
+    },
+    "prompt": "The screen is blank. We want to show the slides. Turn the projector"
+  },
+  {
+    "id": 41,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "projector",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The screen is blank.",
+      "goal": "We want to show the slides.",
+      "stem": "Turn the projector"
+    },
+    "prompt": "We want to show the slides. The screen is blank. Turn the projector"
+  },
+  {
+    "id": 42,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "projector",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The slides are finished.",
+      "goal": "We want a dark screen.",
+      "stem": "Turn the projector"
+    },
+    "prompt": "The slides are finished. We want a dark screen. Turn the projector"
+  },
+  {
+    "id": 43,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "projector",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The slides are finished.",
+      "goal": "We want a dark screen.",
+      "stem": "Turn the projector"
+    },
+    "prompt": "We want a dark screen. The slides are finished. Turn the projector"
+  },
+  {
+    "id": 44,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "stove",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The food is raw.",
+      "goal": "We want to cook the food.",
+      "stem": "Turn the stove"
+    },
+    "prompt": "The food is raw. We want to cook the food. Turn the stove"
+  },
+  {
+    "id": 45,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "stove",
+    "correct": "on",
+    "alternative": "off",
+    "segments": {
+      "initial": "The food is raw.",
+      "goal": "We want to cook the food.",
+      "stem": "Turn the stove"
+    },
+    "prompt": "We want to cook the food. The food is raw. Turn the stove"
+  },
+  {
+    "id": 46,
+    "family": "on_off",
+    "order": "initial_goal",
+    "device": "stove",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The food is cooked.",
+      "goal": "We want to stop cooking.",
+      "stem": "Turn the stove"
+    },
+    "prompt": "The food is cooked. We want to stop cooking. Turn the stove"
+  },
+  {
+    "id": 47,
+    "family": "on_off",
+    "order": "goal_initial",
+    "device": "stove",
+    "correct": "off",
+    "alternative": "on",
+    "segments": {
+      "initial": "The food is cooked.",
+      "goal": "We want to stop cooking.",
+      "stem": "Turn the stove"
+    },
+    "prompt": "We want to stop cooking. The food is cooked. Turn the stove"
+  }
+]

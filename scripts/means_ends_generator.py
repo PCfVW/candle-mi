@@ -119,6 +119,74 @@ FAMILIES = {
 }
 
 
+# --- Step B controlled set (on_off only) -------------------------------------
+#
+# Device-once: the device is named only in the stem ("Turn the {device}"); the
+# state and goal clauses describe the *world* (no device token), so the
+# planning-site spike can be attributed to a clause without a repeated device
+# mention. World-state framing also avoids pronoun anaphora that would bind to
+# the wrong noun in one of the two orders. Each device has a (state, goal) for
+# the "on" direction and for the "off" direction.
+CONTROLLED_OUTPUT = "docs/experiments/means-ends-prolepsis/step_b_items.json"
+
+CONTROLLED_ON_OFF = {
+    "lamp": {"on": ("The room is dark.", "We want the room to be bright."),
+             "off": ("The room is bright.", "We want the room to be dark.")},
+    "heater": {"on": ("The room is cold.", "We want the room to be warm."),
+               "off": ("The room is hot.", "We want the room to be cool.")},
+    "fan": {"on": ("The air is stuffy.", "We want the air to keep moving."),
+            "off": ("The air is too windy.", "We want the air to be still.")},
+    "radio": {"on": ("The room is silent.", "We want to hear some music."),
+              "off": ("The room is noisy.", "We want some silence.")},
+    "television": {"on": ("There is news to catch up on.", "We want to watch the news."),
+                   "off": ("The show is over.", "We want some quiet.")},
+    "oven": {"on": ("The dough is raw.", "We want to bake the bread."),
+             "off": ("The bread is baked.", "We want to stop the heat.")},
+    "kettle": {"on": ("The water is cold.", "We want to boil the water."),
+               "off": ("The water is boiling.", "We want to stop the boiling.")},
+    "computer": {"on": ("There is work to do.", "We want to start working."),
+                 "off": ("The work is done.", "We want to save power.")},
+    "printer": {"on": ("A page needs printing.", "We want to print the page."),
+                "off": ("The printing is finished.", "We want to save power.")},
+    "speaker": {"on": ("The room is quiet.", "We want to play some music."),
+                "off": ("The music is too loud.", "We want some quiet.")},
+    "projector": {"on": ("The screen is blank.", "We want to show the slides."),
+                  "off": ("The slides are finished.", "We want a dark screen.")},
+    "stove": {"on": ("The food is raw.", "We want to cook the food."),
+              "off": ("The food is cooked.", "We want to stop cooking.")},
+}
+
+
+def build_controlled():
+    """Build the ~48-item Step-B on_off set: each device x direction x order,
+    device-once, segment-annotated, prompt ending at the planning site."""
+    items = []
+    idx = 0
+    for device, directions in CONTROLLED_ON_OFF.items():
+        stem = f"Turn the {device}"
+        for direction in ("on", "off"):
+            state, goal = directions[direction]
+            alternative = "off" if direction == "on" else "on"
+            for order in ("initial_goal", "goal_initial"):
+                prompt = (
+                    f"{state} {goal} {stem}"
+                    if order == "initial_goal"
+                    else f"{goal} {state} {stem}"
+                )
+                items.append({
+                    "id": idx,
+                    "family": "on_off",
+                    "order": order,
+                    "device": device,
+                    "correct": direction,
+                    "alternative": alternative,
+                    "segments": {"initial": state, "goal": goal, "stem": stem},
+                    "prompt": prompt,
+                })
+                idx += 1
+    return items
+
+
 def render(device, state_token, goal, stem, template_idx):
     """Render one prompt; ends at the planning site (no trailing space)."""
     state = f"The {device} is {state_token}."
@@ -172,13 +240,39 @@ def balanced_sample(by_group, num_instances, rng):
     return chosen
 
 
+def write_items(items, output):
+    """Write the item list to `output` (pretty JSON, trailing newline)."""
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with open(output, "w", encoding="utf-8") as f:
+        json.dump(items, f, indent=2)
+        f.write("\n")
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--num-instances", type=int, default=200)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--output", type=Path, default=Path(DEFAULT_OUTPUT))
+    parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument(
+        "--controlled",
+        action="store_true",
+        help="emit the Step-B controlled on_off set (device-once, order-tagged, "
+        "segment-annotated) instead of the balanced Step-A set",
+    )
     args = parser.parse_args()
+
+    if args.controlled:
+        output = args.output or Path(CONTROLLED_OUTPUT)
+        items = build_controlled()
+        write_items(items, output)
+        order_counts = Counter(i["order"] for i in items)
+        tok_counts = Counter((i["order"], i["correct"]) for i in items)
+        print(f"Wrote {len(items)} controlled on_off items to {output}", file=sys.stderr)
+        print(f"Per-order: {dict(sorted(order_counts.items()))}", file=sys.stderr)
+        summary = ", ".join(f"{o}:{t}={n}" for (o, t), n in sorted(tok_counts.items()))
+        print(f"Per-(order,token): {summary}", file=sys.stderr)
+        return
 
     if args.num_instances < 1:
         parser.error("--num-instances must be >= 1")
@@ -187,17 +281,12 @@ def main():
     by_group = build_all()
     items = balanced_sample(by_group, args.num_instances, rng)
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    with open(args.output, "w", encoding="utf-8") as f:
-        json.dump(items, f, indent=2)
-        f.write("\n")
+    output = args.output or Path(DEFAULT_OUTPUT)
+    write_items(items, output)
 
     fam_counts = Counter(i["family"] for i in items)
     tok_counts = Counter((i["family"], i["correct"]) for i in items)
-    print(
-        f"Wrote {len(items)} items (seed {args.seed}) to {args.output}",
-        file=sys.stderr,
-    )
+    print(f"Wrote {len(items)} items (seed {args.seed}) to {output}", file=sys.stderr)
     print(f"Per-family: {dict(sorted(fam_counts.items()))}", file=sys.stderr)
     summary = ", ".join(f"{fam}:{tok}={n}" for (fam, tok), n in sorted(tok_counts.items()))
     print(f"Per-(family,token): {summary}", file=sys.stderr)

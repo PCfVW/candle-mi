@@ -110,6 +110,24 @@ adjudicates "genuine proleptic planning" (early, on the goal clause) versus
 permutation is viable; it is designed and de-risked but **not yet built**. After
 that: the irrevocability test (Appendix-G analogue) and a write-up.
 
+## Step B status (in progress — condition revision needed)
+
+The suppress-plus-inject harness exists (`scripts/means_ends_generator.py
+--controlled` → `step_b_items.json`; `examples/means_ends_sweep.rs`; inject
+`on` = L25:78640 / suppress `off` = L24:92568). The first run found the redirect
+spike **only at the final/readout token, flat at every prompt position,
+order-invariant**. **This is a condition artifact, not a prolepsis verdict:** our
+prompt ends with the action token as the *immediate next token*, so the planning
+site and the readout collapse — there are no intervening tokens to "write
+toward," unlike Anthropic's poem (whose planning site is the newline *before* the
+already-written line, separated from the rhyme word by the line). Anthropic's
+Fig 13 is itself a fixed-prompt steering-location sweep, and candle-mi's
+`figure13_planning_poems` shares that valid structure — **the flaw is specific to
+the means-ends prompt having no span between commit and output.** Fix: redesign
+so the action ends a *generated* span (a justification/phrase), then sweep the
+pre-span planning site. (TODO: confirm figure13's spike sits at the early
+planning-site position.)
+
 ## Provenance
 
 Commits (on `main`, unpushed): `da1216a` Step 0 · `40171ff` Step A (gridworld
