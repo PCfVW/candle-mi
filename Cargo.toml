@@ -166,6 +166,10 @@ name = "commitment_onset"
 required-features = ["clt", "transformer"]
 
 [[example]]
+name = "contrastive_patch"
+required-features = ["transformer"]
+
+[[example]]
 name = "maar_contrastive_steering"
 required-features = ["transformer"]
 

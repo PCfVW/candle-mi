@@ -1,0 +1,98 @@
+[
+  {
+    "id": 0,
+    "family": "on_off",
+    "device": "lamp",
+    "entity": "room",
+    "clean_prompt": "We want the room to be bright. Turn the lamp",
+    "corrupt_prompt": "We want the room to be dark. Turn the lamp",
+    "clean_action": "on",
+    "corrupt_action": "off",
+    "goal_clean": "bright",
+    "goal_corrupt": "dark"
+  },
+  {
+    "id": 1,
+    "family": "on_off",
+    "device": "heater",
+    "entity": "room",
+    "clean_prompt": "We want the room to be warm. Turn the heater",
+    "corrupt_prompt": "We want the room to be cool. Turn the heater",
+    "clean_action": "on",
+    "corrupt_action": "off",
+    "goal_clean": "warm",
+    "goal_corrupt": "cool"
+  },
+  {
+    "id": 2,
+    "family": "on_off",
+    "device": "oven",
+    "entity": "oven",
+    "clean_prompt": "We want the oven to be hot. Turn the oven",
+    "corrupt_prompt": "We want the oven to be cold. Turn the oven",
+    "clean_action": "on",
+    "corrupt_action": "off",
+    "goal_clean": "hot",
+    "goal_corrupt": "cold"
+  },
+  {
+    "id": 3,
+    "family": "on_off",
+    "device": "stove",
+    "entity": "stove",
+    "clean_prompt": "We want the stove to be hot. Turn the stove",
+    "corrupt_prompt": "We want the stove to be cold. Turn the stove",
+    "clean_action": "on",
+    "corrupt_action": "off",
+    "goal_clean": "hot",
+    "goal_corrupt": "cold"
+  },
+  {
+    "id": 4,
+    "family": "on_off",
+    "device": "kettle",
+    "entity": "water",
+    "clean_prompt": "We want the water to be hot. Turn the kettle",
+    "corrupt_prompt": "We want the water to be cold. Turn the kettle",
+    "clean_action": "on",
+    "corrupt_action": "off",
+    "goal_clean": "hot",
+    "goal_corrupt": "cold"
+  },
+  {
+    "id": 5,
+    "family": "on_off",
+    "device": "radio",
+    "entity": "room",
+    "clean_prompt": "We want the room to be loud. Turn the radio",
+    "corrupt_prompt": "We want the room to be quiet. Turn the radio",
+    "clean_action": "on",
+    "corrupt_action": "off",
+    "goal_clean": "loud",
+    "goal_corrupt": "quiet"
+  },
+  {
+    "id": 6,
+    "family": "on_off",
+    "device": "speaker",
+    "entity": "room",
+    "clean_prompt": "We want the room to be loud. Turn the speaker",
+    "corrupt_prompt": "We want the room to be quiet. Turn the speaker",
+    "clean_action": "on",
+    "corrupt_action": "off",
+    "goal_clean": "loud",
+    "goal_corrupt": "quiet"
+  },
+  {
+    "id": 7,
+    "family": "on_off",
+    "device": "projector",
+    "entity": "screen",
+    "clean_prompt": "We want the screen to be bright. Turn the projector",
+    "corrupt_prompt": "We want the screen to be dark. Turn the projector",
+    "clean_action": "on",
+    "corrupt_action": "off",
+    "goal_clean": "bright",
+    "goal_corrupt": "dark"
+  }
+]

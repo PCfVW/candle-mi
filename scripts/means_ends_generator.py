@@ -157,6 +157,53 @@ CONTROLLED_ON_OFF = {
 }
 
 
+CONTRASTIVE_OUTPUT = "docs/experiments/means-ends-prolepsis/step_b_contrastive_pairs.json"
+
+# Goal-only minimal contrastive pairs for activation patching. Each device pairs
+# an on-goal (clean) and an off-goal (corrupt) single-token antonym in one fixed
+# frame, so the two prompts differ at EXACTLY the goal word (token-aligned). No
+# state clause: the goal alone determines the action, isolating the goal signal.
+# (device, entity, on_goal, off_goal)
+CONTRASTIVE_DEVICES = [
+    ("lamp", "room", "bright", "dark"),
+    ("heater", "room", "warm", "cool"),
+    ("oven", "oven", "hot", "cold"),
+    ("stove", "stove", "hot", "cold"),
+    ("kettle", "water", "hot", "cold"),
+    ("radio", "room", "loud", "quiet"),
+    ("speaker", "room", "loud", "quiet"),
+    ("projector", "screen", "bright", "dark"),
+]
+
+CONTRASTIVE_FRAME = "We want the {entity} to be {goal}. Turn the {device}"
+
+
+def build_contrastive():
+    """Build token-aligned clean/corrupt goal-flip pairs (on-goal vs off-goal).
+
+    Each pair shares the frame and differs at exactly the goal word, so patching
+    a residual at position p is well defined. The Rust side re-validates
+    token-alignment and competence and prunes any pair that fails.
+    """
+    items = []
+    for idx, (device, entity, on_goal, off_goal) in enumerate(CONTRASTIVE_DEVICES):
+        clean = CONTRASTIVE_FRAME.format(entity=entity, goal=on_goal, device=device)
+        corrupt = CONTRASTIVE_FRAME.format(entity=entity, goal=off_goal, device=device)
+        items.append({
+            "id": idx,
+            "family": "on_off",
+            "device": device,
+            "entity": entity,
+            "clean_prompt": clean,
+            "corrupt_prompt": corrupt,
+            "clean_action": "on",
+            "corrupt_action": "off",
+            "goal_clean": on_goal,
+            "goal_corrupt": off_goal,
+        })
+    return items
+
+
 def build_controlled():
     """Build the ~48-item Step-B on_off set: each device x direction x order,
     device-once, segment-annotated, prompt ending at the planning site."""
@@ -260,7 +307,22 @@ def main():
         help="emit the Step-B controlled on_off set (device-once, order-tagged, "
         "segment-annotated) instead of the balanced Step-A set",
     )
+    parser.add_argument(
+        "--contrastive",
+        action="store_true",
+        help="emit goal-only token-aligned clean/corrupt pairs for activation "
+        "patching (bright/dark goal flip; no state clause)",
+    )
     args = parser.parse_args()
+
+    if args.contrastive:
+        output = args.output or Path(CONTRASTIVE_OUTPUT)
+        items = build_contrastive()
+        write_items(items, output)
+        print(f"Wrote {len(items)} contrastive pairs to {output}", file=sys.stderr)
+        for it in items:
+            print(f"  {it['device']:<10} clean={it['goal_clean']:<6} corrupt={it['goal_corrupt']}", file=sys.stderr)
+        return
 
     if args.controlled:
         output = args.output or Path(CONTROLLED_OUTPUT)

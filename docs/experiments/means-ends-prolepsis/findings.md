@@ -197,6 +197,36 @@ a CLT-free per-layer MLP/attention direct-logit-attribution at the planning site
 genuinely absent (GemmaScope stays strict), so the encoder/`encode()` path works
 for these CLTs.
 
+### Causal mirror — contrastive activation patching (CLT-free)
+
+`examples/contrastive_patch` (no CLT) patches the clean residual into a
+token-aligned `bright`/`dark` goal-flip pair (`means_ends_generator.py
+--contrastive`, goal-only frame `"We want the {entity} to be {goal}. Turn the
+{device}"`) at each `(position, layer)` and measures restoration of the action
+logit-diff `logit(on) − logit(off)`. The **causal onset** = the layer at which
+patching the **planning-site (last) token alone** restores ≥ 50 % of the
+clean-vs-corrupt gap. Pairs are kept when the goal flip flips the on/off
+preference (`clean_d > 0 > corrupt_d`).
+
+| Base model (n_layers) | causal onset (patch) | logit-lens onset (readout) | kept |
+|---|---:|---:|---:|
+| Gemma 2 2B (26) | **0.58** | 0.83 | 7/8 |
+| Llama 3.2 1B (16) | **0.66** | 0.81 | 6/8 |
+| Qwen3-1.7B (28) | **0.61** | 0.89 | 7/8 |
+| Qwen3-0.6B (28) | 0.61 | 0.79 | 2/8 |
+
+**In every model the goal-determined action signal is *causally* present at the
+decision token ~3–8 layers (0.15–0.28 of depth) BEFORE the action surfaces as the
+top-1 readout.** This is **compute-then-readout**, causal and CLT-free: the
+goal→action composition completes mid-stack (~0.58–0.66 depth) and the late
+logit-lens onset (~0.79–0.89) is a *lexicalization lag*, not late computation — so
+the means-ends action is genuinely *computed* from the goal, not retrieved.
+Caveats: Qwen3-0.6B kept only 2/8 pairs (the goal-only preference-flip gate is
+strict on the smallest model) — suggestive, not robust; the two onsets use
+different thresholds (patch recovery ≥ 0.5 vs first top-1), so the *direction* and
+the ~3–8-layer gap are the robust claim, not the exact depths. The mechanism split
+(MLP vs attention DLA) is the deliberate next step, not done here.
+
 ## Provenance
 
 Commits (on `main`, unpushed): `da1216a` Step 0 · `40171ff` Step A (gridworld

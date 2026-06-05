@@ -90,6 +90,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     (`means_ends_sweep --clt-repo/--feature-on/--feature-off`), with on/off inject
     features picked per CLT from a vocab scan — putting the action cell on the
     same minimum-architecture footing as the rhyme cells.
+  - **Contrastive activation patching (CLT-free)** (`examples/contrastive_patch`,
+    `means_ends_generator.py --contrastive`): the no-CLT causal mirror — patch the
+    clean residual into a token-aligned `bright`/`dark` goal-flip pair at each
+    (position, layer) and measure restoration of the action logit-diff
+    `logit(on) − logit(off)`. Yields a *causal* onset (planning-site recovery
+    layer) to compare against the logit-lens onset, and traces where the goal
+    signal flows — all without a CLT.
   - **Commitment-onset layer** (`examples/commitment_onset`,
     `scripts/pick_per_layer_feature.py`): at the planning site, measures the
     layer at which the committed token is decided, two complementary ways —
