@@ -159,18 +159,37 @@ two ways: **logit-lens** P(committed) by layer (onset = first top-1 layer) and t
 **CLT feature-activation** of the per-layer best-encoding feature (onset = first
 layer above 0).
 
-| Cell | n_layers | logit-lens onset | CLT-act onset | depth (LL / CLT) |
-|---|---:|---|---|---|
-| Gemma 2.5M | 26 | L21.5 (46/48) | L24 (4/48) | 0.83 / 0.92 |
-| Gemma 426K | 26 | L21.5 (46/48) | L22 (18/48) | 0.83 / 0.85 |
-| Llama 524K | 16 | L13 (43/48) | L12 (24/48) | 0.81 / 0.75 |
+| Base model (CLT) | n_layers | logit-lens onset | CLT-act onset | depth (LL) |
+|---|---:|---|---|---:|
+| Gemma 2 2B (2.5M) | 26 | L21.5 (46/48) | L24 (4/48) | **0.83** |
+| Gemma 2 2B (426K) | 26 | L21.5 (46/48) | L22 (18/48) | **0.83** |
+| Llama 3.2 1B (524K) | 16 | L13 (43/48) | L12 (24/48) | **0.81** |
+| Qwen3-1.7B (20K) | 28 | L25 (46/48) | L16 (41/48) | **0.89** |
+| Qwen3-0.6B (20K) | 28 | L22 (48/48) | L25 (36/48) | **0.79** |
 
-**The action commitment forms late — the last ~15–25% of layers — and the two
-independent signals agree to within 1–2.5 layers everywhere.** So: *committed at
-the planning site (early in sequence), computed late in depth, at the decision
-token.* Caveat: CLT-act onset is over the subset of items whose committed-token
-feature actually fires (low for the weak `off`-side features); the logit-lens
-onset (46/46/43 of 48) is the robust primary, CLT-act corroborates.
+**The action commitment forms late and remarkably consistently — 0.79–0.89 of
+depth across four base models (0.6B→2B) and three families (Gemma, Llama,
+Qwen3).** So: *committed at the planning site (early in sequence), computed late
+in depth, at the decision token.*
+
+**Rhyme vs action — same depth.** The one cleanly-comparable rhyme cell (Llama
+3.2 1B `-ee` poem, planned word " see", `commitment_onset --prompt`) commits at
+**L14/16 = 0.875** — squarely in the action band. So on the same model, rhyme and
+action crystallize at the *same* late depth. (Qwen3 base models do **not** greedily
+produce a rhyme at the planning site on the figure13 poems — argmax is a
+subword/function continuation, `est`/`the` — so no clean natural-rhyme-onset
+there; they are *steerable* to a rhyme, that's the figure13 result, but not
+naturally planning one. Llama is the clean rhyme cell.)
+
+**CLT-act is a secondary, noisy signal — read logit-lens as primary.** It is
+computed over the subset of items whose committed-token feature fires, with a
+lenient `>0` threshold and possible contextual bleed (the state clause contains
+`on`/`off`). It corroborates logit-lens on Gemma/Llama (±1–2.5 layers) but
+**diverges on Qwen3** in *both* directions (1.7B: CLT-act L16 *before* logit-lens
+L25 — the tantalizing compute-then-readout shape; 0.6B: CLT-act L25 *after* L22).
+We therefore do **not** claim compute-then-readout from CLT-act; the clean test is
+a CLT-free per-layer MLP/attention direct-logit-attribution at the planning site
+(does an MLP write the action direction in mid-layers before it surfaces?).
 
 **Tooling note.** The mntss Gemma CLTs are mis-flagged `CltSplitJumpReLU` by the
 `features/index.json.gz` sidecar heuristic but ship plain-ReLU encoders (no

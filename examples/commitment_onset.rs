@@ -27,9 +27,9 @@
 //!     --per-layer-features docs/experiments/means-ends-prolepsis/per_layer_features_gemma2_2b_2.5m.json \
 //!     --output docs/experiments/means-ends-prolepsis/onset_gemma2_2b_2.5m.json
 //!
-//! # a single rhyme prompt (committed token given explicitly)
+//! # a single rhyme prompt (committed token defaults to the planning-site argmax)
 //! cargo run --release --features clt,transformer,mmap --example commitment_onset -- \
-//!     --prompt "<poem>" --committed-token " that" \
+//!     --prompt "<poem>" \
 //!     --per-layer-features <scan_per_layer.json> --output <out.json>
 //! ```
 
@@ -68,12 +68,15 @@ struct Args {
     #[arg(long)]
     items: Option<PathBuf>,
 
-    /// Single prompt (rhyme cells); requires `--committed-token`.
+    /// Single prompt (rhyme cells), mutually exclusive with `--items`. The
+    /// committed token defaults to the planning-site argmax unless
+    /// `--committed-token` is given.
     #[arg(long)]
     prompt: Option<String>,
 
-    /// Committed token for `--prompt` mode (e.g. `" that"`); also overrides the
-    /// per-item `correct` if given.
+    /// Committed token (e.g. `" that"`). Optional: in `--prompt` mode it defaults
+    /// to the model's final-layer top-1 at the planning site; in `--items` mode
+    /// it overrides each item's `correct` if given.
     #[arg(long)]
     committed_token: Option<String>,
 
@@ -208,15 +211,11 @@ fn capture_item(
     item: &Item,
     n_layers: usize,
     committed_override: Option<&str>,
+    derive_argmax: bool,
 ) -> candle_mi::Result<ItemCapture> {
     let tokenizer = model
         .tokenizer()
         .ok_or_else(|| candle_mi::MIError::Tokenizer("model has no bundled tokenizer".into()))?;
-    // BORROW: committed token string — the item's `correct`, or the override.
-    let correct = committed_override
-        .unwrap_or(item.correct.as_str())
-        .to_owned();
-    let committed_id = tokenizer.find_token_id(&correct)?;
 
     let mut hooks = HookSpec::new();
     for layer in 0..n_layers {
@@ -243,12 +242,50 @@ fn capture_item(
         resid_post.push(rp);
         resid_mid.push(rm);
     }
+
+    // Resolve the committed token: either the model's own final-layer top-1 at
+    // the planning site (rhyme cells, where the planned word is not known a
+    // priori), or the supplied token / the item's `correct` (means-ends).
+    let (correct, committed_id) = if derive_argmax {
+        let last = resid_post
+            .get(n_layers - 1)
+            .ok_or_else(|| candle_mi::MIError::Config("no final-layer residual captured".into()))?;
+        let id = argmax_vocab(model, last)?;
+        (tokenizer.decode_token(id)?, id)
+    } else {
+        // BORROW: committed token string — the override, else the item's `correct`.
+        let s = committed_override
+            .unwrap_or(item.correct.as_str())
+            .to_owned();
+        let id = tokenizer.find_token_id(&s)?;
+        (s, id)
+    };
+
     Ok(ItemCapture {
         correct,
         committed_id,
         resid_post,
         resid_mid,
     })
+}
+
+/// Vocab argmax of a planning-site residual via the unembedding.
+fn argmax_vocab(model: &MIModel, resid_post: &Tensor) -> candle_mi::Result<u32> {
+    let hidden = resid_post.unsqueeze(0)?; // [1, hidden]
+    let logits = model.project_to_vocab(&hidden)?;
+    // PROMOTE: argmax in F32 for numerical stability.
+    let v: Vec<f32> = logits
+        .to_dtype(candle_core::DType::F32)?
+        .flatten_all()?
+        .to_vec1()?;
+    let idx = v
+        .iter()
+        .enumerate()
+        .max_by(|a, b| a.1.total_cmp(b.1))
+        .map(|(i, _)| i)
+        .ok_or_else(|| candle_mi::MIError::Config("empty logits vector".into()))?;
+    u32::try_from(idx)
+        .map_err(|e| candle_mi::MIError::Config(format!("argmax index {idx} exceeds u32: {e}")))
 }
 
 // ── Phase 2 helpers: per-layer logit-lens and CLT activation ───────────────────
@@ -308,11 +345,10 @@ fn run() -> candle_mi::Result<()> {
             candle_mi::MIError::Config(format!("failed to parse {}: {e}", items_path.display()))
         })?
     } else if let Some(ref prompt) = args.prompt {
-        let correct = args.committed_token.clone().ok_or_else(|| {
-            candle_mi::MIError::Config("--prompt requires --committed-token".into())
-        })?;
+        // `--committed-token` optional in prompt mode: when absent the committed
+        // token defaults to the model's final-layer top-1 at the planning site.
         vec![Item {
-            correct,
+            correct: args.committed_token.clone().unwrap_or_default(),
             prompt: prompt.clone(),
         }]
     } else {
@@ -320,6 +356,10 @@ fn run() -> candle_mi::Result<()> {
             "provide --items or --prompt".into(),
         ));
     };
+    // Derive the committed token from the final-layer argmax only in prompt mode
+    // with no explicit `--committed-token` (rhyme cells); means-ends items always
+    // carry their `correct` action.
+    let derive_argmax = args.items.is_none() && args.committed_token.is_none();
 
     let per_layer: PerLayerFeatures = {
         let json = read_to_string(&args.per_layer_features)?;
@@ -351,7 +391,19 @@ fn run() -> candle_mi::Result<()> {
     };
     let mut caps: Vec<ItemCapture> = Vec::with_capacity(items.len());
     for item in &items {
-        caps.push(capture_item(&model, item, n_layers, committed_override)?);
+        caps.push(capture_item(
+            &model,
+            item,
+            n_layers,
+            committed_override,
+            derive_argmax,
+        )?);
+    }
+    if derive_argmax && let Some(first) = caps.first() {
+        eprintln!(
+            "  committed token (final-layer argmax): {:?}",
+            first.correct
+        );
     }
 
     // --- Phase 2: per-layer logit-lens + CLT activation ---
