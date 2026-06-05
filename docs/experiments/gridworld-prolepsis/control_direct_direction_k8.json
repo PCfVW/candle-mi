@@ -1,0 +1,4370 @@
+{
+  "model": "google/gemma-2-2b",
+  "mapping_name": "baseline",
+  "mapping": [
+    {
+      "action": "Up",
+      "token": "Up",
+      "token_id": 3930
+    },
+    {
+      "action": "Down",
+      "token": "Down",
+      "token_id": 7285
+    },
+    {
+      "action": "Left",
+      "token": "Left",
+      "token_id": 22280
+    },
+    {
+      "action": "Right",
+      "token": "Right",
+      "token_id": 11265
+    }
+  ],
+  "grid_size": 5,
+  "few_shot": 8,
+  "seed": 0,
+  "threshold": 0.8,
+  "prompt_format": "Grid: {N}x{N}. Agent: ({ax},{ay}). Goal: ({gx},{gy}). Walls: none.\nMap: Up→{up}, Down→{down}, Left→{left}, Right→{right}.\nBest next move ({up}/{down}/{left}/{right}):",
+  "example_prompt": "Grid: 5x5. Agent: (1,0). Goal: (4,0). Walls: none.\nMap: Up→Up, Down→Down, Left→Left, Right→Right.\nBest next move (Up/Down/Left/Right): Right\n\nGrid: 5x5. Agent: (0,1). Goal: (0,3). Walls: none.\nMap: Up→Up, Down→Down, Left→Left, Right→Right.\nBest next move (Up/Down/Left/Right): Up\n\nGrid: 5x5. Agent: (2,4). Goal: (2,0). Walls: none.\nMap: Up→Up, Down→Down, Left→Left, Right→Right.\nBest next move (Up/Down/Left/Right): Down\n\nGrid: 5x5. Agent: (2,0). Goal: (2,4). Walls: none.\nMap: Up→Up, Down→Down, Left→Left, Right→Right.\nBest next move (Up/Down/Left/Right): Up\n\nGrid: 5x5. Agent: (4,2). Goal: (0,2). Walls: none.\nMap: Up→Up, Down→Down, Left→Left, Right→Right.\nBest next move (Up/Down/Left/Right): Left\n\nGrid: 5x5. Agent: (0,3). Goal: (0,1). Walls: none.\nMap: Up→Up, Down→Down, Left→Left, Right→Right.\nBest next move (Up/Down/Left/Right): Down\n\nGrid: 5x5. Agent: (3,0). Goal: (0,0). Walls: none.\nMap: Up→Up, Down→Down, Left→Left, Right→Right.\nBest next move (Up/Down/Left/Right): Left\n\nGrid: 5x5. Agent: (0,2). Goal: (4,2). Walls: none.\nMap: Up→Up, Down→Down, Left→Left, Right→Right.\nBest next move (Up/Down/Left/Right): Right\n\nGrid: 5x5. Agent: (4,2). Goal: (4,1). Walls: none.\nMap: Up→Up, Down→Down, Left→Left, Right→Right.\nBest next move (Up/Down/Left/Right):",
+  "n_instances": 100,
+  "full_vocab_top1_accuracy": 0.27,
+  "forced_choice_accuracy": 0.27,
+  "mean_p_correct": 0.25644350051879883,
+  "passed": false,
+  "per_action": [
+    {
+      "action": "Up",
+      "n": 25,
+      "full_vocab_top1_accuracy": 0.64,
+      "forced_choice_accuracy": 0.64,
+      "mean_p_correct": 0.2886630630493164
+    },
+    {
+      "action": "Down",
+      "n": 25,
+      "full_vocab_top1_accuracy": 0.16,
+      "forced_choice_accuracy": 0.16,
+      "mean_p_correct": 0.26537380218505857
+    },
+    {
+      "action": "Left",
+      "n": 25,
+      "full_vocab_top1_accuracy": 0.08,
+      "forced_choice_accuracy": 0.08,
+      "mean_p_correct": 0.2080565071105957
+    },
+    {
+      "action": "Right",
+      "n": 25,
+      "full_vocab_top1_accuracy": 0.2,
+      "forced_choice_accuracy": 0.2,
+      "mean_p_correct": 0.26368085861206053
+    }
+  ],
+  "instances": [
+    {
+      "instance_id": 0,
+      "agent": [
+        4,
+        2
+      ],
+      "goal": [
+        4,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29490823,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26539728,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29490823
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26539728
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19523983
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.23840207
+        }
+      ]
+    },
+    {
+      "instance_id": 1,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        4,
+        0
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.283549,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.24732198,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.283549
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2752548
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18480754
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.24732198
+        }
+      ]
+    },
+    {
+      "instance_id": 2,
+      "agent": [
+        2,
+        3
+      ],
+      "goal": [
+        4,
+        4
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29549193,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2313431,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29549193
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2649874
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19958092
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2313431
+        }
+      ]
+    },
+    {
+      "instance_id": 3,
+      "agent": [
+        0,
+        4
+      ],
+      "goal": [
+        0,
+        2
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.26879737,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.25876975,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26879737
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25876975
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.1998043
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26604
+        }
+      ]
+    },
+    {
+      "instance_id": 4,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.30757844,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.28871018,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30757844
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.28871018
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.1464846
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.24927188
+        }
+      ]
+    },
+    {
+      "instance_id": 5,
+      "agent": [
+        4,
+        4
+      ],
+      "goal": [
+        4,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2828247,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26902932,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2828247
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26902932
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.22697271
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.21559674
+        }
+      ]
+    },
+    {
+      "instance_id": 6,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        4,
+        0
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.35231313,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": true,
+      "p_correct": 0.35231313,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.24117494
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.19413172
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20537077
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.35231313
+        }
+      ]
+    },
+    {
+      "instance_id": 7,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        0,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.337502,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.24006999,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.24006999
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.19142859
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.22599983
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.337502
+        }
+      ]
+    },
+    {
+      "instance_id": 8,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        3,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29398367,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.25725186,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29398367
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25909105
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18052487
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.25725186
+        }
+      ]
+    },
+    {
+      "instance_id": 9,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        4,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.30057055,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.24804558,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30057055
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.27880004
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.16490936
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.24804558
+        }
+      ]
+    },
+    {
+      "instance_id": 10,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.3141413,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.3141413,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.3141413
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25546426
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19890948
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2238956
+        }
+      ]
+    },
+    {
+      "instance_id": 11,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        4,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.37049183,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.19898896,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.19498539
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.19898896
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.22666898
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.37049183
+        }
+      ]
+    },
+    {
+      "instance_id": 12,
+      "agent": [
+        4,
+        2
+      ],
+      "goal": [
+        1,
+        2
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.27382335,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.20426324,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26119587
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25374514
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20426324
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.27382335
+        }
+      ]
+    },
+    {
+      "instance_id": 13,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        3,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.30911395,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.27238086,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30911395
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.27238086
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.16884565
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.24107222
+        }
+      ]
+    },
+    {
+      "instance_id": 14,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        1,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.36511293,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.22885036,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.36511293
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.23520152
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.1597231
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.22885036
+        }
+      ]
+    },
+    {
+      "instance_id": 15,
+      "agent": [
+        1,
+        4
+      ],
+      "goal": [
+        2,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Down",
+      "top1_token_trimmed": "Down",
+      "top1_prob": 0.30641988,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.30641988,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30197555
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.30641988
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.17218983
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.20936432
+        }
+      ]
+    },
+    {
+      "instance_id": 16,
+      "agent": [
+        3,
+        1
+      ],
+      "goal": [
+        1,
+        0
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.33165488,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.22020535,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.33165488
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.28853118
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.22020535
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.15448438
+        }
+      ]
+    },
+    {
+      "instance_id": 17,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        3,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.28943038,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26903316,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28943038
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26903316
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.16833033
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26444325
+        }
+      ]
+    },
+    {
+      "instance_id": 18,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        1,
+        4
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29041582,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.19558682,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29041582
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2665229
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19558682
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.24027827
+        }
+      ]
+    },
+    {
+      "instance_id": 19,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        3,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.28816772,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.230042,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28816772
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26941767
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20273855
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.230042
+        }
+      ]
+    },
+    {
+      "instance_id": 20,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        4,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.3031945,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.23947905,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.23947905
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.23658119
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.21493681
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.3031945
+        }
+      ]
+    },
+    {
+      "instance_id": 21,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29097754,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.19768298,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29097754
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2631748
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19768298
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2392941
+        }
+      ]
+    },
+    {
+      "instance_id": 22,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        4,
+        4
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.27651808,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.22702414,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.27651808
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2736982
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.21694551
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.22702414
+        }
+      ]
+    },
+    {
+      "instance_id": 23,
+      "agent": [
+        2,
+        3
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Down",
+      "top1_token_trimmed": "Down",
+      "top1_prob": 0.28139475,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.28139475,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.27795306
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.28139475
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.1986657
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.23675936
+        }
+      ]
+    },
+    {
+      "instance_id": 24,
+      "agent": [
+        0,
+        2
+      ],
+      "goal": [
+        3,
+        3
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2910892,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26692238,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2910892
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25581697
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.17695571
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26692238
+        }
+      ]
+    },
+    {
+      "instance_id": 25,
+      "agent": [
+        4,
+        1
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2906371,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.16743611,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2906371
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.27101105
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.16743611
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26246512
+        }
+      ]
+    },
+    {
+      "instance_id": 26,
+      "agent": [
+        4,
+        2
+      ],
+      "goal": [
+        1,
+        4
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29938668,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.23771912,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29938668
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.22811398
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.23771912
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.22801086
+        }
+      ]
+    },
+    {
+      "instance_id": 27,
+      "agent": [
+        1,
+        4
+      ],
+      "goal": [
+        4,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29100186,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26302665,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29100186
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26302665
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.17751236
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26202822
+        }
+      ]
+    },
+    {
+      "instance_id": 28,
+      "agent": [
+        0,
+        2
+      ],
+      "goal": [
+        0,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.32931986,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.24795151,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.24795151
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.16254112
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.25493678
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.32931986
+        }
+      ]
+    },
+    {
+      "instance_id": 29,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.28317264,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.28103492,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28317264
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.28103492
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18182948
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.24589518
+        }
+      ]
+    },
+    {
+      "instance_id": 30,
+      "agent": [
+        0,
+        2
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2760351,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2513846,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2760351
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26502934
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20136735
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2513846
+        }
+      ]
+    },
+    {
+      "instance_id": 31,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        0,
+        4
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.3014833,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.20964311,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.3014833
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.239367
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20964311
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2427829
+        }
+      ]
+    },
+    {
+      "instance_id": 32,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        0,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.26506633,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.22881505,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26506633
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.22881505
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.25127923
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.24504483
+        }
+      ]
+    },
+    {
+      "instance_id": 33,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        1,
+        2
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.29892832,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.21494277,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26547104
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.21281414
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.21494277
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.29892832
+        }
+      ]
+    },
+    {
+      "instance_id": 34,
+      "agent": [
+        0,
+        3
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29681584,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2668431,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29681584
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25073373
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.17857549
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2668431
+        }
+      ]
+    },
+    {
+      "instance_id": 35,
+      "agent": [
+        0,
+        3
+      ],
+      "goal": [
+        2,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.28052136,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.2569877,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26291394
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2569877
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19232737
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.28052136
+        }
+      ]
+    },
+    {
+      "instance_id": 36,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        3,
+        4
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.3035895,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": true,
+      "p_correct": 0.3035895,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26486012
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24825746
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.17385794
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.3035895
+        }
+      ]
+    },
+    {
+      "instance_id": 37,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        3,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Down",
+      "top1_token_trimmed": "Down",
+      "top1_prob": 0.30122948,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.27378333,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.27378333
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.30122948
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18833137
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.22953734
+        }
+      ]
+    },
+    {
+      "instance_id": 38,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        2,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.30651814,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2501184,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30651814
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24231863
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.1924496
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2501184
+        }
+      ]
+    },
+    {
+      "instance_id": 39,
+      "agent": [
+        2,
+        0
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.3156779,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.3156779,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.3156779
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.27429608
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.16041166
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.24121922
+        }
+      ]
+    },
+    {
+      "instance_id": 40,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        0,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Down",
+      "top1_token_trimmed": "Down",
+      "top1_prob": 0.28307244,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.2728915,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2728915
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.28307244
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.17468219
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.262139
+        }
+      ]
+    },
+    {
+      "instance_id": 41,
+      "agent": [
+        4,
+        1
+      ],
+      "goal": [
+        4,
+        2
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.30442604,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.28523058,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28523058
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.19676042
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20578668
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.30442604
+        }
+      ]
+    },
+    {
+      "instance_id": 42,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        0,
+        3
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.283593,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.21581408,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.24910268
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24669318
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.21581408
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.283593
+        }
+      ]
+    },
+    {
+      "instance_id": 43,
+      "agent": [
+        4,
+        1
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.3956264,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.17539382,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.3956264
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.29061702
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.17539382
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.12963179
+        }
+      ]
+    },
+    {
+      "instance_id": 44,
+      "agent": [
+        0,
+        3
+      ],
+      "goal": [
+        3,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2926714,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.27189952,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2926714
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25281107
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.17520699
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.27189952
+        }
+      ]
+    },
+    {
+      "instance_id": 45,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        2,
+        0
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.31276506,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.28847086,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.31276506
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24519308
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.14548394
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.28847086
+        }
+      ]
+    },
+    {
+      "instance_id": 46,
+      "agent": [
+        1,
+        3
+      ],
+      "goal": [
+        1,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.315942,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.315942,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.315942
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2649166
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18491334
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2244085
+        }
+      ]
+    },
+    {
+      "instance_id": 47,
+      "agent": [
+        4,
+        2
+      ],
+      "goal": [
+        0,
+        2
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.3248711,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.24280447,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.3248711
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.22865166
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.24280447
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.19424818
+        }
+      ]
+    },
+    {
+      "instance_id": 48,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Left",
+      "top1_token_trimmed": "Left",
+      "top1_prob": 0.27436012,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Left",
+      "forced_choice_correct": true,
+      "p_correct": 0.27436012,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26439866
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.19503048
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.27436012
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26048976
+        }
+      ]
+    },
+    {
+      "instance_id": 49,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.31147167,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.31147167,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.31147167
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.28167206
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.16045792
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.23776281
+        }
+      ]
+    },
+    {
+      "instance_id": 50,
+      "agent": [
+        1,
+        3
+      ],
+      "goal": [
+        0,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.28192386,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2552981,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28192386
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2552981
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20149882
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.25425482
+        }
+      ]
+    },
+    {
+      "instance_id": 51,
+      "agent": [
+        2,
+        0
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.28471288,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.28471288,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28471288
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.22106318
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.21591549
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26997957
+        }
+      ]
+    },
+    {
+      "instance_id": 52,
+      "agent": [
+        3,
+        0
+      ],
+      "goal": [
+        0,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2758551,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.2758551,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2758551
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.21834883
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.2327927
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26816058
+        }
+      ]
+    },
+    {
+      "instance_id": 53,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.31688267,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.31688267,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.31688267
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26391634
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.16991492
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.23949276
+        }
+      ]
+    },
+    {
+      "instance_id": 54,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        1,
+        2
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.31258124,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.19100566,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.31258124
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26009563
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19100566
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.22676644
+        }
+      ]
+    },
+    {
+      "instance_id": 55,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        3,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29782283,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.29782283,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29782283
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.28300586
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18948652
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.22071987
+        }
+      ]
+    },
+    {
+      "instance_id": 56,
+      "agent": [
+        0,
+        3
+      ],
+      "goal": [
+        2,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.27264845,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": true,
+      "p_correct": 0.27264845,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.24470928
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26419744
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.21214412
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.27264845
+        }
+      ]
+    },
+    {
+      "instance_id": 57,
+      "agent": [
+        1,
+        0
+      ],
+      "goal": [
+        4,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.30700314,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.23401764,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30700314
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.23534976
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.21413843
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.23401764
+        }
+      ]
+    },
+    {
+      "instance_id": 58,
+      "agent": [
+        1,
+        4
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Down",
+      "top1_token_trimmed": "Down",
+      "top1_prob": 0.2867172,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.2867172,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26239035
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2867172
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18663594
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.25633457
+        }
+      ]
+    },
+    {
+      "instance_id": 59,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        2,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Down",
+      "top1_token_trimmed": "Down",
+      "top1_prob": 0.29053506,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.28004614,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28004614
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.29053506
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.17320074
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2472648
+        }
+      ]
+    },
+    {
+      "instance_id": 60,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        3,
+        2
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29460564,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26140818,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29460564
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26140818
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18884346
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.24602832
+        }
+      ]
+    },
+    {
+      "instance_id": 61,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.30322352,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.30322352,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30322352
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.21848911
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20351408
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26803312
+        }
+      ]
+    },
+    {
+      "instance_id": 62,
+      "agent": [
+        0,
+        0
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.3060309,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.3060309,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.3060309
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2521676
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19155674
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2432967
+        }
+      ]
+    },
+    {
+      "instance_id": 63,
+      "agent": [
+        3,
+        3
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.3141452,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2943223,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.3141452
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2943223
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.15031797
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.23429734
+        }
+      ]
+    },
+    {
+      "instance_id": 64,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        0,
+        3
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Left",
+      "top1_token_trimmed": "Left",
+      "top1_prob": 0.2813161,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Left",
+      "forced_choice_correct": true,
+      "p_correct": 0.2813161,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26401207
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.19533418
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.2813161
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.25245023
+        }
+      ]
+    },
+    {
+      "instance_id": 65,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        1,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.311108,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.21064475,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.311108
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.27597833
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.21064475
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.193059
+        }
+      ]
+    },
+    {
+      "instance_id": 66,
+      "agent": [
+        4,
+        2
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.31761608,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.22038504,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.31761608
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2676106
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.22038504
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.18760751
+        }
+      ]
+    },
+    {
+      "instance_id": 67,
+      "agent": [
+        2,
+        0
+      ],
+      "goal": [
+        1,
+        0
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.27973482,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.20770529,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.27973482
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.23395734
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20770529
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.27051774
+        }
+      ]
+    },
+    {
+      "instance_id": 68,
+      "agent": [
+        3,
+        4
+      ],
+      "goal": [
+        2,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.28556636,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.24626,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26095113
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24626
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20004995
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.28556636
+        }
+      ]
+    },
+    {
+      "instance_id": 69,
+      "agent": [
+        1,
+        0
+      ],
+      "goal": [
+        3,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.28996623,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": true,
+      "p_correct": 0.28996623,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.27583882
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.22712614
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19893822
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.28996623
+        }
+      ]
+    },
+    {
+      "instance_id": 70,
+      "agent": [
+        1,
+        0
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.26901543,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.19471297,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26901543
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26600406
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19471297
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2557609
+        }
+      ]
+    },
+    {
+      "instance_id": 71,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        4,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.3022821,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26359028,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.3022821
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26359028
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20790905
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.22124627
+        }
+      ]
+    },
+    {
+      "instance_id": 72,
+      "agent": [
+        4,
+        1
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2893336,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.14791195,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2893336
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.27337915
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.14791195
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.28061312
+        }
+      ]
+    },
+    {
+      "instance_id": 73,
+      "agent": [
+        4,
+        4
+      ],
+      "goal": [
+        0,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.28912047,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2166726,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28912047
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2679441
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.2166726
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.21957819
+        }
+      ]
+    },
+    {
+      "instance_id": 74,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        1,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.31533298,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.20973837,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.31533298
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25139531
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20973837
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.21297547
+        }
+      ]
+    },
+    {
+      "instance_id": 75,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        1,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.28293073,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.28293073,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28293073
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.22157815
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.22695218
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26117352
+        }
+      ]
+    },
+    {
+      "instance_id": 76,
+      "agent": [
+        0,
+        4
+      ],
+      "goal": [
+        4,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2994198,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.25266728,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2994198
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24227689
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19982824
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.25266728
+        }
+      ]
+    },
+    {
+      "instance_id": 77,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.3352535,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.3352535,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.3352535
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.29451174
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.14728475
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.21220656
+        }
+      ]
+    },
+    {
+      "instance_id": 78,
+      "agent": [
+        1,
+        0
+      ],
+      "goal": [
+        2,
+        2
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.28871024,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.28871024,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28871024
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24391961
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19360992
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26107535
+        }
+      ]
+    },
+    {
+      "instance_id": 79,
+      "agent": [
+        1,
+        3
+      ],
+      "goal": [
+        4,
+        4
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2736074,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2552686,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2736074
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24572413
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.21672261
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2552686
+        }
+      ]
+    },
+    {
+      "instance_id": 80,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        1,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.30627677,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.30627677,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30627677
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.27698684
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.1566796
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.25206473
+        }
+      ]
+    },
+    {
+      "instance_id": 81,
+      "agent": [
+        3,
+        3
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.33421624,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.20068844,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.33421624
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.27722776
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20068844
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.18076788
+        }
+      ]
+    },
+    {
+      "instance_id": 82,
+      "agent": [
+        3,
+        4
+      ],
+      "goal": [
+        3,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Down",
+      "top1_token_trimmed": "Down",
+      "top1_prob": 0.29468077,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.29468077,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.23125435
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.29468077
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.21049283
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2583852
+        }
+      ]
+    },
+    {
+      "instance_id": 83,
+      "agent": [
+        0,
+        2
+      ],
+      "goal": [
+        3,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.299815,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.27429995,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.299815
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.18340716
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.23439573
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.27429995
+        }
+      ]
+    },
+    {
+      "instance_id": 84,
+      "agent": [
+        2,
+        0
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.32030153,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.32030153,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.32030153
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25741616
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.15923144
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.25495005
+        }
+      ]
+    },
+    {
+      "instance_id": 85,
+      "agent": [
+        0,
+        3
+      ],
+      "goal": [
+        2,
+        4
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.3179515,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2332047,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.3179515
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.28739977
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.15331848
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2332047
+        }
+      ]
+    },
+    {
+      "instance_id": 86,
+      "agent": [
+        1,
+        0
+      ],
+      "goal": [
+        4,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.3056082,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.24112739,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.24112739
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.27146333
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.17583276
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.3056082
+        }
+      ]
+    },
+    {
+      "instance_id": 87,
+      "agent": [
+        3,
+        0
+      ],
+      "goal": [
+        2,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29811126,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.29811126,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29811126
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26352674
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20287433
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.22767004
+        }
+      ]
+    },
+    {
+      "instance_id": 88,
+      "agent": [
+        1,
+        4
+      ],
+      "goal": [
+        2,
+        2
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.30466405,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26718318,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30466405
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26718318
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.15314329
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26752892
+        }
+      ]
+    },
+    {
+      "instance_id": 89,
+      "agent": [
+        0,
+        4
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.26800904,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.25828114,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2575742
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25828114
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20885986
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26800904
+        }
+      ]
+    },
+    {
+      "instance_id": 90,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        2,
+        4
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29569063,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.20407021,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29569063
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24981229
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.20407021
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.24211577
+        }
+      ]
+    },
+    {
+      "instance_id": 91,
+      "agent": [
+        4,
+        4
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2567892,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.25210553,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2567892
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.25210553
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.23106588
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.25346082
+        }
+      ]
+    },
+    {
+      "instance_id": 92,
+      "agent": [
+        2,
+        3
+      ],
+      "goal": [
+        2,
+        2
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.342654,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26390922,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.342654
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.26390922
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.1615474
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.22244671
+        }
+      ]
+    },
+    {
+      "instance_id": 93,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        4,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Right",
+      "top1_token_trimmed": "Right",
+      "top1_prob": 0.31042862,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": true,
+      "p_correct": 0.31042862,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.24973106
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24745986
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18360671
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.31042862
+        }
+      ]
+    },
+    {
+      "instance_id": 94,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        4,
+        1
+      ],
+      "correct_action": "Up",
+      "correct_token": "Up",
+      "correct_token_id": 3930,
+      "top1_token": " Down",
+      "top1_token_trimmed": "Down",
+      "top1_prob": 0.27484974,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.26265192,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.26265192
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.27484974
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18311279
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.27351826
+        }
+      ]
+    },
+    {
+      "instance_id": 95,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        0,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.30286798,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.19467658,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30286798
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.28150126
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.19467658
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.21143915
+        }
+      ]
+    },
+    {
+      "instance_id": 96,
+      "agent": [
+        3,
+        4
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "Down",
+      "correct_token_id": 7285,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.2729854,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2506001,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.2729854
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2506001
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.26825282
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.20066926
+        }
+      ]
+    },
+    {
+      "instance_id": 97,
+      "agent": [
+        0,
+        2
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.29452294,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26487014,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.29452294
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.24626954
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.18606853
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.26487014
+        }
+      ]
+    },
+    {
+      "instance_id": 98,
+      "agent": [
+        3,
+        1
+      ],
+      "goal": [
+        0,
+        2
+      ],
+      "correct_action": "Left",
+      "correct_token": "Left",
+      "correct_token_id": 22280,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.30285048,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.16603322,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.30285048
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2622903
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.16603322
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.2616512
+        }
+      ]
+    },
+    {
+      "instance_id": 99,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        4,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "Right",
+      "correct_token_id": 11265,
+      "top1_token": " Up",
+      "top1_token_trimmed": "Up",
+      "top1_prob": 0.28356928,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.28322873,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "Up",
+          "prob": 0.28356928
+        },
+        {
+          "action": "Down",
+          "token": "Down",
+          "prob": 0.2731109
+        },
+        {
+          "action": "Left",
+          "token": "Left",
+          "prob": 0.15024759
+        },
+        {
+          "action": "Right",
+          "token": "Right",
+          "prob": 0.28322873
+        }
+      ]
+    }
+  ],
+  "elapsed_secs": 47.6947619
+}

@@ -25,6 +25,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     formatter, and a tokenization sanity check confirming the mapped action
     tokens (`black`, `kind`, `well`, `round`) are single tokens in the
     Gemma 2 2B vocabulary.
+  - **Step A — baseline feasibility:** the example now exposes `scaffold`
+    (Step 0) and `baseline` (Step A) subcommands. `baseline` runs the 100
+    instances through Gemma 2 2B with no intervention and records both
+    full-vocabulary top-1 accuracy and forced-choice accuracy (among the four
+    action tokens), per-action breakdowns, and every per-instance result to
+    `docs/experiments/gridworld-prolepsis/baseline_gemma2_2b_2.5m.json`. The
+    Step A gate requires both accuracies ≥ 0.80 before Step B. Prompts are
+    few-shot (`--few-shot`) drawn balanced across the four actions from a fixed
+    pool with per-instance randomized order (`--seed`), since the zero-shot bare
+    template is not understood as a four-way action choice and fixed-order
+    few-shot collapses onto the first demonstration's token. The cue ends at the
+    `"):"` token (no trailing space) — the planning site at which the model's
+    next token is the space-prefixed action token — after diagnosing that a
+    trailing space tokenizes as a standalone `▁` that makes the scored token
+    unreachable.
+  - **Step A outcome (negative — a modality finding):** base Gemma 2 2B is at
+    **chance** on single-action gridworld selection across coords, ASCII, and
+    direct-direction encodings and 0–20-shot (randomized) — the blocker is
+    spatial reasoning, not the token mapping or encoding. Single-action gridworld
+    is coordinate comparison, which a transformer lacks the spatial prior for
+    (cf. Taufeeque et al.'s Sokoban planner, which uses a 2D image + ConvLSTM).
+    Result JSONs under `docs/experiments/gridworld-prolepsis/`.
+
+- **Means-ends prolepsis experiment — the working planning cell.** The same
+  planning primitive (STRIPS operator selection) in the *linguistic* modality:
+  goal-contrastive prompts whose next token is the goal-correct single-token
+  action (e.g. *"… We want the room to be dark. Turn the lamp"* → `off`).
+  - `scripts/means_ends_generator.py` — emits a balanced, seeded, goal-contrastive
+    item set across action families (`on_off`, `open_closed`, `up_down`), both
+    directions, to `docs/experiments/means-ends-prolepsis/means_ends_items.json`.
+  - `examples/means_ends_prolepsis` — baseline-feasibility scorer (no CLT, pure
+    forward passes): full-vocabulary top-1 and forced-choice accuracy with
+    per-family and per-(family, token) breakdowns; single-token pre-check on the
+    action vocabulary; results to `docs/experiments/means-ends-prolepsis/`.
+  - Result: the **`on_off` cell passes decisively** — Gemma 2 2B 1.00/1.00,
+    Llama 3.2 1B 0.96/0.97 (both directions, including the lexical-override `off`
+    side). Goal-conditioning generalizes across families on forced-choice
+    (≥ 0.84 both models); the strict full-vocab top-1 is gated by lexical
+    realizability (the model prefers `closed`/`opened` over `shut`). So prolepsis
+    transfer is *not* rhyme-only — the gridworld failure was modality.
 
 ## [0.1.12] - 2026-05-28
 

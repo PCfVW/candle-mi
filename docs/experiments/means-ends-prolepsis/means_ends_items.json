@@ -1,0 +1,1202 @@
+[
+  {
+    "prompt": "We want to show the movie. The projector screen is up. The projector screen should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to get ready for landing. The tray table is down. The tray table should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the speaker is on. We want it to be silent. Turn the speaker",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want a dark screen. The projector is on. Turn the projector",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the drawer is open. We want to tidy the desk. The drawer should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The radio is off. We want to hear some music. Turn the radio",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to save power. The computer is on. Turn the computer",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to use the whiteboard behind it. The projector screen is down. The projector screen should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The projector is on. We want a dark screen. Turn the projector",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The curtain is open. We want to block the glare. The curtain should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The cabinet is closed. We want to take a plate. The cabinet should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the shade is down. We want to see the view. The shade should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The recliner is down. We want to sit upright to work. The recliner should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the printer is off. We want to print a page. Turn the printer",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The tray table is up. We want to eat the meal. The tray table should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The stove is on. We want to stop cooking. Turn the stove",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The stove is off. We want to cook dinner. Turn the stove",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The roller blind is down. We want to let the sunlight in. The roller blind should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to keep the rain out. The car window is down. The car window should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to get some fresh air. The car window is up. The car window should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the trunk is open. We want to drive away. The trunk should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The fan is on. We want the air to stay still. Turn the fan",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the kettle is off. We want to boil the water. Turn the kettle",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The recliner is up. We want to lie back and relax. The recliner should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to keep it sealed. The lid is open. The lid should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the lamp is off. We want the room to be bright. Turn the lamp",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The box is closed. We want to see what is inside. The box should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to tidy the desk. The drawer is open. The drawer should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want some fresh air. The window is closed. The window should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The drawer is closed. We want to get a spoon. The drawer should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the gate is closed. We want to let the car in. The gate should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to sit up and eat. The hospital bed is down. The hospital bed should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the roller blind is down. We want to let the sunlight in. The roller blind should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The valve is closed. We want to let the water flow. The valve should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to let the sunlight in. The roller blind is down. The roller blind should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to save power. The printer is on. Turn the printer",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the oven is off. We want to bake the bread. Turn the oven",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The window is closed. We want some fresh air. The window should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the hospital bed is down. We want to sit up and eat. The hospital bed should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the gate is open. We want to keep the dog inside. The gate should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to hear some music. The radio is off. Turn the radio",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The window blind is down. We want to let the morning light in. The window blind should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the seat back is down. We want to prepare for takeoff. The seat back should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The lid is closed. We want to reach inside. The lid should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to drive away. The trunk is open. The trunk should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to watch the news. The television is off. Turn the television",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the fan is off. We want the air to keep moving. Turn the fan",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want some privacy. The door is open. The door should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the car window is down. We want to keep the rain out. The car window should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to cook dinner. The stove is off. Turn the stove",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the hatch is open. We want to stay warm. The hatch should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The television is off. We want to watch the news. Turn the television",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the valve is open. We want to stop the leak. The valve should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The gate is closed. We want to let the car in. The gate should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The jar is open. We want to keep it fresh. The jar should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want it to be silent. The speaker is on. Turn the speaker",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the thermostat is up. We want to make the room cooler. The thermostat should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to climb out. The hatch is closed. The hatch should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the window blind is up. We want to darken the room for sleep. The window blind should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to let the car in. The gate is closed. The gate should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The heater is on. We want the room to be cool. Turn the heater",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to bake the bread. The oven is off. Turn the oven",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to darken the room for sleep. The window blind is up. The window blind should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The valve is open. We want to stop the leak. The valve should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want the room to be dark. The lamp is on. Turn the lamp",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The computer is off. We want to start working. Turn the computer",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the radio is off. We want to hear some music. Turn the radio",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to show the slides. The projector is off. Turn the projector",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The fan is off. We want the air to keep moving. Turn the fan",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to hide the clutter. The cabinet is open. The cabinet should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to start working. The computer is off. Turn the computer",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The roller blind is up. We want to block the bright sun. The roller blind should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to hear the song clearly. The volume is down. The volume should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the seat back is up. We want to recline and rest. The seat back should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the heater is on. We want the room to be cool. Turn the heater",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The window is open. We want to keep out the cold. The window should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The television is on. We want some quiet. Turn the television",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The door is open. We want some privacy. The door should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The lid is open. We want to keep it sealed. The lid should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the fan is on. We want the air to stay still. Turn the fan",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The car window is up. We want to get some fresh air. The car window should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to make the room warmer. The thermostat is down. The thermostat should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to sit upright to work. The recliner is down. The recliner should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the kettle is on. We want to stop boiling. Turn the kettle",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The computer is on. We want to save power. Turn the computer",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the projector is on. We want a dark screen. Turn the projector",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the volume is up. We want to avoid waking the baby. The volume should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The trunk is closed. We want to load the bags. The trunk should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the lamp is on. We want the room to be dark. Turn the lamp",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to load the bags. The trunk is closed. The trunk should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to keep it safe. The box is open. The box should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to boil the water. The kettle is off. Turn the kettle",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the television is off. We want to watch the news. Turn the television",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the window is closed. We want some fresh air. The window should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the stove is on. We want to stop cooking. Turn the stove",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to keep it fresh. The jar is open. The jar should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to play the song. The speaker is off. Turn the speaker",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The heater is off. We want the room to be warm. Turn the heater",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want complete silence. The radio is on. Turn the radio",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to take a plate. The cabinet is closed. The cabinet should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The hatch is open. We want to stay warm. The hatch should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want the room to be cool. The heater is on. Turn the heater",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to walk through. The door is closed. The door should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The door is closed. We want to walk through. The door should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to stop the leak. The valve is open. The valve should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the heater is off. We want the room to be warm. Turn the heater",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the lid is closed. We want to reach inside. The lid should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the curtain is closed. We want to let the sunlight in. The curtain should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to let the morning light in. The window blind is down. The window blind should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the shade is up. We want to keep the room cool. The shade should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the volume is down. We want to hear the song clearly. The volume should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the valve is closed. We want to let the water flow. The valve should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want the air to stay still. The fan is on. Turn the fan",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to make the room cooler. The thermostat is up. The thermostat should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The volume is up. We want to avoid waking the baby. The volume should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want the air to keep moving. The fan is off. Turn the fan",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the door is open. We want some privacy. The door should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The oven is off. We want to bake the bread. Turn the oven",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the printer is on. We want to save power. Turn the printer",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to block the bright sun. The roller blind is up. The roller blind should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The cabinet is open. We want to hide the clutter. The cabinet should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to keep the room cool. The shade is up. The shade should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The oven is on. We want to stop the heat. Turn the oven",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The box is open. We want to keep it safe. The box should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The projector screen is down. We want to use the whiteboard behind it. The projector screen should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to stay warm. The hatch is open. The hatch should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want some quiet. The television is on. Turn the television",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the garage door is up. We want to secure the garage. The garage door should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The kettle is on. We want to stop boiling. Turn the kettle",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to see what is inside. The box is closed. The box should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to secure the garage. The garage door is up. The garage door should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The drawer is open. We want to tidy the desk. The drawer should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to get a spoon. The drawer is closed. The drawer should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The radio is on. We want complete silence. Turn the radio",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the car window is up. We want to get some fresh air. The car window should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The hatch is closed. We want to climb out. The hatch should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The projector screen is up. We want to show the movie. The projector screen should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The seat back is up. We want to recline and rest. The seat back should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The hospital bed is up. We want to lie flat and rest. The hospital bed should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the stove is off. We want to cook dinner. Turn the stove",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The speaker is on. We want it to be silent. Turn the speaker",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The shade is up. We want to keep the room cool. The shade should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The lamp is off. We want the room to be bright. Turn the lamp",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the window blind is down. We want to let the morning light in. The window blind should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the hatch is closed. We want to climb out. The hatch should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the door is closed. We want to walk through. The door should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to stop cooking. The stove is on. Turn the stove",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The thermostat is up. We want to make the room cooler. The thermostat should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the recliner is down. We want to sit upright to work. The recliner should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to block the glare. The curtain is open. The curtain should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The jar is closed. We want to take a cookie. The jar should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want the room to be bright. The lamp is off. Turn the lamp",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to drive the car out. The garage door is down. The garage door should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the speaker is off. We want to play the song. Turn the speaker",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to prepare for takeoff. The seat back is down. The seat back should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The speaker is off. We want to play the song. Turn the speaker",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the garage door is down. We want to drive the car out. The garage door should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The printer is on. We want to save power. Turn the printer",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the thermostat is down. We want to make the room warmer. The thermostat should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to let the sunlight in. The curtain is closed. The curtain should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The car window is down. We want to keep the rain out. The car window should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the projector screen is down. We want to use the whiteboard behind it. The projector screen should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the television is on. We want some quiet. Turn the television",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to recline and rest. The seat back is up. The seat back should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the projector screen is up. We want to show the movie. The projector screen should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the tray table is up. We want to eat the meal. The tray table should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the tray table is down. We want to get ready for landing. The tray table should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the curtain is open. We want to block the glare. The curtain should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the roller blind is up. We want to block the bright sun. The roller blind should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The trunk is open. We want to drive away. The trunk should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the box is closed. We want to see what is inside. The box should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The kettle is off. We want to boil the water. Turn the kettle",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The projector is off. We want to show the slides. Turn the projector",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The gate is open. We want to keep the dog inside. The gate should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to lie flat and rest. The hospital bed is up. The hospital bed should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the radio is on. We want complete silence. Turn the radio",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the lid is open. We want to keep it sealed. The lid should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the computer is on. We want to save power. Turn the computer",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The curtain is closed. We want to let the sunlight in. The curtain should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The shade is down. We want to see the view. The shade should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "The thermostat is down. We want to make the room warmer. The thermostat should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to avoid waking the baby. The volume is up. The volume should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to print a page. The printer is off. Turn the printer",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want the room to be warm. The heater is off. Turn the heater",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "We want to see the view. The shade is down. The shade should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the window is open. We want to keep out the cold. The window should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to keep out the cold. The window is open. The window should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The garage door is up. We want to secure the garage. The garage door should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the jar is open. We want to keep it fresh. The jar should be",
+    "correct": "closed",
+    "alternative": "open",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "Right now, the trunk is closed. We want to load the bags. The trunk should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The window blind is up. We want to darken the room for sleep. The window blind should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to take a cookie. The jar is closed. The jar should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "The tray table is down. We want to get ready for landing. The tray table should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to let the water flow. The valve is closed. The valve should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to stop the heat. The oven is on. Turn the oven",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  },
+  {
+    "prompt": "Right now, the computer is off. We want to start working. Turn the computer",
+    "correct": "on",
+    "alternative": "off",
+    "family": "on_off"
+  },
+  {
+    "prompt": "The volume is down. We want to hear the song clearly. The volume should be",
+    "correct": "up",
+    "alternative": "down",
+    "family": "up_down"
+  },
+  {
+    "prompt": "We want to reach inside. The lid is closed. The lid should be",
+    "correct": "open",
+    "alternative": "closed",
+    "family": "open_closed"
+  },
+  {
+    "prompt": "We want to eat the meal. The tray table is up. The tray table should be",
+    "correct": "down",
+    "alternative": "up",
+    "family": "up_down"
+  },
+  {
+    "prompt": "Right now, the oven is on. We want to stop the heat. Turn the oven",
+    "correct": "off",
+    "alternative": "on",
+    "family": "on_off"
+  }
+]

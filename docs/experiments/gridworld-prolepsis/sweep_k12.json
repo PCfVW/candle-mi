@@ -1,0 +1,4370 @@
+{
+  "model": "google/gemma-2-2b",
+  "mapping_name": "baseline",
+  "mapping": [
+    {
+      "action": "Up",
+      "token": "black",
+      "token_id": 2656
+    },
+    {
+      "action": "Down",
+      "token": "kind",
+      "token_id": 2858
+    },
+    {
+      "action": "Left",
+      "token": "well",
+      "token_id": 1578
+    },
+    {
+      "action": "Right",
+      "token": "round",
+      "token_id": 5094
+    }
+  ],
+  "grid_size": 5,
+  "few_shot": 12,
+  "seed": 0,
+  "threshold": 0.8,
+  "prompt_format": "Grid: {N}x{N}. Agent: ({ax},{ay}). Goal: ({gx},{gy}). Walls: none.\nMap: Up→{up}, Down→{down}, Left→{left}, Right→{right}.\nBest next move ({up}/{down}/{left}/{right}):",
+  "example_prompt": "Grid: 5x5. Agent: (0,4). Goal: (3,4). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): round\n\nGrid: 5x5. Agent: (4,0). Goal: (4,3). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): black\n\nGrid: 5x5. Agent: (1,0). Goal: (4,0). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): round\n\nGrid: 5x5. Agent: (0,1). Goal: (0,3). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): black\n\nGrid: 5x5. Agent: (4,2). Goal: (0,2). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): well\n\nGrid: 5x5. Agent: (2,4). Goal: (2,0). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): kind\n\nGrid: 5x5. Agent: (0,3). Goal: (0,1). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): kind\n\nGrid: 5x5. Agent: (2,0). Goal: (2,4). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): black\n\nGrid: 5x5. Agent: (3,0). Goal: (0,0). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): well\n\nGrid: 5x5. Agent: (4,4). Goal: (4,1). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): kind\n\nGrid: 5x5. Agent: (4,4). Goal: (1,4). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): well\n\nGrid: 5x5. Agent: (0,2). Goal: (4,2). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round): round\n\nGrid: 5x5. Agent: (4,2). Goal: (4,1). Walls: none.\nMap: Up→black, Down→kind, Left→well, Right→round.\nBest next move (black/kind/well/round):",
+  "n_instances": 100,
+  "full_vocab_top1_accuracy": 0.27,
+  "forced_choice_accuracy": 0.27,
+  "mean_p_correct": 0.24736454010009765,
+  "passed": false,
+  "per_action": [
+    {
+      "action": "Up",
+      "n": 25,
+      "full_vocab_top1_accuracy": 0.52,
+      "forced_choice_accuracy": 0.52,
+      "mean_p_correct": 0.27290891647338866
+    },
+    {
+      "action": "Down",
+      "n": 25,
+      "full_vocab_top1_accuracy": 0.48,
+      "forced_choice_accuracy": 0.48,
+      "mean_p_correct": 0.2709873390197754
+    },
+    {
+      "action": "Left",
+      "n": 25,
+      "full_vocab_top1_accuracy": 0.08,
+      "forced_choice_accuracy": 0.08,
+      "mean_p_correct": 0.23123983383178712
+    },
+    {
+      "action": "Right",
+      "n": 25,
+      "full_vocab_top1_accuracy": 0.0,
+      "forced_choice_accuracy": 0.0,
+      "mean_p_correct": 0.21432209014892578
+    }
+  ],
+  "instances": [
+    {
+      "instance_id": 0,
+      "agent": [
+        4,
+        2
+      ],
+      "goal": [
+        4,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.27596608,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.27596608,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26944378
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27596608
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21169387
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.22466415
+        }
+      ]
+    },
+    {
+      "instance_id": 1,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        4,
+        0
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.29008582,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.19442225,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.29008582
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.24618371
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24543263
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19442225
+        }
+      ]
+    },
+    {
+      "instance_id": 2,
+      "agent": [
+        2,
+        3
+      ],
+      "goal": [
+        4,
+        4
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.28988168,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.21215357,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.27241215
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.28988168
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.20510064
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21215357
+        }
+      ]
+    },
+    {
+      "instance_id": 3,
+      "agent": [
+        0,
+        4
+      ],
+      "goal": [
+        0,
+        2
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2776778,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.2776778,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.21098238
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2776778
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.27763227
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20340854
+        }
+      ]
+    },
+    {
+      "instance_id": 4,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.27708352,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.27128714,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.27708352
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27128714
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21364155
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21282165
+        }
+      ]
+    },
+    {
+      "instance_id": 5,
+      "agent": [
+        4,
+        4
+      ],
+      "goal": [
+        4,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.29310375,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.29310375,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25203636
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.29310375
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22379626
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19824524
+        }
+      ]
+    },
+    {
+      "instance_id": 6,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        4,
+        0
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.26809978,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.25812426,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.22321543
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26809978
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22391093
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.25812426
+        }
+      ]
+    },
+    {
+      "instance_id": 7,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        0,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.29711553,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.29711553,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.29711553
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2895809
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21906924
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.17494962
+        }
+      ]
+    },
+    {
+      "instance_id": 8,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        3,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2734327,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.24416237,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2734327
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25255948
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21008724
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.24416237
+        }
+      ]
+    },
+    {
+      "instance_id": 9,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        4,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2832487,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.23822969,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2832487
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.24902102
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21147728
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.23822969
+        }
+      ]
+    },
+    {
+      "instance_id": 10,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.27006432,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.26417336,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26417336
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27006432
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22759184
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21744072
+        }
+      ]
+    },
+    {
+      "instance_id": 11,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        4,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.26896396,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.26896396,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2615175
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26896396
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24817331
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20265788
+        }
+      ]
+    },
+    {
+      "instance_id": 12,
+      "agent": [
+        4,
+        2
+      ],
+      "goal": [
+        1,
+        2
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.29519755,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.24064709,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.22207454
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.29519755
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24064709
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.22938412
+        }
+      ]
+    },
+    {
+      "instance_id": 13,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        3,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.27137086,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.27137086,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26048446
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27137086
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24399874
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.2056169
+        }
+      ]
+    },
+    {
+      "instance_id": 14,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        1,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.29904246,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.18575656,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.280349
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.29904246
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22261514
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.18575656
+        }
+      ]
+    },
+    {
+      "instance_id": 15,
+      "agent": [
+        1,
+        4
+      ],
+      "goal": [
+        2,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2749194,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.24703948,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2749194
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.24703948
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2269246
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.23172711
+        }
+      ]
+    },
+    {
+      "instance_id": 16,
+      "agent": [
+        3,
+        1
+      ],
+      "goal": [
+        1,
+        0
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.3387246,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2216171,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.3387246
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25275362
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2216171
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.17263246
+        }
+      ]
+    },
+    {
+      "instance_id": 17,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        3,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.28398702,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2620656,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.28398702
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2620656
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22553495
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20667452
+        }
+      ]
+    },
+    {
+      "instance_id": 18,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        1,
+        4
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.29294258,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.23175833,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25979772
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.29294258
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23175833
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19138387
+        }
+      ]
+    },
+    {
+      "instance_id": 19,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        3,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.272889,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.19077702,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2662992
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.272889
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.25342926
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19077702
+        }
+      ]
+    },
+    {
+      "instance_id": 20,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        4,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2712794,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.2712794,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2712794
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.24219476
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21656844
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.24469937
+        }
+      ]
+    },
+    {
+      "instance_id": 21,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.3021522,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.23240767,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.3021522
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25817496
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23240767
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.18696113
+        }
+      ]
+    },
+    {
+      "instance_id": 22,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        4,
+        4
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2933371,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.20150788,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.27482513
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2933371
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2133204
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20150788
+        }
+      ]
+    },
+    {
+      "instance_id": 23,
+      "agent": [
+        2,
+        3
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.29508793,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.29508793,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.28935337
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.29508793
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23815638
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.16499346
+        }
+      ]
+    },
+    {
+      "instance_id": 24,
+      "agent": [
+        0,
+        2
+      ],
+      "goal": [
+        3,
+        3
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2893559,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.24469323,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.21229413
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2893559
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23588674
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.24469323
+        }
+      ]
+    },
+    {
+      "instance_id": 25,
+      "agent": [
+        4,
+        1
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.28405023,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2008536,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.28405023
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26197997
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2008536
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.23612954
+        }
+      ]
+    },
+    {
+      "instance_id": 26,
+      "agent": [
+        4,
+        2
+      ],
+      "goal": [
+        1,
+        4
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.27548456,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.23304118,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.24602695
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27548456
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23304118
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.22479677
+        }
+      ]
+    },
+    {
+      "instance_id": 27,
+      "agent": [
+        1,
+        4
+      ],
+      "goal": [
+        4,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " well",
+      "top1_token_trimmed": "well",
+      "top1_prob": 0.26220423,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Left",
+      "forced_choice_correct": false,
+      "p_correct": 0.23837157,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26105848
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.23837157
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.26220423
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21294175
+        }
+      ]
+    },
+    {
+      "instance_id": 28,
+      "agent": [
+        0,
+        2
+      ],
+      "goal": [
+        0,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2657182,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.25684336,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25684336
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2657182
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24931128
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20487927
+        }
+      ]
+    },
+    {
+      "instance_id": 29,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.27150053,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26289752,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.27150053
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26289752
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24907589
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20061432
+        }
+      ]
+    },
+    {
+      "instance_id": 30,
+      "agent": [
+        0,
+        2
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.27234066,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.22854432,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.27234066
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26819256
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21137421
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.22854432
+        }
+      ]
+    },
+    {
+      "instance_id": 31,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        0,
+        4
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " well",
+      "top1_token_trimmed": "well",
+      "top1_prob": 0.26410148,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Left",
+      "forced_choice_correct": true,
+      "p_correct": 0.26410148,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.23776898
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2419301
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.26410148
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.23762754
+        }
+      ]
+    },
+    {
+      "instance_id": 32,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        0,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2705972,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.2705972,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26784435
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2705972
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23608391
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19902872
+        }
+      ]
+    },
+    {
+      "instance_id": 33,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        1,
+        2
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2704358,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.20838591,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2704358
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2604151
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.20838591
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.24347825
+        }
+      ]
+    },
+    {
+      "instance_id": 34,
+      "agent": [
+        0,
+        3
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.32918513,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.17329475,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.32918513
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2510545
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23036164
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.17329475
+        }
+      ]
+    },
+    {
+      "instance_id": 35,
+      "agent": [
+        0,
+        3
+      ],
+      "goal": [
+        2,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.29060745,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.25722197,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.29060745
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25722197
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21273586
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21834517
+        }
+      ]
+    },
+    {
+      "instance_id": 36,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        3,
+        4
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2736547,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.24839342,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2736547
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.24462454
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21538971
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.24839342
+        }
+      ]
+    },
+    {
+      "instance_id": 37,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        3,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.26826575,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.26149967,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26149967
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26826575
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23666018
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21651067
+        }
+      ]
+    },
+    {
+      "instance_id": 38,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        2,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.29262954,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.19841133,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.29262954
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.28313333
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2028138
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19841133
+        }
+      ]
+    },
+    {
+      "instance_id": 39,
+      "agent": [
+        2,
+        0
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.27812216,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.27812216,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.27812216
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2523233
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.20674355
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.24335222
+        }
+      ]
+    },
+    {
+      "instance_id": 40,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        0,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.30768073,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.30768073,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.30768073
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27618173
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21554558
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.17772314
+        }
+      ]
+    },
+    {
+      "instance_id": 41,
+      "agent": [
+        4,
+        1
+      ],
+      "goal": [
+        4,
+        2
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2627175,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.2627175,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2627175
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2582619
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22210126
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.23902868
+        }
+      ]
+    },
+    {
+      "instance_id": 42,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        0,
+        3
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.26351535,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.24824388,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2430318
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26351535
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24824388
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21829362
+        }
+      ]
+    },
+    {
+      "instance_id": 43,
+      "agent": [
+        4,
+        1
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.28786877,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.23805921,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.28786877
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2638651
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23805921
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.18799555
+        }
+      ]
+    },
+    {
+      "instance_id": 44,
+      "agent": [
+        0,
+        3
+      ],
+      "goal": [
+        3,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.26517615,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.21203473,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26517615
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.24218959
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2614352
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21203473
+        }
+      ]
+    },
+    {
+      "instance_id": 45,
+      "agent": [
+        0,
+        1
+      ],
+      "goal": [
+        2,
+        0
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2813055,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.20033526,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2813055
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27569202
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21851714
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20033526
+        }
+      ]
+    },
+    {
+      "instance_id": 46,
+      "agent": [
+        1,
+        3
+      ],
+      "goal": [
+        1,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.31379664,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.31379664,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.31379664
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2360926
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.19409263
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.23337452
+        }
+      ]
+    },
+    {
+      "instance_id": 47,
+      "agent": [
+        4,
+        2
+      ],
+      "goal": [
+        0,
+        2
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " well",
+      "top1_token_trimmed": "well",
+      "top1_prob": 0.29176077,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Left",
+      "forced_choice_correct": true,
+      "p_correct": 0.29176077,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.22997388
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27705616
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.29176077
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.18277714
+        }
+      ]
+    },
+    {
+      "instance_id": 48,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.30117473,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.25368762,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.22626664
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.30117473
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.25368762
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20329237
+        }
+      ]
+    },
+    {
+      "instance_id": 49,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.31317383,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.31317383,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.31317383
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25615117
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23074071
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.17732482
+        }
+      ]
+    },
+    {
+      "instance_id": 50,
+      "agent": [
+        1,
+        3
+      ],
+      "goal": [
+        0,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.32665366,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.32665366,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.24799551
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.32665366
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.25103512
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.15904076
+        }
+      ]
+    },
+    {
+      "instance_id": 51,
+      "agent": [
+        2,
+        0
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2782764,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.2707864,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2707864
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2782764
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23375012
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19872807
+        }
+      ]
+    },
+    {
+      "instance_id": 52,
+      "agent": [
+        3,
+        0
+      ],
+      "goal": [
+        0,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.27672052,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.24013895,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.24013895
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27672052
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24672006
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.2197075
+        }
+      ]
+    },
+    {
+      "instance_id": 53,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.26706564,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.26706564,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26706564
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2438874
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22208951
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.25098547
+        }
+      ]
+    },
+    {
+      "instance_id": 54,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        1,
+        2
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.26636288,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.21993357,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26137093
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26636288
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21993357
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.23317021
+        }
+      ]
+    },
+    {
+      "instance_id": 55,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        3,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2915649,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.2915649,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2915649
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.23861146
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21065944
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.23960203
+        }
+      ]
+    },
+    {
+      "instance_id": 56,
+      "agent": [
+        0,
+        3
+      ],
+      "goal": [
+        2,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.31757152,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.17466858,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.31757152
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27026588
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21684809
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.17466858
+        }
+      ]
+    },
+    {
+      "instance_id": 57,
+      "agent": [
+        1,
+        0
+      ],
+      "goal": [
+        4,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.27978796,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.2528884,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25445217
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27978796
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.18446426
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.2528884
+        }
+      ]
+    },
+    {
+      "instance_id": 58,
+      "agent": [
+        1,
+        4
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.29781482,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26351133,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.29781482
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26351133
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21351852
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.203027
+        }
+      ]
+    },
+    {
+      "instance_id": 59,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        2,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.26232758,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.26232758,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26232758
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2529482
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.26113993
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20843016
+        }
+      ]
+    },
+    {
+      "instance_id": 60,
+      "agent": [
+        2,
+        4
+      ],
+      "goal": [
+        3,
+        2
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.268422,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.268422,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25365356
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.268422
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21920674
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.24052155
+        }
+      ]
+    },
+    {
+      "instance_id": 61,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.27907097,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.2631875,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2631875
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27907097
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2182063
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21360455
+        }
+      ]
+    },
+    {
+      "instance_id": 62,
+      "agent": [
+        0,
+        0
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.29664516,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.27858466,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.27858466
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.29664516
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21294864
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19275622
+        }
+      ]
+    },
+    {
+      "instance_id": 63,
+      "agent": [
+        3,
+        3
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2784253,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.2784253,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26562107
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2784253
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2307835
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20266674
+        }
+      ]
+    },
+    {
+      "instance_id": 64,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        0,
+        3
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.27835444,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.23947142,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2642166
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27835444
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23947142
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20317668
+        }
+      ]
+    },
+    {
+      "instance_id": 65,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        1,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2802976,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.222593,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2802976
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26867053
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.222593
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21003534
+        }
+      ]
+    },
+    {
+      "instance_id": 66,
+      "agent": [
+        4,
+        2
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.30271035,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.1928774,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25893125
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.30271035
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.1928774
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.23218729
+        }
+      ]
+    },
+    {
+      "instance_id": 67,
+      "agent": [
+        2,
+        0
+      ],
+      "goal": [
+        1,
+        0
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2949444,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.20925824,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.28640586
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2949444
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.20925824
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.18827935
+        }
+      ]
+    },
+    {
+      "instance_id": 68,
+      "agent": [
+        3,
+        4
+      ],
+      "goal": [
+        2,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " round",
+      "top1_token_trimmed": "round",
+      "top1_prob": 0.26164094,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Right",
+      "forced_choice_correct": false,
+      "p_correct": 0.25698343,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.20511848
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25698343
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.26117077
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.26164094
+        }
+      ]
+    },
+    {
+      "instance_id": 69,
+      "agent": [
+        1,
+        0
+      ],
+      "goal": [
+        3,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.28340605,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.17321093,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26246393
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.28340605
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2586463
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.17321093
+        }
+      ]
+    },
+    {
+      "instance_id": 70,
+      "agent": [
+        1,
+        0
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2848134,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.23908651,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.23080207
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2848134
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23908651
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.22424829
+        }
+      ]
+    },
+    {
+      "instance_id": 71,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        4,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.26622948,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2640846,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26622948
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2640846
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24469297
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19985625
+        }
+      ]
+    },
+    {
+      "instance_id": 72,
+      "agent": [
+        4,
+        1
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.28578892,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.22062333,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.28578892
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27008554
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22062333
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20458451
+        }
+      ]
+    },
+    {
+      "instance_id": 73,
+      "agent": [
+        4,
+        4
+      ],
+      "goal": [
+        0,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.28194705,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.26187786,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25495562
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.28194705
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.26187786
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.18429627
+        }
+      ]
+    },
+    {
+      "instance_id": 74,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        1,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2741897,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.21552205,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2706172
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2741897
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21552205
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.2236429
+        }
+      ]
+    },
+    {
+      "instance_id": 75,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        1,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.27857268,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.24603984,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.24603984
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27857268
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23996747
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21496558
+        }
+      ]
+    },
+    {
+      "instance_id": 76,
+      "agent": [
+        0,
+        4
+      ],
+      "goal": [
+        4,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.299813,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.20120816,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.23459274
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.299813
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2409024
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20120816
+        }
+      ]
+    },
+    {
+      "instance_id": 77,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2730528,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.2232634,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2232634
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2730528
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22769205
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.2599601
+        }
+      ]
+    },
+    {
+      "instance_id": 78,
+      "agent": [
+        1,
+        0
+      ],
+      "goal": [
+        2,
+        2
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.28249624,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.2678194,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2678194
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.28249624
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.21039556
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21688057
+        }
+      ]
+    },
+    {
+      "instance_id": 79,
+      "agent": [
+        1,
+        3
+      ],
+      "goal": [
+        4,
+        4
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " well",
+      "top1_token_trimmed": "well",
+      "top1_prob": 0.27296537,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Left",
+      "forced_choice_correct": false,
+      "p_correct": 0.26023844,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2439325
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.20778313
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.27296537
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.26023844
+        }
+      ]
+    },
+    {
+      "instance_id": 80,
+      "agent": [
+        2,
+        1
+      ],
+      "goal": [
+        1,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.29633066,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.29633066,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.29633066
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25600418
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22307415
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20497078
+        }
+      ]
+    },
+    {
+      "instance_id": 81,
+      "agent": [
+        3,
+        3
+      ],
+      "goal": [
+        1,
+        3
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.26988032,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.23446,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25871745
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26988032
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23446
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21604739
+        }
+      ]
+    },
+    {
+      "instance_id": 82,
+      "agent": [
+        3,
+        4
+      ],
+      "goal": [
+        3,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.29175055,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.25133637,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.29175055
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25133637
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.25227246
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.18206824
+        }
+      ]
+    },
+    {
+      "instance_id": 83,
+      "agent": [
+        0,
+        2
+      ],
+      "goal": [
+        3,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2696475,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.21403581,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2599494
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2696475
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23513423
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21403581
+        }
+      ]
+    },
+    {
+      "instance_id": 84,
+      "agent": [
+        2,
+        0
+      ],
+      "goal": [
+        2,
+        3
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.33302096,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.33302096,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.33302096
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26480094
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.20926434
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.16825064
+        }
+      ]
+    },
+    {
+      "instance_id": 85,
+      "agent": [
+        0,
+        3
+      ],
+      "goal": [
+        2,
+        4
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.28262374,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.19996047,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.28262374
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27168828
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22448695
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19996047
+        }
+      ]
+    },
+    {
+      "instance_id": 86,
+      "agent": [
+        1,
+        0
+      ],
+      "goal": [
+        4,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " well",
+      "top1_token_trimmed": "well",
+      "top1_prob": 0.27117157,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Left",
+      "forced_choice_correct": false,
+      "p_correct": 0.25539455,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25539455
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.24785338
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.27117157
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20584682
+        }
+      ]
+    },
+    {
+      "instance_id": 87,
+      "agent": [
+        3,
+        0
+      ],
+      "goal": [
+        2,
+        4
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " well",
+      "top1_token_trimmed": "well",
+      "top1_prob": 0.2655677,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Left",
+      "forced_choice_correct": false,
+      "p_correct": 0.24623522,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.24623522
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.244367
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2655677
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.22461404
+        }
+      ]
+    },
+    {
+      "instance_id": 88,
+      "agent": [
+        1,
+        4
+      ],
+      "goal": [
+        2,
+        2
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.27229178,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26283973,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.27229178
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26283973
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22222067
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.22175664
+        }
+      ]
+    },
+    {
+      "instance_id": 89,
+      "agent": [
+        0,
+        4
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.26447302,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.26102912,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.26447302
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26102912
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22086002
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.23279196
+        }
+      ]
+    },
+    {
+      "instance_id": 90,
+      "agent": [
+        4,
+        3
+      ],
+      "goal": [
+        2,
+        4
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.2930376,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.22021553,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2930376
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.24358673
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.22021553
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.22239316
+        }
+      ]
+    },
+    {
+      "instance_id": 91,
+      "agent": [
+        4,
+        4
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.29728433,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.29728433,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.27797502
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.29728433
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.20915051
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19535878
+        }
+      ]
+    },
+    {
+      "instance_id": 92,
+      "agent": [
+        2,
+        3
+      ],
+      "goal": [
+        2,
+        2
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.28271776,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": true,
+      "p_correct": 0.28271776,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2693023
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.28271776
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.23539512
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.19588853
+        }
+      ]
+    },
+    {
+      "instance_id": 93,
+      "agent": [
+        3,
+        2
+      ],
+      "goal": [
+        4,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.27797067,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.20198338,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.2593503
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.27797067
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24448337
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.20198338
+        }
+      ]
+    },
+    {
+      "instance_id": 94,
+      "agent": [
+        4,
+        0
+      ],
+      "goal": [
+        4,
+        1
+      ],
+      "correct_action": "Up",
+      "correct_token": "black",
+      "correct_token_id": 2656,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.25456145,
+      "full_vocab_top1_correct": true,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": true,
+      "p_correct": 0.25456145,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25456145
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25239697
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.25436586
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.215393
+        }
+      ]
+    },
+    {
+      "instance_id": 95,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        0,
+        1
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.29558817,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2349933,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.29558817
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25465018
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2349933
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.1930688
+        }
+      ]
+    },
+    {
+      "instance_id": 96,
+      "agent": [
+        3,
+        4
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "correct_action": "Down",
+      "correct_token": "kind",
+      "correct_token_id": 2858,
+      "top1_token": " well",
+      "top1_token_trimmed": "well",
+      "top1_prob": 0.29136446,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Left",
+      "forced_choice_correct": false,
+      "p_correct": 0.26974475,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.25294057
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.26974475
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.29136446
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.16283761
+        }
+      ]
+    },
+    {
+      "instance_id": 97,
+      "agent": [
+        0,
+        2
+      ],
+      "goal": [
+        2,
+        1
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " kind",
+      "top1_token_trimmed": "kind",
+      "top1_prob": 0.2837123,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Down",
+      "forced_choice_correct": false,
+      "p_correct": 0.2182558,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.23404358
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2837123
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.24584042
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.2182558
+        }
+      ]
+    },
+    {
+      "instance_id": 98,
+      "agent": [
+        3,
+        1
+      ],
+      "goal": [
+        0,
+        2
+      ],
+      "correct_action": "Left",
+      "correct_token": "well",
+      "correct_token_id": 1578,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.28716636,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2055192,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.28716636
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.2684569
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.2055192
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.21978913
+        }
+      ]
+    },
+    {
+      "instance_id": 99,
+      "agent": [
+        1,
+        1
+      ],
+      "goal": [
+        4,
+        2
+      ],
+      "correct_action": "Right",
+      "correct_token": "round",
+      "correct_token_id": 5094,
+      "top1_token": " black",
+      "top1_token_trimmed": "black",
+      "top1_prob": 0.28708896,
+      "full_vocab_top1_correct": false,
+      "forced_choice_action": "Up",
+      "forced_choice_correct": false,
+      "p_correct": 0.2307608,
+      "action_probs": [
+        {
+          "action": "Up",
+          "token": "black",
+          "prob": 0.28708896
+        },
+        {
+          "action": "Down",
+          "token": "kind",
+          "prob": 0.25242275
+        },
+        {
+          "action": "Left",
+          "token": "well",
+          "prob": 0.20204279
+        },
+        {
+          "action": "Right",
+          "token": "round",
+          "prob": 0.2307608
+        }
+      ]
+    }
+  ],
+  "elapsed_secs": 56.7838198
+}
