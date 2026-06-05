@@ -258,6 +258,39 @@ MLP-dominance still holds; the three onsets use different thresholds, so the
 *ordering* and the *MLP-dominance* are the robust claims, not the exact depths.
 **This closes the CLT-free mechanism arc (a) + (b).**
 
+### Depth-axis (ir)revocability — does a later layer overturn the decision?
+
+`examples/decision_trace` (no CLT) logit-lenses every layer's planning-site
+residual and tracks the signed action margin `d[L] = logit(correct) −
+logit(alternative)`. To avoid the `on ≻ off` frequency baseline (which makes an
+absolute zero-crossing meaningless), it uses **peak-vs-final** statistics: the
+margin peaks at some layer, the **late erosion** is `peak − final`, and a decision
+is **flipped by late layers** when the correct action led at the peak (`peak > 0`)
+yet lost at the readout (`final ≤ 0`).
+
+| Base model (n_layers) | peak layer | late erosion (peak−final) | last-layer Δ | failures that are late-flips |
+|---|---:|---:|---:|---:|
+| Llama 3.2 1B (16) | 12 (0.75) | +5.9 (95%) | −1.7 (68%) | **7/7 (100%)** |
+| Gemma 2 2B (26) | 23 (0.88) | +13.9 (100%) | −9.5 (98%) | **3/3 (100%)** |
+| Qwen3-1.7B (28) | 24 (0.86) | +7.7 (100%) | −2.0 (93%) | **2/2 (100%)** |
+| Qwen3-0.6B (28) | 22 (0.79) | +6.9 (100%) | −1.1 (86%) | **5/5 (100%)** |
+
+**The decision is *strongest at the mid-late peak* (~0.75–0.88 depth) and the later
+layers systematically walk it back** (95–100 % of items eroded; the last layer is
+the single biggest eroder). And **in 100 % of the model's errors, across all four
+models, the goal-correct `off` was winning at the peak and the late layers flipped
+it to the lexical prior `on`** — every failure is an `off`-correct item (verified;
+not the `on`-bias artifact), so the mid-stack *computed the right operator* and the
+final layers *relapsed to the "turn it on" prior*. The readout is therefore a
+**worse operator-selector than the mid-stack peak**. So means-ends is
+depth-**revocable** — the opposite of STRIPS non-backtracking: there is
+"backtracking" in *depth*, it is directional (toward the lexical prior), and that
+backtracking *is* the failure mode. **Caveat:** the erosion *magnitude* (esp.
+Gemma's +13.9 / −9.5) is largely **final-layer calibration** — Gemma-2 logit
+soft-capping and the general final-norm temperature compress the margin — not
+deliberate reconsideration; the robust claims are **sign-based** (the late layers
+reduce the margin and, in failures, flip it toward the prior).
+
 ## Provenance
 
 Commits (on `main`, unpushed): `da1216a` Step 0 · `40171ff` Step A (gridworld

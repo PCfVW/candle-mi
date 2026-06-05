@@ -90,6 +90,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     (`means_ends_sweep --clt-repo/--feature-on/--feature-off`), with on/off inject
     features picked per CLT from a vocab scan — putting the action cell on the
     same minimum-architecture footing as the rhyme cells.
+  - **Depth-axis irrevocability** (`examples/decision_trace`): logit-lenses every
+    layer's planning-site residual to trace the signed action margin
+    `logit(correct) − logit(alternative)` by layer, and reports the commit layer
+    (first positive margin), whether the decision ever re-crosses to ≤ 0 at a later
+    layer (depth-irrevocable vs transiently backtracked), and how often / how much
+    the last layer reduces the margin — the depth-axis analogue of STRIPS
+    non-backtracking.
   - **MLP-vs-attention DLA (CLT-free)** (`examples/action_dla`): the mechanism
     behind compute-then-readout — decomposes the action logit-diff
     `logit(on) − logit(off)` at the planning site into per-layer `AttnOut`/`MlpOut`
