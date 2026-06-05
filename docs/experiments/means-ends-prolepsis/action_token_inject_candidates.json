@@ -1,0 +1,48 @@
+{
+  "purpose": "Step B prerequisite: candidate CLT inject/suppress features for the means-ends action tokens, from a full vocab scan of the 2.5M Gemma CLT. Determines whether the locked on_off cell can be steered.",
+  "model": "google/gemma-2-2b",
+  "clt_repo": "mntss/clt-gemma-2-2b-2.5M",
+  "scan": {
+    "tool": "examples/vocab_scan (full, all 26 layers)",
+    "raw_output": "docs/experiments/means-ends-prolepsis/vocab_scan_gemma2_2b_2.5m_raw.json (gitignored, ~3.0 GB)",
+    "features_scanned": 2555904,
+    "metric": "decoder -> embedding cosine; Gemma ties embeddings, so this is the feature's logit-write direction toward the token",
+    "query_tool": "scripts/pick_inject_feature.py"
+  },
+  "caveat": "Candidates only. Final steering efficacy is validated by the Step B suppress-plus-inject sweep (as in COLM); cosine is a necessary, not sufficient, indicator. COLM's working 2.5M inject features were ~0.4-0.6.",
+  "tokens": {
+    "on": {
+      "verdict": "clean / strong",
+      "best": { "layer": 25, "index": 78640, "cos_to_target": 0.5081, "top5": ["on", "على", "на", "On", "On"] },
+      "alternates": [{ "layer": 25, "index": 76525, "cos_to_target": 0.4591 }, { "layer": 24, "index": 17826, "cos_to_target": 0.4077 }]
+    },
+    "off": {
+      "verdict": "clean / moderate",
+      "best": { "layer": 24, "index": 92568, "cos_to_target": 0.3555, "top5": ["off", "Off", "OFF", "Off", "off"] },
+      "alternates": [{ "layer": 24, "index": 221, "cos_to_target": 0.3831, "note": "#1 token is capitalized 'Off'" }, { "layer": 23, "index": 94796, "cos_to_target": 0.3196 }]
+    },
+    "open": {
+      "verdict": "clean / strong",
+      "best": { "layer": 25, "index": 78851, "cos_to_target": 0.5417, "top5": ["open", "open", "Open", "Open", "OPEN"] }
+    },
+    "closed": {
+      "verdict": "UNUSABLE - no clean feature (polysemantic open/close-ness; #1 token is 'opened')",
+      "best": { "layer": 19, "index": 64540, "cos_to_target": 0.1506, "top5": ["opened", "closed", "opens", "closes", "open"] }
+    },
+    "up": {
+      "verdict": "clean / weak",
+      "best": { "layer": 24, "index": 18084, "cos_to_target": 0.3059, "top5": ["up", "Up", "Up", "up", "upto"] }
+    },
+    "down": {
+      "verdict": "clean / weak",
+      "best": { "layer": 19, "index": 73562, "cos_to_target": 0.2576, "top5": ["down", "DOWN", "Down", "down", "Down"] }
+    }
+  },
+  "step_b_decision": {
+    "cell": "on_off",
+    "rationale": "Only family with clean, single-sense features on BOTH sides (on 0.51, off 0.36), enabling bidirectional suppress-plus-inject. 'open' is the single cleanest action feature (0.54) but 'closed' has no usable feature (0.15), so open_closed cannot do a clean bidirectional intervention. up/down are usable but weak (0.26-0.31) - a secondary fallback.",
+    "inject_on": { "layer": 25, "index": 78640, "cos": 0.5081 },
+    "suppress_off": { "layer": 24, "index": 92568, "cos": 0.3555 },
+    "note": "The off feature is weaker than on, so the redirect may need asymmetric/higher strength on the off side; the Step B sweep will quantify. Both features sit at L24-25 (late), consistent with the COLM Gemma redirect features."
+  }
+}
