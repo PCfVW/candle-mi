@@ -162,6 +162,10 @@ name = "means_ends_sweep"
 required-features = ["clt", "transformer"]
 
 [[example]]
+name = "commitment_onset"
+required-features = ["clt", "transformer"]
+
+[[example]]
 name = "maar_contrastive_steering"
 required-features = ["transformer"]
 

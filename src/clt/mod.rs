@@ -916,19 +916,24 @@ impl CrossLayerTranscoder {
             // naming). PROMOTE: BF16 on disk → F32 for the `pre > threshold`
             // gate, matching the F32-everywhere precision strategy.
             let threshold_name = format!("threshold_{layer}");
-            let t = tensor_from_view(
-                &st.tensor(&threshold_name).map_err(|e| {
-                    MIError::Config(format!(
-                        "tensor '{threshold_name}' not found in encoder file \
-                         for layer {layer} (CltSplitJumpReLU requires a \
-                         JumpReLU threshold): {e}"
-                    ))
-                })?,
-                device,
-            )?;
-            // PROMOTE: threshold may be BF16 on disk; encode-path gate
-            // needs F32 to match the F32 pre-activation tensor.
-            Some(t.to_dtype(DType::F32)?)
+            if let Ok(view) = st.tensor(&threshold_name) {
+                let t = tensor_from_view(&view, device)?;
+                // PROMOTE: threshold may be BF16 on disk; encode-path gate
+                // needs F32 to match the F32 pre-activation tensor.
+                Some(t.to_dtype(DType::F32)?)
+            } else {
+                // The schema was flagged CltSplitJumpReLU by the
+                // `features/index.json.gz` sidecar heuristic, but this repo
+                // ships a plain-ReLU encoder with no `threshold_{l}` tensor
+                // (e.g. mntss/clt-gemma-2-2b-*). Treat as ReLU (no gate) rather
+                // than failing the load; the encode path falls back to ReLU
+                // when the threshold is `None`.
+                tracing::warn!(
+                    "encoder file for layer {layer} has no '{threshold_name}'; \
+                     treating this CltSplitJumpReLU repo as plain ReLU"
+                );
+                None
+            }
         } else {
             None
         };
@@ -1133,20 +1138,30 @@ impl CrossLayerTranscoder {
                             .into(),
                     )
                 })?;
-                let threshold = enc.threshold.as_ref().ok_or_else(|| {
-                    MIError::Hook(
-                        "JumpReLU encode requires a threshold tensor; \
-                         the loaded encoder has none (load path mismatch?)"
-                            .into(),
-                    )
-                })?;
-                // JumpReLU: select pre-activation where mask is non-zero, 0 otherwise.
-                // `where_cond` fuses the mask-select into one op — avoids the
-                // U8 → F32 dtype cast and the explicit elementwise multiply
-                // that the older `pre * mask.to_dtype(F32)` formulation needed.
-                let mask = pre_acts.gt(threshold)?;
-                let zeros = pre_acts.zeros_like()?;
-                mask.where_cond(&pre_acts, &zeros)?
+                if let Some(threshold) = enc.threshold.as_ref() {
+                    // JumpReLU: select pre-activation where mask is non-zero,
+                    // 0 otherwise. `where_cond` fuses the mask-select into one
+                    // op — avoids the U8 → F32 dtype cast and the explicit
+                    // elementwise multiply the older `pre * mask` form needed.
+                    let mask = pre_acts.gt(threshold)?;
+                    let zeros = pre_acts.zeros_like()?;
+                    mask.where_cond(&pre_acts, &zeros)?
+                } else {
+                    // GemmaScope must always carry a threshold; its absence is a
+                    // genuine load-path mismatch (asserted by tests).
+                    // CltSplitJumpReLU, by contrast, can be a plain-ReLU mntss
+                    // repo mis-flagged JumpReLU by the `features/index.json.gz`
+                    // sidecar heuristic (no `threshold_{l}` tensor on disk) — fall
+                    // back to ReLU rather than failing.
+                    if matches!(self.config.schema, TranscoderSchema::GemmaScopeNpz) {
+                        return Err(MIError::Hook(
+                            "JumpReLU encode requires a threshold tensor; \
+                             the loaded encoder has none (load path mismatch?)"
+                                .into(),
+                        ));
+                    }
+                    pre_acts.relu()?
+                }
             }
         };
 

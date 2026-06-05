@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **CLT encoder loading for sidecar-flagged ReLU CLTs.** `load_encoder` errored
+  (`threshold_{l}` not found) for repos classified `CltSplitJumpReLU` via the
+  `features/index.json.gz` sidecar heuristic that nonetheless ship plain-ReLU
+  encoders with no threshold tensor (the mntss Gemma CLTs `clt-gemma-2-2b-2.5M`
+  / `-426k`). It now falls back to plain ReLU when the threshold is genuinely
+  absent (GemmaScope remains strict), so the encoder / `encode()` /
+  `encode_pre_activation` path works for these CLTs instead of aborting.
+
 ### Added
 
 - **Gridworld prolepsis experiment — Step 0 scaffolding** (per
@@ -74,7 +82,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     scan), locating the planning-site spike and anchoring it to clause landmarks
     via `encode_with_offsets`. Permuting the Initial/Goal order dissociates a
     goal-bound vs information-completion (STRIPS precondition antecedent) vs
-    output-adjacent planning site.
+    output-adjacent planning site. **Result:** the redirect spikes at the
+    planning site (last content token), 48/48 items, best abs. P(inject)=0.97 —
+    the canonical Figure-13 shape, now in the action domain.
+  - **Means-ends cross-CLT replications:** the same `on_off` planning-site sweep
+    runs on the Gemma 2 2B 426K CLT and the 16-layer Llama 3.2 1B 524K CLT
+    (`means_ends_sweep --clt-repo/--feature-on/--feature-off`), with on/off inject
+    features picked per CLT from a vocab scan — putting the action cell on the
+    same minimum-architecture footing as the rhyme cells.
+  - **Commitment-onset layer** (`examples/commitment_onset`,
+    `scripts/pick_per_layer_feature.py`): at the planning site, measures the
+    layer at which the committed token is decided, two complementary ways —
+    logit-lens P(committed) by layer (onset = first top-1 layer) and the CLT
+    feature-activation of the per-layer best-encoding feature (onset = first
+    layer above threshold) — adding a depth / minimum-architecture axis to the
+    planning-site replications.
 
 ## [0.1.12] - 2026-05-28
 
