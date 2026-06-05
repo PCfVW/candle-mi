@@ -55,6 +55,48 @@ goal-driven, not collocational. Scope is honest: this is single-operator
 selection (the *first* commitment), not multi-step plan search — which is exactly
 the right scope for a *prolepsis* study and faithful to how rhyme planning works.
 
+## Classical-planning framing: the STRIPS commitment rule
+
+The sharper statement of the hypothesis: we are testing whether a transformer's
+forward pass **instantiates the STRIPS operator-commitment rule** (Fikes &
+Nilsson 1971), as stated by Ghallab, Nau & Traverso (*Automated Planning: Theory
+and Practice*, 2004, §4.4, p. 76): *"If the current state satisfies all of an
+operator's preconditions, STRIPS commits to executing that operator and will not
+backtrack over this commitment."* That single sentence maps clause-by-clause
+onto three already-designed probes:
+
+- **"if the current state satisfies the preconditions" → *when* it commits.**
+  The antecedent is precondition-satisfaction — commitment once state + goal are
+  encoded, i.e. the *information-completion* locus. The Initial/Goal
+  order-permutation (Step B) tests exactly this: does the planning-site spike
+  track where the preconditions become checkable, or sit at a fixed pre-output
+  slot?
+- **"commits to executing that operator" → *that* it commits.** The operator is
+  the action token; the planning-site spike is the commitment event.
+- **"will not backtrack over this commitment" → *that it won't revise*.** This is
+  the irrevocability / correction sweep (COLM Appendix-G analogue):
+  "commitment locked under contradictory injection" is the neural-substrate
+  restatement of non-backtracking.
+
+This places transformer action-selection on the classical **commitment-strategy
+axis** — at the **STRIPS / eager** end (commit early, don't backtrack) rather
+than the **least-commitment / partial-order** end (TWEAK, Chapman 1987; SNLP,
+McAllester & Rosenblitt 1991; UCPOP, Penberthy & Weld 1992; Weld 1994), which
+was invented precisely to avoid premature commitment. It also yields a
+falsifiable failure prediction: STRIPS's non-backtracking commitment is the very
+source of its **incompleteness**, witnessed by the **Sussman anomaly** (subgoal
+interactions requiring the first operator to be undone). If a transformer commits
+STRIPS-style, it should fail *where STRIPS fails* — recasting "LLMs can't plan"
+(Kambhampati et al.) as a candidate *mechanistic diagnosis* (eager-commitment
+planning, with eager-commitment incompleteness) rather than a flat verdict.
+
+**Two honesty checks.** (i) This is a correspondence to be *earned*: if Step B
+shows the spike at the stem (shallow lookup), the GNT-antecedent prediction
+breaks and it is "completion dressed as commitment." (ii) Single-operator
+selection cannot exhibit the Sussman failure — that is strictly a
+**multi-operator follow-on cell** (does the model fail on subgoal-interacting
+instances exactly as ground-STRIPS does?).
+
 ## Where we're heading — Step B
 
 Run the suppress-plus-inject **position sweep** on the `on_off` cell (inject
