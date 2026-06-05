@@ -227,6 +227,37 @@ different thresholds (patch recovery ≥ 0.5 vs first top-1), so the *direction*
 the ~3–8-layer gap are the robust claim, not the exact depths. The mechanism split
 (MLP vs attention DLA) is the deliberate next step, not done here.
 
+### Mechanism — MLP-vs-attention DLA (CLT-free)
+
+`examples/action_dla` (no CLT) decomposes the action logit-diff
+`logit(on) − logit(off)` at the planning-site token into per-layer `AttnOut`/`MlpOut`
+contributions via **frozen-final-norm direct logit attribution**
+(`contrib(c) = (rms(c)/rms(R_final)) · logit_diff(project_to_vocab(c))` — additive
+by construction; the per-component *ablation* variant is **not** additive under
+RMSNorm, which the additivity sanity check caught: 0.15 → 1.00 after the fix). The
+**goal-driven** contribution is `contrib_clean − contrib_corrupt` on the same
+`bright`/`dark` pairs and keep-gate as (a).
+
+| Base model (n_layers) | DLA onset | (a) causal onset | logit-lens onset | attn total | **MLP total** | kept |
+|---|---:|---:|---:|---:|---:|---:|
+| Gemma 2 2B (26) | 0.88 | 0.58 | 0.83 | +29.8 | **+68.5** | 7/8 |
+| Llama 3.2 1B (16) | 0.75 | 0.66 | 0.81 | +6.7 | **+9.7** | 6/8 |
+| Qwen3-1.7B (28) | 0.86 | 0.61 | 0.89 | +4.7 | **+28.2** | 7/8 |
+| Qwen3-0.6B (28) | 0.77 | 0.61 | 0.79 | +1.0 | **+5.3** | 2/8 |
+
+**The goal→action signal is written predominantly by the MLPs in every model**
+(MLP ≫ attention, 1.4×–6×) — the means-ends action is **composed in the MLPs**, not
+attention-copied from a stored associate. That is the *compute* verdict,
+mechanistically; attention plays a secondary (goal-routing) role. The onsets form a
+pipeline: the goal is **causally present** at the decision token early (~0.6, from
+(a)), the **MLPs compose it into the action-logit direction** in the upper-mid stack
+(DLA onset ~0.75–0.88), and it **surfaces as top-1** last (logit-lens ~0.79–0.89) —
+so the late readout is the *tail of MLP composition*, not late arrival of the goal.
+Caveats: additivity = 1.00 (validated); Qwen3-0.6B is thin (2/8 kept) but
+MLP-dominance still holds; the three onsets use different thresholds, so the
+*ordering* and the *MLP-dominance* are the robust claims, not the exact depths.
+**This closes the CLT-free mechanism arc (a) + (b).**
+
 ## Provenance
 
 Commits (on `main`, unpushed): `da1216a` Step 0 · `40171ff` Step A (gridworld

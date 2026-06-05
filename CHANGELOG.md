@@ -90,6 +90,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     (`means_ends_sweep --clt-repo/--feature-on/--feature-off`), with on/off inject
     features picked per CLT from a vocab scan — putting the action cell on the
     same minimum-architecture footing as the rhyme cells.
+  - **MLP-vs-attention DLA (CLT-free)** (`examples/action_dla`): the mechanism
+    behind compute-then-readout — decomposes the action logit-diff
+    `logit(on) − logit(off)` at the planning site into per-layer `AttnOut`/`MlpOut`
+    contributions (component ablation through the real `project_to_vocab` readout)
+    and isolates the goal-driven part by contrasting the `bright`/`dark` pair.
+    Reports which component writes the goal→action signal, at which layers, and a
+    DLA onset comparable to the activation-patching causal onset.
   - **Contrastive activation patching (CLT-free)** (`examples/contrastive_patch`,
     `means_ends_generator.py --contrastive`): the no-CLT causal mirror — patch the
     clean residual into a token-aligned `bright`/`dark` goal-flip pair at each
