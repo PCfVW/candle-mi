@@ -52,7 +52,13 @@ fn main() {
 }
 
 fn run() -> candle_mi::Result<()> {
-    let prompt = "The capital of France is";
+    // BORROW: an optional `GEN_PROMPT` env var overrides the default prompt
+    // (lets callers pass a multi-line prompt without a CLI flag); `.as_deref()`
+    // hands the inner `&str` to the generation loop without cloning.
+    let prompt_owned = std::env::var("GEN_PROMPT").ok();
+    let prompt = prompt_owned
+        .as_deref()
+        .unwrap_or("The capital of France is");
     let max_new_tokens: usize = 20;
     let args: Vec<String> = std::env::args().collect();
 

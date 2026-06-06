@@ -1,0 +1,374 @@
+{
+  "gemma2_2b": {
+    "n": 79,
+    "dual_hit": 45,
+    "rhyme": 48,
+    "goal_lean": 78,
+    "four_way": {
+      "both": 48,
+      "rhyme_only": 0,
+      "goal_only": 30,
+      "neither": 1
+    },
+    "oov": 3,
+    "top_completions": [
+      [
+        "down",
+        7
+      ],
+      [
+        "bright",
+        6
+      ],
+      [
+        "stop",
+        6
+      ],
+      [
+        "glow",
+        5
+      ],
+      [
+        "loud",
+        5
+      ],
+      [
+        "cold",
+        5
+      ],
+      [
+        "cool",
+        4
+      ],
+      [
+        "up",
+        4
+      ]
+    ],
+    "per_family_dual_hit": {
+      "bright_dark": [
+        6,
+        8
+      ],
+      "cold_hot": [
+        5,
+        7
+      ],
+      "cool_warm": [
+        4,
+        7
+      ],
+      "down_up": [
+        6,
+        7
+      ],
+      "glow_dim": [
+        5,
+        8
+      ],
+      "high_low": [
+        1,
+        7
+      ],
+      "hot_cold": [
+        3,
+        7
+      ],
+      "loud_soft": [
+        5,
+        7
+      ],
+      "shut_open": [
+        4,
+        7
+      ],
+      "warm_cool": [
+        3,
+        7
+      ],
+      "wide_narrow": [
+        3,
+        7
+      ]
+    }
+  },
+  "llama32_1b": {
+    "n": 79,
+    "dual_hit": 25,
+    "rhyme": 27,
+    "goal_lean": 67,
+    "four_way": {
+      "both": 26,
+      "rhyme_only": 1,
+      "goal_only": 41,
+      "neither": 11
+    },
+    "oov": 5,
+    "top_completions": [
+      [
+        "hot",
+        12
+      ],
+      [
+        "down",
+        7
+      ],
+      [
+        "a",
+        6
+      ],
+      [
+        "up",
+        6
+      ],
+      [
+        "loud",
+        5
+      ],
+      [
+        "bright",
+        4
+      ],
+      [
+        "so",
+        2
+      ],
+      [
+        "light",
+        2
+      ]
+    ],
+    "per_family_dual_hit": {
+      "bright_dark": [
+        1,
+        8
+      ],
+      "cold_hot": [
+        2,
+        7
+      ],
+      "cool_warm": [
+        1,
+        7
+      ],
+      "down_up": [
+        6,
+        7
+      ],
+      "glow_dim": [
+        0,
+        8
+      ],
+      "high_low": [
+        1,
+        7
+      ],
+      "hot_cold": [
+        6,
+        7
+      ],
+      "loud_soft": [
+        5,
+        7
+      ],
+      "shut_open": [
+        1,
+        7
+      ],
+      "warm_cool": [
+        1,
+        7
+      ],
+      "wide_narrow": [
+        1,
+        7
+      ]
+    }
+  },
+  "qwen3_1.7b": {
+    "n": 79,
+    "dual_hit": 32,
+    "rhyme": 34,
+    "goal_lean": 68,
+    "four_way": {
+      "both": 34,
+      "rhyme_only": 0,
+      "goal_only": 34,
+      "neither": 11
+    },
+    "oov": 3,
+    "top_completions": [
+      [
+        "bright",
+        9
+      ],
+      [
+        "warm",
+        6
+      ],
+      [
+        "a",
+        5
+      ],
+      [
+        "hot",
+        5
+      ],
+      [
+        "loud",
+        5
+      ],
+      [
+        "down",
+        5
+      ],
+      [
+        "wide",
+        4
+      ],
+      [
+        "up",
+        3
+      ]
+    ],
+    "per_family_dual_hit": {
+      "bright_dark": [
+        4,
+        8
+      ],
+      "cold_hot": [
+        2,
+        7
+      ],
+      "cool_warm": [
+        1,
+        7
+      ],
+      "down_up": [
+        4,
+        7
+      ],
+      "glow_dim": [
+        2,
+        8
+      ],
+      "high_low": [
+        1,
+        7
+      ],
+      "hot_cold": [
+        3,
+        7
+      ],
+      "loud_soft": [
+        5,
+        7
+      ],
+      "shut_open": [
+        2,
+        7
+      ],
+      "warm_cool": [
+        5,
+        7
+      ],
+      "wide_narrow": [
+        3,
+        7
+      ]
+    }
+  },
+  "qwen3_0.6b": {
+    "n": 79,
+    "dual_hit": 20,
+    "rhyme": 21,
+    "goal_lean": 66,
+    "four_way": {
+      "both": 21,
+      "rhyme_only": 0,
+      "goal_only": 45,
+      "neither": 13
+    },
+    "oov": 5,
+    "top_completions": [
+      [
+        "bright",
+        14
+      ],
+      [
+        "a",
+        14
+      ],
+      [
+        "warm",
+        7
+      ],
+      [
+        "down",
+        6
+      ],
+      [
+        "hot",
+        4
+      ],
+      [
+        "up",
+        4
+      ],
+      [
+        ".",
+        3
+      ],
+      [
+        "loud",
+        2
+      ]
+    ],
+    "per_family_dual_hit": {
+      "bright_dark": [
+        6,
+        8
+      ],
+      "cold_hot": [
+        0,
+        7
+      ],
+      "cool_warm": [
+        0,
+        7
+      ],
+      "down_up": [
+        3,
+        7
+      ],
+      "glow_dim": [
+        0,
+        8
+      ],
+      "high_low": [
+        1,
+        7
+      ],
+      "hot_cold": [
+        2,
+        7
+      ],
+      "loud_soft": [
+        2,
+        7
+      ],
+      "shut_open": [
+        0,
+        7
+      ],
+      "warm_cool": [
+        4,
+        7
+      ],
+      "wide_narrow": [
+        2,
+        7
+      ]
+    }
+  }
+}

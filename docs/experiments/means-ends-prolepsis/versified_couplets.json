@@ -1,0 +1,713 @@
+[
+  {
+    "id": 0,
+    "family": "glow_dim",
+    "prompt": "The room is dim, the lamps are low,\nwe want it bright, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 1,
+    "family": "glow_dim",
+    "prompt": "The fire has faded, embers low,\nwe want more light, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 2,
+    "family": "glow_dim",
+    "prompt": "The screen is dark, its backlight low,\nwe want to see, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 3,
+    "family": "glow_dim",
+    "prompt": "The porch is dark, the wattage low,\nwe want it cheery, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 4,
+    "family": "glow_dim",
+    "prompt": "The lantern's faint, its wick set low,\nwe want a beacon, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 5,
+    "family": "glow_dim",
+    "prompt": "The streetlamp flickers, dull and low,\nwe want it shining, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 6,
+    "family": "glow_dim",
+    "prompt": "The hallway dims, the voltage low,\nwe want it brilliant, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 7,
+    "family": "glow_dim",
+    "prompt": "The bulb is weak, its current low,\nwe want it radiant, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 8,
+    "family": "bright_dark",
+    "prompt": "The bulb is dead, the room is night,\nwe want to read, so make it",
+    "correct": "bright",
+    "alternative": "dark",
+    "anchor": "night",
+    "target": "bright"
+  },
+  {
+    "id": 9,
+    "family": "bright_dark",
+    "prompt": "We grope around, deprived of light,\nwe need to work, so make it",
+    "correct": "bright",
+    "alternative": "dark",
+    "anchor": "light",
+    "target": "bright"
+  },
+  {
+    "id": 10,
+    "family": "bright_dark",
+    "prompt": "The dusk has fallen, dim the light,\nwe want to sew, so make it",
+    "correct": "bright",
+    "alternative": "dark",
+    "anchor": "light",
+    "target": "bright"
+  },
+  {
+    "id": 11,
+    "family": "bright_dark",
+    "prompt": "The cellar's black as starless night,\nwe want to search, so make it",
+    "correct": "bright",
+    "alternative": "dark",
+    "anchor": "night",
+    "target": "bright"
+  },
+  {
+    "id": 12,
+    "family": "bright_dark",
+    "prompt": "The study's gloomy, poor of light,\nwe want to focus, so make it",
+    "correct": "bright",
+    "alternative": "dark",
+    "anchor": "light",
+    "target": "bright"
+  },
+  {
+    "id": 13,
+    "family": "bright_dark",
+    "prompt": "The lamp burns weak, a dying light,\nwe want it dazzling, so make it",
+    "correct": "bright",
+    "alternative": "dark",
+    "anchor": "light",
+    "target": "bright"
+  },
+  {
+    "id": 14,
+    "family": "bright_dark",
+    "prompt": "The workshop dims at fall of night,\nwe want precision, so make it",
+    "correct": "bright",
+    "alternative": "dark",
+    "anchor": "night",
+    "target": "bright"
+  },
+  {
+    "id": 15,
+    "family": "bright_dark",
+    "prompt": "The garret's grey, devoid of light,\nwe want to paint, so make it",
+    "correct": "bright",
+    "alternative": "dark",
+    "anchor": "light",
+    "target": "bright"
+  },
+  {
+    "id": 16,
+    "family": "warm_cool",
+    "prompt": "Outside there rages a winter storm,\nwe're chilled inside, so make it",
+    "correct": "warm",
+    "alternative": "cool",
+    "anchor": "storm",
+    "target": "warm"
+  },
+  {
+    "id": 17,
+    "family": "warm_cool",
+    "prompt": "The cabin's frigid after the storm,\nwe want some heat, so make it",
+    "correct": "warm",
+    "alternative": "cool",
+    "anchor": "storm",
+    "target": "warm"
+  },
+  {
+    "id": 18,
+    "family": "warm_cool",
+    "prompt": "The wind howls cold in a dreadful storm,\nwe want to thaw, so make it",
+    "correct": "warm",
+    "alternative": "cool",
+    "anchor": "storm",
+    "target": "warm"
+  },
+  {
+    "id": 19,
+    "family": "warm_cool",
+    "prompt": "Snow buries the road in a morning storm,\nwe seek some comfort, so make it",
+    "correct": "warm",
+    "alternative": "cool",
+    "anchor": "storm",
+    "target": "warm"
+  },
+  {
+    "id": 20,
+    "family": "warm_cool",
+    "prompt": "The barn runs cold, below its norm,\nthe calves are shivering, so make it",
+    "correct": "warm",
+    "alternative": "cool",
+    "anchor": "norm",
+    "target": "warm"
+  },
+  {
+    "id": 21,
+    "family": "warm_cool",
+    "prompt": "The tent is icy through the storm,\nwe want to rest, so make it",
+    "correct": "warm",
+    "alternative": "cool",
+    "anchor": "storm",
+    "target": "warm"
+  },
+  {
+    "id": 22,
+    "family": "warm_cool",
+    "prompt": "The office froze beneath the storm,\nthe staff are stamping, so make it",
+    "correct": "warm",
+    "alternative": "cool",
+    "anchor": "storm",
+    "target": "warm"
+  },
+  {
+    "id": 23,
+    "family": "cool_warm",
+    "prompt": "The afternoon is hot beside the pool,\nwe want relief, so make it",
+    "correct": "cool",
+    "alternative": "warm",
+    "anchor": "pool",
+    "target": "cool"
+  },
+  {
+    "id": 24,
+    "family": "cool_warm",
+    "prompt": "The classroom's stifling, like a school,\nwe want fresh air, so make it",
+    "correct": "cool",
+    "alternative": "warm",
+    "anchor": "school",
+    "target": "cool"
+  },
+  {
+    "id": 25,
+    "family": "cool_warm",
+    "prompt": "The engine's redlined, breaking every rule,\nbefore it fails, so make it",
+    "correct": "cool",
+    "alternative": "warm",
+    "anchor": "rule",
+    "target": "cool"
+  },
+  {
+    "id": 26,
+    "family": "cool_warm",
+    "prompt": "The greenhouse roasts, a sweltering pool,\nto save the ferns, so make it",
+    "correct": "cool",
+    "alternative": "warm",
+    "anchor": "pool",
+    "target": "cool"
+  },
+  {
+    "id": 27,
+    "family": "cool_warm",
+    "prompt": "The dorm is baking, hot as a school,\nwe want to sleep, so make it",
+    "correct": "cool",
+    "alternative": "warm",
+    "anchor": "school",
+    "target": "cool"
+  },
+  {
+    "id": 28,
+    "family": "cool_warm",
+    "prompt": "The server room is far too warm to cool\nwith one small fan, so make it",
+    "correct": "cool",
+    "alternative": "warm",
+    "anchor": "cool",
+    "target": "cool"
+  },
+  {
+    "id": 29,
+    "family": "cool_warm",
+    "prompt": "The kiln still glows, too hot to spool,\nwe want to handle it, so make it",
+    "correct": "cool",
+    "alternative": "warm",
+    "anchor": "spool",
+    "target": "cool"
+  },
+  {
+    "id": 30,
+    "family": "loud_soft",
+    "prompt": "The hall is hushed before the crowd,\nwe want to hear, so make it",
+    "correct": "loud",
+    "alternative": "soft",
+    "anchor": "crowd",
+    "target": "loud"
+  },
+  {
+    "id": 31,
+    "family": "loud_soft",
+    "prompt": "The speaker's muffled, no sound allowed,\nwe want some music, so make it",
+    "correct": "loud",
+    "alternative": "soft",
+    "anchor": "allowed",
+    "target": "loud"
+  },
+  {
+    "id": 32,
+    "family": "loud_soft",
+    "prompt": "The whisper's lost amid the crowd,\nwe want to reach them, so make it",
+    "correct": "loud",
+    "alternative": "soft",
+    "anchor": "crowd",
+    "target": "loud"
+  },
+  {
+    "id": 33,
+    "family": "loud_soft",
+    "prompt": "The set is silent, no cheer allowed,\nthe fans are waiting, so make it",
+    "correct": "loud",
+    "alternative": "soft",
+    "anchor": "allowed",
+    "target": "loud"
+  },
+  {
+    "id": 34,
+    "family": "loud_soft",
+    "prompt": "The band plays faint, the room not proud,\nwe want a party, so make it",
+    "correct": "loud",
+    "alternative": "soft",
+    "anchor": "proud",
+    "target": "loud"
+  },
+  {
+    "id": 35,
+    "family": "loud_soft",
+    "prompt": "The intercom is barely loud\nabove the din, so make it",
+    "correct": "loud",
+    "alternative": "soft",
+    "anchor": "loud",
+    "target": "loud"
+  },
+  {
+    "id": 36,
+    "family": "loud_soft",
+    "prompt": "The alarm is soft, its chime not loud\nacross the floor, so make it",
+    "correct": "loud",
+    "alternative": "soft",
+    "anchor": "loud",
+    "target": "loud"
+  },
+  {
+    "id": 37,
+    "family": "hot_cold",
+    "prompt": "The kettle waits in its usual spot,\nwe want some tea, so make it",
+    "correct": "hot",
+    "alternative": "cold",
+    "anchor": "spot",
+    "target": "hot"
+  },
+  {
+    "id": 38,
+    "family": "hot_cold",
+    "prompt": "The stew's gone lukewarm in the pot,\nwe want to serve it, so make it",
+    "correct": "hot",
+    "alternative": "cold",
+    "anchor": "pot",
+    "target": "hot"
+  },
+  {
+    "id": 39,
+    "family": "hot_cold",
+    "prompt": "The bath has cooled, no longer hot,\nwe want to soak, so make it",
+    "correct": "hot",
+    "alternative": "cold",
+    "anchor": "hot",
+    "target": "hot"
+  },
+  {
+    "id": 40,
+    "family": "hot_cold",
+    "prompt": "The iron's tepid, pressing not,\nto smooth the shirt, so make it",
+    "correct": "hot",
+    "alternative": "cold",
+    "anchor": "not",
+    "target": "hot"
+  },
+  {
+    "id": 41,
+    "family": "hot_cold",
+    "prompt": "The grill's barely warm, a feeble spot,\nwe want to sear, so make it",
+    "correct": "hot",
+    "alternative": "cold",
+    "anchor": "spot",
+    "target": "hot"
+  },
+  {
+    "id": 42,
+    "family": "hot_cold",
+    "prompt": "The coffee's cold, forgotten in its pot,\nwe want a sip, so make it",
+    "correct": "hot",
+    "alternative": "cold",
+    "anchor": "pot",
+    "target": "hot"
+  },
+  {
+    "id": 43,
+    "family": "hot_cold",
+    "prompt": "The sauna's cooled, no steam, no spot of heat,\nwe want to sweat, so make it",
+    "correct": "hot",
+    "alternative": "cold",
+    "anchor": "heat",
+    "target": "hot"
+  },
+  {
+    "id": 44,
+    "family": "cold_hot",
+    "prompt": "The lemonade is flat and warm and old,\nwe want refreshment, so make it",
+    "correct": "cold",
+    "alternative": "hot",
+    "anchor": "old",
+    "target": "cold"
+  },
+  {
+    "id": 45,
+    "family": "cold_hot",
+    "prompt": "The soda's tepid, sitting where it's told,\nwe want a chill, so make it",
+    "correct": "cold",
+    "alternative": "hot",
+    "anchor": "told",
+    "target": "cold"
+  },
+  {
+    "id": 46,
+    "family": "cold_hot",
+    "prompt": "The fridge gave out, the milk no longer cold,\nwe want it fresh, so make it",
+    "correct": "cold",
+    "alternative": "hot",
+    "anchor": "cold",
+    "target": "cold"
+  },
+  {
+    "id": 47,
+    "family": "cold_hot",
+    "prompt": "The cellar's mild where wine should keep its cold,\nwe want it crisp, so make it",
+    "correct": "cold",
+    "alternative": "hot",
+    "anchor": "cold",
+    "target": "cold"
+  },
+  {
+    "id": 48,
+    "family": "cold_hot",
+    "prompt": "The plunge pool's heated, brave and bold,\nwe want a shock, so make it",
+    "correct": "cold",
+    "alternative": "hot",
+    "anchor": "bold",
+    "target": "cold"
+  },
+  {
+    "id": 49,
+    "family": "cold_hot",
+    "prompt": "The compress warmed, its ice all sold,\nto ease the swelling, so make it",
+    "correct": "cold",
+    "alternative": "hot",
+    "anchor": "sold",
+    "target": "cold"
+  },
+  {
+    "id": 50,
+    "family": "cold_hot",
+    "prompt": "The brew is room-warm, going old,\nwe want it bracing, so make it",
+    "correct": "cold",
+    "alternative": "hot",
+    "anchor": "old",
+    "target": "cold"
+  },
+  {
+    "id": 51,
+    "family": "down_up",
+    "prompt": "The banner hangs high above the town,\nthe fete is over, so bring it",
+    "correct": "down",
+    "alternative": "up",
+    "anchor": "town",
+    "target": "down"
+  },
+  {
+    "id": 52,
+    "family": "down_up",
+    "prompt": "The flag flies proud across the town,\nthe day is done, so take it",
+    "correct": "down",
+    "alternative": "up",
+    "anchor": "town",
+    "target": "down"
+  },
+  {
+    "id": 53,
+    "family": "down_up",
+    "prompt": "The blind is raised, the glare its crown,\nwe want to nap, so pull it",
+    "correct": "down",
+    "alternative": "up",
+    "anchor": "crown",
+    "target": "down"
+  },
+  {
+    "id": 54,
+    "family": "down_up",
+    "prompt": "The drone hangs high above the town,\nthe flight is finished, so set it",
+    "correct": "down",
+    "alternative": "up",
+    "anchor": "town",
+    "target": "down"
+  },
+  {
+    "id": 55,
+    "family": "down_up",
+    "prompt": "The drawbridge towers over the town,\nto let us cross, so lower it",
+    "correct": "down",
+    "alternative": "up",
+    "anchor": "town",
+    "target": "down"
+  },
+  {
+    "id": 56,
+    "family": "down_up",
+    "prompt": "The shade is lifted, the room a-frown,\nthe sun is harsh, so draw it",
+    "correct": "down",
+    "alternative": "up",
+    "anchor": "a-frown",
+    "target": "down"
+  },
+  {
+    "id": 57,
+    "family": "down_up",
+    "prompt": "The mast stands tall above the town,\nthe storm approaches, so haul it",
+    "correct": "down",
+    "alternative": "up",
+    "anchor": "town",
+    "target": "down"
+  },
+  {
+    "id": 58,
+    "family": "high_low",
+    "prompt": "The kite hangs limp against the sky,\nwe want it soaring, so raise it",
+    "correct": "high",
+    "alternative": "low",
+    "anchor": "sky",
+    "target": "high"
+  },
+  {
+    "id": 59,
+    "family": "high_low",
+    "prompt": "The volume's faint, a feeble sigh,\nwe want to rock, so crank it",
+    "correct": "high",
+    "alternative": "low",
+    "anchor": "sigh",
+    "target": "high"
+  },
+  {
+    "id": 60,
+    "family": "high_low",
+    "prompt": "The drone sits grounded, longing to fly,\nwe want a view, so send it",
+    "correct": "high",
+    "alternative": "low",
+    "anchor": "fly",
+    "target": "high"
+  },
+  {
+    "id": 61,
+    "family": "high_low",
+    "prompt": "The flame burns small, it will not fly,\nwe want a blaze, so turn it",
+    "correct": "high",
+    "alternative": "low",
+    "anchor": "fly",
+    "target": "high"
+  },
+  {
+    "id": 62,
+    "family": "high_low",
+    "prompt": "The thermostat reads cold and dry,\nwe want some heat, so set it",
+    "correct": "high",
+    "alternative": "low",
+    "anchor": "dry",
+    "target": "high"
+  },
+  {
+    "id": 63,
+    "family": "high_low",
+    "prompt": "The swing hangs still beneath the sky,\nthe child is eager, so push it",
+    "correct": "high",
+    "alternative": "low",
+    "anchor": "sky",
+    "target": "high"
+  },
+  {
+    "id": 64,
+    "family": "high_low",
+    "prompt": "The balloon won't rise, however we try,\nwe want it up, so let it",
+    "correct": "high",
+    "alternative": "low",
+    "anchor": "try",
+    "target": "high"
+  },
+  {
+    "id": 65,
+    "family": "shut_open",
+    "prompt": "A cold wind whistles through the cut,\nwe want it sealed, so keep it",
+    "correct": "shut",
+    "alternative": "open",
+    "anchor": "cut",
+    "target": "shut"
+  },
+  {
+    "id": 66,
+    "family": "shut_open",
+    "prompt": "The gate swings wide, the latch undone, a rut,\nthe dog might bolt, so pull it",
+    "correct": "shut",
+    "alternative": "open",
+    "anchor": "rut",
+    "target": "shut"
+  },
+  {
+    "id": 67,
+    "family": "shut_open",
+    "prompt": "Mosquitoes drift in past the strut,\nwe want them gone, so slam it",
+    "correct": "shut",
+    "alternative": "open",
+    "anchor": "strut",
+    "target": "shut"
+  },
+  {
+    "id": 68,
+    "family": "shut_open",
+    "prompt": "The vault stands open, bare its gut,\nthe guard is nervous, so swing it",
+    "correct": "shut",
+    "alternative": "open",
+    "anchor": "gut",
+    "target": "shut"
+  },
+  {
+    "id": 69,
+    "family": "shut_open",
+    "prompt": "The lid is loose atop the butt,\nto keep it fresh, so press it",
+    "correct": "shut",
+    "alternative": "open",
+    "anchor": "butt",
+    "target": "shut"
+  },
+  {
+    "id": 70,
+    "family": "shut_open",
+    "prompt": "The door bangs open in the rut,\nthe draft is freezing, so hold it",
+    "correct": "shut",
+    "alternative": "open",
+    "anchor": "rut",
+    "target": "shut"
+  },
+  {
+    "id": 71,
+    "family": "shut_open",
+    "prompt": "The window gapes above the hut,\nthe rain is coming, so push it",
+    "correct": "shut",
+    "alternative": "open",
+    "anchor": "hut",
+    "target": "shut"
+  },
+  {
+    "id": 72,
+    "family": "wide_narrow",
+    "prompt": "The harbor opens, deep and wide,\nlet the ships in, so throw it",
+    "correct": "wide",
+    "alternative": "narrow",
+    "anchor": "wide",
+    "target": "wide"
+  },
+  {
+    "id": 73,
+    "family": "wide_narrow",
+    "prompt": "The curtains part to show the tide,\nwe want the view, so fling them",
+    "correct": "wide",
+    "alternative": "narrow",
+    "anchor": "tide",
+    "target": "wide"
+  },
+  {
+    "id": 74,
+    "family": "wide_narrow",
+    "prompt": "The aperture is cramped inside,\nwe want more light, so set it",
+    "correct": "wide",
+    "alternative": "narrow",
+    "anchor": "inside",
+    "target": "wide"
+  },
+  {
+    "id": 75,
+    "family": "wide_narrow",
+    "prompt": "The gateway's pinched, too tight to ride,\nthe truck must pass, so spread it",
+    "correct": "wide",
+    "alternative": "narrow",
+    "anchor": "ride",
+    "target": "wide"
+  },
+  {
+    "id": 76,
+    "family": "wide_narrow",
+    "prompt": "The lens is stopped, the field denied,\nwe want it sweeping, so open it",
+    "correct": "wide",
+    "alternative": "narrow",
+    "anchor": "denied",
+    "target": "wide"
+  },
+  {
+    "id": 77,
+    "family": "wide_narrow",
+    "prompt": "The valve is choked, the flow belied,\nwe want full pressure, so crank it",
+    "correct": "wide",
+    "alternative": "narrow",
+    "anchor": "belied",
+    "target": "wide"
+  },
+  {
+    "id": 78,
+    "family": "wide_narrow",
+    "prompt": "The path is narrow by the riverside,\nthe crowd is surging, so make it",
+    "correct": "wide",
+    "alternative": "narrow",
+    "anchor": "riverside",
+    "target": "wide"
+  }
+]

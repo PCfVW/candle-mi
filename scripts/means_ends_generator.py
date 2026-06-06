@@ -178,6 +178,146 @@ CONTRASTIVE_DEVICES = [
 CONTRASTIVE_FRAME = "We want the {entity} to be {goal}. Turn the {device}"
 
 
+VERSIFIED_OUTPUT = "docs/experiments/means-ends-prolepsis/versified_couplets.json"
+
+# Versified means-ends: a rhyming couplet whose final word must satisfy BOTH the
+# rhyme (set by line 1's last word) AND the goal (the action/state). `W` is the
+# dual rhyme+goal target; `Wp` is the goal-WRONG antonym (scored as the
+# `alternative`). line2 ends at a cue with NO trailing space and NO occurrence of
+# `W`, so the model's next token is the completion. Each tuple is (line1, line2).
+VERSIFIED_FAMILIES = [
+    {"family": "glow_dim", "W": "glow", "Wp": "dim", "couplets": [
+        ("The room is dim, the lamps are low,", "we want it bright, so make it"),
+        ("The fire has faded, embers low,", "we want more light, so make it"),
+        ("The screen is dark, its backlight low,", "we want to see, so make it"),
+        ("The porch is dark, the wattage low,", "we want it cheery, so make it"),
+        ("The lantern's faint, its wick set low,", "we want a beacon, so make it"),
+        ("The streetlamp flickers, dull and low,", "we want it shining, so make it"),
+        ("The hallway dims, the voltage low,", "we want it brilliant, so make it"),
+        ("The bulb is weak, its current low,", "we want it radiant, so make it"),
+    ]},
+    {"family": "bright_dark", "W": "bright", "Wp": "dark", "couplets": [
+        ("The bulb is dead, the room is night,", "we want to read, so make it"),
+        ("We grope around, deprived of light,", "we need to work, so make it"),
+        ("The dusk has fallen, dim the light,", "we want to sew, so make it"),
+        ("The cellar's black as starless night,", "we want to search, so make it"),
+        ("The study's gloomy, poor of light,", "we want to focus, so make it"),
+        ("The lamp burns weak, a dying light,", "we want it dazzling, so make it"),
+        ("The workshop dims at fall of night,", "we want precision, so make it"),
+        ("The garret's grey, devoid of light,", "we want to paint, so make it"),
+    ]},
+    {"family": "warm_cool", "W": "warm", "Wp": "cool", "couplets": [
+        ("Outside there rages a winter storm,", "we're chilled inside, so make it"),
+        ("The cabin's frigid after the storm,", "we want some heat, so make it"),
+        ("The wind howls cold in a dreadful storm,", "we want to thaw, so make it"),
+        ("Snow buries the road in a morning storm,", "we seek some comfort, so make it"),
+        ("The barn runs cold, below its norm,", "the calves are shivering, so make it"),
+        ("The tent is icy through the storm,", "we want to rest, so make it"),
+        ("The office froze beneath the storm,", "the staff are stamping, so make it"),
+    ]},
+    {"family": "cool_warm", "W": "cool", "Wp": "warm", "couplets": [
+        ("The afternoon is hot beside the pool,", "we want relief, so make it"),
+        ("The classroom's stifling, like a school,", "we want fresh air, so make it"),
+        ("The engine's redlined, breaking every rule,", "before it fails, so make it"),
+        ("The greenhouse roasts, a sweltering pool,", "to save the ferns, so make it"),
+        ("The dorm is baking, hot as a school,", "we want to sleep, so make it"),
+        ("The server room is far too warm to cool", "with one small fan, so make it"),
+        ("The kiln still glows, too hot to spool,", "we want to handle it, so make it"),
+    ]},
+    {"family": "loud_soft", "W": "loud", "Wp": "soft", "couplets": [
+        ("The hall is hushed before the crowd,", "we want to hear, so make it"),
+        ("The speaker's muffled, no sound allowed,", "we want some music, so make it"),
+        ("The whisper's lost amid the crowd,", "we want to reach them, so make it"),
+        ("The set is silent, no cheer allowed,", "the fans are waiting, so make it"),
+        ("The band plays faint, the room not proud,", "we want a party, so make it"),
+        ("The intercom is barely loud", "above the din, so make it"),
+        ("The alarm is soft, its chime not loud", "across the floor, so make it"),
+    ]},
+    {"family": "hot_cold", "W": "hot", "Wp": "cold", "couplets": [
+        ("The kettle waits in its usual spot,", "we want some tea, so make it"),
+        ("The stew's gone lukewarm in the pot,", "we want to serve it, so make it"),
+        ("The bath has cooled, no longer hot,", "we want to soak, so make it"),
+        ("The iron's tepid, pressing not,", "to smooth the shirt, so make it"),
+        ("The grill's barely warm, a feeble spot,", "we want to sear, so make it"),
+        ("The coffee's cold, forgotten in its pot,", "we want a sip, so make it"),
+        ("The sauna's cooled, no steam, no spot of heat,", "we want to sweat, so make it"),
+    ]},
+    {"family": "cold_hot", "W": "cold", "Wp": "hot", "couplets": [
+        ("The lemonade is flat and warm and old,", "we want refreshment, so make it"),
+        ("The soda's tepid, sitting where it's told,", "we want a chill, so make it"),
+        ("The fridge gave out, the milk no longer cold,", "we want it fresh, so make it"),
+        ("The cellar's mild where wine should keep its cold,", "we want it crisp, so make it"),
+        ("The plunge pool's heated, brave and bold,", "we want a shock, so make it"),
+        ("The compress warmed, its ice all sold,", "to ease the swelling, so make it"),
+        ("The brew is room-warm, going old,", "we want it bracing, so make it"),
+    ]},
+    {"family": "down_up", "W": "down", "Wp": "up", "couplets": [
+        ("The banner hangs high above the town,", "the fete is over, so bring it"),
+        ("The flag flies proud across the town,", "the day is done, so take it"),
+        ("The blind is raised, the glare its crown,", "we want to nap, so pull it"),
+        ("The drone hangs high above the town,", "the flight is finished, so set it"),
+        ("The drawbridge towers over the town,", "to let us cross, so lower it"),
+        ("The shade is lifted, the room a-frown,", "the sun is harsh, so draw it"),
+        ("The mast stands tall above the town,", "the storm approaches, so haul it"),
+    ]},
+    {"family": "high_low", "W": "high", "Wp": "low", "couplets": [
+        ("The kite hangs limp against the sky,", "we want it soaring, so raise it"),
+        ("The volume's faint, a feeble sigh,", "we want to rock, so crank it"),
+        ("The drone sits grounded, longing to fly,", "we want a view, so send it"),
+        ("The flame burns small, it will not fly,", "we want a blaze, so turn it"),
+        ("The thermostat reads cold and dry,", "we want some heat, so set it"),
+        ("The swing hangs still beneath the sky,", "the child is eager, so push it"),
+        ("The balloon won't rise, however we try,", "we want it up, so let it"),
+    ]},
+    {"family": "shut_open", "W": "shut", "Wp": "open", "couplets": [
+        ("A cold wind whistles through the cut,", "we want it sealed, so keep it"),
+        ("The gate swings wide, the latch undone, a rut,", "the dog might bolt, so pull it"),
+        ("Mosquitoes drift in past the strut,", "we want them gone, so slam it"),
+        ("The vault stands open, bare its gut,", "the guard is nervous, so swing it"),
+        ("The lid is loose atop the butt,", "to keep it fresh, so press it"),
+        ("The door bangs open in the rut,", "the draft is freezing, so hold it"),
+        ("The window gapes above the hut,", "the rain is coming, so push it"),
+    ]},
+    {"family": "wide_narrow", "W": "wide", "Wp": "narrow", "couplets": [
+        ("The harbor opens, deep and wide,", "let the ships in, so throw it"),
+        ("The curtains part to show the tide,", "we want the view, so fling them"),
+        ("The aperture is cramped inside,", "we want more light, so set it"),
+        ("The gateway's pinched, too tight to ride,", "the truck must pass, so spread it"),
+        ("The lens is stopped, the field denied,", "we want it sweeping, so open it"),
+        ("The valve is choked, the flow belied,", "we want full pressure, so crank it"),
+        ("The path is narrow by the riverside,", "the crowd is surging, so make it"),
+    ]},
+]
+
+
+def build_versified():
+    """Build ~100 versified means-ends couplets.
+
+    Each prompt is a couplet ending at a cue (no trailing space); the model's
+    next token should be `W`, the word that satisfies BOTH the rhyme (with line
+    1's last word, the `anchor`) AND the goal. `Wp` is the goal-wrong antonym
+    (the `alternative`). The Rust scorer (`means_ends_prolepsis`) reports the
+    greedy top-1 and `P(W)` vs `P(Wp)`; rhyme is checked downstream from the
+    `anchor` via CMUdict.
+    """
+    items = []
+    idx = 0
+    for fam in VERSIFIED_FAMILIES:
+        for line1, line2 in fam["couplets"]:
+            anchor = line1.rstrip(",.;:!?").split()[-1].lower()
+            items.append({
+                "id": idx,
+                "family": fam["family"],
+                "prompt": f"{line1}\n{line2}",
+                "correct": fam["W"],
+                "alternative": fam["Wp"],
+                "anchor": anchor,
+                "target": fam["W"],
+            })
+            idx += 1
+    return items
+
+
 def build_contrastive():
     """Build token-aligned clean/corrupt goal-flip pairs (on-goal vs off-goal).
 
@@ -313,7 +453,22 @@ def main():
         help="emit goal-only token-aligned clean/corrupt pairs for activation "
         "patching (bright/dark goal flip; no state clause)",
     )
+    parser.add_argument(
+        "--versified",
+        action="store_true",
+        help="emit ~100 versified means-ends couplets (final word must satisfy "
+        "both rhyme and goal); scored via means_ends_prolepsis + a CMUdict rhyme check",
+    )
     args = parser.parse_args()
+
+    if args.versified:
+        output = args.output or Path(VERSIFIED_OUTPUT)
+        items = build_versified()
+        write_items(items, output)
+        fam_counts = Counter(i["family"] for i in items)
+        print(f"Wrote {len(items)} versified couplets to {output}", file=sys.stderr)
+        print(f"Per-family: {dict(sorted(fam_counts.items()))}", file=sys.stderr)
+        return
 
     if args.contrastive:
         output = args.output or Path(CONTRASTIVE_OUTPUT)

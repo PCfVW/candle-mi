@@ -291,6 +291,36 @@ soft-capping and the general final-norm temperature compress the margin — not
 deliberate reconsideration; the robust claims are **sign-based** (the late layers
 reduce the margin and, in failures, flip it toward the prior).
 
+### Versified means-ends — 79-couplet competence sweep (base models)
+
+Scaling the single versified couplet to **79 couplets × 4 base models**
+(`means_ends_generator.py --versified` → `means_ends_prolepsis` →
+`scripts/classify_versified.py`, CMUdict rhyme via `nltk`). Each couplet's final
+word must satisfy **both** the rhyme (line-1 anchor) and the goal (`W` = the dual
+word, `W'` = goal-wrong antonym).
+
+| Base model | goal-lean `P(W)>P(W')` | rhyme | dual-hit (`C==W`) |
+|---|---:|---:|---:|
+| gemma-2-2b | 99% | 61% | **57%** |
+| Qwen3-1.7B | 86% | 43% | **41%** |
+| Llama-3.2-1B | 85% | 34% | **32%** |
+| Qwen3-0.6B | 84% | 27% | **25%** |
+
+**Goal selection is robust (84–99%); joint rhyme+goal is hard and uneven (25–57%).**
+But the aggregate **overstates** planning: for most families `W` was the *default*
+goal word and line 1 was anchored to rhyme with it, so rhyme is satisfied
+**incidentally**, not planned. The only family where rhyme **forces a non-default
+word** (`glow_dim`: rhyme demands `glow`, default goal word is `bright`) is the real
+test — `glow` produced **gemma 5/8, Qwen3-1.7B 2/8, Llama 0/8, Qwen3-0.6B 0/8**.
+This **inverts the single-prompt impression** (where Qwen3-1.7B emitted `glow` and
+gemma `so`): at n=8 gemma is *best* and Qwen mostly fails, the smalls fail entirely
+— the one prompt was noise. **Conclusion:** under genuine pressure only gemma plans
+the non-default rhyming word more than half the time; the rest default to the plain
+goal word and drop the rhyme — weak evidence of rhyme-*planning*, strong evidence of
+goal-*selection*. **Design lesson (for a v2):** every family must force a non-default
+rhyming word (like `glow_dim`); most of this set does not, which is why the aggregate
+looks better than the mechanism warrants.
+
 ## Provenance
 
 Commits (on `main`, unpushed): `da1216a` Step 0 · `40171ff` Step A (gridworld
