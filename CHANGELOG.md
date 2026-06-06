@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`RoPE` `rope_scaling` support (linear + llama3).** `TransformerConfig` now
+  parses the `config.json` `rope_scaling` block into a new public
+  `RopeScaling` enum and `TransformerConfig::rope_scaling` field, and
+  `RopeCache` applies it: `Linear` (DeepSeek-Coder; divides positions by
+  `factor`) and `Llama3` (Llama 3.1/3.2; frequency-band rescaling of the
+  rotary inverse frequencies). Unsupported schemes (`yarn`, `longrope`, …)
+  now error loudly at config-parse time rather than being silently dropped.
+- **`from_pretrained` loads `pytorch_model.bin`.** Repositories that ship
+  weights only as a PyTorch pickle (no `.safetensors`, e.g. `DeepSeek-Coder`)
+  now load via `VarBuilder::from_pth` instead of erroring
+  (`model.safetensors not found`). Sharded pickles remain unsupported.
+- **Forward-parity validation for DeepSeek-Coder 1.3B and Llama 3.2 1B.**
+  New `scripts/deepseek_coder_validation.py` / `scripts/llama32_forward_validation.py`
+  oracles and `tests/validate_deepseek_forward.rs` /
+  `tests/validate_llama32_forward.rs` assert exact top-10 logit parity
+  against PyTorch (CPU `<1e-3`, GPU `<5e-3`), plus `rope_scaling` config
+  unit tests and `from_pretrained` `.bin` resolution tests.
+
+### Fixed
+
+- **`rope_scaling` was silently ignored, mis-running Llama 3.x.** Llama 3.1/3.2
+  ship `rope_scaling: {rope_type: "llama3", factor: 32.0, …}`, which the RoPE
+  cache previously dropped. The effect is subtle at short context (the top-1
+  token stays correct, so the prior `"Paris" in top-5` smoke test passed) but
+  measurable: last-token logits drifted up to ~9.5e-3 vs PyTorch; with the fix
+  the same prompts match to ~2.3e-5. DeepSeek-Coder's linear scaling was far
+  worse (catastrophic, ~15 logit divergence) and is likewise fixed.
+
 ### Changed
 
 - **Dependencies:** bump `anamnesis` 0.6.0 → 0.6.2 and `hf-fetch-model` 0.10.3 →

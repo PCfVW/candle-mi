@@ -278,18 +278,28 @@ pub struct TransformerConfig {
 
 With this config, **one implementation** covers:
 
+The **Validated** column uses three tiers:
+- **exact-parity** — top-10 next-token logits match a PyTorch oracle to `<1e-3`
+  (CPU) via a frozen `scripts/*_validation.py` reference + `tests/validate_*.rs`.
+  This is the only tier that catches subtle numerical bugs (e.g. a dropped
+  `rope_scaling`).
+- **smoke** — a plausibility check only (the expected token appears in the
+  top-k); a subtly-wrong forward pass can still pass.
+- **—** — not yet validated.
+
 | Model Family | Config Notes | Validated |
 |--------------|-------------|-----------|
-| **LLaMA 1/2/3 / Code-LLaMA** | GQA, SiLU, RmsNorm, separate lm_head | LLaMA 3.2 1B |
-| **Qwen 2 / 2.5** | GQA, SiLU, RmsNorm, QKV bias, conditional tied embeddings | Qwen2.5-Coder-3B |
+| **LLaMA 1/2/3 / Code-LLaMA** | GQA, SiLU, RmsNorm, separate lm_head; llama3 `rope_scaling` | LLaMA 3.2 1B (exact-parity) |
+| **Qwen 2 / 2.5** | GQA, SiLU, RmsNorm, QKV bias, conditional tied embeddings | Qwen2.5-Coder-3B (smoke) |
 | **Gemma 1 / CodeGemma** | GQA, GELU, GemmaRmsNorm, sqrt embedding scale, tied lm_head | — |
-| **Gemma 2** | + GeluApprox, soft-capping, 4-norm, custom attn scalar, alternating sliding window | Gemma 2 2B |
-| **Phi-3 / Phi-4** | GQA, SiLU, RmsNorm, fused QKV, fused MLP | Phi-3 Mini 4K |
-| **StarCoder2** | GQA, GeluApprox, LayerNorm, plain MLP, bias everywhere, tied lm_head | StarCoder2 3B |
-| **Mistral / Mixtral** (dense layers) | GQA, SiLU, RmsNorm, sliding window | Mistral 7B v0.1 |
-| **DeepSeek** (dense layers) | GQA, SiLU, RmsNorm | — |
+| **Gemma 2** | + GeluApprox, soft-capping, 4-norm, custom attn scalar, alternating sliding window | Gemma 2 2B (smoke) |
+| **Phi-3 / Phi-4** | GQA, SiLU, RmsNorm, fused QKV, fused MLP | Phi-3 Mini 4K (smoke) |
+| **StarCoder2** | GQA, GeluApprox, LayerNorm, plain MLP, bias everywhere, tied lm_head | StarCoder2 3B (smoke) |
+| **Mistral / Mixtral** (dense layers) | GQA, SiLU, RmsNorm, sliding window | Mistral 7B v0.1 (smoke) |
+| **DeepSeek-Coder** (dense layers) | GQA, SiLU, RmsNorm, **linear `rope_scaling`** | DeepSeek-Coder 1.3B (exact-parity) |
+| **Qwen 3** | GQA, SiLU, RmsNorm, QK-norm | Qwen3-1.7B-Base (exact-parity) |
 | **Yi** | GQA, SiLU, RmsNorm (LLaMA-like) | — |
-| **InternLM 2** | GQA, SiLU, RmsNorm (LLaMA-like) | — |
+| **InternLM 2** | GQA, SiLU, RmsNorm; non-standard `wqkv`/`wo` weight names (won't load via the standard loader) | — |
 
 **VRAM budget (F32, RTX 5060 Ti 16 GB).** Since v0.0.3+, candle-mi defaults to F32 for research-grade precision (see §8, decision 14). This doubles the VRAM footprint vs BF16 but gives exact numerical parity with Python/PyTorch. Non-validated families that fit on 16 GB at F32:
 
