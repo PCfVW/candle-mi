@@ -351,6 +351,67 @@ prompts" intuition), and no model does it generally. At scale, the means-ends do
 shows robust goal-**selection** and only thin, lexically-gated rhyme-**planning**
 (gemma aside, and only for common synonyms).
 
+### Why the means-ends transfer is hard (and what it would take)
+
+The accumulated negative result has a *structural* reading, not merely an empirical
+one. See also [`planning-pressure-brief.md`](planning-pressure-brief.md).
+
+**Form vs. deliberation.** Poetry encodes planning in **form**: the constraint that
+forces early commitment — the rhyme — is *phonological* and *set by the surface form
+of an earlier line*. The model never has to *reason* that it is planning; the **form
+of the sentence is the planning problem**, learned wholesale from web poetry, and the
+intervening span is simultaneously the linguistic unit (the line) and the planning
+scaffold — the two coincide for free. Abstract/means-ends planning has no such
+coincidence: the planning structure is carried by **no linguistic form**, so to impose
+it one must *annotate* it ("Initial State / Goal / Plan"), which stops riding on form
+and instead invokes whether the model was *trained* on that annotated genre
+(instruction / CoT / PDDL-like text) — which small base models largely were not. This
+is the two-senses-of-planning split (cf. Kambhampati): poetry's planning-site
+mechanism is the *formal / retrieval* kind (early-commit + write-toward, riding on a
+learned form); genuine means-ends is the *deliberative* kind, and it **does not reduce
+to the first** in small models.
+
+**The competence-≥-difficulty law.** Planning *pressure* requires a constraint that is
+hard to satisfy jointly — and that is exactly the constraint a small model cannot
+satisfy. Rhyme has pressure (jointly rhyme-and-mean-the-goal is genuinely hard) → small
+models fail it (the v2 collapse). Swap to an *easy* formal scaffold (e.g. a separable
+phrasal-verb particle, where `turn the lamp … off` is nearly forced) → the small model
+succeeds, but no pressure remains, so there is nothing to plan and nothing to observe.
+The window — *hard enough to force planning, easy enough for a 1–2B model* — is narrow
+or empty. Poetry sits just inside it for Gemma; means-ends-with-real-pressure sits
+outside. Stated as a law:
+
+> **Observable formal planning requires model competence ≥ joint-constraint difficulty.**
+
+**What the consumer-GPU scale does and does not limit.** The poetry *positive* is **not**
+scale-gated — the planning-site spike replicated on 1–2B models, and the small models
+were essential to the depth/minimum-architecture result (a 16-layer model that fails to
+commit). What *is* scale-bounded is the **reach beyond poetry**: CLT resolution
+(426K/2.5M vs Haiku's 30M — so the code/cooking "zero feature" negatives are
+"not at this scale", not "not ever"), task competence, and training distribution. So
+the means-ends difficulty is "very hard at this scale", with the **competence
+threshold — not the cleverness of the encoding — as the gate**.
+
+**What it would take.** (i) A model above the competence threshold (Haiku-class). A
+**behavioral probe of Haiku 4.5** (via a Haiku-model agent, asked to complete each v2
+couplet with one rhyme-and-sense word) produced the **exact dual word `W` on 84/84
+couplets — 100%, every family** (vs. base gemma 26% / Qwen3-1.7B 14% / Llama 1% /
+Qwen3-0.6B 1%). This **brackets the competence threshold** between Qwen3-1.7B (14%) and
+Haiku (100%) and confirms the law. **Three caveats keep this OUT of the main table as a
+true row:** Haiku is closed/API-only (not in the `means_ends_prolepsis` harness); the
+probe is *behavioral* (one word), not the full-vocab logit metric the API can't expose;
+and the agent is *instruct* and was **explicitly told to rhyme**, whereas the base
+models merely *continued text*. So the 100% measures **competence** (can a capable model
+satisfy the joint constraint when asked) — **not planning** (early commitment), which
+still requires the logit/feature analysis or the generate-the-span test the API blocks.
+(ii) the
+**generate-the-span** setup (Condition B: give line 1 + the goal, let the model *write*
+line 2 and check its self-chosen final word is rhyme-and-goal) — the only setup
+methodologically comparable to the poetry task, since v1/v2 *gave* the span and thus
+measured one-shot improvisation, not planning; or (iii) explicit `Initial/Goal/Plan`
+structure plus a model trained on it (which trades "planning in one sentence" for
+reliance on the training distribution).
+
 ## Provenance
 
 Commits (on `main`, unpushed): `da1216a` Step 0 · `40171ff` Step A (gridworld
