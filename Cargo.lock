@@ -39,25 +39,9 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "anamnesis"
-version = "0.5.0"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2458b74040c00c417ae2fd884bd6ee3c4141a7fe1436a772272d22a52e3a50a8"
-dependencies = [
- "float8 0.7.0",
- "half",
- "memmap2",
- "safetensors 0.4.5",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "zip 2.4.2",
-]
-
-[[package]]
-name = "anamnesis"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6fc7119ff14d7bc4f2b22ec84feeecd759ffb54b42712b929e2b63feaf9fc5e"
+checksum = "8df4223ac29773186b9cf2d7a6a89d821db045253ede8cefbf59bbd7365dd45f"
 dependencies = [
  "float8 0.7.0",
  "half",
@@ -366,7 +350,7 @@ dependencies = [
 name = "candle-mi"
 version = "0.1.12"
 dependencies = [
- "anamnesis 0.6.0",
+ "anamnesis",
  "anyhow",
  "candle-core",
  "candle-nn",
@@ -816,7 +800,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -911,7 +895,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1509,11 +1493,11 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hf-fetch-model"
-version = "0.10.3"
+version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0cad4479c33b9e93b39668657788a59cf0a7093c4d6a9db1c62417fe65d25e5"
+checksum = "59d743876ddbfd67125d26dada4b04129ba02eea00b065733f90796f55497ee2"
 dependencies = [
- "anamnesis 0.5.0",
+ "anamnesis",
  "dirs",
  "fs2",
  "futures-util",
@@ -2256,7 +2240,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2921,7 +2905,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3370,7 +3354,7 @@ dependencies = [
  "getrandom 0.4.2",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4074,7 +4058,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

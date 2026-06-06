@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Dependencies:** bump `anamnesis` 0.6.0 → 0.6.2 and `hf-fetch-model` 0.10.3 →
+  0.10.4. anamnesis 0.6.1/0.6.2 are DoS-hardening security patches (unguarded-
+  allocation guards across the NPZ/GGUF/PTH parsers) with **no public API or
+  behaviour change for legitimate files**, so the `sae`/`stoicheia` loaders are
+  unaffected. hf-fm 0.10.4 requires `anamnesis ≥0.6.1`, so the two now share a
+  single `anamnesis 0.6.2`, dropping the old transitive `anamnesis 0.5.0`.
+
 ### Fixed
 
 - **CLT encoder loading for sidecar-flagged ReLU CLTs.** `load_encoder` errored
