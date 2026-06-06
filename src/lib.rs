@@ -243,8 +243,8 @@ pub use backend::{
 
 // Config
 pub use config::{
-    Activation, CompatibilityReport, MlpLayout, NormType, QkvLayout, SUPPORTED_MODEL_TYPES,
-    TransformerConfig,
+    Activation, CompatibilityReport, MlpLayout, NormType, QkvLayout, RopeScaling,
+    SUPPORTED_MODEL_TYPES, TransformerConfig,
 };
 
 // Transformer backend

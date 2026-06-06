@@ -204,6 +204,7 @@ impl GenericTransformer {
             config.head_dim,
             config.max_position_embeddings,
             config.rope_theta,
+            config.rope_scaling,
             device,
             dtype,
         )?;

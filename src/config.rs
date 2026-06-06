@@ -146,6 +146,55 @@ impl fmt::Display for MlpLayout {
     }
 }
 
+/// `RoPE` position-interpolation scaling declared in `config.json`'s
+/// `rope_scaling` block.  `None` (the field absent, `null`, or
+/// `rope_type: "default"`) means standard, unscaled `RoPE`.
+///
+/// candle-mi parses this block and **errors** on scaling variants it does
+/// not implement, rather than ignoring them: a dropped `rope_scaling` still
+/// yields plausible-looking logits, so a silent miss is invisible to a
+/// top-k smoke test (this is exactly how the `llama3` scaling went unnoticed
+/// on Llama 3.2 — see `ROADMAP.md` §3.3).
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RopeScaling {
+    /// Linear position interpolation (`type: "linear"`).  Every position
+    /// index is divided by `factor` before the rotary rotation, uniformly
+    /// across all frequency components.  Used by `DeepSeek-Coder`
+    /// (`factor: 4.0`, extending the 4 096 base context to 16 384).
+    Linear {
+        /// Position divisor; `> 1` compresses positions into the trained range.
+        factor: f64,
+    },
+    /// Llama 3 frequency-band rescaling (`rope_type: "llama3"`).
+    /// Low-frequency (long-wavelength) inverse frequencies are divided by
+    /// `factor`, high-frequency ones are left intact, with a smooth
+    /// interpolation in between.  Position-independent (acts on the
+    /// frequencies, not the positions).  Used by Llama 3.1 / 3.2
+    /// (`factor: 32.0`).
+    Llama3 {
+        /// Inverse-frequency divisor applied to the low-frequency band.
+        factor: f64,
+        /// Low-frequency band boundary: wavelength threshold is
+        /// `original_max_position_embeddings / low_freq_factor`.
+        low_freq_factor: f64,
+        /// High-frequency band boundary: wavelength threshold is
+        /// `original_max_position_embeddings / high_freq_factor`.
+        high_freq_factor: f64,
+        /// Context length the base frequencies were trained for.
+        original_max_position_embeddings: usize,
+    },
+}
+
+impl fmt::Display for RopeScaling {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Linear { factor } => write!(f, "Linear(factor={factor})"),
+            Self::Llama3 { factor, .. } => write!(f, "Llama3(factor={factor})"),
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // TransformerConfig
 // ---------------------------------------------------------------------------
@@ -190,13 +239,16 @@ impl fmt::Display for MlpLayout {
 /// | `rope_theta` | `rope_theta` | 10 000 ³ |
 /// | `max_position_embeddings` | `max_position_embeddings` | 4 096 ⁴ |
 /// | `tie_word_embeddings` | `tie_word_embeddings` | `false` ⁵ |
+/// | `rope_scaling` | `rope_scaling` | `None` ⁶ |
 ///
 /// ¹ `StarCoder2` reads `norm_epsilon` instead.\
 /// ² 1e-6 for `Qwen2`, `Qwen3`, Gemma, Gemma 2.\
 /// ³ 1 000 000 for `Qwen2`/`Qwen3`.\
 /// ⁴ 32 768 for `Qwen2`/Mistral; 40 960 for `Qwen3`; 16 384 for `StarCoder2`;
 ///   8 192 for Gemma/Gemma 2; 4 096 for `LLaMA`/`Phi-3`.\
-/// ⁵ `true` for Gemma, Gemma 2, `StarCoder2`.
+/// ⁵ `true` for Gemma, Gemma 2, `StarCoder2`.\
+/// ⁶ Parsed into [`RopeScaling`]; `linear` (`DeepSeek-Coder`) and `llama3`
+///   (Llama 3.1/3.2) are supported, other schemes error at parse time.
 ///
 /// ## Hardcoded architecture axes
 ///
@@ -291,6 +343,9 @@ pub struct TransformerConfig {
     pub rope_theta: f64,
     /// Maximum sequence length for position embeddings.
     pub max_position_embeddings: usize,
+    /// `RoPE` position-interpolation scaling, or `None` for standard `RoPE`.
+    /// Parsed from the `rope_scaling` block; see [`RopeScaling`].
+    pub rope_scaling: Option<RopeScaling>,
 
     // --- Gemma 2 extensions --------------------------------------------------
     /// Attention logit soft-capping: `tanh(scores / cap) * cap` before softmax.
@@ -408,6 +463,7 @@ impl TransformerConfig {
 
             rope_theta: get_f64_or(config, "rope_theta", 10_000.0),
             max_position_embeddings: get_usize_or(config, "max_position_embeddings", 4096),
+            rope_scaling: parse_rope_scaling(config)?,
 
             attn_logit_softcapping: None,
             final_logit_softcapping: None,
@@ -464,6 +520,7 @@ impl TransformerConfig {
 
             rope_theta: get_f64_or(config, "rope_theta", 1_000_000.0),
             max_position_embeddings: get_usize_or(config, "max_position_embeddings", 40_960),
+            rope_scaling: parse_rope_scaling(config)?,
 
             attn_logit_softcapping: None,
             final_logit_softcapping: None,
@@ -512,6 +569,7 @@ impl TransformerConfig {
 
             rope_theta: get_f64_or(config, "rope_theta", 1_000_000.0),
             max_position_embeddings: get_usize_or(config, "max_position_embeddings", 32_768),
+            rope_scaling: parse_rope_scaling(config)?,
 
             attn_logit_softcapping: None,
             final_logit_softcapping: None,
@@ -566,6 +624,7 @@ impl TransformerConfig {
                 "max_position_embeddings",
                 8192,
             ),
+            rope_scaling: parse_rope_scaling(config)?,
 
             attn_logit_softcapping: None,
             final_logit_softcapping: None,
@@ -621,6 +680,7 @@ impl TransformerConfig {
                 "max_position_embeddings",
                 8192,
             ),
+            rope_scaling: parse_rope_scaling(config)?,
 
             attn_logit_softcapping: get_optional_f64(config, "attn_logit_softcapping"),
             final_logit_softcapping: get_optional_f64(config, "final_logit_softcapping"),
@@ -669,6 +729,7 @@ impl TransformerConfig {
 
             rope_theta: get_f64_or(config, "rope_theta", 10_000.0),
             max_position_embeddings: get_usize_or(config, "max_position_embeddings", 4096),
+            rope_scaling: parse_rope_scaling(config)?,
 
             attn_logit_softcapping: None,
             final_logit_softcapping: None,
@@ -724,6 +785,7 @@ impl TransformerConfig {
 
             rope_theta: get_f64_or(config, "rope_theta", 10_000.0),
             max_position_embeddings: get_usize_or(config, "max_position_embeddings", 16_384),
+            rope_scaling: parse_rope_scaling(config)?,
 
             attn_logit_softcapping: None,
             final_logit_softcapping: None,
@@ -771,6 +833,7 @@ impl TransformerConfig {
 
             rope_theta: get_f64_or(config, "rope_theta", 10_000.0),
             max_position_embeddings: get_usize_or(config, "max_position_embeddings", 32_768),
+            rope_scaling: parse_rope_scaling(config)?,
 
             attn_logit_softcapping: None,
             final_logit_softcapping: None,
@@ -829,6 +892,57 @@ pub(crate) fn get_optional_f64(config: &Value, key: &str) -> Option<f64> {
 /// Extract a `bool` field, returning a default if absent.
 pub(crate) fn get_bool_or(config: &Value, key: &str, default: bool) -> bool {
     config.get(key).and_then(Value::as_bool).unwrap_or(default)
+}
+
+/// Parse the optional `rope_scaling` block from a `config.json`.
+///
+/// Accepts both the legacy `"type"` key and the current `"rope_type"` key
+/// (`HuggingFace` renamed it; `DeepSeek-Coder` still ships `"type"`, Llama 3.x
+/// ships `"rope_type"`).  Returns `Ok(None)` when the block is absent,
+/// `null`, or `rope_type: "default"`.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] for a scaling variant candle-mi does not
+/// implement.  Failing loudly is deliberate: a silently-dropped scaling
+/// scheme mis-runs the model while still producing plausible logits, which
+/// a top-k smoke test cannot catch (see [`RopeScaling`]).
+pub(crate) fn parse_rope_scaling(config: &Value) -> Result<Option<RopeScaling>> {
+    let Some(rs) = config.get("rope_scaling") else {
+        return Ok(None);
+    };
+    if rs.is_null() {
+        return Ok(None);
+    }
+    let kind = rs
+        .get("rope_type")
+        .or_else(|| rs.get("type"))
+        .and_then(Value::as_str)
+        .ok_or_else(|| MIError::Config("rope_scaling block missing 'rope_type'/'type'".into()))?;
+
+    match kind {
+        "default" => Ok(None),
+        "linear" => {
+            let factor = get_optional_f64(rs, "factor").ok_or_else(|| {
+                MIError::Config("linear rope_scaling missing numeric 'factor'".into())
+            })?;
+            Ok(Some(RopeScaling::Linear { factor }))
+        }
+        "llama3" => Ok(Some(RopeScaling::Llama3 {
+            factor: get_f64_or(rs, "factor", 8.0),
+            low_freq_factor: get_f64_or(rs, "low_freq_factor", 1.0),
+            high_freq_factor: get_f64_or(rs, "high_freq_factor", 4.0),
+            original_max_position_embeddings: get_usize_or(
+                rs,
+                "original_max_position_embeddings",
+                8192,
+            ),
+        })),
+        other => Err(MIError::Config(format!(
+            "unsupported rope_scaling type {other:?} (candle-mi implements 'linear' \
+             and 'llama3'); see ROADMAP.md §3.3 for status"
+        ))),
+    }
 }
 
 /// Extract `head_dim`, falling back to `hidden_size / num_attention_heads`.
@@ -1118,6 +1232,7 @@ impl TransformerConfig {
 
             rope_theta: get_f64_or(config, "rope_theta", 10_000.0),
             max_position_embeddings: get_usize_or(config, "max_position_embeddings", 4096),
+            rope_scaling: parse_rope_scaling(config)?,
 
             attn_logit_softcapping,
             final_logit_softcapping,
@@ -1552,6 +1667,104 @@ mod tests {
         assert_eq!(config.num_layers, 28);
         assert_eq!(config.head_dim, 128);
         assert_eq!(config.num_kv_heads, 8);
+
+        // Vanilla Qwen3 declares no rope_scaling.
+        assert_eq!(config.rope_scaling, None);
+    }
+
+    /// `llama_config_json` with an optional `rope_scaling` block injected.
+    fn llama_config_with_rope_scaling(
+        rope_scaling: Option<serde_json::Value>,
+    ) -> serde_json::Value {
+        let mut json = llama_config_json();
+        if let Some(rs) = rope_scaling {
+            json["rope_scaling"] = rs;
+        }
+        json
+    }
+
+    #[test]
+    fn parse_rope_scaling_linear_deepseek() {
+        // DeepSeek-Coder ships model_type "llama" + a linear rope_scaling block
+        // (legacy "type" key) extending the 4 096 context to 16 384.
+        let json = llama_config_with_rope_scaling(Some(serde_json::json!({
+            "type": "linear",
+            "factor": 4.0
+        })));
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+        assert_eq!(
+            config.rope_scaling,
+            Some(RopeScaling::Linear { factor: 4.0 })
+        );
+    }
+
+    #[test]
+    fn parse_rope_scaling_llama3() {
+        // Llama 3.1 / 3.2 use the "llama3" frequency-band scheme (current
+        // "rope_type" key) with the standard band factors.
+        let json = llama_config_with_rope_scaling(Some(serde_json::json!({
+            "rope_type": "llama3",
+            "factor": 32.0,
+            "low_freq_factor": 1.0,
+            "high_freq_factor": 4.0,
+            "original_max_position_embeddings": 8192
+        })));
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+        assert_eq!(
+            config.rope_scaling,
+            Some(RopeScaling::Llama3 {
+                factor: 32.0,
+                low_freq_factor: 1.0,
+                high_freq_factor: 4.0,
+                original_max_position_embeddings: 8192,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_rope_scaling_absent_default_and_null_are_none() {
+        // Absent block → None.
+        let json = llama_config_with_rope_scaling(None);
+        assert_eq!(
+            TransformerConfig::from_hf_config(&json)
+                .unwrap()
+                .rope_scaling,
+            None
+        );
+
+        // Explicit "default" sentinel → None.
+        let json = llama_config_with_rope_scaling(Some(serde_json::json!({
+            "rope_type": "default"
+        })));
+        assert_eq!(
+            TransformerConfig::from_hf_config(&json)
+                .unwrap()
+                .rope_scaling,
+            None
+        );
+
+        // JSON null → None.
+        let json = llama_config_with_rope_scaling(Some(serde_json::Value::Null));
+        assert_eq!(
+            TransformerConfig::from_hf_config(&json)
+                .unwrap()
+                .rope_scaling,
+            None
+        );
+    }
+
+    #[test]
+    fn parse_rope_scaling_unsupported_errors() {
+        // An unimplemented scheme must fail loudly rather than be silently
+        // dropped (a dropped scaling still yields plausible logits — exactly
+        // the failure mode that hid the llama3 miss on Llama 3.2).
+        let json = llama_config_with_rope_scaling(Some(serde_json::json!({
+            "rope_type": "yarn",
+            "factor": 4.0
+        })));
+        let err = TransformerConfig::from_hf_config(&json).unwrap_err();
+        assert!(matches!(err, MIError::Config(_)));
+        assert!(err.to_string().contains("yarn"));
     }
 
     #[test]
