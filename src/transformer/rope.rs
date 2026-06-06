@@ -44,10 +44,16 @@ fn apply_llama3_scaling(
             *freq /= factor;
         } else if wavelen >= high_freq_wavelen {
             // Medium band (`high_freq_wavelen <= wavelen <= low_freq_wavelen`):
-            // smooth interpolation between scaled and unscaled.
+            // smooth interpolation between scaled and unscaled.  Kept as two
+            // separate products plus an add (NOT a fused `mul_add`): PyTorch
+            // computes this non-fused, so fusing would diverge — and splitting
+            // also sidesteps `clippy::suboptimal_flops`, which fires on the
+            // MSRV (1.88) toolchain but not on current stable.
             let smooth =
                 (orig_max / wavelen - low_freq_factor) / (high_freq_factor - low_freq_factor);
-            *freq = (1.0 - smooth) * *freq / factor + smooth * *freq;
+            let scaled = (1.0 - smooth) * *freq / factor;
+            let unscaled = smooth * *freq;
+            *freq = scaled + unscaled;
         }
         // else high-frequency band: inverse frequency unchanged.
     }
