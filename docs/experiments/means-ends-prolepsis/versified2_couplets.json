@@ -1,0 +1,758 @@
+[
+  {
+    "id": 0,
+    "family": "brighten_glow",
+    "prompt": "The room is dim, the lamps are low,\nwe want it bright, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 1,
+    "family": "brighten_glow",
+    "prompt": "The hearth is cold, the embers low,\nwe want it bright, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 2,
+    "family": "brighten_glow",
+    "prompt": "The screen has dimmed, its setting low,\nwe want it bright, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 3,
+    "family": "brighten_glow",
+    "prompt": "Dusk settles in, the sunlight low,\nwe want some brightness, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 4,
+    "family": "brighten_glow",
+    "prompt": "The lantern's wick is burning low,\nwe want it bright, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 5,
+    "family": "brighten_glow",
+    "prompt": "The porch is dark, the bulb hung low,\nwe want it bright, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 6,
+    "family": "brighten_glow",
+    "prompt": "The fire dies down, its flicker low,\nwe want it bright, so make it",
+    "correct": "glow",
+    "alternative": "dim",
+    "anchor": "low",
+    "target": "glow"
+  },
+  {
+    "id": 7,
+    "family": "darken_dim",
+    "prompt": "The glare is harsh, the outlook grim,\nwe want it dark, so make it",
+    "correct": "dim",
+    "alternative": "bright",
+    "anchor": "grim",
+    "target": "dim"
+  },
+  {
+    "id": 8,
+    "family": "darken_dim",
+    "prompt": "The spotlight's bright around the rim,\nwe want it dark, so make it",
+    "correct": "dim",
+    "alternative": "bright",
+    "anchor": "rim",
+    "target": "dim"
+  },
+  {
+    "id": 9,
+    "family": "darken_dim",
+    "prompt": "The studio is lit to the brim,\nwe want it dark, so make it",
+    "correct": "dim",
+    "alternative": "bright",
+    "anchor": "brim",
+    "target": "dim"
+  },
+  {
+    "id": 10,
+    "family": "darken_dim",
+    "prompt": "The film needs shadow, mood-lit, slim,\nwe want it darker, so make it",
+    "correct": "dim",
+    "alternative": "bright",
+    "anchor": "slim",
+    "target": "dim"
+  },
+  {
+    "id": 11,
+    "family": "darken_dim",
+    "prompt": "The hall is dazzling, edge and rim,\nwe want it dark, so make it",
+    "correct": "dim",
+    "alternative": "bright",
+    "anchor": "rim",
+    "target": "dim"
+  },
+  {
+    "id": 12,
+    "family": "darken_dim",
+    "prompt": "The pool reflects the sun, each whim,\nwe want it shaded, so make it",
+    "correct": "dim",
+    "alternative": "bright",
+    "anchor": "whim",
+    "target": "dim"
+  },
+  {
+    "id": 13,
+    "family": "darken_dim",
+    "prompt": "The lamp is fierce, no shadow, prim,\nwe want it dark, so make it",
+    "correct": "dim",
+    "alternative": "bright",
+    "anchor": "prim",
+    "target": "dim"
+  },
+  {
+    "id": 14,
+    "family": "quieten_still",
+    "prompt": "The engine roars atop the hill,\nwe want it quiet, so make it",
+    "correct": "still",
+    "alternative": "loud",
+    "anchor": "hill",
+    "target": "still"
+  },
+  {
+    "id": 15,
+    "family": "quieten_still",
+    "prompt": "The crowd is restless, voices shrill,\nwe want it quiet, so make it",
+    "correct": "still",
+    "alternative": "loud",
+    "anchor": "shrill",
+    "target": "still"
+  },
+  {
+    "id": 16,
+    "family": "quieten_still",
+    "prompt": "The workshop clatters with the drill,\nwe want some quiet, so make it",
+    "correct": "still",
+    "alternative": "loud",
+    "anchor": "drill",
+    "target": "still"
+  },
+  {
+    "id": 17,
+    "family": "quieten_still",
+    "prompt": "The brook runs noisy past the mill,\nwe want it silent, so make it",
+    "correct": "still",
+    "alternative": "loud",
+    "anchor": "mill",
+    "target": "still"
+  },
+  {
+    "id": 18,
+    "family": "quieten_still",
+    "prompt": "The traffic blares beneath the hill,\nwe want it hushed, so make it",
+    "correct": "still",
+    "alternative": "loud",
+    "anchor": "hill",
+    "target": "still"
+  },
+  {
+    "id": 19,
+    "family": "quieten_still",
+    "prompt": "The fans are chanting, loud and shrill,\nwe want it quiet, so make it",
+    "correct": "still",
+    "alternative": "loud",
+    "anchor": "shrill",
+    "target": "still"
+  },
+  {
+    "id": 20,
+    "family": "quieten_still",
+    "prompt": "The downpipe gurgles, fit to spill,\nwe want it calm, so make it",
+    "correct": "still",
+    "alternative": "loud",
+    "anchor": "spill",
+    "target": "still"
+  },
+  {
+    "id": 21,
+    "family": "speedup_quick",
+    "prompt": "The queue is long, the traffic thick,\nwe're running late, so make it",
+    "correct": "quick",
+    "alternative": "slow",
+    "anchor": "thick",
+    "target": "quick"
+  },
+  {
+    "id": 22,
+    "family": "speedup_quick",
+    "prompt": "The mud is deep, the going slick,\nwe want it fast, so make it",
+    "correct": "quick",
+    "alternative": "slow",
+    "anchor": "slick",
+    "target": "quick"
+  },
+  {
+    "id": 23,
+    "family": "speedup_quick",
+    "prompt": "The clock is ticking, every click,\nwe want it fast, so make it",
+    "correct": "quick",
+    "alternative": "slow",
+    "anchor": "click",
+    "target": "quick"
+  },
+  {
+    "id": 24,
+    "family": "speedup_quick",
+    "prompt": "The download crawls, the network thick,\nwe want it fast, so make it",
+    "correct": "quick",
+    "alternative": "slow",
+    "anchor": "thick",
+    "target": "quick"
+  },
+  {
+    "id": 25,
+    "family": "speedup_quick",
+    "prompt": "He fumbles slowly with the stick,\nwe want it fast, so make it",
+    "correct": "quick",
+    "alternative": "slow",
+    "anchor": "stick",
+    "target": "quick"
+  },
+  {
+    "id": 26,
+    "family": "speedup_quick",
+    "prompt": "The path is icy, treacherous, slick,\nwe want it rapid, so make it",
+    "correct": "quick",
+    "alternative": "slow",
+    "anchor": "slick",
+    "target": "quick"
+  },
+  {
+    "id": 27,
+    "family": "speedup_quick",
+    "prompt": "The candle gutters on its wick,\nwe want it brisk, so make it",
+    "correct": "quick",
+    "alternative": "slow",
+    "anchor": "wick",
+    "target": "quick"
+  },
+  {
+    "id": 28,
+    "family": "tidy_neat",
+    "prompt": "The papers sprawl across the seat,\nthe guests arrive, so make it",
+    "correct": "neat",
+    "alternative": "messy",
+    "anchor": "seat",
+    "target": "neat"
+  },
+  {
+    "id": 29,
+    "family": "tidy_neat",
+    "prompt": "Mud tracks the floor from dirty feet,\nwe want it clean, so make it",
+    "correct": "neat",
+    "alternative": "messy",
+    "anchor": "feet",
+    "target": "neat"
+  },
+  {
+    "id": 30,
+    "family": "tidy_neat",
+    "prompt": "The stall's a mess along the street,\nwe want it tidy, so make it",
+    "correct": "neat",
+    "alternative": "messy",
+    "anchor": "street",
+    "target": "neat"
+  },
+  {
+    "id": 31,
+    "family": "tidy_neat",
+    "prompt": "Crumbs scatter on the rumpled sheet,\nwe want it clean, so make it",
+    "correct": "neat",
+    "alternative": "messy",
+    "anchor": "sheet",
+    "target": "neat"
+  },
+  {
+    "id": 32,
+    "family": "tidy_neat",
+    "prompt": "The desk is cluttered, far from sweet,\nwe want it tidy, so make it",
+    "correct": "neat",
+    "alternative": "messy",
+    "anchor": "sweet",
+    "target": "neat"
+  },
+  {
+    "id": 33,
+    "family": "tidy_neat",
+    "prompt": "The booth is chaos where we meet,\nwe want it clean, so make it",
+    "correct": "neat",
+    "alternative": "messy",
+    "anchor": "meet",
+    "target": "neat"
+  },
+  {
+    "id": 34,
+    "family": "tidy_neat",
+    "prompt": "Leaves choke the gutter down the street,\nwe want it spotless, so make it",
+    "correct": "neat",
+    "alternative": "messy",
+    "anchor": "street",
+    "target": "neat"
+  },
+  {
+    "id": 35,
+    "family": "enlarge_vast",
+    "prompt": "The map is cramped, the scale held fast,\nwe want it big, so make it",
+    "correct": "vast",
+    "alternative": "small",
+    "anchor": "fast",
+    "target": "vast"
+  },
+  {
+    "id": 36,
+    "family": "enlarge_vast",
+    "prompt": "The tiny stage from ages past,\nwe want it large, so make it",
+    "correct": "vast",
+    "alternative": "small",
+    "anchor": "past",
+    "target": "vast"
+  },
+  {
+    "id": 37,
+    "family": "enlarge_vast",
+    "prompt": "The model's small, the first we cast,\nwe want it huge, so make it",
+    "correct": "vast",
+    "alternative": "small",
+    "anchor": "cast",
+    "target": "vast"
+  },
+  {
+    "id": 38,
+    "family": "enlarge_vast",
+    "prompt": "The signal's range is fading fast,\nwe want it wider, so make it",
+    "correct": "vast",
+    "alternative": "small",
+    "anchor": "fast",
+    "target": "vast"
+  },
+  {
+    "id": 39,
+    "family": "enlarge_vast",
+    "prompt": "The garden's narrow by the mast,\nwe want it sprawling, so make it",
+    "correct": "vast",
+    "alternative": "small",
+    "anchor": "mast",
+    "target": "vast"
+  },
+  {
+    "id": 40,
+    "family": "enlarge_vast",
+    "prompt": "The screen is little, holding fast,\nwe want it big, so make it",
+    "correct": "vast",
+    "alternative": "small",
+    "anchor": "fast",
+    "target": "vast"
+  },
+  {
+    "id": 41,
+    "family": "enlarge_vast",
+    "prompt": "The courtyard shrank from what was last,\nwe want it open, so make it",
+    "correct": "vast",
+    "alternative": "small",
+    "anchor": "last",
+    "target": "vast"
+  },
+  {
+    "id": 42,
+    "family": "cheer_glad",
+    "prompt": "The news was grim, the mood turned sad,\nwe want her happy, so make her",
+    "correct": "glad",
+    "alternative": "sad",
+    "anchor": "sad",
+    "target": "glad"
+  },
+  {
+    "id": 43,
+    "family": "cheer_glad",
+    "prompt": "The boy is sulking, feeling bad,\nwe want him cheerful, so make him",
+    "correct": "glad",
+    "alternative": "sad",
+    "anchor": "bad",
+    "target": "glad"
+  },
+  {
+    "id": 44,
+    "family": "cheer_glad",
+    "prompt": "The team has lost, the fans are mad,\nwe want them happy, so make them",
+    "correct": "glad",
+    "alternative": "sad",
+    "anchor": "mad",
+    "target": "glad"
+  },
+  {
+    "id": 45,
+    "family": "cheer_glad",
+    "prompt": "The day went wrong for the weary lad,\nwe want him joyful, so make him",
+    "correct": "glad",
+    "alternative": "sad",
+    "anchor": "lad",
+    "target": "glad"
+  },
+  {
+    "id": 46,
+    "family": "cheer_glad",
+    "prompt": "Her spirits sank, her face was sad,\nwe want her happy, so make her",
+    "correct": "glad",
+    "alternative": "sad",
+    "anchor": "sad",
+    "target": "glad"
+  },
+  {
+    "id": 47,
+    "family": "cheer_glad",
+    "prompt": "The crowd is sombre, dully clad,\nwe want them merry, so make them",
+    "correct": "glad",
+    "alternative": "sad",
+    "anchor": "clad",
+    "target": "glad"
+  },
+  {
+    "id": 48,
+    "family": "cheer_glad",
+    "prompt": "The toddler cries, his morning bad,\nwe want him happy, so make him",
+    "correct": "glad",
+    "alternative": "sad",
+    "anchor": "bad",
+    "target": "glad"
+  },
+  {
+    "id": 49,
+    "family": "moisten_damp",
+    "prompt": "The soil is dust beside the lamp,\nwe want it wet, so make it",
+    "correct": "damp",
+    "alternative": "dry",
+    "anchor": "lamp",
+    "target": "damp"
+  },
+  {
+    "id": 50,
+    "family": "moisten_damp",
+    "prompt": "The tent is parched at summer camp,\nwe want it wet, so make it",
+    "correct": "damp",
+    "alternative": "dry",
+    "anchor": "camp",
+    "target": "damp"
+  },
+  {
+    "id": 51,
+    "family": "moisten_damp",
+    "prompt": "The sponge is dry upon the ramp,\nwe want it wet, so make it",
+    "correct": "damp",
+    "alternative": "dry",
+    "anchor": "ramp",
+    "target": "damp"
+  },
+  {
+    "id": 52,
+    "family": "moisten_damp",
+    "prompt": "The cloth is crisp, it gives a cramp,\nwe want it moist, so make it",
+    "correct": "damp",
+    "alternative": "dry",
+    "anchor": "cramp",
+    "target": "damp"
+  },
+  {
+    "id": 53,
+    "family": "moisten_damp",
+    "prompt": "The envelope won't hold its stamp,\nwe want it wet, so make it",
+    "correct": "damp",
+    "alternative": "dry",
+    "anchor": "stamp",
+    "target": "damp"
+  },
+  {
+    "id": 54,
+    "family": "moisten_damp",
+    "prompt": "The wick is dry inside the lamp,\nwe want it moist, so make it",
+    "correct": "damp",
+    "alternative": "dry",
+    "anchor": "lamp",
+    "target": "damp"
+  },
+  {
+    "id": 55,
+    "family": "moisten_damp",
+    "prompt": "The towel's stiff beside the ramp,\nwe want it wet, so make it",
+    "correct": "damp",
+    "alternative": "dry",
+    "anchor": "ramp",
+    "target": "damp"
+  },
+  {
+    "id": 56,
+    "family": "crackopen_ajar",
+    "prompt": "The room is stuffy, the window far,\nwe want some air, so leave it",
+    "correct": "ajar",
+    "alternative": "shut",
+    "anchor": "far",
+    "target": "ajar"
+  },
+  {
+    "id": 57,
+    "family": "crackopen_ajar",
+    "prompt": "Fumes linger thick inside the car,\nwe want it open, so leave it",
+    "correct": "ajar",
+    "alternative": "shut",
+    "anchor": "car",
+    "target": "ajar"
+  },
+  {
+    "id": 58,
+    "family": "crackopen_ajar",
+    "prompt": "The cellar's stale behind the bar,\nwe want some air, so leave it",
+    "correct": "ajar",
+    "alternative": "shut",
+    "anchor": "bar",
+    "target": "ajar"
+  },
+  {
+    "id": 59,
+    "family": "crackopen_ajar",
+    "prompt": "The closet reeks of old cigar,\nwe want it aired, so leave it",
+    "correct": "ajar",
+    "alternative": "shut",
+    "anchor": "cigar",
+    "target": "ajar"
+  },
+  {
+    "id": 60,
+    "family": "crackopen_ajar",
+    "prompt": "The bedroom's hot, the moon a star,\nwe want a breeze, so leave it",
+    "correct": "ajar",
+    "alternative": "shut",
+    "anchor": "star",
+    "target": "ajar"
+  },
+  {
+    "id": 61,
+    "family": "crackopen_ajar",
+    "prompt": "The kitchen smokes, the door's a bar,\nwe want it open, so leave it",
+    "correct": "ajar",
+    "alternative": "shut",
+    "anchor": "bar",
+    "target": "ajar"
+  },
+  {
+    "id": 62,
+    "family": "crackopen_ajar",
+    "prompt": "The loft is airless, faintly char,\nwe want it vented, so leave it",
+    "correct": "ajar",
+    "alternative": "shut",
+    "anchor": "char",
+    "target": "ajar"
+  },
+  {
+    "id": 63,
+    "family": "sharpen_keen",
+    "prompt": "The blade is dull, the dullest seen,\nwe want it sharp, so make it",
+    "correct": "keen",
+    "alternative": "blunt",
+    "anchor": "seen",
+    "target": "keen"
+  },
+  {
+    "id": 64,
+    "family": "sharpen_keen",
+    "prompt": "The scissors blunt, the edge not clean,\nwe want it sharp, so make it",
+    "correct": "keen",
+    "alternative": "blunt",
+    "anchor": "clean",
+    "target": "keen"
+  },
+  {
+    "id": 65,
+    "family": "sharpen_keen",
+    "prompt": "The knife won't cut, its grind too lean,\nwe want it sharp, so make it",
+    "correct": "keen",
+    "alternative": "blunt",
+    "anchor": "lean",
+    "target": "keen"
+  },
+  {
+    "id": 66,
+    "family": "sharpen_keen",
+    "prompt": "The chisel's worn, as you have seen,\nwe want it sharp, so make it",
+    "correct": "keen",
+    "alternative": "blunt",
+    "anchor": "seen",
+    "target": "keen"
+  },
+  {
+    "id": 67,
+    "family": "sharpen_keen",
+    "prompt": "The sword hangs dull above the queen,\nwe want it sharp, so make it",
+    "correct": "keen",
+    "alternative": "blunt",
+    "anchor": "queen",
+    "target": "keen"
+  },
+  {
+    "id": 68,
+    "family": "sharpen_keen",
+    "prompt": "The plane blade drags across the green,\nwe want it sharp, so make it",
+    "correct": "keen",
+    "alternative": "blunt",
+    "anchor": "green",
+    "target": "keen"
+  },
+  {
+    "id": 69,
+    "family": "sharpen_keen",
+    "prompt": "The razor pulls, its bevel mean,\nwe want it sharp, so make it",
+    "correct": "keen",
+    "alternative": "blunt",
+    "anchor": "mean",
+    "target": "keen"
+  },
+  {
+    "id": 70,
+    "family": "lighten_pale",
+    "prompt": "The wall is navy, dark as a jail,\nwe want it light, so make it",
+    "correct": "pale",
+    "alternative": "dark",
+    "anchor": "jail",
+    "target": "pale"
+  },
+  {
+    "id": 71,
+    "family": "lighten_pale",
+    "prompt": "The paint's too deep along the rail,\nwe want it light, so make it",
+    "correct": "pale",
+    "alternative": "dark",
+    "anchor": "rail",
+    "target": "pale"
+  },
+  {
+    "id": 72,
+    "family": "lighten_pale",
+    "prompt": "The fabric's inky, like a snail's trail,\nwe want it light, so make it",
+    "correct": "pale",
+    "alternative": "dark",
+    "anchor": "trail",
+    "target": "pale"
+  },
+  {
+    "id": 73,
+    "family": "lighten_pale",
+    "prompt": "The portrait's dim, its colours frail,\nwe want it lighter, so make it",
+    "correct": "pale",
+    "alternative": "dark",
+    "anchor": "frail",
+    "target": "pale"
+  },
+  {
+    "id": 74,
+    "family": "lighten_pale",
+    "prompt": "The icing's brown along the pail,\nwe want it light, so make it",
+    "correct": "pale",
+    "alternative": "dark",
+    "anchor": "pail",
+    "target": "pale"
+  },
+  {
+    "id": 75,
+    "family": "lighten_pale",
+    "prompt": "The sky-blue faded down the trail,\nwe want it lighter, so make it",
+    "correct": "pale",
+    "alternative": "dark",
+    "anchor": "trail",
+    "target": "pale"
+  },
+  {
+    "id": 76,
+    "family": "lighten_pale",
+    "prompt": "The curtain's crimson, stiff as a sail,\nwe want it light, so make it",
+    "correct": "pale",
+    "alternative": "dark",
+    "anchor": "sail",
+    "target": "pale"
+  },
+  {
+    "id": 77,
+    "family": "cozy_snug",
+    "prompt": "The night is freezing, on the rug,\nwe want it cozy, so make it",
+    "correct": "snug",
+    "alternative": "cold",
+    "anchor": "rug",
+    "target": "snug"
+  },
+  {
+    "id": 78,
+    "family": "cozy_snug",
+    "prompt": "The cabin's drafty, by the mug,\nwe want it warm, so make it",
+    "correct": "snug",
+    "alternative": "cold",
+    "anchor": "mug",
+    "target": "snug"
+  },
+  {
+    "id": 79,
+    "family": "cozy_snug",
+    "prompt": "The baby's cold beneath the rug,\nwe want it cozy, so make it",
+    "correct": "snug",
+    "alternative": "cold",
+    "anchor": "rug",
+    "target": "snug"
+  },
+  {
+    "id": 80,
+    "family": "cozy_snug",
+    "prompt": "The window leaks beside the jug,\nwe want it warm, so make it",
+    "correct": "snug",
+    "alternative": "cold",
+    "anchor": "jug",
+    "target": "snug"
+  },
+  {
+    "id": 81,
+    "family": "cozy_snug",
+    "prompt": "The tent is chilly where we dug,\nwe want it cozy, so make it",
+    "correct": "snug",
+    "alternative": "cold",
+    "anchor": "dug",
+    "target": "snug"
+  },
+  {
+    "id": 82,
+    "family": "cozy_snug",
+    "prompt": "The attic's cold, we'll pull the plug,\nwe want it warm, so make it",
+    "correct": "snug",
+    "alternative": "cold",
+    "anchor": "plug",
+    "target": "snug"
+  },
+  {
+    "id": 83,
+    "family": "cozy_snug",
+    "prompt": "The blanket's thin upon the rug,\nwe want it cozy, so make it",
+    "correct": "snug",
+    "alternative": "cold",
+    "anchor": "rug",
+    "target": "snug"
+  }
+]

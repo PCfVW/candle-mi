@@ -1,0 +1,390 @@
+{
+  "gemma2_2b": {
+    "n": 84,
+    "dual_hit": 22,
+    "rhyme": 33,
+    "goal_lean": 69,
+    "four_way": {
+      "both": 30,
+      "rhyme_only": 3,
+      "goal_only": 39,
+      "neither": 12
+    },
+    "oov": 1,
+    "top_completions": [
+      [
+        "so",
+        13
+      ],
+      [
+        "quick",
+        7
+      ],
+      [
+        "sharp",
+        6
+      ],
+      [
+        "dim",
+        5
+      ],
+      [
+        "open",
+        4
+      ],
+      [
+        "white",
+        4
+      ],
+      [
+        "still",
+        3
+      ],
+      [
+        "clean",
+        3
+      ]
+    ],
+    "per_family_dual_hit": {
+      "brighten_glow": [
+        2,
+        7
+      ],
+      "cheer_glad": [
+        2,
+        7
+      ],
+      "cozy_snug": [
+        1,
+        7
+      ],
+      "crackopen_ajar": [
+        0,
+        7
+      ],
+      "darken_dim": [
+        5,
+        7
+      ],
+      "enlarge_vast": [
+        0,
+        7
+      ],
+      "lighten_pale": [
+        0,
+        7
+      ],
+      "moisten_damp": [
+        1,
+        7
+      ],
+      "quieten_still": [
+        3,
+        7
+      ],
+      "sharpen_keen": [
+        0,
+        7
+      ],
+      "speedup_quick": [
+        6,
+        7
+      ],
+      "tidy_neat": [
+        2,
+        7
+      ]
+    }
+  },
+  "llama32_1b": {
+    "n": 84,
+    "dual_hit": 1,
+    "rhyme": 2,
+    "goal_lean": 42,
+    "four_way": {
+      "both": 1,
+      "rhyme_only": 1,
+      "goal_only": 41,
+      "neither": 41
+    },
+    "oov": 2,
+    "top_completions": [
+      [
+        "so",
+        26
+      ],
+      [
+        "smile",
+        5
+      ],
+      [
+        "wet",
+        5
+      ],
+      [
+        "open",
+        5
+      ],
+      [
+        "sharp",
+        5
+      ],
+      [
+        "hot",
+        3
+      ],
+      [
+        "brighter",
+        3
+      ],
+      [
+        "burn",
+        3
+      ]
+    ],
+    "per_family_dual_hit": {
+      "brighten_glow": [
+        0,
+        7
+      ],
+      "cheer_glad": [
+        0,
+        7
+      ],
+      "cozy_snug": [
+        0,
+        7
+      ],
+      "crackopen_ajar": [
+        0,
+        7
+      ],
+      "darken_dim": [
+        0,
+        7
+      ],
+      "enlarge_vast": [
+        0,
+        7
+      ],
+      "lighten_pale": [
+        0,
+        7
+      ],
+      "moisten_damp": [
+        0,
+        7
+      ],
+      "quieten_still": [
+        0,
+        7
+      ],
+      "sharpen_keen": [
+        0,
+        7
+      ],
+      "speedup_quick": [
+        1,
+        7
+      ],
+      "tidy_neat": [
+        0,
+        7
+      ]
+    }
+  },
+  "qwen3_1.7b": {
+    "n": 84,
+    "dual_hit": 12,
+    "rhyme": 12,
+    "goal_lean": 64,
+    "four_way": {
+      "both": 12,
+      "rhyme_only": 0,
+      "goal_only": 52,
+      "neither": 20
+    },
+    "oov": 0,
+    "top_completions": [
+      [
+        "smile",
+        6
+      ],
+      [
+        "wet",
+        6
+      ],
+      [
+        "dark",
+        5
+      ],
+      [
+        "sharp",
+        5
+      ],
+      [
+        "shine",
+        4
+      ],
+      [
+        "bright",
+        4
+      ],
+      [
+        "alone",
+        4
+      ],
+      [
+        "warm",
+        4
+      ]
+    ],
+    "per_family_dual_hit": {
+      "brighten_glow": [
+        3,
+        7
+      ],
+      "cheer_glad": [
+        0,
+        7
+      ],
+      "cozy_snug": [
+        0,
+        7
+      ],
+      "crackopen_ajar": [
+        0,
+        7
+      ],
+      "darken_dim": [
+        1,
+        7
+      ],
+      "enlarge_vast": [
+        0,
+        7
+      ],
+      "lighten_pale": [
+        0,
+        7
+      ],
+      "moisten_damp": [
+        0,
+        7
+      ],
+      "quieten_still": [
+        2,
+        7
+      ],
+      "sharpen_keen": [
+        1,
+        7
+      ],
+      "speedup_quick": [
+        3,
+        7
+      ],
+      "tidy_neat": [
+        2,
+        7
+      ]
+    }
+  },
+  "qwen3_0.6b": {
+    "n": 84,
+    "dual_hit": 1,
+    "rhyme": 3,
+    "goal_lean": 24,
+    "four_way": {
+      "both": 2,
+      "rhyme_only": 1,
+      "goal_only": 22,
+      "neither": 59
+    },
+    "oov": 0,
+    "top_completions": [
+      [
+        "so",
+        12
+      ],
+      [
+        "bright",
+        8
+      ],
+      [
+        "open",
+        6
+      ],
+      [
+        "happy",
+        6
+      ],
+      [
+        "wet",
+        6
+      ],
+      [
+        "fast",
+        4
+      ],
+      [
+        "big",
+        4
+      ],
+      [
+        "sharp",
+        4
+      ]
+    ],
+    "per_family_dual_hit": {
+      "brighten_glow": [
+        0,
+        7
+      ],
+      "cheer_glad": [
+        0,
+        7
+      ],
+      "cozy_snug": [
+        0,
+        7
+      ],
+      "crackopen_ajar": [
+        0,
+        7
+      ],
+      "darken_dim": [
+        0,
+        7
+      ],
+      "enlarge_vast": [
+        0,
+        7
+      ],
+      "lighten_pale": [
+        0,
+        7
+      ],
+      "moisten_damp": [
+        0,
+        7
+      ],
+      "quieten_still": [
+        0,
+        7
+      ],
+      "sharpen_keen": [
+        0,
+        7
+      ],
+      "speedup_quick": [
+        1,
+        7
+      ],
+      "tidy_neat": [
+        0,
+        7
+      ]
+    }
+  }
+}

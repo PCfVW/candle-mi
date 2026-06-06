@@ -91,12 +91,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     features picked per CLT from a vocab scan — putting the action cell on the
     same minimum-architecture footing as the rhyme cells.
   - **Versified means-ends competence sweep** (`means_ends_generator.py
-    --versified`, `scripts/classify_versified.py`): ~79 rhyming couplets whose
-    final word must satisfy both rhyme and goal, scored on 4 base models via the
-    reused `means_ends_prolepsis` harness + a CMUdict (`nltk`) rhyme check —
-    quantifies dual-hit / rhyme / goal-lean per model. Also: `examples/generate`
-    now honours an optional `GEN_PROMPT` env var (multi-line prompt without a CLI
-    flag).
+    --versified` / `--versified-v2`, `scripts/classify_versified.py`): rhyming
+    couplets whose final word must satisfy both rhyme and goal, scored on 4 base
+    models via the reused `means_ends_prolepsis` harness + a CMUdict (`nltk`) rhyme
+    check — quantifies dual-hit / rhyme / goal-lean per model. `--versified-v2`
+    forces a **non-default rhyming synonym** in every family (the real planning
+    test): dual-hit collapses to gemma 26% / Qwen3-1.7B 14% / Llama 1% / Qwen3-0.6B
+    1%, confirming v1's higher numbers were incidental rhyme. Also:
+    `examples/generate` now honours an optional `GEN_PROMPT` env var (multi-line
+    prompt without a CLI flag).
   - **Depth-axis irrevocability** (`examples/decision_trace`): logit-lenses every
     layer's planning-site residual to trace the signed action margin
     `logit(correct) − logit(alternative)` by layer, and reports the commit layer

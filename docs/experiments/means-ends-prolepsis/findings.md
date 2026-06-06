@@ -321,6 +321,36 @@ goal-*selection*. **Design lesson (for a v2):** every family must force a non-de
 rhyming word (like `glow_dim`); most of this set does not, which is why the aggregate
 looks better than the mechanism warrants.
 
+### Versified v2 — forced-non-default in every family (the real planning test)
+
+`means_ends_generator.py --versified-v2` (84 couplets, 12 families × 7). Every
+family's `W` is now a **non-default rhyming synonym** of the goal: line 2 primes the
+*default* word `D` ("we want it bright/dark/fast/clean…"), and only the rhyme forces
+the synonym `W` (`glow`, `dim`, `quick`, `neat`, `vast`, `glad`, `damp`, `ajar`,
+`keen`, `pale`, `snug`, `still`). So a dual-hit (`C==W`) can **only** happen by
+planning the rhyme-and-goal word over the primed default — no incidental rhyme.
+
+| Base model | dual-hit **v2** | (v1, inflated) | goal-lean | dominant failure |
+|---|---:|---:|---:|---|
+| gemma-2-2b | **26%** | 57% | 82% | goal-only 46% |
+| Qwen3-1.7B | **14%** | 41% | 76% | goal-only 62% |
+| Llama-3.2-1B | **1%** | 32% | 50% (chance) | `so`-filler (26/84) |
+| Qwen3-0.6B | **1%** | 25% | 29% | neither 70% |
+
+**Real planning collapses** once rhyme can't be satisfied by the default word —
+confirming v1 was mostly incidental. The dominant outcome is **goal-only**: the model
+emits the *default* lexicalization (`sharp`, `open`, `wet`, `bright`, `fast`, `big`,
+`happy`) and **drops the rhyme**; Llama collapses into the `so` filler and its
+goal-conditioning falls to chance (0.50), Qwen3-0.6B below chance (0.29). Even
+**gemma plans only family-dependently** — strong where the forced synonym is itself
+common (`quick` 6/7, `dim` 5/7, `still` 3/7) but **0/7** where it is rarer (`ajar`,
+`vast`, `pale`, `keen`). **Conclusion:** planning the non-default rhyming word is
+gated by the *lexical availability* of that word — it appears only when the synonym
+is still in-distribution (supporting the "small models need training-distribution
+prompts" intuition), and no model does it generally. At scale, the means-ends domain
+shows robust goal-**selection** and only thin, lexically-gated rhyme-**planning**
+(gemma aside, and only for common synonyms).
+
 ## Provenance
 
 Commits (on `main`, unpushed): `da1216a` Step 0 · `40171ff` Step A (gridworld

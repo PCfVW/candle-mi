@@ -318,6 +318,152 @@ def build_versified():
     return items
 
 
+VERSIFIED2_OUTPUT = "docs/experiments/means-ends-prolepsis/versified2_couplets.json"
+
+# v2 — FORCED-NON-DEFAULT versified means-ends. In v1 most families set `W` = the
+# DEFAULT goal word and rigged line 1 to rhyme with it, so rhyme was incidental. Here
+# EVERY family's `W` is a NON-default synonym that the goal alone would NOT produce
+# (the default `D` is what line 2 primes — "we want it bright" pulls `bright`, but the
+# rhyme forces `glow`). So a dual-hit (`C == W`) can only happen by planning the
+# rhyme-and-goal word over the primed default. `Wp` = goal-wrong antonym.
+VERSIFIED2_FAMILIES = [
+    {"family": "brighten_glow", "W": "glow", "Wp": "dim", "couplets": [
+        ("The room is dim, the lamps are low,", "we want it bright, so make it"),
+        ("The hearth is cold, the embers low,", "we want it bright, so make it"),
+        ("The screen has dimmed, its setting low,", "we want it bright, so make it"),
+        ("Dusk settles in, the sunlight low,", "we want some brightness, so make it"),
+        ("The lantern's wick is burning low,", "we want it bright, so make it"),
+        ("The porch is dark, the bulb hung low,", "we want it bright, so make it"),
+        ("The fire dies down, its flicker low,", "we want it bright, so make it"),
+    ]},
+    {"family": "darken_dim", "W": "dim", "Wp": "bright", "couplets": [
+        ("The glare is harsh, the outlook grim,", "we want it dark, so make it"),
+        ("The spotlight's bright around the rim,", "we want it dark, so make it"),
+        ("The studio is lit to the brim,", "we want it dark, so make it"),
+        ("The film needs shadow, mood-lit, slim,", "we want it darker, so make it"),
+        ("The hall is dazzling, edge and rim,", "we want it dark, so make it"),
+        ("The pool reflects the sun, each whim,", "we want it shaded, so make it"),
+        ("The lamp is fierce, no shadow, prim,", "we want it dark, so make it"),
+    ]},
+    {"family": "quieten_still", "W": "still", "Wp": "loud", "couplets": [
+        ("The engine roars atop the hill,", "we want it quiet, so make it"),
+        ("The crowd is restless, voices shrill,", "we want it quiet, so make it"),
+        ("The workshop clatters with the drill,", "we want some quiet, so make it"),
+        ("The brook runs noisy past the mill,", "we want it silent, so make it"),
+        ("The traffic blares beneath the hill,", "we want it hushed, so make it"),
+        ("The fans are chanting, loud and shrill,", "we want it quiet, so make it"),
+        ("The downpipe gurgles, fit to spill,", "we want it calm, so make it"),
+    ]},
+    {"family": "speedup_quick", "W": "quick", "Wp": "slow", "couplets": [
+        ("The queue is long, the traffic thick,", "we're running late, so make it"),
+        ("The mud is deep, the going slick,", "we want it fast, so make it"),
+        ("The clock is ticking, every click,", "we want it fast, so make it"),
+        ("The download crawls, the network thick,", "we want it fast, so make it"),
+        ("He fumbles slowly with the stick,", "we want it fast, so make it"),
+        ("The path is icy, treacherous, slick,", "we want it rapid, so make it"),
+        ("The candle gutters on its wick,", "we want it brisk, so make it"),
+    ]},
+    {"family": "tidy_neat", "W": "neat", "Wp": "messy", "couplets": [
+        ("The papers sprawl across the seat,", "the guests arrive, so make it"),
+        ("Mud tracks the floor from dirty feet,", "we want it clean, so make it"),
+        ("The stall's a mess along the street,", "we want it tidy, so make it"),
+        ("Crumbs scatter on the rumpled sheet,", "we want it clean, so make it"),
+        ("The desk is cluttered, far from sweet,", "we want it tidy, so make it"),
+        ("The booth is chaos where we meet,", "we want it clean, so make it"),
+        ("Leaves choke the gutter down the street,", "we want it spotless, so make it"),
+    ]},
+    {"family": "enlarge_vast", "W": "vast", "Wp": "small", "couplets": [
+        ("The map is cramped, the scale held fast,", "we want it big, so make it"),
+        ("The tiny stage from ages past,", "we want it large, so make it"),
+        ("The model's small, the first we cast,", "we want it huge, so make it"),
+        ("The signal's range is fading fast,", "we want it wider, so make it"),
+        ("The garden's narrow by the mast,", "we want it sprawling, so make it"),
+        ("The screen is little, holding fast,", "we want it big, so make it"),
+        ("The courtyard shrank from what was last,", "we want it open, so make it"),
+    ]},
+    {"family": "cheer_glad", "W": "glad", "Wp": "sad", "couplets": [
+        ("The news was grim, the mood turned sad,", "we want her happy, so make her"),
+        ("The boy is sulking, feeling bad,", "we want him cheerful, so make him"),
+        ("The team has lost, the fans are mad,", "we want them happy, so make them"),
+        ("The day went wrong for the weary lad,", "we want him joyful, so make him"),
+        ("Her spirits sank, her face was sad,", "we want her happy, so make her"),
+        ("The crowd is sombre, dully clad,", "we want them merry, so make them"),
+        ("The toddler cries, his morning bad,", "we want him happy, so make him"),
+    ]},
+    {"family": "moisten_damp", "W": "damp", "Wp": "dry", "couplets": [
+        ("The soil is dust beside the lamp,", "we want it wet, so make it"),
+        ("The tent is parched at summer camp,", "we want it wet, so make it"),
+        ("The sponge is dry upon the ramp,", "we want it wet, so make it"),
+        ("The cloth is crisp, it gives a cramp,", "we want it moist, so make it"),
+        ("The envelope won't hold its stamp,", "we want it wet, so make it"),
+        ("The wick is dry inside the lamp,", "we want it moist, so make it"),
+        ("The towel's stiff beside the ramp,", "we want it wet, so make it"),
+    ]},
+    {"family": "crackopen_ajar", "W": "ajar", "Wp": "shut", "couplets": [
+        ("The room is stuffy, the window far,", "we want some air, so leave it"),
+        ("Fumes linger thick inside the car,", "we want it open, so leave it"),
+        ("The cellar's stale behind the bar,", "we want some air, so leave it"),
+        ("The closet reeks of old cigar,", "we want it aired, so leave it"),
+        ("The bedroom's hot, the moon a star,", "we want a breeze, so leave it"),
+        ("The kitchen smokes, the door's a bar,", "we want it open, so leave it"),
+        ("The loft is airless, faintly char,", "we want it vented, so leave it"),
+    ]},
+    {"family": "sharpen_keen", "W": "keen", "Wp": "blunt", "couplets": [
+        ("The blade is dull, the dullest seen,", "we want it sharp, so make it"),
+        ("The scissors blunt, the edge not clean,", "we want it sharp, so make it"),
+        ("The knife won't cut, its grind too lean,", "we want it sharp, so make it"),
+        ("The chisel's worn, as you have seen,", "we want it sharp, so make it"),
+        ("The sword hangs dull above the queen,", "we want it sharp, so make it"),
+        ("The plane blade drags across the green,", "we want it sharp, so make it"),
+        ("The razor pulls, its bevel mean,", "we want it sharp, so make it"),
+    ]},
+    {"family": "lighten_pale", "W": "pale", "Wp": "dark", "couplets": [
+        ("The wall is navy, dark as a jail,", "we want it light, so make it"),
+        ("The paint's too deep along the rail,", "we want it light, so make it"),
+        ("The fabric's inky, like a snail's trail,", "we want it light, so make it"),
+        ("The portrait's dim, its colours frail,", "we want it lighter, so make it"),
+        ("The icing's brown along the pail,", "we want it light, so make it"),
+        ("The sky-blue faded down the trail,", "we want it lighter, so make it"),
+        ("The curtain's crimson, stiff as a sail,", "we want it light, so make it"),
+    ]},
+    {"family": "cozy_snug", "W": "snug", "Wp": "cold", "couplets": [
+        ("The night is freezing, on the rug,", "we want it cozy, so make it"),
+        ("The cabin's drafty, by the mug,", "we want it warm, so make it"),
+        ("The baby's cold beneath the rug,", "we want it cozy, so make it"),
+        ("The window leaks beside the jug,", "we want it warm, so make it"),
+        ("The tent is chilly where we dug,", "we want it cozy, so make it"),
+        ("The attic's cold, we'll pull the plug,", "we want it warm, so make it"),
+        ("The blanket's thin upon the rug,", "we want it cozy, so make it"),
+    ]},
+]
+
+
+def build_versified2():
+    """Build the FORCED-NON-DEFAULT versified couplets (v2).
+
+    Same schema as `build_versified`, but every `W` is a NON-default synonym that
+    the goal (which line 2 states via the default word `D`) would not produce on
+    its own — only the rhyme forces it. So `C == W` (dual-hit) is a genuine
+    planning signal in every family, not the incidental rhyme of v1.
+    """
+    items = []
+    idx = 0
+    for fam in VERSIFIED2_FAMILIES:
+        for line1, line2 in fam["couplets"]:
+            anchor = line1.rstrip(",.;:!?").split()[-1].lower()
+            items.append({
+                "id": idx,
+                "family": fam["family"],
+                "prompt": f"{line1}\n{line2}",
+                "correct": fam["W"],
+                "alternative": fam["Wp"],
+                "anchor": anchor,
+                "target": fam["W"],
+            })
+            idx += 1
+    return items
+
+
 def build_contrastive():
     """Build token-aligned clean/corrupt goal-flip pairs (on-goal vs off-goal).
 
@@ -459,6 +605,13 @@ def main():
         help="emit ~100 versified means-ends couplets (final word must satisfy "
         "both rhyme and goal); scored via means_ends_prolepsis + a CMUdict rhyme check",
     )
+    parser.add_argument(
+        "--versified-v2",
+        dest="versified_v2",
+        action="store_true",
+        help="emit the FORCED-NON-DEFAULT versified couplets (every family's W is a "
+        "non-default rhyming synonym of the goal); the real planning test at scale",
+    )
     args = parser.parse_args()
 
     if args.versified:
@@ -467,6 +620,15 @@ def main():
         write_items(items, output)
         fam_counts = Counter(i["family"] for i in items)
         print(f"Wrote {len(items)} versified couplets to {output}", file=sys.stderr)
+        print(f"Per-family: {dict(sorted(fam_counts.items()))}", file=sys.stderr)
+        return
+
+    if args.versified_v2:
+        output = args.output or Path(VERSIFIED2_OUTPUT)
+        items = build_versified2()
+        write_items(items, output)
+        fam_counts = Counter(i["family"] for i in items)
+        print(f"Wrote {len(items)} forced-non-default couplets to {output}", file=sys.stderr)
         print(f"Per-family: {dict(sorted(fam_counts.items()))}", file=sys.stderr)
         return
 

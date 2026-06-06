@@ -149,7 +149,8 @@ def main():
         tops = ", ".join(f"{w!r}:{c}" for w, c in s["top_completions"])
         print(f"  {tag:<12} {tops}")
 
-    out_path = "docs/experiments/means-ends-prolepsis/versified_classified.json"
+    # Derive the summary name from the couplets file so v1/v2 don't clobber.
+    out_path = sys.argv[1].replace("_couplets.json", "_classified.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
         f.write("\n")
