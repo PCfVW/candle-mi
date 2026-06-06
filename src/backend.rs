@@ -179,8 +179,8 @@ impl MIModel {
             .get("tokenizer.json")
             .and_then(|p| MITokenizer::from_hf_path(p).ok());
 
-        let weights_paths = resolve_safetensors_paths(&files)?;
-        let vb = create_var_builder(&weights_paths, dtype, &device)?;
+        let (weights_paths, weight_format) = resolve_weight_paths(&files)?;
+        let vb = create_var_builder(&weights_paths, weight_format, dtype, &device)?;
 
         match model_type {
             #[cfg(feature = "transformer")]
@@ -633,6 +633,54 @@ fn extract_tensor_names(
     ))
 }
 
+/// Weight storage format detected among the downloaded files.
+///
+/// Private internal enum, matched exhaustively within this module.
+#[cfg(any(feature = "transformer", feature = "rwkv"))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum WeightFormat {
+    /// `.safetensors` (single `model.safetensors` or sharded via index).
+    Safetensors,
+    /// Single-file `pytorch_model.bin` pickle, loaded via
+    /// `VarBuilder::from_pth`.
+    Pytorch,
+}
+
+/// Resolve weight file paths and their format from a downloaded file map.
+///
+/// Prefers `.safetensors` (the safe, mmap-able format) over a
+/// `pytorch_model.bin` pickle.  The pickle fallback lets `from_pretrained`
+/// load repositories that ship weights only as `pytorch_model.bin` (e.g.
+/// `DeepSeek-Coder`), which the safetensors-only path could not.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] when no recognized weight file is present, or
+/// when the only weights are a sharded `pytorch_model.bin.index.json`
+/// (sharded pickles are unsupported — convert to `safetensors`).
+#[cfg(any(feature = "transformer", feature = "rwkv"))]
+fn resolve_weight_paths(
+    files: &std::collections::HashMap<String, std::path::PathBuf>,
+) -> Result<(Vec<std::path::PathBuf>, WeightFormat)> {
+    if files.contains_key("model.safetensors.index.json") || files.contains_key("model.safetensors")
+    {
+        return Ok((resolve_safetensors_paths(files)?, WeightFormat::Safetensors));
+    }
+    if let Some(path) = files.get("pytorch_model.bin") {
+        // BORROW: explicit .clone() — PathBuf from HashMap value
+        return Ok((vec![path.clone()], WeightFormat::Pytorch));
+    }
+    if files.contains_key("pytorch_model.bin.index.json") {
+        return Err(MIError::Config(
+            "sharded pytorch_model.bin (pickle) weights are unsupported (convert to safetensors)"
+                .into(),
+        ));
+    }
+    Err(MIError::Config(
+        "no weight files found (expected model.safetensors or pytorch_model.bin)".into(),
+    ))
+}
+
 /// Resolve safetensors file paths from a downloaded file map.
 ///
 /// Tries `model.safetensors.index.json` first (sharded), falls back to
@@ -677,24 +725,51 @@ fn resolve_safetensors_paths(
     Ok(vec![path.clone()])
 }
 
-/// Create a `VarBuilder` from safetensors file paths.
+/// Create a `VarBuilder` from resolved weight file paths.
 ///
-/// Uses buffered (safe) loading by default. With the `mmap` feature,
-/// uses memory-mapped loading for reduced memory overhead on large models.
+/// For [`WeightFormat::Safetensors`], uses buffered (safe) loading by
+/// default, or memory-mapped loading with the `mmap` feature.  For
+/// [`WeightFormat::Pytorch`], loads the single `pytorch_model.bin` pickle via
+/// `VarBuilder::from_pth`.
 #[cfg(any(feature = "transformer", feature = "rwkv"))]
 fn create_var_builder(
+    paths: &[std::path::PathBuf],
+    format: WeightFormat,
+    dtype: DType,
+    device: &Device,
+) -> Result<candle_nn::VarBuilder<'static>> {
+    match format {
+        WeightFormat::Safetensors => {
+            #[cfg(feature = "mmap")]
+            {
+                mmap_var_builder(paths, dtype, device)
+            }
+            #[cfg(not(feature = "mmap"))]
+            {
+                buffered_var_builder(paths, dtype, device)
+            }
+        }
+        WeightFormat::Pytorch => pth_var_builder(paths, dtype, device),
+    }
+}
+
+/// Load weights from a single `pytorch_model.bin` pickle via `from_pth`.
+///
+/// `from_pth` reads the entire pickle into memory and materializes every
+/// tensor (there is no memory-mapped pickle path), so peak memory is ~1x the
+/// model size in `dtype`.  Adequate for the small (<=~3 B) families that ship
+/// only `.bin`; larger models should be converted to `safetensors`.
+#[cfg(any(feature = "transformer", feature = "rwkv"))]
+fn pth_var_builder(
     paths: &[std::path::PathBuf],
     dtype: DType,
     device: &Device,
 ) -> Result<candle_nn::VarBuilder<'static>> {
-    #[cfg(feature = "mmap")]
-    {
-        mmap_var_builder(paths, dtype, device)
-    }
-    #[cfg(not(feature = "mmap"))]
-    {
-        buffered_var_builder(paths, dtype, device)
-    }
+    let path = paths.first().ok_or_else(|| {
+        MIError::Model(candle_core::Error::Msg("no pytorch_model.bin path".into()))
+    })?;
+    let vb = candle_nn::VarBuilder::from_pth(path, dtype, device)?;
+    Ok(vb)
 }
 
 /// Load weights via buffered (safe) reading — reads all data into RAM.
@@ -744,4 +819,55 @@ fn mmap_var_builder(
     // SAFETY: safetensors files must not be modified while loaded.
     let vb = unsafe { candle_nn::VarBuilder::from_mmaped_safetensors(paths, dtype, device)? };
     Ok(vb)
+}
+
+#[cfg(all(test, any(feature = "transformer", feature = "rwkv")))]
+mod tests {
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    use super::{WeightFormat, resolve_weight_paths};
+
+    fn file_map(names: &[&str]) -> HashMap<String, PathBuf> {
+        names
+            .iter()
+            .map(|n| ((*n).to_owned(), PathBuf::from(format!("/cache/{n}"))))
+            .collect()
+    }
+
+    #[test]
+    fn resolve_prefers_single_safetensors() {
+        let files = file_map(&["config.json", "model.safetensors", "tokenizer.json"]);
+        let (paths, format) = resolve_weight_paths(&files).unwrap();
+        assert_eq!(format, WeightFormat::Safetensors);
+        assert_eq!(paths, vec![PathBuf::from("/cache/model.safetensors")]);
+    }
+
+    #[test]
+    fn resolve_falls_back_to_pytorch_bin() {
+        // DeepSeek-Coder ships only pytorch_model.bin — must resolve to it.
+        let files = file_map(&["config.json", "pytorch_model.bin", "tokenizer.json"]);
+        let (paths, format) = resolve_weight_paths(&files).unwrap();
+        assert_eq!(format, WeightFormat::Pytorch);
+        assert_eq!(paths, vec![PathBuf::from("/cache/pytorch_model.bin")]);
+    }
+
+    #[test]
+    fn resolve_prefers_safetensors_over_bin_when_both_present() {
+        let files = file_map(&["model.safetensors", "pytorch_model.bin"]);
+        let (_, format) = resolve_weight_paths(&files).unwrap();
+        assert_eq!(format, WeightFormat::Safetensors);
+    }
+
+    #[test]
+    fn resolve_sharded_pickle_is_rejected() {
+        let files = file_map(&["config.json", "pytorch_model.bin.index.json"]);
+        assert!(resolve_weight_paths(&files).is_err());
+    }
+
+    #[test]
+    fn resolve_no_weights_errors() {
+        let files = file_map(&["config.json", "tokenizer.json"]);
+        assert!(resolve_weight_paths(&files).is_err());
+    }
 }
