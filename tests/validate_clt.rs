@@ -132,7 +132,7 @@ fn load_llama(device: &Device) -> (GenericTransformer, MITokenizer, TransformerC
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_open_detects_config() {
     let clt = CrossLayerTranscoder::open("mntss/clt-gemma-2-2b-426k").unwrap();
@@ -162,7 +162,7 @@ fn clt_open_detects_config() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_encode_gemma2_residuals() {
     let device = cuda_device().expect("CUDA required for CLT encoding test");
@@ -276,7 +276,7 @@ fn clt_encode_gemma2_residuals() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_injection_shifts_logits() {
     let device = cuda_device().expect("CUDA required for CLT injection test");
@@ -440,7 +440,7 @@ fn clt_injection_shifts_logits() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_position_sweep_activations() {
     let device = cuda_device().expect("CUDA required for CLT position sweep");
@@ -598,7 +598,7 @@ fn clt_position_sweep_activations() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_position_sweep_causal() {
     let device = cuda_device().expect("CUDA required for CLT causal sweep");
@@ -810,7 +810,7 @@ fn clt_position_sweep_causal() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_open_llama_detects_config() {
     let clt = CrossLayerTranscoder::open("mntss/clt-llama-3.2-1b-524k").unwrap();
@@ -840,7 +840,7 @@ fn clt_open_llama_detects_config() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_encode_llama_residuals() {
     let device = cuda_device().expect("CUDA required for CLT encoding test");
@@ -954,7 +954,7 @@ fn clt_encode_llama_residuals() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_injection_shifts_logits_llama() {
     let device = cuda_device().expect("CUDA required for CLT injection test");
@@ -1117,7 +1117,7 @@ fn clt_injection_shifts_logits_llama() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_position_sweep_activations_llama() {
     let device = cuda_device().expect("CUDA required for CLT position sweep");
@@ -1275,7 +1275,7 @@ fn clt_position_sweep_activations_llama() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_position_sweep_causal_llama() {
     let device = cuda_device().expect("CUDA required for CLT causal sweep");

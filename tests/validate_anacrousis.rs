@@ -421,7 +421,7 @@ fn generate_baseline(
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "full 28x15 condition-couplet matrix; long-running, run locally"]
 fn anacrousis_28x15_full_matrix() {
     let t0 = Instant::now();
     let device = cuda_device().expect("anacrousis test requires a CUDA GPU");

@@ -459,9 +459,8 @@ fn run() -> candle_mi::Result<()> {
             top_heads,
             strength_sweep,
         };
-        let json = serde_json::to_string_pretty(&output).map_err(|e| {
-            candle_mi::MIError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
-        })?;
+        let json = serde_json::to_string_pretty(&output)
+            .map_err(|e| candle_mi::MIError::Io(std::io::Error::other(e)))?;
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(candle_mi::MIError::Io)?;
         }

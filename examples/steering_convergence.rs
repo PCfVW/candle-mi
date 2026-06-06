@@ -322,7 +322,7 @@ fn run_batch(args: &Args, batch_path: &Path) -> candle_mi::Result<()> {
         }
     }
 
-    println!("\n=== Batch complete: {successes} succeeded, {skipped} skipped ===",);
+    println!("\n=== Batch complete: {successes} succeeded, {skipped} skipped ===");
     Ok(())
 }
 
@@ -1214,7 +1214,7 @@ fn estimate_weight_mb(n_layers: usize, hidden: usize) -> f64 {
 
 fn write_json(path: &Path, output: &JsonOutput) -> candle_mi::Result<()> {
     let json = serde_json::to_string_pretty(output)
-        .map_err(|e| candle_mi::MIError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        .map_err(|e| candle_mi::MIError::Io(std::io::Error::other(e)))?;
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(candle_mi::MIError::Io)?;
     }

@@ -616,7 +616,7 @@ fn mistral_7b_config_parse() {
 }
 
 #[test]
-#[ignore] // 7B F32 on CPU exceeds CI timeout; validated locally (41s, "Paris" at rank 4)
+#[ignore = "7B F32 on CPU exceeds CI timeout; validated locally (41s, Paris at rank 4)"]
 fn mistral_7b_forward_cpu() {
     if ensure_mistral_7b_cached().is_none() {
         eprintln!("SKIP: mistralai/Mistral-7B-v0.1 not available");

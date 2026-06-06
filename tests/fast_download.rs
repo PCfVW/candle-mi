@@ -22,7 +22,7 @@
 
 /// Async download of a small test repo returns a valid directory path.
 #[tokio::test]
-#[ignore] // networked — depends on HuggingFace Hub availability
+#[ignore = "networked — depends on HuggingFace Hub availability"]
 async fn download_small_public_model() {
     let result = candle_mi::download_model("julien-c/dummy-unknown".to_owned()).await;
 
@@ -42,7 +42,7 @@ async fn download_small_public_model() {
 
 /// Blocking download variant also works.
 #[test]
-#[ignore] // networked — depends on HuggingFace Hub availability
+#[ignore = "networked — depends on HuggingFace Hub availability"]
 fn download_blocking_small_public_model() {
     let result = candle_mi::download_model_blocking("julien-c/dummy-unknown".to_owned());
 
