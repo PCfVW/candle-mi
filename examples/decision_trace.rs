@@ -326,6 +326,7 @@ fn run() -> candle_mi::Result<()> {
     )? / n_correct_f64;
     let last_layer_mean_delta = {
         let sum: f64 = correct.iter().map(|t| f64::from(t.last_delta)).sum();
+        // CAST: mean last-layer Δ to f32 for the JSON scalar.
         #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
         let v = (sum / n_correct_f64) as f32;
         v
