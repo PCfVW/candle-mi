@@ -21,13 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   now load via `VarBuilder::from_pth` instead of erroring
   (`model.safetensors not found`). Sharded pickles remain unsupported.
 - **Forward-parity validation for DeepSeek-Coder 1.3B, Llama 3.2 1B,
-  Gemma 2 2B, Qwen2.5-Coder-3B, StarCoder2 3B, and Phi-3 Mini 4K.** New `scripts/*_validation.py` oracles and
+  Gemma 2 2B, Qwen2.5-Coder-3B, StarCoder2 3B, Phi-3 Mini 4K, and
+  Mistral 7B v0.1.** New `scripts/*_validation.py` oracles and
   `tests/validate_*_forward.rs` assert exact top-10 logit parity against PyTorch
   (CPU `<1e-3`, GPU `<5e-3`), plus `rope_scaling` config unit tests and
-  `from_pretrained` `.bin` resolution tests. The Gemma 2 oracle forces
-  `attn_implementation="eager"`: the default `sdpa` backend silently drops
-  Gemma 2's attention soft-capping, producing a wrong reference. candle-mi
-  matches the (correct) references to ~2e-5 (Gemma 2) / ~1e-5 (Qwen2.5-Coder).
+  `from_pretrained` `.bin` resolution tests. candle-mi matches the references to
+  ~1–3e-5. Two reference notes: the Gemma 2 oracle forces
+  `attn_implementation="eager"` (the default `sdpa` silently drops Gemma 2's
+  attention soft-capping → wrong reference); and Mistral 7B (F32 = ~27 GiB,
+  larger than a 16 GiB GPU) is validated on three tiers against the same F32
+  oracle — exact F32 on CPU and on GPU (the latter via CUDA memory
+  oversubscription, weights spilling to host RAM), plus a fast fully-resident
+  BF16-on-GPU run (looser `<0.1` bar). All three pass.
 - **Build-hygiene guard** (`src/registration_guard.rs`): a `#[cfg(test)]` check
   asserting every `tests/*.rs` / `examples/*.rs` file is registered as a
   `[[test]]` / `[[example]]` target in `Cargo.toml`, so an unregistered

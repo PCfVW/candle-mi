@@ -295,7 +295,7 @@ The **Validated** column uses three tiers:
 | **Gemma 2** | + GeluApprox, soft-capping, 4-norm, custom attn scalar, alternating sliding window | Gemma 2 2B (exact-parity) |
 | **Phi-3 / Phi-4** | GQA, SiLU, RmsNorm, fused QKV, fused MLP | Phi-3 Mini 4K (exact-parity) |
 | **StarCoder2** | GQA, GeluApprox, LayerNorm, plain MLP, bias everywhere, tied lm_head | StarCoder2 3B (exact-parity) |
-| **Mistral / Mixtral** (dense layers) | GQA, SiLU, RmsNorm, sliding window | Mistral 7B v0.1 (smoke) |
+| **Mistral / Mixtral** (dense layers) | GQA, SiLU, RmsNorm, sliding window | Mistral 7B v0.1 (exact-parity, F32 CPU + GPU; also fast BF16 GPU) |
 | **DeepSeek-Coder** (dense layers) | GQA, SiLU, RmsNorm, **linear `rope_scaling`** | DeepSeek-Coder 1.3B (exact-parity) |
 | **Qwen 3** | GQA, SiLU, RmsNorm, QK-norm | Qwen3-1.7B-Base (exact-parity) |
 | **Yi** | GQA, SiLU, RmsNorm (LLaMA-like) | — |
