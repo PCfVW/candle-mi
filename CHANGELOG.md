@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Config-key coverage audit.** New `TransformerConfig::audit_config_coverage`
+  returns `config.json` keys that candle-mi neither reads nor recognizes as
+  benign metadata, and `CompatibilityReport` now carries these as non-fatal
+  `warnings` (surfaced by `check_auto_compatibility`). It is a tripwire for
+  silent-incorrectness: a model feature encoded in an unrecognized key (a new
+  `rope` scheme, a non-default MLP) would otherwise be dropped while still
+  producing plausible logits. The audit is clean across every supported,
+  exact-parity-validated model in the cache; it fires on genuinely-new keys.
+  (`CompatibilityReport` is now `#[non_exhaustive]`.)
 - **`RoPE` `rope_scaling` support (linear + llama3).** `TransformerConfig` now
   parses the `config.json` `rope_scaling` block into a new public
   `RopeScaling` enum and `TransformerConfig::rope_scaling` field, and
@@ -47,6 +56,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   measurable: last-token logits drifted up to ~9.5e-3 vs PyTorch; with the fix
   the same prompts match to ~2.3e-5. DeepSeek-Coder's linear scaling was far
   worse (catastrophic, ~15 logit divergence) and is likewise fixed.
+- **`rope_scaling` is also read from the newer `rope_parameters` key.** Recent
+  `transformers` renamed `rope_scaling` → `rope_parameters` (identical
+  structure). `parse_rope_scaling` now accepts either, so a llama3 scaling
+  carried only under the new key is no longer silently skipped (same
+  plausible-logits failure mode as above). Surfaced by the new config-key
+  coverage audit.
 
 ### Changed
 

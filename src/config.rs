@@ -898,8 +898,15 @@ pub(crate) fn get_bool_or(config: &Value, key: &str, default: bool) -> bool {
 ///
 /// Accepts both the legacy `"type"` key and the current `"rope_type"` key
 /// (`HuggingFace` renamed it; `DeepSeek-Coder` still ships `"type"`, Llama 3.x
-/// ships `"rope_type"`).  Returns `Ok(None)` when the block is absent,
-/// `null`, or `rope_type: "default"`.
+/// ships `"rope_type"`).  Also accepts the block under the newer
+/// `"rope_parameters"` key — recent `transformers` renamed `rope_scaling` ->
+/// `rope_parameters` (same structure); reading only the old name would
+/// silently skip a llama3 scaling carried under the new one.  Returns
+/// `Ok(None)` when the block is absent, `null`, or `rope_type: "default"`.
+///
+/// Note: a `rope_theta` nested *inside* `rope_parameters` is not read here —
+/// callers still read the top-level `rope_theta`.  Every config observed in
+/// the wild keeps `rope_theta` at top level even when it also nests it.
 ///
 /// # Errors
 ///
@@ -908,7 +915,10 @@ pub(crate) fn get_bool_or(config: &Value, key: &str, default: bool) -> bool {
 /// scheme mis-runs the model while still producing plausible logits, which
 /// a top-k smoke test cannot catch (see [`RopeScaling`]).
 pub(crate) fn parse_rope_scaling(config: &Value) -> Result<Option<RopeScaling>> {
-    let Some(rs) = config.get("rope_scaling") else {
+    let Some(rs) = config
+        .get("rope_scaling")
+        .or_else(|| config.get("rope_parameters"))
+    else {
         return Ok(None);
     };
     if rs.is_null() {
@@ -1253,13 +1263,137 @@ impl TransformerConfig {
 
 /// Result of a compatibility check for auto-config loading.
 ///
+/// Top-level `config.json` keys that candle-mi's per-family parsers and
+/// helpers actually read.  Keep in sync with the parsers above and the
+/// `get_*` helpers; [`TransformerConfig::audit_config_coverage`] treats any
+/// key outside this set (and [`BENIGN_CONFIG_KEYS`]) as unrecognized.
+const CONSUMED_CONFIG_KEYS: &[&str] = &[
+    // Dispatch + dimensions
+    "model_type",
+    "hidden_size",
+    "num_hidden_layers",
+    "num_attention_heads",
+    "num_key_value_heads",
+    "head_dim",
+    "intermediate_size",
+    "vocab_size",
+    // Norm
+    "rms_norm_eps",
+    "norm_epsilon",
+    "norm_type",
+    // Activation
+    "hidden_act",
+    "hidden_activation",
+    // Bias
+    "attention_bias",
+    "use_bias",
+    // RoPE (`rope_parameters` is newer transformers' alias for `rope_scaling`)
+    "rope_theta",
+    "max_position_embeddings",
+    "rope_scaling",
+    "rope_parameters",
+    // Embeddings
+    "tie_word_embeddings",
+    // Gemma 2 soft-capping + scaled attention
+    "attn_logit_softcapping",
+    "final_logit_softcapping",
+    "query_pre_attn_scalar",
+    // Sliding-window attention
+    "sliding_window",
+    "use_sliding_window",
+];
+
+/// Top-level `config.json` keys that candle-mi intentionally ignores without
+/// warning: tokenizer, generation, training, runtime, and quantization
+/// metadata that does not affect the forward pass.
+///
+/// Also includes a handful of **structural** keys (`mlp_bias`, `mlp_type`,
+/// `max_window_layers`, `layer_types`, `original_max_position_embeddings`)
+/// that candle-mi does not read but which carry their benign default in every
+/// supported, exact-parity-validated model family.  They are listed here
+/// (rather than warned on) to keep the audit high-signal; a genuinely new
+/// key still trips [`TransformerConfig::audit_config_coverage`].
+const BENIGN_CONFIG_KEYS: &[&str] = &[
+    // HF `PretrainedConfig` bookkeeping
+    "architectures",
+    "_name_or_path",
+    "_commit_hash",
+    "_attn_implementation_autoset",
+    "transformers_version",
+    "torch_dtype",
+    "dtype",
+    "auto_map",
+    "unsloth_fixed",
+    // Runtime / inference toggles (no effect on a single forward pass)
+    "use_cache",
+    "cache_implementation",
+    "return_dict",
+    "output_hidden_states",
+    "output_attentions",
+    "output_past",
+    "torchscript",
+    "use_bfloat16",
+    // Classification / seq2seq head metadata (decoder-only models ignore these)
+    "tf_legacy_loss",
+    "tie_encoder_decoder",
+    "is_encoder_decoder",
+    "is_decoder",
+    "add_cross_attention",
+    "chunk_size_feed_forward",
+    "pruned_heads",
+    "problem_type",
+    "id2label",
+    "label2id",
+    "num_labels",
+    "finetuning_task",
+    "task_specific_params",
+    "bad_words_ids",
+    // Tokenizer / generation token ids
+    "bos_token_id",
+    "eos_token_id",
+    "pad_token_id",
+    "unk_token_id",
+    "sep_token_id",
+    "decoder_start_token_id",
+    "forced_bos_token_id",
+    "forced_eos_token_id",
+    // Training-only hyperparameters
+    "initializer_range",
+    "attention_dropout",
+    "hidden_dropout",
+    "classifier_dropout",
+    "embedding_dropout",
+    "residual_dropout",
+    "embd_pdrop",
+    "resid_pdrop",
+    "attn_pdrop",
+    "pretraining_tp",
+    "quantization_config",
+    // Structural keys candle-mi does not read but whose value is benign in
+    // every supported, validated family (see doc comment above).
+    "mlp_bias",
+    "mlp_type",
+    "max_window_layers",
+    "layer_types",
+    "original_max_position_embeddings",
+];
+
 /// Returned by [`TransformerConfig::check_auto_compatibility`].
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct CompatibilityReport {
     /// Whether the model is loadable by `GenericTransformer`.
     pub compatible: bool,
-    /// Human-readable issues found (empty if compatible).
+    /// Human-readable issues found (empty if compatible).  An issue means the
+    /// model cannot be loaded.
     pub issues: Vec<String>,
+    /// Non-fatal coverage warnings: `config.json` keys that candle-mi neither
+    /// reads nor recognizes as benign metadata (see
+    /// [`audit_config_coverage`](TransformerConfig::audit_config_coverage)).
+    /// A warning does **not** block loading — it flags a key whose model
+    /// behavior candle-mi may silently ignore, so it is surfaced rather than
+    /// dropped.
+    pub warnings: Vec<String>,
 }
 
 impl CompatibilityReport {
@@ -1310,7 +1444,48 @@ impl TransformerConfig {
         CompatibilityReport {
             compatible: issues.is_empty(),
             issues,
+            warnings: Self::audit_config_coverage(config)
+                .into_iter()
+                .map(|key| {
+                    format!(
+                        "config key '{key}' is present but not read by candle-mi; \
+                         if the model relies on it, GenericTransformer may silently mis-run it"
+                    )
+                })
+                .collect(),
         }
+    }
+
+    /// Audit `config.json` for keys candle-mi neither reads nor recognizes as
+    /// benign metadata.
+    ///
+    /// Returns the sorted top-level keys that are in neither
+    /// [`CONSUMED_CONFIG_KEYS`] (read by a parser) nor [`BENIGN_CONFIG_KEYS`]
+    /// (tokenizer/training/runtime/quantization metadata that does not affect
+    /// the forward pass).  An empty result means every key is either consumed
+    /// or known-benign.
+    ///
+    /// This is a **tripwire for silent-incorrectness**: a model feature
+    /// encoded in an unrecognized key (a new `rope` scheme, a non-default MLP,
+    /// per-layer attention types) would otherwise be dropped while still
+    /// producing plausible logits — the same failure mode a top-k smoke test
+    /// cannot catch.  It is intentionally value-blind: it flags an unfamiliar
+    /// *key*, not a specific value.
+    #[must_use]
+    pub fn audit_config_coverage(config: &Value) -> Vec<String> {
+        let Some(obj) = config.as_object() else {
+            return Vec::new();
+        };
+        let mut unrecognized: Vec<String> = obj
+            .keys()
+            .filter(|k| {
+                !CONSUMED_CONFIG_KEYS.contains(&k.as_str())
+                    && !BENIGN_CONFIG_KEYS.contains(&k.as_str())
+            })
+            .cloned()
+            .collect();
+        unrecognized.sort();
+        unrecognized
     }
 
     /// Check whether a model is fully compatible with `GenericTransformer`
@@ -1355,6 +1530,7 @@ impl TransformerConfig {
         CompatibilityReport {
             compatible: issues.is_empty(),
             issues,
+            warnings: field_report.warnings,
         }
     }
 }
@@ -1765,6 +1941,88 @@ mod tests {
         let err = TransformerConfig::from_hf_config(&json).unwrap_err();
         assert!(matches!(err, MIError::Config(_)));
         assert!(err.to_string().contains("yarn"));
+    }
+
+    #[test]
+    fn parse_rope_scaling_accepts_rope_parameters() {
+        // Newer transformers renamed `rope_scaling` -> `rope_parameters`.
+        // A llama3 scaling carried only under the new key must still parse,
+        // not be silently skipped.
+        let mut json = llama_config_json();
+        json["rope_parameters"] = serde_json::json!({
+            "rope_type": "llama3",
+            "factor": 32.0,
+            "low_freq_factor": 1.0,
+            "high_freq_factor": 4.0,
+            "original_max_position_embeddings": 8192
+        });
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+        assert_eq!(
+            config.rope_scaling,
+            Some(RopeScaling::Llama3 {
+                factor: 32.0,
+                low_freq_factor: 1.0,
+                high_freq_factor: 4.0,
+                original_max_position_embeddings: 8192,
+            })
+        );
+    }
+
+    #[test]
+    fn audit_config_coverage_clean_when_all_consumed() {
+        // The minimal llama config uses only consumed keys → no warnings.
+        assert!(TransformerConfig::audit_config_coverage(&llama_config_json()).is_empty());
+    }
+
+    #[test]
+    fn audit_config_coverage_ignores_benign_metadata() {
+        // Tokenizer / training / runtime / structural-but-benign metadata is
+        // intentionally not flagged.
+        let mut json = llama_config_json();
+        json["architectures"] = serde_json::json!(["LlamaForCausalLM"]);
+        json["torch_dtype"] = serde_json::json!("bfloat16");
+        json["bos_token_id"] = serde_json::json!(128_000);
+        json["transformers_version"] = serde_json::json!("4.45.0");
+        json["mlp_bias"] = serde_json::json!(false);
+        json["pretraining_tp"] = serde_json::json!(1);
+        assert!(TransformerConfig::audit_config_coverage(&json).is_empty());
+    }
+
+    #[test]
+    fn audit_config_coverage_flags_unknown_keys() {
+        // A genuinely unfamiliar key is surfaced (sorted).
+        let mut json = llama_config_json();
+        json["frobnicate_factor"] = serde_json::json!(3.0);
+        json["another_mystery"] = serde_json::json!(true);
+        let unrecognized = TransformerConfig::audit_config_coverage(&json);
+        assert_eq!(
+            unrecognized,
+            vec![
+                "another_mystery".to_string(),
+                "frobnicate_factor".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn audit_config_coverage_does_not_flag_rope_parameters_alias() {
+        // `rope_parameters` is consumed (alias for `rope_scaling`).
+        let mut json = llama_config_json();
+        json["rope_parameters"] = serde_json::json!({ "rope_type": "llama3" });
+        assert!(TransformerConfig::audit_config_coverage(&json).is_empty());
+    }
+
+    #[test]
+    fn compatibility_report_surfaces_warnings_without_blocking() {
+        // An unknown key is a non-fatal warning: the model stays compatible,
+        // but the key is surfaced rather than silently dropped.
+        let mut json = llama_config_json();
+        json["mystery_scheme"] = serde_json::json!("on");
+        let report = TransformerConfig::check_config_fields(&json);
+        assert!(report.compatible);
+        assert!(report.issues.is_empty());
+        assert_eq!(report.warnings.len(), 1);
+        assert!(report.warnings.iter().any(|w| w.contains("mystery_scheme")));
     }
 
     #[test]
