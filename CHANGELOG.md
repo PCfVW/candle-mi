@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   now load via `VarBuilder::from_pth` instead of erroring
   (`model.safetensors not found`). Sharded pickles remain unsupported.
 - **Forward-parity validation for DeepSeek-Coder 1.3B, Llama 3.2 1B,
-  Gemma 2 2B, Qwen2.5-Coder-3B, and StarCoder2 3B.** New `scripts/*_validation.py` oracles and
+  Gemma 2 2B, Qwen2.5-Coder-3B, StarCoder2 3B, and Phi-3 Mini 4K.** New `scripts/*_validation.py` oracles and
   `tests/validate_*_forward.rs` assert exact top-10 logit parity against PyTorch
   (CPU `<1e-3`, GPU `<5e-3`), plus `rope_scaling` config unit tests and
   `from_pretrained` `.bin` resolution tests. The Gemma 2 oracle forces
