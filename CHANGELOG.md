@@ -20,17 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   weights only as a PyTorch pickle (no `.safetensors`, e.g. `DeepSeek-Coder`)
   now load via `VarBuilder::from_pth` instead of erroring
   (`model.safetensors not found`). Sharded pickles remain unsupported.
-- **Forward-parity validation for DeepSeek-Coder 1.3B, Llama 3.2 1B, and
-  Gemma 2 2B.** New `scripts/deepseek_coder_validation.py` /
-  `scripts/llama32_forward_validation.py` / `scripts/gemma2_validation.py`
-  oracles and `tests/validate_deepseek_forward.rs` /
-  `tests/validate_llama32_forward.rs` / `tests/validate_gemma2_forward.rs`
-  assert exact top-10 logit parity against PyTorch (CPU `<1e-3`, GPU `<5e-3`),
-  plus `rope_scaling` config unit tests and `from_pretrained` `.bin` resolution
-  tests. The Gemma 2 oracle forces `attn_implementation="eager"`: the default
-  `sdpa` backend silently drops Gemma 2's attention soft-capping, producing a
-  wrong reference. candle-mi's Gemma 2 forward matches the (correct) eager
-  reference to ~2e-5.
+- **Forward-parity validation for DeepSeek-Coder 1.3B, Llama 3.2 1B,
+  Gemma 2 2B, and Qwen2.5-Coder-3B.** New `scripts/*_validation.py` oracles and
+  `tests/validate_*_forward.rs` assert exact top-10 logit parity against PyTorch
+  (CPU `<1e-3`, GPU `<5e-3`), plus `rope_scaling` config unit tests and
+  `from_pretrained` `.bin` resolution tests. The Gemma 2 oracle forces
+  `attn_implementation="eager"`: the default `sdpa` backend silently drops
+  Gemma 2's attention soft-capping, producing a wrong reference. candle-mi
+  matches the (correct) references to ~2e-5 (Gemma 2) / ~1e-5 (Qwen2.5-Coder).
 - **Build-hygiene guard** (`src/registration_guard.rs`): a `#[cfg(test)]` check
   asserting every `tests/*.rs` / `examples/*.rs` file is registered as a
   `[[test]]` / `[[example]]` target in `Cargo.toml`, so an unregistered
