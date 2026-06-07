@@ -97,6 +97,10 @@ name = "validate_qwen25_coder_forward"
 required-features = ["transformer"]
 
 [[test]]
+name = "validate_starcoder2_forward"
+required-features = ["transformer"]
+
+[[test]]
 name = "bench_hook_overhead"
 required-features = ["transformer"]
 
