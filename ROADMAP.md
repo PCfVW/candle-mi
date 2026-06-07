@@ -292,7 +292,7 @@ The **Validated** column uses three tiers:
 | **LLaMA 1/2/3 / Code-LLaMA** | GQA, SiLU, RmsNorm, separate lm_head; llama3 `rope_scaling` | LLaMA 3.2 1B (exact-parity) |
 | **Qwen 2 / 2.5** | GQA, SiLU, RmsNorm, QKV bias, conditional tied embeddings | Qwen2.5-Coder-3B (smoke) |
 | **Gemma 1 / CodeGemma** | GQA, GELU, GemmaRmsNorm, sqrt embedding scale, tied lm_head | — |
-| **Gemma 2** | + GeluApprox, soft-capping, 4-norm, custom attn scalar, alternating sliding window | Gemma 2 2B (smoke) |
+| **Gemma 2** | + GeluApprox, soft-capping, 4-norm, custom attn scalar, alternating sliding window | Gemma 2 2B (exact-parity) |
 | **Phi-3 / Phi-4** | GQA, SiLU, RmsNorm, fused QKV, fused MLP | Phi-3 Mini 4K (smoke) |
 | **StarCoder2** | GQA, GeluApprox, LayerNorm, plain MLP, bias everywhere, tied lm_head | StarCoder2 3B (smoke) |
 | **Mistral / Mixtral** (dense layers) | GQA, SiLU, RmsNorm, sliding window | Mistral 7B v0.1 (smoke) |

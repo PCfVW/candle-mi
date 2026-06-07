@@ -89,6 +89,10 @@ name = "validate_llama32_forward"
 required-features = ["transformer"]
 
 [[test]]
+name = "validate_gemma2_forward"
+required-features = ["transformer"]
+
+[[test]]
 name = "bench_hook_overhead"
 required-features = ["transformer"]
 
