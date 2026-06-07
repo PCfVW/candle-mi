@@ -234,6 +234,11 @@ pub mod tokenizer;
 pub mod transformer;
 mod util;
 
+/// Build-hygiene guard: asserts every `tests/*.rs` / `examples/*.rs` file is
+/// registered in `Cargo.toml`. Test-only; see the module docs for rationale.
+#[cfg(test)]
+mod registration_guard;
+
 // --- Public re-exports ---------------------------------------------------
 
 // Backend
