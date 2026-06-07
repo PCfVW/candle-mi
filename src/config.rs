@@ -948,9 +948,22 @@ pub(crate) fn parse_rope_scaling(config: &Value) -> Result<Option<RopeScaling>> 
                 8192,
             ),
         })),
+        // `longrope` (Phi-3.5-mini, Phi-3-medium-128k) is the next scheme on
+        // the roadmap; give it a specific, actionable error rather than the
+        // generic one, because it is structurally different from the scalar
+        // schemes (see ROADMAP.md §3.3).
+        "longrope" => Err(MIError::Config(
+            "rope_scaling type \"longrope\" is not yet implemented (Phi-3.5-mini, \
+             Phi-3-medium-128k). Unlike the scalar 'linear'/'llama3' schemes it needs \
+             per-dimension short_factor/long_factor arrays, an attention (mscale) factor, \
+             and a sequence-length branch (short vs long factors at \
+             original_max_position_embeddings). Tracked for v0.2.0; see ROADMAP.md §3.3. \
+             Load a model with 'linear', 'llama3', or no rope_scaling instead."
+                .into(),
+        )),
         other => Err(MIError::Config(format!(
             "unsupported rope_scaling type {other:?} (candle-mi implements 'linear' \
-             and 'llama3'); see ROADMAP.md §3.3 for status"
+             and 'llama3'; 'longrope' is tracked for v0.2.0); see ROADMAP.md §3.3 for status"
         ))),
     }
 }
@@ -1965,6 +1978,81 @@ mod tests {
                 high_freq_factor: 4.0,
                 original_max_position_embeddings: 8192,
             })
+        );
+    }
+
+    #[test]
+    fn parse_rope_scaling_longrope_specific_error() {
+        // longrope must fail with an actionable, scheme-specific message (not
+        // the generic one), naming what makes it structurally different.
+        let json = llama_config_with_rope_scaling(Some(serde_json::json!({
+            "rope_type": "longrope",
+            "short_factor": [1.0, 1.02],
+            "long_factor": [1.08, 1.11],
+            "original_max_position_embeddings": 4096
+        })));
+        let err = TransformerConfig::from_hf_config(&json).unwrap_err();
+        assert!(matches!(err, MIError::Config(_)));
+        let msg = err.to_string();
+        assert!(msg.contains("longrope"));
+        assert!(msg.contains("short_factor"));
+    }
+
+    #[test]
+    fn parse_rope_scaling_linear_missing_factor_errors() {
+        // A linear block without a numeric factor is malformed → error, not a
+        // silent default that would mis-scale positions.
+        let json = llama_config_with_rope_scaling(Some(serde_json::json!({
+            "type": "linear"
+        })));
+        let err = TransformerConfig::from_hf_config(&json).unwrap_err();
+        assert!(matches!(err, MIError::Config(_)));
+        assert!(err.to_string().contains("factor"));
+    }
+
+    #[test]
+    fn parse_rope_scaling_missing_type_errors() {
+        // A scaling block with neither "rope_type" nor "type" is ambiguous and
+        // must error rather than guess.
+        let json = llama_config_with_rope_scaling(Some(serde_json::json!({
+            "factor": 8.0
+        })));
+        let err = TransformerConfig::from_hf_config(&json).unwrap_err();
+        assert!(matches!(err, MIError::Config(_)));
+        assert!(err.to_string().contains("rope_type"));
+    }
+
+    #[test]
+    fn parse_rope_scaling_llama3_defaults_when_band_factors_omitted() {
+        // A llama3 block carrying only the type falls back to the HF default
+        // band factors (8 / 1 / 4 / 8192) rather than erroring.
+        let json = llama_config_with_rope_scaling(Some(serde_json::json!({
+            "rope_type": "llama3"
+        })));
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+        assert_eq!(
+            config.rope_scaling,
+            Some(RopeScaling::Llama3 {
+                factor: 8.0,
+                low_freq_factor: 1.0,
+                high_freq_factor: 4.0,
+                original_max_position_embeddings: 8192,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_rope_scaling_rope_parameters_carries_linear_too() {
+        // The rope_parameters alias applies to every scheme, not just llama3.
+        let mut json = llama_config_json();
+        json["rope_parameters"] = serde_json::json!({
+            "type": "linear",
+            "factor": 4.0
+        });
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+        assert_eq!(
+            config.rope_scaling,
+            Some(RopeScaling::Linear { factor: 4.0 })
         );
     }
 

@@ -65,6 +65,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Clearer `longrope` error.** An unimplemented `rope_scaling: {rope_type:
+  "longrope"}` (Phi-3.5-mini, Phi-3-medium-128k) now errors with a
+  scheme-specific message — naming the per-dimension `short_factor`/`long_factor`
+  arrays and attention/mscale factor that make it structurally different, and
+  that it is tracked for v0.2.0 — instead of the generic "unsupported type".
+  Added edge-case unit tests for the existing schemes (missing `factor`, missing
+  `rope_type`, llama3 default band factors, `rope_parameters` carrying linear).
 - **Dependencies:** bump `anamnesis` 0.6.0 → 0.6.2 and `hf-fetch-model` 0.10.3 →
   0.10.4. anamnesis 0.6.1/0.6.2 are DoS-hardening security patches (unguarded-
   allocation guards across the NPZ/GGUF/PTH parsers) with **no public API or
