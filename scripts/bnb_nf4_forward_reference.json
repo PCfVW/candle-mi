@@ -1,0 +1,178 @@
+{
+  "model_repo": "medmekk/Llama-3.2-1B-Instruct-bnb-nf4",
+  "tokenizer_repo": "meta-llama/Llama-3.2-1B",
+  "methodology": "bitsandbytes-NF4 forward-pass oracle (transformers + bitsandbytes, F32 compute on CUDA); validates candle-mi's anamnesis NF4 dequant load path",
+  "torch_version": "2.10.0+cu130",
+  "transformers_version": "5.1.0",
+  "bitsandbytes_version": "0.49.1",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "model_type": "llama",
+  "quant_method": "QuantizationMethod.BITS_AND_BYTES",
+  "hidden_size": 2048,
+  "num_layers": 16,
+  "vocab_size": 128256,
+  "head_dim": 64,
+  "test_cases": [
+    {
+      "prompt": "The capital of France is",
+      "tokens": [
+        128000,
+        791,
+        6864,
+        315,
+        9822,
+        374
+      ],
+      "top_10": [
+        {
+          "index": 12366,
+          "logit": 19.231300354003906
+        },
+        {
+          "index": 539,
+          "logit": 16.053695678710938
+        },
+        {
+          "index": 264,
+          "logit": 15.744446754455566
+        },
+        {
+          "index": 1131,
+          "logit": 15.438555717468262
+        },
+        {
+          "index": 279,
+          "logit": 14.940621376037598
+        },
+        {
+          "index": 20437,
+          "logit": 14.774496078491211
+        },
+        {
+          "index": 25,
+          "logit": 14.530152320861816
+        },
+        {
+          "index": 311,
+          "logit": 14.517041206359863
+        },
+        {
+          "index": 7559,
+          "logit": 14.354340553283691
+        },
+        {
+          "index": 3604,
+          "logit": 14.301971435546875
+        }
+      ]
+    },
+    {
+      "prompt": "Two plus two equals",
+      "tokens": [
+        128000,
+        11874,
+        5636,
+        1403,
+        17239
+      ],
+      "top_10": [
+        {
+          "index": 3116,
+          "logit": 20.51384925842285
+        },
+        {
+          "index": 4330,
+          "logit": 20.301528930664062
+        },
+        {
+          "index": 220,
+          "logit": 18.263551712036133
+        },
+        {
+          "index": 4400,
+          "logit": 18.191823959350586
+        },
+        {
+          "index": 8223,
+          "logit": 17.986309051513672
+        },
+        {
+          "index": 1131,
+          "logit": 17.86895179748535
+        },
+        {
+          "index": 8254,
+          "logit": 17.833688735961914
+        },
+        {
+          "index": 4848,
+          "logit": 17.661401748657227
+        },
+        {
+          "index": 198,
+          "logit": 17.351215362548828
+        },
+        {
+          "index": 482,
+          "logit": 17.265073776245117
+        }
+      ]
+    },
+    {
+      "prompt": "Once upon a time, there was a",
+      "tokens": [
+        128000,
+        12805,
+        5304,
+        264,
+        892,
+        11,
+        1070,
+        574,
+        264
+      ],
+      "top_10": [
+        {
+          "index": 3995,
+          "logit": 19.341646194458008
+        },
+        {
+          "index": 2678,
+          "logit": 17.349872589111328
+        },
+        {
+          "index": 893,
+          "logit": 17.160659790039062
+        },
+        {
+          "index": 6366,
+          "logit": 17.104965209960938
+        },
+        {
+          "index": 2697,
+          "logit": 16.60169219970703
+        },
+        {
+          "index": 8334,
+          "logit": 16.12689208984375
+        },
+        {
+          "index": 3828,
+          "logit": 16.021955490112305
+        },
+        {
+          "index": 1912,
+          "logit": 15.974161148071289
+        },
+        {
+          "index": 24632,
+          "logit": 15.948994636535645
+        },
+        {
+          "index": 5333,
+          "logit": 15.813974380493164
+        }
+      ]
+    }
+  ]
+}

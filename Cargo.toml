@@ -49,7 +49,8 @@ libloading = { version = "0.9", optional = true }
 # Optional: tensor format parsing via anamnesis
 # - sae feature activates "npz" (Gemma Scope SAE weights)
 # - stoicheia feature activates "pth" (AlgZoo .pth agnostic loading)
-anamnesis = { version = "0.6.2", optional = true }
+# - quantized feature activates "bnb"/"awq"/"gptq" (dequant-to-BF16 weight loading)
+anamnesis = { version = "0.6.4", optional = true }
 
 # Optional: per-process VRAM on Windows via DXGI (IDXGIAdapter3::QueryVideoMemoryInfo)
 [target.'cfg(windows)'.dependencies]
@@ -107,6 +108,10 @@ required-features = ["transformer"]
 [[test]]
 name = "validate_mistral_7b_forward"
 required-features = ["transformer"]
+
+[[test]]
+name = "validate_bnb_loading"
+required-features = ["transformer", "quantized"]
 
 [[test]]
 name = "bench_hook_overhead"
@@ -302,6 +307,10 @@ rwkv-tokenizer = []
 clt = []
 sae = ["dep:anamnesis", "anamnesis/npz"]
 stoicheia = ["dep:anamnesis", "anamnesis/pth"]
+# Load quantized checkpoints (bitsandbytes NF4/FP4/INT8, AWQ, GPTQ) by
+# dequantizing to BF16 in memory via anamnesis, then loading the standard
+# safetensors bytes through candle's VarBuilder. See `backend::from_pretrained`.
+quantized = ["dep:anamnesis", "anamnesis/bnb", "anamnesis/awq", "anamnesis/gptq"]
 memory = ["dep:libloading", "dep:windows"]
 memory-debug = ["memory"]
 probing = ["linfa", "linfa-logistic", "ndarray"]

@@ -39,10 +39,11 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "anamnesis"
-version = "0.6.2"
+version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8df4223ac29773186b9cf2d7a6a89d821db045253ede8cefbf59bbd7365dd45f"
+checksum = "05da720bff0c7967a983e7c13d8dda3d238456a0601ca5a0dc784c5d28baf5c2"
 dependencies = [
+ "flate2",
  "float8 0.7.0",
  "half",
  "memmap2",
@@ -4514,7 +4515,6 @@ dependencies = [
  "indexmap 2.14.0",
  "memchr",
  "thiserror 2.0.18",
- "zopfli",
 ]
 
 [[package]]
@@ -4534,15 +4534,3 @@ name = "zmij"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
-
-[[package]]
-name = "zopfli"
-version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f05cd8797d63865425ff89b5c4a48804f35ba0ce8d125800027ad6017d2b5249"
-dependencies = [
- "bumpalo",
- "crc32fast",
- "log",
- "simd-adler32",
-]

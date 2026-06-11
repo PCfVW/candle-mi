@@ -180,7 +180,15 @@ impl MIModel {
             .and_then(|p| MITokenizer::from_hf_path(p).ok());
 
         let (weights_paths, weight_format) = resolve_weight_paths(&files)?;
-        let vb = create_var_builder(&weights_paths, weight_format, dtype, &device)?;
+        // A `quantization_config` block means the weights are stored quantized
+        // (bitsandbytes / AWQ / GPTQ).  Route those through anamnesis to
+        // dequantize to BF16 before building the VarBuilder; standard
+        // checkpoints take the direct candle path.
+        let vb = if json.get("quantization_config").is_some() {
+            load_quantized_var_builder(&weights_paths, dtype, &device)?
+        } else {
+            create_var_builder(&weights_paths, weight_format, dtype, &device)?
+        };
 
         match model_type {
             #[cfg(feature = "transformer")]
@@ -751,6 +759,67 @@ fn create_var_builder(
         }
         WeightFormat::Pytorch => pth_var_builder(paths, dtype, device),
     }
+}
+
+/// Load a single quantized safetensors file by dequantizing to BF16 in memory
+/// via anamnesis, then building a `VarBuilder` from the resulting standard
+/// safetensors bytes.
+///
+/// anamnesis auto-detects the quantization scheme (bitsandbytes `NF4`/`FP4`/
+/// `INT8`, AWQ, GPTQ) and emits standard BF16 safetensors bytes;
+/// [`candle_nn::VarBuilder::from_buffered_safetensors`] then up-casts to `dtype`
+/// (F32 by default).  Single-file only for now — sharded quantized checkpoints
+/// error rather than silently load a partial model.
+///
+/// Peak memory is ~1x the model's BF16 size: anamnesis buffers the whole
+/// serialized output before returning.  Comfortable for the `<=~7 B` quantized
+/// models this targets.
+#[cfg(all(any(feature = "transformer", feature = "rwkv"), feature = "quantized"))]
+fn load_quantized_var_builder(
+    paths: &[std::path::PathBuf],
+    dtype: DType,
+    device: &Device,
+) -> Result<candle_nn::VarBuilder<'static>> {
+    if paths.len() != 1 {
+        return Err(MIError::Config(format!(
+            "quantized checkpoints are supported only as a single safetensors file for now \
+             (found {} shards); a sharded-dequant path is not yet implemented",
+            paths.len()
+        )));
+    }
+    let path = paths.first().ok_or_else(|| {
+        MIError::Model(candle_core::Error::Msg(
+            "no quantized safetensors path".into(),
+        ))
+    })?;
+    let parsed = anamnesis::parse(path)
+        .map_err(|e| MIError::Config(format!("anamnesis parse {}: {e}", path.display())))?;
+    // anamnesis dequantizes to BF16; `from_buffered_safetensors` then up-casts
+    // to `dtype` (F32) on load.
+    let bytes = parsed
+        .remember_to_bytes(anamnesis::TargetDtype::BF16)
+        .map_err(|e| MIError::Config(format!("anamnesis dequantize {}: {e}", path.display())))?;
+    let vb = candle_nn::VarBuilder::from_buffered_safetensors(bytes, dtype, device)?;
+    Ok(vb)
+}
+
+/// Fallback when the `quantized` feature is disabled: a clear, actionable error
+/// instead of a cryptic tensor-not-found failure on quantized weights.
+#[cfg(all(
+    any(feature = "transformer", feature = "rwkv"),
+    not(feature = "quantized")
+))]
+fn load_quantized_var_builder(
+    _paths: &[std::path::PathBuf],
+    _dtype: DType,
+    _device: &Device,
+) -> Result<candle_nn::VarBuilder<'static>> {
+    Err(MIError::Config(
+        "this checkpoint is quantized (`quantization_config` present in config.json); \
+         rebuild candle-mi with the `quantized` feature to load it (it dequantizes to \
+         BF16 in memory via anamnesis)"
+            .into(),
+    ))
 }
 
 /// Load weights from a single `pytorch_model.bin` pickle via `from_pth`.

@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Quantized checkpoint loading (`quantized` feature).** `from_pretrained` now
+  loads bitsandbytes (NF4/FP4/INT8), AWQ, and GPTQ checkpoints: when
+  `config.json` carries a `quantization_config`, the weights are dequantized to
+  BF16 in memory via anamnesis (`parse` → `remember_to_bytes`) and handed to
+  candle's `VarBuilder` — no separate dequant step or disk sidecar. Single-file
+  checkpoints for now (sharded → clear error); without the feature, a quantized
+  model errors with an actionable message. Validated end-to-end against a
+  PyTorch + bitsandbytes oracle on `medmekk/Llama-3.2-1B-Instruct-bnb-nf4`
+  (`tests/validate_bnb_loading.rs`): exact top-1 match per prompt, magnitudes
+  within the BF16-weight tier of the F32 reference. (This validation surfaced a
+  real NF4 nibble-order bug in anamnesis, fixed in anamnesis v0.6.4.)
 - **Config-key coverage audit.** New `TransformerConfig::audit_config_coverage`
   returns `config.json` keys that candle-mi neither reads nor recognizes as
   benign metadata, and `CompatibilityReport` now carries these as non-fatal
