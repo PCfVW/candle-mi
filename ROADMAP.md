@@ -302,15 +302,17 @@ The **Validated** column uses three tiers:
 | **InternLM 2** | GQA, SiLU, RmsNorm; non-standard `wqkv`/`wo` weight names (won't load via the standard loader) | — |
 
 **`rope_scaling` schemes.** Implemented and exact-parity-validated: `linear`
-(DeepSeek-Coder) and `llama3` (Llama 3.1/3.2); both are also read under the
-newer `rope_parameters` key. `longrope` (Phi-3.5-mini, Phi-3-medium-128k) is
-**not yet implemented**: it errors loudly with a scheme-specific message rather
-than silently mis-running, and is tracked for v0.2.0 (it needs per-dimension
-`short_factor`/`long_factor` arrays, an attention/mscale factor, and a
-sequence-length branch — structurally unlike the scalar schemes). Any other
-scheme (`yarn`, `dynamic`, …) errors at config-parse time. A config-key
-coverage audit (`TransformerConfig::audit_config_coverage`) flags unrecognized
-keys so a new scheme cannot be silently dropped.
+(DeepSeek-Coder), `llama3` (Llama 3.1/3.2), and `longrope` (Phi-3.5-mini,
+Phi-3-medium-128k); `linear`/`llama3` are also read under the newer
+`rope_parameters` key. `longrope` uses per-dimension `short_factor`/`long_factor`
+arrays (the **short** factors for sequences ≤ `original_max_position_embeddings`
+= 4096, **long** beyond) plus an `attention_factor` (mscale) on cos/sin, read
+from config when set else derived as `sqrt(1 + ln(factor)/ln(orig_max))`;
+**both regimes** are validated end-to-end against `microsoft/Phi-3.5-mini-instruct`
+(exact, 5e-5; short + a >4096-token long case). Any other scheme (`yarn`,
+`dynamic`, …) errors at config-parse time. A config-key coverage audit
+(`TransformerConfig::audit_config_coverage`) flags unrecognized keys so a new
+scheme cannot be silently dropped.
 
 **VRAM budget (F32, RTX 5060 Ti 16 GB).** Since v0.0.3+, candle-mi defaults to F32 for research-grade precision (see §8, decision 14). This doubles the VRAM footprint vs BF16 but gives exact numerical parity with Python/PyTorch. Non-validated families that fit on 16 GB at F32:
 

@@ -156,7 +156,7 @@ impl fmt::Display for MlpLayout {
 /// top-k smoke test (this is exactly how the `llama3` scaling went unnoticed
 /// on Llama 3.2 — see `ROADMAP.md` §3.3).
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum RopeScaling {
     /// Linear position interpolation (`type: "linear"`).  Every position
     /// index is divided by `factor` before the rotary rotation, uniformly
@@ -184,6 +184,28 @@ pub enum RopeScaling {
         /// Context length the base frequencies were trained for.
         original_max_position_embeddings: usize,
     },
+    /// `LongRoPE` scaling (`rope_type: "longrope"`), used by Phi-3.5-mini and
+    /// Phi-3-medium-128k.  Per-dimension factor arrays divide the inverse
+    /// frequencies — `short_factor` for sequence length
+    /// `<= original_max_position_embeddings`, `long_factor` beyond — and
+    /// `attention_factor` (mscale) scales the resulting cos/sin.  Mirrors
+    /// `_compute_longrope_parameters` in `HuggingFace` `transformers`.
+    Longrope {
+        /// Per-dimension inverse-frequency divisors for the short regime
+        /// (sequence length `<= original_max_position_embeddings`).  Length
+        /// `head_dim / 2`.
+        short_factor: Vec<f64>,
+        /// Per-dimension inverse-frequency divisors for the long regime
+        /// (sequence length `> original_max_position_embeddings`).  Length
+        /// `head_dim / 2`.
+        long_factor: Vec<f64>,
+        /// Pretraining context length; the short/long regime boundary.
+        original_max_position_embeddings: usize,
+        /// Attention scaling factor (mscale) applied to `cos`/`sin`.  Read from
+        /// the config `attention_factor` when present, else
+        /// `sqrt(1 + ln(factor) / ln(original_max_position_embeddings))`.
+        attention_factor: f64,
+    },
 }
 
 impl fmt::Display for RopeScaling {
@@ -191,6 +213,9 @@ impl fmt::Display for RopeScaling {
         match self {
             Self::Linear { factor } => write!(f, "Linear(factor={factor})"),
             Self::Llama3 { factor, .. } => write!(f, "Llama3(factor={factor})"),
+            Self::Longrope {
+                attention_factor, ..
+            } => write!(f, "Longrope(attention_factor={attention_factor})"),
         }
     }
 }
@@ -889,6 +914,25 @@ pub(crate) fn get_optional_f64(config: &Value, key: &str) -> Option<f64> {
     config.get(key).and_then(Value::as_f64)
 }
 
+/// Extract a required array of `f64` (e.g. `longrope` `short_factor`).
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] if the key is absent, not an array, or any
+/// element is non-numeric.
+pub(crate) fn get_f64_array(config: &Value, key: &str) -> Result<Vec<f64>> {
+    let arr = config
+        .get(key)
+        .and_then(Value::as_array)
+        .ok_or_else(|| MIError::Config(format!("missing or non-array field '{key}'")))?;
+    arr.iter()
+        .map(|v| {
+            v.as_f64()
+                .ok_or_else(|| MIError::Config(format!("non-numeric element in array '{key}'")))
+        })
+        .collect()
+}
+
 /// Extract a `bool` field, returning a default if absent.
 pub(crate) fn get_bool_or(config: &Value, key: &str, default: bool) -> bool {
     config.get(key).and_then(Value::as_bool).unwrap_or(default)
@@ -948,22 +992,63 @@ pub(crate) fn parse_rope_scaling(config: &Value) -> Result<Option<RopeScaling>> 
                 8192,
             ),
         })),
-        // `longrope` (Phi-3.5-mini, Phi-3-medium-128k) is the next scheme on
-        // the roadmap; give it a specific, actionable error rather than the
-        // generic one, because it is structurally different from the scalar
-        // schemes (see ROADMAP.md §3.3).
-        "longrope" => Err(MIError::Config(
-            "rope_scaling type \"longrope\" is not yet implemented (Phi-3.5-mini, \
-             Phi-3-medium-128k). Unlike the scalar 'linear'/'llama3' schemes it needs \
-             per-dimension short_factor/long_factor arrays, an attention (mscale) factor, \
-             and a sequence-length branch (short vs long factors at \
-             original_max_position_embeddings). Tracked for v0.2.0; see ROADMAP.md §3.3. \
-             Load a model with 'linear', 'llama3', or no rope_scaling instead."
-                .into(),
-        )),
+        // `longrope` (Phi-3.5-mini, Phi-3-medium-128k): per-dimension
+        // short/long factor arrays + an attention (mscale) factor. Mirrors
+        // HuggingFace `_compute_longrope_parameters`.
+        "longrope" => {
+            let short_factor = get_f64_array(rs, "short_factor")?;
+            let long_factor = get_f64_array(rs, "long_factor")?;
+            if short_factor.len() != long_factor.len() {
+                return Err(MIError::Config(format!(
+                    "longrope short_factor (len {}) and long_factor (len {}) must match",
+                    short_factor.len(),
+                    long_factor.len()
+                )));
+            }
+            // `original_max_position_embeddings` lives in the rope block or at
+            // the top level of the config (Phi-3 puts it at the top level).
+            let original_max = get_optional_usize(rs, "original_max_position_embeddings")
+                .or_else(|| get_optional_usize(config, "original_max_position_embeddings"))
+                .ok_or_else(|| {
+                    MIError::Config(
+                        "longrope rope_scaling missing 'original_max_position_embeddings'".into(),
+                    )
+                })?;
+            // CAST: usize -> f64, context lengths fit in the f64 mantissa (<= 2^52).
+            #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+            let orig_max_f = original_max as f64;
+            // `factor`: explicit, else the max/original context ratio (Phi-3).
+            let factor = get_optional_f64(rs, "factor").unwrap_or_else(|| {
+                // CAST: usize -> f64, as above.
+                #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+                let max_pos = get_usize_or(config, "max_position_embeddings", original_max) as f64;
+                max_pos / orig_max_f
+            });
+            // `attention_factor` (mscale): explicit config value if present
+            // (some checkpoints set it), else the value recommended by the
+            // LongRoPE paper: sqrt(1 + ln(factor) / ln(original_max)).
+            let attention_factor = get_optional_f64(rs, "attention_factor").unwrap_or_else(|| {
+                if factor <= 1.0 {
+                    1.0
+                } else {
+                    // EXPLICIT: keep the `ln(factor)/ln(orig_max)` form (not
+                    // `factor.log(orig_max)`) to mirror HuggingFace's
+                    // `math.log(factor)/math.log(orig_max)` exactly for parity.
+                    #[allow(clippy::suboptimal_flops)]
+                    let mscale = (1.0 + factor.ln() / orig_max_f.ln()).sqrt();
+                    mscale
+                }
+            });
+            Ok(Some(RopeScaling::Longrope {
+                short_factor,
+                long_factor,
+                original_max_position_embeddings: original_max,
+                attention_factor,
+            }))
+        }
         other => Err(MIError::Config(format!(
-            "unsupported rope_scaling type {other:?} (candle-mi implements 'linear' \
-             and 'llama3'; 'longrope' is tracked for v0.2.0); see ROADMAP.md §3.3 for status"
+            "unsupported rope_scaling type {other:?} (candle-mi implements 'linear', \
+             'llama3', and 'longrope'); see ROADMAP.md §3.3 for status"
         ))),
     }
 }
@@ -1982,20 +2067,66 @@ mod tests {
     }
 
     #[test]
-    fn parse_rope_scaling_longrope_specific_error() {
-        // longrope must fail with an actionable, scheme-specific message (not
-        // the generic one), naming what makes it structurally different.
+    fn parse_rope_scaling_longrope() {
+        // longrope parses the per-dimension factor arrays + boundary, and (when
+        // the config omits `attention_factor`) derives the mscale from the HF
+        // formula sqrt(1 + ln(factor) / ln(original_max)) with
+        // factor = max_position / original_max = 131072 / 4096 = 32.
         let json = llama_config_with_rope_scaling(Some(serde_json::json!({
             "rope_type": "longrope",
             "short_factor": [1.0, 1.02],
             "long_factor": [1.08, 1.11],
             "original_max_position_embeddings": 4096
         })));
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+        match config.rope_scaling {
+            Some(RopeScaling::Longrope {
+                short_factor,
+                long_factor,
+                original_max_position_embeddings,
+                attention_factor,
+            }) => {
+                assert_eq!(short_factor, vec![1.0, 1.02]);
+                assert_eq!(long_factor, vec![1.08, 1.11]);
+                assert_eq!(original_max_position_embeddings, 4096);
+                // sqrt(1 + ln(32)/ln(4096)) ≈ 1.190238
+                assert!((attention_factor - 1.190_238).abs() < 1e-5);
+            }
+            other => panic!("expected Longrope, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_rope_scaling_longrope_explicit_attention_factor() {
+        // When the config sets `attention_factor` (e.g. unsloth Phi-3.5 re-saves
+        // it as 32.0), it is used verbatim — not the formula value.
+        let json = llama_config_with_rope_scaling(Some(serde_json::json!({
+            "rope_type": "longrope",
+            "short_factor": [1.0, 1.02],
+            "long_factor": [1.08, 1.11],
+            "original_max_position_embeddings": 4096,
+            "attention_factor": 32.0
+        })));
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+        match config.rope_scaling {
+            Some(RopeScaling::Longrope {
+                attention_factor, ..
+            }) => assert!((attention_factor - 32.0).abs() < f64::EPSILON),
+            other => panic!("expected Longrope, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_rope_scaling_longrope_length_mismatch_errors() {
+        // short_factor and long_factor must have the same length.
+        let json = llama_config_with_rope_scaling(Some(serde_json::json!({
+            "rope_type": "longrope",
+            "short_factor": [1.0, 1.02],
+            "long_factor": [1.08],
+            "original_max_position_embeddings": 4096
+        })));
         let err = TransformerConfig::from_hf_config(&json).unwrap_err();
         assert!(matches!(err, MIError::Config(_)));
-        let msg = err.to_string();
-        assert!(msg.contains("longrope"));
-        assert!(msg.contains("short_factor"));
     }
 
     #[test]

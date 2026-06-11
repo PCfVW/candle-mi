@@ -204,7 +204,9 @@ impl GenericTransformer {
             config.head_dim,
             config.max_position_embeddings,
             config.rope_theta,
-            config.rope_scaling,
+            // BORROW: RopeScaling carries Vec factors (longrope) so it is not
+            // Copy; clone it out of the retained config.
+            config.rope_scaling.clone(),
             device,
             dtype,
         )?;
