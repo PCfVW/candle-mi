@@ -50,7 +50,7 @@ libloading = { version = "0.9", optional = true }
 # - sae feature activates "npz" (Gemma Scope SAE weights)
 # - stoicheia feature activates "pth" (AlgZoo .pth agnostic loading)
 # - quantized feature activates "bnb"/"awq"/"gptq" (dequant-to-BF16 weight loading)
-anamnesis = { version = "0.6.4", optional = true }
+anamnesis = { version = "0.6.5", optional = true }
 
 # Optional: per-process VRAM on Windows via DXGI (IDXGIAdapter3::QueryVideoMemoryInfo)
 [target.'cfg(windows)'.dependencies]
@@ -110,7 +110,7 @@ name = "validate_mistral_7b_forward"
 required-features = ["transformer"]
 
 [[test]]
-name = "validate_bnb_loading"
+name = "validate_quantized_loading"
 required-features = ["transformer", "quantized"]
 
 [[test]]

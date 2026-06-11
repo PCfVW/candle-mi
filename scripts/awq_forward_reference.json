@@ -1,0 +1,176 @@
+{
+  "model_repo": "casperhansen/llama-3.2-1b-instruct-awq",
+  "methodology": "AWQ forward-pass oracle (transformers + AutoAWQ, fp16 compute on CUDA); validates candle-mi's anamnesis AWQ dequant load path",
+  "torch_version": "2.10.0+cu130",
+  "transformers_version": "5.1.0",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "model_type": "llama",
+  "quant_method": "QuantizationMethod.AWQ",
+  "hidden_size": 2048,
+  "num_layers": 16,
+  "vocab_size": 128256,
+  "head_dim": 64,
+  "test_cases": [
+    {
+      "prompt": "The capital of France is",
+      "tokens": [
+        128000,
+        791,
+        6864,
+        315,
+        9822,
+        374
+      ],
+      "top_10": [
+        {
+          "index": 12366,
+          "logit": 18.71875
+        },
+        {
+          "index": 539,
+          "logit": 15.5625
+        },
+        {
+          "index": 264,
+          "logit": 15.3515625
+        },
+        {
+          "index": 3604,
+          "logit": 15.1015625
+        },
+        {
+          "index": 1101,
+          "logit": 14.8203125
+        },
+        {
+          "index": 1131,
+          "logit": 14.515625
+        },
+        {
+          "index": 279,
+          "logit": 14.5
+        },
+        {
+          "index": 20437,
+          "logit": 14.3203125
+        },
+        {
+          "index": 2663,
+          "logit": 14.2109375
+        },
+        {
+          "index": 3967,
+          "logit": 13.9296875
+        }
+      ]
+    },
+    {
+      "prompt": "Two plus two equals",
+      "tokens": [
+        128000,
+        11874,
+        5636,
+        1403,
+        17239
+      ],
+      "top_10": [
+        {
+          "index": 3116,
+          "logit": 20.375
+        },
+        {
+          "index": 4330,
+          "logit": 18.59375
+        },
+        {
+          "index": 4400,
+          "logit": 16.75
+        },
+        {
+          "index": 1131,
+          "logit": 16.6875
+        },
+        {
+          "index": 198,
+          "logit": 16.671875
+        },
+        {
+          "index": 8223,
+          "logit": 16.609375
+        },
+        {
+          "index": 220,
+          "logit": 16.59375
+        },
+        {
+          "index": 11,
+          "logit": 16.328125
+        },
+        {
+          "index": 4848,
+          "logit": 16.25
+        },
+        {
+          "index": 8254,
+          "logit": 16.09375
+        }
+      ]
+    },
+    {
+      "prompt": "Once upon a time, there was a",
+      "tokens": [
+        128000,
+        12805,
+        5304,
+        264,
+        892,
+        11,
+        1070,
+        574,
+        264
+      ],
+      "top_10": [
+        {
+          "index": 3995,
+          "logit": 19.390625
+        },
+        {
+          "index": 2678,
+          "logit": 18.390625
+        },
+        {
+          "index": 6366,
+          "logit": 18.046875
+        },
+        {
+          "index": 2697,
+          "logit": 17.890625
+        },
+        {
+          "index": 24632,
+          "logit": 16.984375
+        },
+        {
+          "index": 13987,
+          "logit": 16.71875
+        },
+        {
+          "index": 1912,
+          "logit": 16.5625
+        },
+        {
+          "index": 893,
+          "logit": 16.546875
+        },
+        {
+          "index": 3828,
+          "logit": 16.421875
+        },
+        {
+          "index": 41792,
+          "logit": 16.375
+        }
+      ]
+    }
+  ]
+}

@@ -15,11 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   BF16 in memory via anamnesis (`parse` → `remember_to_bytes`) and handed to
   candle's `VarBuilder` — no separate dequant step or disk sidecar. Single-file
   checkpoints for now (sharded → clear error); without the feature, a quantized
-  model errors with an actionable message. Validated end-to-end against a
-  PyTorch + bitsandbytes oracle on `medmekk/Llama-3.2-1B-Instruct-bnb-nf4`
-  (`tests/validate_bnb_loading.rs`): exact top-1 match per prompt, magnitudes
-  within the BF16-weight tier of the F32 reference. (This validation surfaced a
-  real NF4 nibble-order bug in anamnesis, fixed in anamnesis v0.6.4.)
+  model errors with an actionable message. All three schemes are validated
+  end-to-end against PyTorch oracles built on each scheme's real library
+  (bitsandbytes / AutoAWQ / GPTQModel) on cached Llama-3.2-1B checkpoints
+  (`tests/validate_quantized_loading.rs`): exact top-1 match per prompt,
+  magnitudes within the weight-precision tier (~1.0 bnb vs its F32 oracle;
+  ~2–3e-2 AWQ/GPTQ vs their fp16 oracles). This dogfooding surfaced two real
+  bugs in anamnesis — an NF4 nibble-order swap (fixed v0.6.4) and transposed
+  AWQ/GPTQ weight orientation (fixed v0.6.5) — both invisible to anamnesis's
+  value-only cross-validation and caught only by an end-to-end load through a
+  real framework. Requires `anamnesis 0.6.5`.
 - **Config-key coverage audit.** New `TransformerConfig::audit_config_coverage`
   returns `config.json` keys that candle-mi neither reads nor recognizes as
   benign metadata, and `CompatibilityReport` now carries these as non-fatal
