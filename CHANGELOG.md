@@ -43,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **`examples/diffusion_logit_lens.rs`** — diffusion-time logit lens: prints the
   `(layer × denoising-step)` slice of the `(k, ℓ, π)` object for a masked target
   position, showing the prediction crystallize across denoising time.
+- **`examples/diffusion_decoding_order.rs`** — decoding-order analysis: fills a
+  masked completion under random / confidence / entropy unmasking orders and
+  reports per-order reveal-confidence and prediction-stability, showing the
+  orders differ measurably (entropy/confidence front-load confident, stable
+  positions; random does not).
 
 ## [0.1.13] - 2026-06-10
 

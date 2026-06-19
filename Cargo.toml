@@ -282,6 +282,10 @@ name = "diffusion_logit_lens"
 required-features = ["diffusion"]
 
 [[example]]
+name = "diffusion_decoding_order"
+required-features = ["diffusion"]
+
+[[example]]
 name = "steering_convergence"
 required-features = ["transformer"]
 
