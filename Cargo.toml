@@ -126,6 +126,10 @@ name = "bench_hook_diagnostic"
 required-features = ["transformer"]
 
 [[test]]
+name = "validate_mdlm_forward"
+required-features = ["diffusion"]
+
+[[test]]
 name = "validate_rwkv6"
 required-features = ["rwkv", "rwkv-tokenizer"]
 
@@ -270,6 +274,10 @@ name = "quick_start_transformer"
 required-features = ["transformer"]
 
 [[example]]
+name = "quick_start_mdlm"
+required-features = ["diffusion"]
+
+[[example]]
 name = "steering_convergence"
 required-features = ["transformer"]
 
@@ -308,6 +316,9 @@ transformer = []
 mmap = []
 rwkv = []
 rwkv-tokenizer = []
+# Diffusion-LM backend (MDLM masked-diffusion DiT). Standalone — does not
+# require `transformer`. See `src/diffusion/`.
+diffusion = []
 clt = []
 sae = ["dep:anamnesis", "anamnesis/npz"]
 stoicheia = ["dep:anamnesis", "anamnesis/pth"]
@@ -368,7 +379,7 @@ must_use_candidate        = "warn"      # Rule 17
 # CPU-safe features so the generated docs cover the full public API surface.
 [package.metadata.docs.rs]
 no-default-features = true
-features = ["transformer", "rwkv", "rwkv-tokenizer", "clt", "sae", "mmap", "memory", "probing", "stoicheia"]
+features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "mmap", "memory", "probing", "stoicheia"]
 
 [profile.release]
 lto = true

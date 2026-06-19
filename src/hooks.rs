@@ -223,7 +223,7 @@ pub enum Intervention {
 /// # Errors
 ///
 /// Returns [`MIError::Model`] if the underlying tensor operation fails.
-#[cfg(any(feature = "transformer", feature = "rwkv"))]
+#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 pub(crate) fn apply_intervention(tensor: &Tensor, intervention: &Intervention) -> Result<Tensor> {
     match intervention {
         Intervention::Replace(replacement) => Ok(replacement.clone()),

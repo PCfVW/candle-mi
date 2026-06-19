@@ -215,6 +215,8 @@ pub mod cache;
 #[cfg(feature = "clt")]
 pub mod clt;
 pub mod config;
+#[cfg(feature = "diffusion")]
+pub mod diffusion;
 pub mod download;
 pub mod error;
 pub mod hooks;
@@ -263,6 +265,10 @@ pub use transformer::recurrent::{RecurrentFeedbackEntry, RecurrentPassSpec};
 // RWKV backend
 #[cfg(feature = "rwkv")]
 pub use rwkv::{GenericRwkv, RwkvConfig, RwkvLoraDims, RwkvVersion};
+
+// Diffusion backend (MDLM)
+#[cfg(feature = "diffusion")]
+pub use diffusion::{GenericMdlm, MdlmConfig, SUPPORTED_DIFFUSION_MODEL_TYPES};
 
 // Stoicheia (AlgZoo) backends — Phase A
 #[cfg(feature = "stoicheia")]

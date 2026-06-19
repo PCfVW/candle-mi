@@ -142,7 +142,7 @@ impl MIModel {
     ///
     /// Returns [`MIError::Config`] if the model type is unsupported, or
     /// [`MIError::Model`] if weight loading fails.
-    #[cfg(any(feature = "transformer", feature = "rwkv"))]
+    #[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
     pub fn from_pretrained(model_id: &str) -> Result<Self> {
         // --- Device and dtype ---
         let device = Self::select_device()?;
@@ -212,6 +212,14 @@ impl MIModel {
                 let rwkv = GenericRwkv::load(config, &device, dtype, vb)?;
                 Ok(Self::with_tokenizer(Box::new(rwkv), device, tokenizer))
             }
+            #[cfg(feature = "diffusion")]
+            mt if crate::diffusion::SUPPORTED_DIFFUSION_MODEL_TYPES.contains(&mt) => {
+                use crate::diffusion::{GenericMdlm, MdlmConfig};
+
+                let config = MdlmConfig::from_hf_config(&json)?;
+                let mdlm = GenericMdlm::load(config, &device, dtype, vb)?;
+                Ok(Self::with_tokenizer(Box::new(mdlm), device, tokenizer))
+            }
             #[cfg(feature = "transformer")]
             _unknown => {
                 use crate::config::TransformerConfig;
@@ -243,7 +251,7 @@ impl MIModel {
     /// # Errors
     ///
     /// Returns [`MIError::Model`] on device detection failure.
-    #[cfg(any(feature = "transformer", feature = "rwkv"))]
+    #[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
     fn select_device() -> Result<Device> {
         match Device::cuda_if_available(0) {
             Ok(dev) => Ok(dev),
@@ -615,7 +623,7 @@ pub struct GenerationResult {
 // ---------------------------------------------------------------------------
 
 /// Index structure for sharded safetensors models.
-#[cfg(any(feature = "transformer", feature = "rwkv"))]
+#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 #[derive(serde::Deserialize)]
 struct SafetensorsIndex {
     /// Maps weight name → shard filename.
@@ -644,7 +652,7 @@ fn extract_tensor_names(
 /// Weight storage format detected among the downloaded files.
 ///
 /// Private internal enum, matched exhaustively within this module.
-#[cfg(any(feature = "transformer", feature = "rwkv"))]
+#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum WeightFormat {
     /// `.safetensors` (single `model.safetensors` or sharded via index).
@@ -666,7 +674,7 @@ enum WeightFormat {
 /// Returns [`MIError::Config`] when no recognized weight file is present, or
 /// when the only weights are a sharded `pytorch_model.bin.index.json`
 /// (sharded pickles are unsupported — convert to `safetensors`).
-#[cfg(any(feature = "transformer", feature = "rwkv"))]
+#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 fn resolve_weight_paths(
     files: &std::collections::HashMap<String, std::path::PathBuf>,
 ) -> Result<(Vec<std::path::PathBuf>, WeightFormat)> {
@@ -693,7 +701,7 @@ fn resolve_weight_paths(
 ///
 /// Tries `model.safetensors.index.json` first (sharded), falls back to
 /// single `model.safetensors`.
-#[cfg(any(feature = "transformer", feature = "rwkv"))]
+#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 fn resolve_safetensors_paths(
     files: &std::collections::HashMap<String, std::path::PathBuf>,
 ) -> Result<Vec<std::path::PathBuf>> {
@@ -739,7 +747,7 @@ fn resolve_safetensors_paths(
 /// default, or memory-mapped loading with the `mmap` feature.  For
 /// [`WeightFormat::Pytorch`], loads the single `pytorch_model.bin` pickle via
 /// `VarBuilder::from_pth`.
-#[cfg(any(feature = "transformer", feature = "rwkv"))]
+#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 fn create_var_builder(
     paths: &[std::path::PathBuf],
     format: WeightFormat,
@@ -774,7 +782,10 @@ fn create_var_builder(
 /// Peak memory is ~1x the model's BF16 size: anamnesis buffers the whole
 /// serialized output before returning.  Comfortable for the `<=~7 B` quantized
 /// models this targets.
-#[cfg(all(any(feature = "transformer", feature = "rwkv"), feature = "quantized"))]
+#[cfg(all(
+    any(feature = "transformer", feature = "rwkv", feature = "diffusion"),
+    feature = "quantized"
+))]
 fn load_quantized_var_builder(
     paths: &[std::path::PathBuf],
     dtype: DType,
@@ -806,7 +817,7 @@ fn load_quantized_var_builder(
 /// Fallback when the `quantized` feature is disabled: a clear, actionable error
 /// instead of a cryptic tensor-not-found failure on quantized weights.
 #[cfg(all(
-    any(feature = "transformer", feature = "rwkv"),
+    any(feature = "transformer", feature = "rwkv", feature = "diffusion"),
     not(feature = "quantized")
 ))]
 fn load_quantized_var_builder(
@@ -828,7 +839,7 @@ fn load_quantized_var_builder(
 /// tensor (there is no memory-mapped pickle path), so peak memory is ~1x the
 /// model size in `dtype`.  Adequate for the small (<=~3 B) families that ship
 /// only `.bin`; larger models should be converted to `safetensors`.
-#[cfg(any(feature = "transformer", feature = "rwkv"))]
+#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 fn pth_var_builder(
     paths: &[std::path::PathBuf],
     dtype: DType,
@@ -845,7 +856,10 @@ fn pth_var_builder(
 ///
 /// Only supports single-file models. For sharded models (7B+), enable
 /// the `mmap` feature.
-#[cfg(all(any(feature = "transformer", feature = "rwkv"), not(feature = "mmap")))]
+#[cfg(all(
+    any(feature = "transformer", feature = "rwkv", feature = "diffusion"),
+    not(feature = "mmap")
+))]
 fn buffered_var_builder(
     paths: &[std::path::PathBuf],
     dtype: DType,
@@ -878,7 +892,10 @@ fn buffered_var_builder(
 ///
 /// The safetensors files must not be modified while the model is loaded.
 /// This is the standard invariant for memory-mapped files.
-#[cfg(all(any(feature = "transformer", feature = "rwkv"), feature = "mmap"))]
+#[cfg(all(
+    any(feature = "transformer", feature = "rwkv", feature = "diffusion"),
+    feature = "mmap"
+))]
 #[allow(unsafe_code)]
 fn mmap_var_builder(
     paths: &[std::path::PathBuf],
@@ -890,7 +907,10 @@ fn mmap_var_builder(
     Ok(vb)
 }
 
-#[cfg(all(test, any(feature = "transformer", feature = "rwkv")))]
+#[cfg(all(
+    test,
+    any(feature = "transformer", feature = "rwkv", feature = "diffusion")
+))]
 mod tests {
     use std::collections::HashMap;
     use std::path::PathBuf;

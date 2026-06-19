@@ -1,0 +1,184 @@
+{
+  "oracle_repo": "TheQweaker/mdlm-owt-noflash",
+  "weights_repo": "kuleshov-group/mdlm-owt",
+  "methodology": "fp32 forward-pass oracle (AutoModelForMaskedLM, CPU, raw logits at masked positions)",
+  "torch_version": "2.10.0+cu130",
+  "transformers_version": "5.1.0",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "hidden_dim": 768,
+  "n_blocks": 12,
+  "n_heads": 12,
+  "vocab_size": 50258,
+  "mask_token_id": 50257,
+  "test_cases": [
+    {
+      "prompt": "The capital of France is Paris.",
+      "target": " Paris",
+      "tokens": [
+        464,
+        3139,
+        286,
+        4881,
+        318,
+        50257,
+        13
+      ],
+      "mask_position": 5,
+      "top_10": [
+        {
+          "index": 6342,
+          "logit": 19.836101531982422
+        },
+        {
+          "index": 14644,
+          "logit": 18.593852996826172
+        },
+        {
+          "index": 4881,
+          "logit": 17.06683349609375
+        },
+        {
+          "index": 35193,
+          "logit": 15.90701961517334
+        },
+        {
+          "index": 3139,
+          "logit": 15.89237117767334
+        },
+        {
+          "index": 311,
+          "logit": 14.854121208190918
+        },
+        {
+          "index": 4682,
+          "logit": 14.51915454864502
+        },
+        {
+          "index": 4141,
+          "logit": 14.462328910827637
+        },
+        {
+          "index": 390,
+          "logit": 14.432690620422363
+        },
+        {
+          "index": 262,
+          "logit": 14.41201400756836
+        }
+      ]
+    },
+    {
+      "prompt": "The opposite of hot is cold.",
+      "target": " cold",
+      "tokens": [
+        464,
+        6697,
+        286,
+        3024,
+        318,
+        50257,
+        13
+      ],
+      "mask_position": 5,
+      "top_10": [
+        {
+          "index": 3024,
+          "logit": 18.983156204223633
+        },
+        {
+          "index": 37546,
+          "logit": 16.813438415527344
+        },
+        {
+          "index": 6964,
+          "logit": 16.7932186126709
+        },
+        {
+          "index": 471,
+          "logit": 16.67789077758789
+        },
+        {
+          "index": 4894,
+          "logit": 16.568870544433594
+        },
+        {
+          "index": 1583,
+          "logit": 15.489537239074707
+        },
+        {
+          "index": 6697,
+          "logit": 15.462569236755371
+        },
+        {
+          "index": 1111,
+          "logit": 14.767111778259277
+        },
+        {
+          "index": 27810,
+          "logit": 14.560046195983887
+        },
+        {
+          "index": 2046,
+          "logit": 14.329756736755371
+        }
+      ]
+    },
+    {
+      "prompt": "Water is made of hydrogen and oxygen.",
+      "target": " oxygen",
+      "tokens": [
+        19184,
+        318,
+        925,
+        286,
+        17669,
+        290,
+        50257,
+        13
+      ],
+      "mask_position": 6,
+      "top_10": [
+        {
+          "index": 11863,
+          "logit": 20.614120483398438
+        },
+        {
+          "index": 1660,
+          "logit": 18.690860748291016
+        },
+        {
+          "index": 367,
+          "logit": 18.62069320678711
+        },
+        {
+          "index": 440,
+          "logit": 18.0155029296875
+        },
+        {
+          "index": 13100,
+          "logit": 17.846237182617188
+        },
+        {
+          "index": 509,
+          "logit": 17.71817398071289
+        },
+        {
+          "index": 6588,
+          "logit": 17.46002769470215
+        },
+        {
+          "index": 269,
+          "logit": 17.38620376586914
+        },
+        {
+          "index": 17669,
+          "logit": 16.93834686279297
+        },
+        {
+          "index": 362,
+          "logit": 16.327611923217773
+        }
+      ]
+    }
+  ]
+}

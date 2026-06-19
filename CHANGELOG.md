@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **MDLM masked-diffusion backend** (`diffusion` feature, `src/diffusion/`) — the
+  first **diffusion-language-model** family in candle-mi, and the first
+  **bidirectional** backend. Ports `kuleshov-group/mdlm-owt` (Sahoo et al.,
+  NeurIPS 2024): a `DiT` with `adaLN` conditioning (constant, since the
+  checkpoint is `time_conditioning=false`), full bidirectional self-attention
+  (no causal mask), weight-only `LayerNorm`, fused QKV, rotary embeddings, and a
+  plain GELU-tanh MLP. New public API: `GenericMdlm`, `MdlmConfig`,
+  `SUPPORTED_DIFFUSION_MODEL_TYPES`. Loads via `MIModel::from_pretrained` (model
+  type `"mdlm"`) or `GenericMdlm::load`. The `diffusion` feature is standalone —
+  it does not require `transformer`. Implements the full `MIBackend` hook surface
+  (`Embed`, `ResidPre`/`ResidMid`/`ResidPost`, `AttnQ`/`AttnK`/`AttnV`/
+  `AttnScores`/`AttnPattern`, `AttnOut`, `MlpPre`/`MlpPost`/`MlpOut`,
+  `FinalNorm`), so the existing analysis primitives (logit lens, knockout,
+  steering) operate on MDLM activations unchanged.
+- **`examples/quick_start_mdlm.rs`** — masked fill-in-the-blank demo
+  (`The capital of France is [MASK].` → `" Paris"`), using the GPT-2 tokenizer.
+- **MDLM forward-pass parity test** (`tests/validate_mdlm_forward.rs` +
+  `scripts/mdlm_forward_validation.py`) — validates the candle-mi forward against
+  a from-first-principles fp32 Python oracle built on the flash-attn-free
+  reimplementation `TheQweaker/mdlm-owt-noflash` (byte-identical weights). Top-10
+  logit indices match exactly at the masked positions; max abs-diff
+  **3.05×10⁻⁵ (CPU)** / **1.34×10⁻⁵ (GPU)**, well under the `1e-3`/`5e-3` bars.
+
 ## [0.1.13] - 2026-06-10
 
 ### Added
