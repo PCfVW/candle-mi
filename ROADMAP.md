@@ -969,7 +969,7 @@ Detailed design proposals live in the [`design/`](design/) directory. Summary:
 
 Two independent replications of Anthropic's "Planning in Poems" [Figure 13](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poem-location), now unified on the `melometis` branch:
 
-**Gemma 2 2B** (426K and 2.5M CLTs): suppress all `-out` rhyme-group features, inject a single "around" feature at L22, sweep injection position across 31 tokens — P("around") is flat at ~4.5e-8 then **jumps to 0.483 at the planning site** (155-million-fold ratio). 70% of 136 suppress+inject pairs peak at the planning site. The 2.5M CLT upgrade achieves word-level resolution (209 words, 52.2% best redirect, 3.78-trillion-fold spike ratio).
+**Gemma 2 2B** (426K and 2.5M CLTs): suppress all `-out` rhyme-group features, inject a single "around" feature at L22, sweep injection position across 31 tokens — P("around") is flat at 4.836×10⁻⁸ then **jumps to 0.483 at the planning site** (≈10-million-fold ratio; 9,974,880× measured). 70% of 136 suppress+inject pairs peak at the planning site. The 2.5M CLT upgrade achieves word-level resolution (209 words, 52.2% best redirect, 3.78-trillion-fold spike ratio).
 
 **Llama 3.2 1B** (524K CLT): second independent replication confirming the phenomenon generalises across architectures. Cross-model comparison reveals the **search vs. commitment distinction**: both models have phonological search (Jaccard 0.24), but Llama lacks the commitment circuit that sustains the rhyme signal through the final layers (82% of planning features crammed into L15, the last layer). Layer suppression on Gemma confirms L22–25 are causally necessary for rhyming (0/10 without them).
 
