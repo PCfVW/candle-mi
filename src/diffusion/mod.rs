@@ -14,9 +14,11 @@
 pub mod config;
 pub mod mdlm;
 pub mod rope;
+pub mod sample;
 
 pub use config::MdlmConfig;
 pub use mdlm::GenericMdlm;
+pub use sample::{DiffusionSamplingConfig, generate, generate_trajectory};
 
 /// `model_type` strings handled by the diffusion backend dispatch in
 /// [`MIModel::from_pretrained`](crate::MIModel::from_pretrained).

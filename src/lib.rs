@@ -268,7 +268,9 @@ pub use rwkv::{GenericRwkv, RwkvConfig, RwkvLoraDims, RwkvVersion};
 
 // Diffusion backend (MDLM)
 #[cfg(feature = "diffusion")]
-pub use diffusion::{GenericMdlm, MdlmConfig, SUPPORTED_DIFFUSION_MODEL_TYPES};
+pub use diffusion::{
+    DiffusionSamplingConfig, GenericMdlm, MdlmConfig, SUPPORTED_DIFFUSION_MODEL_TYPES,
+};
 
 // Stoicheia (AlgZoo) backends — Phase A
 #[cfg(feature = "stoicheia")]

@@ -31,6 +31,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   reimplementation `TheQweaker/mdlm-owt-noflash` (byte-identical weights). Top-10
   logit indices match exactly at the masked positions; max abs-diff
   **3.05×10⁻⁵ (CPU)** / **1.34×10⁻⁵ (GPU)**, well under the `1e-3`/`5e-3` bars.
+- **MDLM SUBS ancestral sampler** (`candle_mi::diffusion::generate` /
+  `generate_trajectory`, `DiffusionSamplingConfig`) — a faithful, backend-agnostic
+  port of the noflash `sample.py`: absorbing/masked diffusion on a linear
+  `t: 1 → 0` schedule with carry-over unmasking, zero-mask-probability (`SUBS`),
+  temperature, and optional top-k; deterministic by seed. `generate_trajectory`
+  returns the per-step token states (the denoising-step `k` axis for diffusion
+  MI). Covered by model-free unit tests (SUBS forbids `[MASK]`, top-k truncation,
+  seed determinism) and a model-based invariant test (determinism, monotone
+  unmasking, termination, prompt carry-over).
+- **`examples/diffusion_logit_lens.rs`** — diffusion-time logit lens: prints the
+  `(layer × denoising-step)` slice of the `(k, ℓ, π)` object for a masked target
+  position, showing the prediction crystallize across denoising time.
 
 ## [0.1.13] - 2026-06-10
 

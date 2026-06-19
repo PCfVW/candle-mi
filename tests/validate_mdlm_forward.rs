@@ -43,7 +43,7 @@
 use std::path::PathBuf;
 
 use candle_core::{DType, Device, IndexOp, Tensor};
-use candle_mi::{GenericMdlm, HookSpec, MIBackend, MdlmConfig};
+use candle_mi::{DiffusionSamplingConfig, GenericMdlm, HookSpec, MIBackend, MdlmConfig};
 use serial_test::serial;
 
 const MODEL_ID: &str = "kuleshov-group/mdlm-owt";
@@ -215,6 +215,80 @@ fn run_mdlm_forward_parity(device: &Device, device_name: &str, abs_diff_bar: f32
         test_cases.len(),
         max_abs_diff,
         abs_diff_bar
+    );
+}
+
+/// Real invariants of the SUBS ancestral sampler on the actual model:
+/// determinism by seed, monotone unmasking (carry-over), termination (no
+/// `[MASK]` left), and prompt-prefix preservation. (Token *values* can't be
+/// matched against `PyTorch` — different RNGs — so we assert falsifiable
+/// structural properties instead, on top of the already-exact forward pass.)
+#[test]
+#[ignore = "requires kuleshov-group/mdlm-owt cached (~648 MiB); run with --ignored"]
+#[serial]
+fn mdlm_sampler_invariants() {
+    let Some(snapshot) = find_snapshot(MODEL_ID) else {
+        eprintln!("SKIP: {MODEL_ID} not in HF cache");
+        return;
+    };
+    let device = Device::Cpu;
+    let json: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(snapshot.join("config.json")).unwrap())
+            .unwrap();
+    let config = MdlmConfig::from_hf_config(&json).unwrap();
+    let mask_id = config.mask_token_id;
+    let weights = snapshot.join("model.safetensors");
+    // SAFETY: safetensors files are not modified during test execution.
+    let vb = unsafe {
+        candle_nn::VarBuilder::from_mmaped_safetensors(&[weights], DType::F32, &device).unwrap()
+    };
+    let model = GenericMdlm::load(config, &device, DType::F32, vb).unwrap();
+
+    // Carry over a 3-token prompt prefix; denoise the rest.
+    let prompt: Vec<u32> = vec![464, 3139, 286]; // "The capital of"
+    let cfg = DiffusionSamplingConfig {
+        seq_len: 16,
+        num_steps: 16,
+        temperature: 1.0,
+        top_k: Some(50),
+        seed: 0,
+    };
+
+    let traj1 =
+        candle_mi::diffusion::generate_trajectory(&model, &device, mask_id, &prompt, &cfg).unwrap();
+    let traj2 =
+        candle_mi::diffusion::generate_trajectory(&model, &device, mask_id, &prompt, &cfg).unwrap();
+
+    // Determinism: same seed -> identical trajectory.
+    assert_eq!(traj1, traj2, "same seed must reproduce the trajectory");
+
+    // Trajectory has num_steps + 1 states; each is full-length and keeps the prefix.
+    assert_eq!(traj1.len(), cfg.num_steps + 1, "wrong trajectory length");
+    for state in &traj1 {
+        assert_eq!(state.len(), cfg.seq_len, "wrong state length");
+        for (i, &p) in prompt.iter().enumerate() {
+            assert_eq!(state[i], p, "prompt prefix changed at position {i}");
+        }
+    }
+
+    // Monotone unmasking (carry-over): the revealed count never decreases, and
+    // the final state is fully revealed.
+    let revealed = |s: &[u32]| s.iter().filter(|&&t| t != mask_id).count();
+    let mut prev = revealed(&traj1[0]);
+    for state in &traj1[1..] {
+        let now = revealed(state);
+        assert!(now >= prev, "unmasking not monotone: {prev} -> {now}");
+        prev = now;
+    }
+    assert_eq!(
+        revealed(traj1.last().unwrap()),
+        cfg.seq_len,
+        "final state still has [MASK] tokens"
+    );
+
+    println!(
+        "sampler invariants OK; final state: {:?}",
+        traj1.last().unwrap()
     );
 }
 
