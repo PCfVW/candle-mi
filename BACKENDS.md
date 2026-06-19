@@ -38,7 +38,7 @@
 |------|-------------|--------|--------------|
 | **Auto-config** | Model uses HuggingFace-standard weight naming and is a standard decoder-only transformer | None | Full (automatic) |
 | **Config parser** | Model is a decoder-only transformer with quirks (special norm, bias pattern, etc.) | ~30 lines | Full (automatic) |
-| **Custom `MIBackend`** | Model is not a decoder-only transformer (e.g., RWKV, Mamba, encoder-decoder) | ~500+ lines | Manual (you place hooks) |
+| **Custom `MIBackend`** | Model is not a decoder-only transformer (e.g., RWKV, Mamba, masked diffusion, encoder-decoder) | ~500+ lines | Manual (you place hooks) |
 
 Most HuggingFace transformer models work out of the box via auto-config.
 If yours doesn't, a config parser is usually enough.  A custom backend is
@@ -104,7 +104,7 @@ The check verifies:
 
 Auto-config does **not** handle:
 - Non-standard weight naming (e.g., `transformer.h.0.attn` instead of `model.layers.0.self_attn`)
-- Architectures that aren't decoder-only transformers (RWKV, Mamba, encoder-decoder)
+- Architectures that aren't decoder-only transformers (RWKV, Mamba, masked diffusion, encoder-decoder)
 - Novel attention mechanisms (linear attention, local-global hybrid)
 - Custom activations not in the standard set (`SiLU`, `GELU`, `GELU tanh`)
 
@@ -262,7 +262,8 @@ With F32 on both sides, logits should match to ~6 decimal places.
 ## Path 3: Custom MIBackend (Non-Transformer Architectures)
 
 For architectures that aren't decoder-only transformers (RWKV, Mamba,
-encoder-decoder, etc.), implement the `MIBackend` trait directly.
+masked diffusion, encoder-decoder, etc.), implement the `MIBackend` trait
+directly.
 
 ### The MIBackend Trait
 
@@ -408,6 +409,43 @@ use explicit `load(config, path, device)` constructors instead of
 `from_pretrained()`, and demonstrate how a non-language-model backend fits
 into the `MIBackend` trait. See `src/stoicheia/mod.rs` for the full
 implementation (~500 lines for both backends).
+
+### MDLM: A Bidirectional Masked-Diffusion Backend
+
+The `diffusion` module (`src/diffusion/`) implements `GenericMdlm`, a custom
+`MIBackend` for [MDLM](https://huggingface.co/kuleshov-group/mdlm-owt) — a
+masked-diffusion **bidirectional DiT** (Sahoo et al., NeurIPS 2024).  It is the
+template for a *non-causal* language model, and differs from the transformer
+backend on every axis that matters:
+
+- **Bidirectional attention** — an all-zeros attention mask instead of the
+  causal `-inf` mask, so every position attends to every other.
+- **adaLN conditioning** — each block modulates its norms by a conditioning
+  vector (`modulate(x, shift, scale) = x * (1 + scale) + shift`), and gates its
+  attention/MLP residual contributions.  For the released time-independent
+  checkpoint that vector is a constant, computed once at load.
+- **Non-HF weight layout** — `backbone.*` tensors: a raw-`Parameter` embedding
+  (no `.weight` suffix), weight-only `LayerNorm`, fused `attn_qkv` / `attn_out`
+  (no bias), a plain GELU-tanh MLP, and an untied `output_layer.linear`.  None
+  of these fit `TransformerConfig`, which is why MDLM is a backend (Path 3)
+  rather than a parser (Path 2).
+- **Standard hook surface** — it reuses the usual `HookPoint` variants
+  (`Embed`, `ResidPre/Mid/Post`, `AttnQ/K/V/Scores/Pattern`, `AttnOut`,
+  `MlpPre/Post/Out`, `FinalNorm`), so every logit-lens / patching / steering
+  tool works unchanged.  `AttnOut` / `MlpOut` capture the **gated** residual
+  contribution (`g_msa * attn_out(...)`, `g_mlp * mlp(...)`), matching the
+  TransformerLens "added to the residual stream" convention.
+
+It is gated behind the `diffusion` feature, ships its own config (`MdlmConfig`,
+parsed from `model_type = "mdlm"`) plus a `SUBS` ancestral sampler, and is
+dispatched from `MIModel::from_pretrained()` via
+`SUPPORTED_DIFFUSION_MODEL_TYPES` (the same mechanism as the RWKV backend).  The
+forward pass is validated bit-faithfully against an fp32 oracle (max abs-diff
+1.3e-5 on GPU).  See
+[`docs/roadmaps/diffusion-lm-roadmap.md`](docs/roadmaps/diffusion-lm-roadmap.md)
+for the DiT-vs-decoder split and the planned bidirectional-`GenericTransformer`
+path that will bring decoder-style diffusion LMs (Dream, LLaDA) in as a *config
+flag* on Path 2 rather than new backends.
 
 ---
 

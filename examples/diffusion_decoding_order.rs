@@ -28,7 +28,6 @@ use candle_core::{DType, IndexOp, Tensor};
 use candle_mi::{HookSpec, MIModel, MITokenizer};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use std::path::PathBuf;
 
 /// `HuggingFace` repo id of the MDLM masked-diffusion checkpoint.
 const MODEL_ID: &str = "kuleshov-group/mdlm-owt";
@@ -61,12 +60,13 @@ impl Order {
 
 fn main() -> candle_mi::Result<()> {
     let model = MIModel::from_pretrained(MODEL_ID)?;
-    let Some(tok_path) = find_gpt2_tokenizer() else {
+    let Ok(tokenizer) = MITokenizer::from_hf_cache("openai-community/gpt2")
+        .or_else(|_| MITokenizer::from_hf_cache("gpt2"))
+    else {
         println!("GPT-2 tokenizer not found in the HuggingFace cache.");
         println!("  hf-fm download-file openai-community/gpt2 tokenizer.json");
         return Ok(());
     };
-    let tokenizer = MITokenizer::from_hf_path(&tok_path)?;
 
     let mask_id = u32::try_from(model.vocab_size() - 1).map_err(|e| {
         candle_mi::MIError::Model(candle_core::Error::Msg(format!("mask id overflow: {e}")))
@@ -287,40 +287,4 @@ fn dist_stats(row: &[f32], mask_idx: usize) -> (u32, f32, f32, f32) {
     (top1.0 as u32, top1.1, margin, entropy)
 }
 
-/// Locate a `GPT-2` `tokenizer.json` in the `HuggingFace` cache.
-fn find_gpt2_tokenizer() -> Option<PathBuf> {
-    let cache = hf_cache_dir()?;
-    for repo in ["openai-community/gpt2", "gpt2"] {
-        let dir = format!("models--{}", repo.replace('/', "--"));
-        let snapshots = cache.join(&dir).join("snapshots");
-        let Ok(entries) = std::fs::read_dir(&snapshots) else {
-            continue;
-        };
-        for entry in entries.flatten() {
-            let candidate = entry.path().join("tokenizer.json");
-            if candidate.is_file() {
-                return Some(candidate);
-            }
-        }
-    }
-    None
-}
-
-/// Return the `HuggingFace` Hub cache directory.
-fn hf_cache_dir() -> Option<PathBuf> {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return Some(PathBuf::from(cache).join("hub"));
-    }
-    for var in ["USERPROFILE", "HOME"] {
-        if let Ok(home) = std::env::var(var) {
-            let p = PathBuf::from(home)
-                .join(".cache")
-                .join("huggingface")
-                .join("hub");
-            if p.is_dir() {
-                return Some(p);
-            }
-        }
-    }
-    None
-}
+// (GPT-2 tokenizer discovery now lives in `MITokenizer::from_hf_cache`.)

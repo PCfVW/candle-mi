@@ -8,6 +8,8 @@
 #[cfg(feature = "rwkv-tokenizer")]
 mod rwkv;
 
+use std::path::PathBuf;
+
 use crate::error::{MIError, Result};
 use crate::util::positioning::EncodingWithOffsets;
 
@@ -59,6 +61,63 @@ impl MITokenizer {
     #[must_use]
     pub fn from_hf(tokenizer: tokenizers::Tokenizer) -> Self {
         Self::HuggingFace(Box::new(tokenizer))
+    }
+
+    /// Load a `HuggingFace` tokenizer from the local Hub cache by repo id.
+    ///
+    /// Scans the `HuggingFace` cache (`$HF_HOME/hub` or
+    /// `~/.cache/huggingface/hub`) for the first snapshot of `repo_id` that
+    /// contains a `tokenizer.json` and loads it.  This does **not** download —
+    /// pre-fetch with [`download_model`](crate::download_model) (or the `hf-fm`
+    /// CLI) if the repo is not cached.  Handy for models whose *weight* repo
+    /// ships no tokenizer (e.g. `MDLM`, which uses the `gpt2` tokenizer).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Tokenizer`] if no cached `tokenizer.json` is found for
+    /// `repo_id`.
+    pub fn from_hf_cache(repo_id: &str) -> Result<Self> {
+        let path = Self::hf_cache_tokenizer_path(repo_id).ok_or_else(|| {
+            MIError::Tokenizer(format!(
+                "no cached tokenizer.json for `{repo_id}`; fetch it first, \
+                 e.g. `hf-fm download-file {repo_id} tokenizer.json`"
+            ))
+        })?;
+        Self::from_hf_path(path)
+    }
+
+    /// Resolve the `HuggingFace` Hub cache directory (`$HF_HOME/hub` or
+    /// `~/.cache/huggingface/hub`), if it exists.
+    fn hf_cache_dir() -> Option<PathBuf> {
+        if let Ok(cache) = std::env::var("HF_HOME") {
+            return Some(PathBuf::from(cache).join("hub"));
+        }
+        for var in ["USERPROFILE", "HOME"] {
+            if let Ok(home) = std::env::var(var) {
+                let dir = PathBuf::from(home)
+                    .join(".cache")
+                    .join("huggingface")
+                    .join("hub");
+                if dir.is_dir() {
+                    return Some(dir);
+                }
+            }
+        }
+        None
+    }
+
+    /// Find a cached `tokenizer.json` for `repo_id` in the Hub cache.
+    fn hf_cache_tokenizer_path(repo_id: &str) -> Option<PathBuf> {
+        let snapshots = Self::hf_cache_dir()?
+            .join(format!("models--{}", repo_id.replace('/', "--")))
+            .join("snapshots");
+        for entry in std::fs::read_dir(&snapshots).ok()?.flatten() {
+            let candidate = entry.path().join("tokenizer.json");
+            if candidate.is_file() {
+                return Some(candidate);
+            }
+        }
+        None
     }
 
     /// Load an RWKV World tokenizer from a vocabulary file.

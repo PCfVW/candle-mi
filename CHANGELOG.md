@@ -48,6 +48,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   reports per-order reveal-confidence and prediction-stability, showing the
   orders differ measurably (entropy/confidence front-load confident, stable
   positions; random does not).
+- **`MITokenizer::from_hf_cache(repo_id)`** — load a `HuggingFace` tokenizer
+  directly from the local Hub cache by repo id (scans `$HF_HOME/hub` /
+  `~/.cache/huggingface/hub` for the repo's `tokenizer.json`). Handy for models
+  whose weight repo ships no tokenizer — e.g. MDLM, which reuses the GPT-2
+  tokenizer; the three diffusion examples now call it instead of each
+  duplicating cache-discovery boilerplate.
+
+### Documentation
+
+- Documented the MDLM masked-diffusion backend across the crate's docs: the
+  crate-level rustdoc backend/feature tables, the main `README.md` (model-family
+  and feature-flag tables, a masked-diffusion-MI capability row, a roadmap
+  link), `examples/README.md` (the three diffusion examples), and `BACKENDS.md`
+  (a "Bidirectional Masked-Diffusion Backend" Path-3 worked example). Added
+  `docs/roadmaps/diffusion-lm-roadmap.md` recording the DiT-vs-decoder split and
+  the staged plan.
 
 ## [0.1.13] - 2026-06-10
 
