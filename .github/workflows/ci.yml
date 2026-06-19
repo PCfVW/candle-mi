@@ -85,6 +85,19 @@ jobs:
       - name: Tests (CLT)
         run: cargo test --no-default-features --features "clt,transformer" --lib
 
+      # Diffusion is a standalone backend (MDLM masked-diffusion DiT) that does
+      # NOT imply `transformer`, so none of the lanes above ever compile it.
+      # Without a dedicated lane the whole `src/diffusion/` module, its three
+      # examples, and its forward-parity test escape CI entirely.
+      - name: Build (Diffusion)
+        run: cargo build --no-default-features --features diffusion
+
+      - name: Clippy (Diffusion, pedantic)
+        run: cargo clippy --no-default-features --features diffusion -- -W clippy::pedantic
+
+      - name: Tests (Diffusion)
+        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward
+
       # Check 5 (Rule 15): Bare no-default-features build
       - name: Build (no default features)
         run: cargo build --no-default-features
@@ -92,4 +105,4 @@ jobs:
       # Check 6 (Rule 15): All software features build
       # Note: cuda/metal features require hardware; test all software features instead
       - name: Build (all software features)
-        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,clt,sae,stoicheia,probing"
+        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing"

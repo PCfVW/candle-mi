@@ -164,6 +164,15 @@ cargo run --features stoicheia --release --example stoicheia_analysis -- --weigh
 # Stoicheia analysis — larger model (M₁₆,₁₀), 10K samples
 cargo run --features stoicheia --release --example stoicheia_analysis -- --weights path/to/rnn_16_10.safetensors --hidden-size 16 --seq-len 10 --samples 10000
 
+# MDLM masked-diffusion fill-in-the-blank (downloads mdlm-owt + gpt2 tokenizer on first run)
+cargo run --release --features diffusion,mmap --example quick_start_mdlm
+
+# Diffusion-time logit lens — (layer × denoising-step) slice at a masked target
+cargo run --release --features diffusion,mmap --example diffusion_logit_lens
+
+# Decoding-order analysis — random / confidence / entropy unmasking orders
+cargo run --release --features diffusion,mmap --example diffusion_decoding_order
+
 # Recurrent feedback — default (Llama 3.2 1B, unembed layers 8-15, strength 2.0)
 cargo run --release --features transformer --example recurrent_feedback
 

@@ -3,8 +3,8 @@
 # Mirrors the per-feature lanes in .github/workflows/ci.yml so that a clean run
 # here predicts a clean run on CI. CI runs a matrix of two toolchains:
 # MSRV (1.88) and stable, each executing fmt + build/clippy/test for the
-# transformer, rwkv, stoicheia and clt feature sets, plus bare and
-# all-software-features builds.
+# transformer, rwkv, stoicheia, clt and diffusion feature sets, plus bare
+# and all-software-features builds.
 #
 # Tiers:
 #   ./scripts/preflight.ps1        # FAST (default): full STABLE mirror + MSRV
@@ -75,8 +75,8 @@ function Invoke-Cargo {
 }
 
 # Feature sets and the all-software set — keep in sync with ci.yml.
-$featureSets = @("transformer", "rwkv,rwkv-tokenizer", "stoicheia", "clt,transformer")
-$allSoftware = "transformer,rwkv,rwkv-tokenizer,clt,sae,stoicheia,probing"
+$featureSets = @("transformer", "rwkv,rwkv-tokenizer", "stoicheia", "clt,transformer", "diffusion")
+$allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing"
 
 # Skip the bench_hook_* benches unless -Full (see header note).
 $benchArgs = if ($Full) { @() } else { @("--", "--skip", "bench_hook") }
@@ -119,6 +119,11 @@ function Invoke-Lanes {
         @("build", "--no-default-features", "--features", "clt,transformer")
     Invoke-Cargo "[$Tc] Tests (CLT)" $Tc `
         @("test", "--no-default-features", "--features", "clt,transformer", "--lib")
+
+    Invoke-Cargo "[$Tc] Build (Diffusion)" $Tc `
+        @("build", "--no-default-features", "--features", "diffusion")
+    Invoke-Cargo "[$Tc] Tests (Diffusion)" $Tc `
+        @("test", "--no-default-features", "--features", "diffusion", "--lib", "--test", "validate_mdlm_forward")
 
     Invoke-Cargo "[$Tc] Build (no default features)" $Tc `
         @("build", "--no-default-features")
