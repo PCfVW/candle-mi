@@ -11,7 +11,7 @@
 //! carried over (never re-masked); the final step reveals everything remaining.
 //!
 //! The sampler is **backend-agnostic** — it drives any
-//! [`MIBackend`](crate::MIBackend) whose forward returns `[batch, seq, vocab]`
+//! [`MIBackend`] whose forward returns `[batch, seq, vocab]`
 //! logits — so it serves both the `MDLM` `DiT` and (later) decoder-style
 //! diffusion models.  Determinism is by seed: the same `seed` reproduces the
 //! same unmasking schedule and tokens.

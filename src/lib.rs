@@ -17,6 +17,7 @@
 //! |---------|--------|-------------|
 //! | [`GenericTransformer`] | `LLaMA`, `Qwen2`, `Qwen3`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral (+ auto-config for unknown families) | `transformer` |
 //! | `GenericRwkv` | RWKV-6 (Finch), RWKV-7 (Goose) | `rwkv` |
+//! | `GenericMdlm` | MDLM masked-diffusion `DiT` (bidirectional) | `diffusion` |
 //! | `StoicheiaRnn` / `StoicheiaTransformer` | `AlgZoo` `ReLU` RNN, attention-only transformer (8–1,408 params) | `stoicheia` |
 //!
 //! See [`BACKENDS.md`](https://github.com/PCfVW/candle-mi/blob/main/BACKENDS.md)
@@ -30,6 +31,7 @@
 //! | `cuda` | yes | CUDA GPU acceleration |
 //! | `rwkv` | no | RWKV-6/7 linear RNN backend |
 //! | `rwkv-tokenizer` | no | RWKV world tokenizer (required for RWKV inference) |
+//! | `diffusion` | no | MDLM masked-diffusion backend (bidirectional `DiT`; standalone) |
 //! | `clt` | no | Cross-Layer Transcoder support |
 //! | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
 //! | `mmap` | no | Memory-mapped weight loading (required for sharded models) |

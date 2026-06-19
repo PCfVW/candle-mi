@@ -10,6 +10,11 @@
 //! Enabled by the `diffusion` feature.  Reuses the shared
 //! [`MIBackend`](crate::MIBackend) trait, hook system, and `VarBuilder` weight
 //! loading; it does **not** depend on the `transformer` feature.
+//!
+//! Beyond the backend, [`sample`] provides the masked-diffusion `SUBS` ancestral
+//! sampler ([`sample::generate`]) and the per-step token trajectory
+//! ([`sample::generate_trajectory`]) — the denoising-step axis the diffusion-MI
+//! examples (`diffusion_logit_lens`, `diffusion_decoding_order`) consume.
 
 pub mod config;
 pub mod mdlm;

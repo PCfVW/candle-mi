@@ -55,6 +55,9 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
 | `vocab_scan` | `clt`, `transformer` | (v0.1.11) Anthropic Appendix B vocabulary scan: enumerate CLT features by decoder-cosine against the model embedding matrix, top-K tokens per feature.  Pair with `scripts/vocab_scan_cmudict_filter.py` for CMUdict-clustered rhyme-group discovery and `scripts/pick_inject_feature.py` for `figure13_planning_poems` preset construction |
 | `stoicheia_inference` | `stoicheia` | Run an AlgZoo RNN or transformer, compare predictions against ground-truth task function |
 | `stoicheia_analysis` | `stoicheia` | Full Phase B MI pipeline: standardize weights, ablate neurons, probe roles, enumerate regions, run surprise accounting |
+| `quick_start_mdlm` | `diffusion` | MDLM masked-diffusion fill-in-the-blank: mask `" Paris"`, run a bidirectional forward, apply `SUBS`, print the fill |
+| `diffusion_logit_lens` | `diffusion` | Diffusion-time logit lens — the `(layer × denoising-step)` slice of the `(k, ℓ, π)` object at a masked target position; watch the prediction crystallize over denoising time |
+| `diffusion_decoding_order` | `diffusion` | Decoding-order analysis — fill a masked completion under random / confidence / entropy unmasking orders; report per-order reveal-confidence and prediction-stability |
 
 ## Running
 

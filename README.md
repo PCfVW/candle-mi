@@ -18,6 +18,7 @@
 |---|---|---|---|
 | Decoder-only transformer | LLaMA 1/2/3, Mistral, Qwen 2/2.5, Qwen 3, Phi-3/4, Gemma, Gemma 2, StarCoder2 | LLaMA 3.2 1B, Qwen2.5-Coder-3B, Qwen3-1.7B-Base, Gemma 2 2B, Phi-3 Mini, StarCoder2 3B, Mistral 7B | `transformer` |
 | Linear RNN | RWKV-6 (Finch), RWKV-7 (Goose) | RWKV-7 1.6B | `rwkv` |
+| Masked diffusion (bidirectional `DiT`) | MDLM | MDLM-owt (0.2B) | `diffusion` |
 | [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny models | Single-layer ReLU RNN, attention-only transformer (8–1,408 params) | M₂,₂ (10 params), M₁₆,₁₀ (432 params), transformer h4n4 (176 params) | `stoicheia` |
 
 Most HuggingFace transformer models work out of the box via **auto-config** — no code changes needed. See [BACKENDS.md](BACKENDS.md) for details and how to add new architectures.
@@ -61,6 +62,7 @@ This is the Rust equivalent of Python's [TransformerLens](https://github.com/Tra
 | **Attention patterns** | Visualize where each attention head attends across the sequence | [`attention_patterns`](examples/README.md#example-output-attention_patterns) |
 | **RWKV state analysis** | Inspect and intervene on recurrent state — not just transformers | [`rwkv_inference`](examples/README.md#example-output-rwkv_inference) |
 | **AlgZoo analysis** | Exhaustive MI on [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny models: weight standardization, piecewise-linear region enumeration, neuron ablation, functional probing, surprise accounting | [`stoicheia_analysis`](examples/README.md) |
+| **Masked-diffusion MI** | Logit lens and decoding-order analysis across denoising steps — the `(k, ℓ, π)` generalization of the logit lens for bidirectional masked-diffusion models (MDLM) | [`diffusion_logit_lens`](examples/README.md) |
 
 candle-mi is (to our knowledge) the only MI toolkit with hook points for recurrent architectures — `RwkvState`, `RwkvDecay`, and `RwkvEffectiveAttn` enable mechanistic analysis of RWKV-6/7 models, a frontier that most MI tooling ignores entirely.
 
@@ -177,6 +179,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | `cuda` | yes | CUDA GPU acceleration |
 | `rwkv` | no | RWKV-6/7 linear RNN backend |
 | `rwkv-tokenizer` | no | RWKV world tokenizer (required for RWKV inference) |
+| `diffusion` | no | MDLM masked-diffusion backend (bidirectional DiT; standalone) |
 | `clt` | no | Cross-Layer Transcoder support |
 | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
 | `stoicheia` | no | [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
@@ -193,7 +196,8 @@ This is a research-first design: MI analyses need to see everything, and the per
 | [API docs (docs.rs)](https://docs.rs/candle-mi) | Crate-level documentation with quick start and examples |
 | [HOOKS.md](HOOKS.md) | Hook point reference, intervention API walkthrough, and worked examples |
 | [BACKENDS.md](BACKENDS.md) | How to add a new model architecture (auto-config, config parser, custom backend) |
-| [examples/README.md](examples/README.md) | 23 runnable examples covering inference, logit lens, knockout, steering, AlgZoo analysis, and more |
+| [examples/README.md](examples/README.md) | Runnable examples covering inference, logit lens, knockout, steering, AlgZoo analysis, masked-diffusion MI, and more |
+| [docs/roadmaps/diffusion-lm-roadmap.md](docs/roadmaps/diffusion-lm-roadmap.md) | Masked-diffusion-LM support: the DiT vs decoder-style split, MDLM (done), and the Stage 2/3 plan |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 | [ROADMAP.md](ROADMAP.md) | Development roadmap and architecture decisions |
 

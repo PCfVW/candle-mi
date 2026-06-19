@@ -5,7 +5,7 @@
 //! A faithful Rust port of `kuleshov-group/mdlm-owt` (Sahoo et al., `NeurIPS`
 //! 2024), validated against the flash-attn-free fp32 reference
 //! `TheQweaker/mdlm-owt-noflash`.  Unlike the causal
-//! [`GenericTransformer`](crate::GenericTransformer), `MDLM` is a
+//! `GenericTransformer`, `MDLM` is a
 //! **bidirectional** `DiT`: each block applies `adaLN` modulation (constant
 //! here, since the checkpoint is time-independent), full self-attention with
 //! no causal mask, weight-only `LayerNorm`, and a plain `GELU`-tanh MLP.
@@ -49,13 +49,13 @@ fn modulate(x: &Tensor, shift: &Tensor, scale: &Tensor) -> Result<Tensor> {
 /// Apply the standard capture-then-intervene hook protocol at `point`.
 ///
 /// Mirrors the per-hook-point block used throughout
-/// [`GenericTransformer`](crate::GenericTransformer): the activation is cloned
+/// `GenericTransformer`: the activation is cloned
 /// into the cache when captured, then each registered intervention is applied
 /// in turn (mutating `tensor` in place).
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Model`](crate::MIError::Model) if an intervention's
+/// Returns [`MIError::Model`] if an intervention's
 /// tensor operation fails.
 // The by-value `HookPoint` lets call sites pass a freshly-built variant without
 // `&`; capturing still needs one clone either way.
@@ -82,7 +82,7 @@ fn hook_point(
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Model`](crate::MIError::Model) if the weight tensor
+/// Returns [`MIError::Model`] if the weight tensor
 /// cannot be loaded.
 #[allow(clippy::needless_pass_by_value)] // VarBuilder is candle's pass-by-value convention
 fn load_layer_norm(vb: VarBuilder<'_>, hidden: usize, eps: f64) -> Result<LayerNorm> {
@@ -103,7 +103,7 @@ fn load_layer_norm(vb: VarBuilder<'_>, hidden: usize, eps: f64) -> Result<LayerN
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+/// Returns [`MIError::Model`] on tensor failures.
 #[allow(clippy::needless_pass_by_value)] // VarBuilder is candle's pass-by-value convention
 fn compute_conditioning(
     vb_sigma: VarBuilder<'_>,
@@ -161,7 +161,7 @@ impl DiTBlock {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) if any weight fails to load.
+    /// Returns [`MIError::Model`] if any weight fails to load.
     #[allow(clippy::needless_pass_by_value)] // VarBuilder is candle's pass-by-value convention
     fn load(config: &MdlmConfig, vb: VarBuilder<'_>) -> Result<Self> {
         let h = config.hidden_dim;
@@ -197,7 +197,7 @@ impl DiTBlock {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+    /// Returns [`MIError::Model`] on tensor failures.
     fn attention(
         &self,
         xs: &Tensor,
@@ -278,7 +278,7 @@ impl DiTBlock {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+    /// Returns [`MIError::Model`] on tensor failures.
     fn mlp(&self, x: &Tensor) -> Result<Tensor> {
         let up = self.mlp_fc.forward(x)?;
         let act = up.gelu()?; // tanh approximation, matching nn.GELU(approximate='tanh')
@@ -298,7 +298,7 @@ impl DiTBlock {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+    /// Returns [`MIError::Model`] on tensor failures.
     fn forward(
         &self,
         hidden_in: &Tensor,
@@ -373,7 +373,7 @@ impl DDitFinalLayer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) if any weight fails to load.
+    /// Returns [`MIError::Model`] if any weight fails to load.
     #[allow(clippy::needless_pass_by_value)] // VarBuilder is candle's pass-by-value convention
     fn load(config: &MdlmConfig, vb: VarBuilder<'_>) -> Result<Self> {
         let h = config.hidden_dim;
@@ -407,7 +407,7 @@ impl DDitFinalLayer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+    /// Returns [`MIError::Model`] on tensor failures.
     fn forward(
         &self,
         hidden: &Tensor,
@@ -428,7 +428,7 @@ impl DDitFinalLayer {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+    /// Returns [`MIError::Model`] on tensor failures.
     fn project(&self, hidden: &Tensor, cond: &Tensor) -> Result<Tensor> {
         let xs = self.modulated(hidden, cond)?;
         Ok(self.linear.forward(&xs)?)
@@ -477,9 +477,9 @@ impl GenericMdlm {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Config`](crate::MIError::Config) if the checkpoint sets
+    /// Returns [`MIError::Config`] if the checkpoint sets
     /// `time_conditioning = true` (unsupported), or
-    /// [`MIError::Model`](crate::MIError::Model) if weight loading fails or a
+    /// [`MIError::Model`] if weight loading fails or a
     /// dimension is inconsistent with the checkpoint.
     #[allow(clippy::needless_pass_by_value)] // VarBuilder is candle's pass-by-value convention
     pub fn load(

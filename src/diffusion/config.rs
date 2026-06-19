@@ -51,7 +51,7 @@ impl MdlmConfig {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Config`](crate::MIError::Config) if a required key
+    /// Returns [`MIError::Config`] if a required key
     /// (`hidden_dim`, `n_blocks`, `n_heads`, `cond_dim`, `vocab_size`) is
     /// missing or not a non-negative integer, or if `hidden_dim` is not
     /// divisible by `n_heads`.
@@ -91,7 +91,7 @@ impl MdlmConfig {
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Config`](crate::MIError::Config) if the key is absent or
+/// Returns [`MIError::Config`] if the key is absent or
 /// not a `u64`.
 fn get_usize(config: &Value, key: &str) -> Result<usize> {
     let value = config
