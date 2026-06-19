@@ -38,19 +38,29 @@ Commit `4a9c774` (not yet pushed; ROADMAP ratio fix in `dd5f161`).
   See `tests/validate_mdlm_forward.rs` + `scripts/mdlm_forward_validation.py`.
 - Demo: `examples/quick_start_mdlm.rs` (masked fill-in → `" Paris"`).
 
-## Stage 2 — MDLM denoising sampler + SAE-free MI examples — NEXT
+## Stage 2 — MDLM denoising sampler + SAE-free MI examples — DONE
 
-- **SUBS ancestral sampler** (port of the noflash `sample.py`): absorbing/masked
-  diffusion, linear schedule `t: 1 → 0` over `K` steps, carry-over unmasking
-  (revealed positions stay fixed), zero-mask-probability (`[MASK]` logit → −∞).
-  This produces the denoising-step axis `k` that the MI examples need.
-- **Decoding-order analysis** example: random vs confidence vs entropy unmasking
-  order; per-step activation/feature stability across the trajectory.
-- **Diffusion-time logit lens** example: capture the residual stream across
-  denoising steps; show how masked-position predictions sharpen over `k`.
+Commits `4a9c774`→ + the sampler/examples commits (not yet pushed).
+
+- **SUBS ancestral sampler** (`src/diffusion/sample.rs`; port of the noflash
+  `sample.py`): absorbing/masked diffusion, linear schedule `t: 1 → 0` over `K`
+  steps, carry-over unmasking, zero-mask-probability (`[MASK]` logit → −∞),
+  temperature, optional top-k; deterministic by seed. `generate` (final tokens)
+  + `generate_trajectory` (per-step states = the `k` axis). Tested by model-free
+  unit tests (SUBS / top-k / determinism) + a model invariant test (determinism,
+  monotone unmasking, termination, prompt carry-over).
+- **Diffusion-time logit lens** (`examples/diffusion_logit_lens.rs`): the
+  `(layer × denoising-step)` slice of the `(k, ℓ, π)` object at a masked target
+  position — watch the prediction crystallize over `k` (validated: target →
+  "located", all layers converge by k=2).
+- **Decoding-order analysis** (`examples/diffusion_decoding_order.rs`): random vs
+  confidence vs entropy unmasking order, with per-order reveal-confidence and
+  prediction-stability (SAE-free proxy for per-step feature stability). Validated:
+  entropy > confidence > random on both metrics.
 
 Both examples operate on raw residual-stream hooks (no SAE). They are
-provenance-agnostic and are reused unchanged in Stage 3.
+provenance-agnostic and are reused unchanged in Stage 3. The full
+SAE-feature-stability decoding-order experiment needs a trained SAE (deferred).
 
 ## Stage 3 — Decoder-style DLMs via a bidirectional `GenericTransformer` — AFTER Stage 2
 
