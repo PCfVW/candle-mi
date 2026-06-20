@@ -1642,6 +1642,24 @@ impl TransformerConfig {
         config: &Value,
         tensor_names: &[String],
     ) -> CompatibilityReport {
+        // MDLM masked-diffusion DiT checkpoints are bidirectional and use
+        // `backbone.*` / `adaLN_modulation` tensors — they cannot load as a
+        // causal decoder.  Short-circuit with a single actionable hint instead
+        // of a wall of "missing model.layers.*" diagnostics.
+        if is_mdlm_diffusion_checkpoint(config, tensor_names) {
+            return CompatibilityReport {
+                compatible: false,
+                issues: vec![
+                    "this looks like an MDLM masked-diffusion checkpoint (a bidirectional \
+                     DiT with `backbone.*` / `adaLN_modulation` tensors), not a causal \
+                     decoder — load it with the `diffusion` feature (`GenericMdlm`, \
+                     model_type \"mdlm\"), not transformer auto-config"
+                        .into(),
+                ],
+                warnings: Vec::new(),
+            };
+        }
+
         let mut issues = Vec::new();
 
         // --- Config field checks ---
@@ -1812,6 +1830,21 @@ fn check_tensor_names(config: &Value, tensor_names: &[String], issues: &mut Vec<
     }
 
     has_issues
+}
+
+/// Detect an MDLM masked-diffusion `DiT` checkpoint.
+///
+/// These are bidirectional `DiT`s with `backbone.*` tensors and `adaLN`
+/// modulation — they load via the `diffusion` backend (`GenericMdlm`),
+/// not transformer auto-config.  Detected by the `mdlm` `model_type` or the
+/// structural `backbone.vocab_embed` / `adaLN_modulation` tensor signatures.
+fn is_mdlm_diffusion_checkpoint(config: &Value, tensor_names: &[String]) -> bool {
+    if config.get("model_type").and_then(Value::as_str) == Some("mdlm") {
+        return true;
+    }
+    tensor_names
+        .iter()
+        .any(|n| n.starts_with("backbone.vocab_embed") || n.contains("adaLN_modulation"))
 }
 
 /// Detect known non-standard weight naming conventions and produce a
@@ -3028,6 +3061,32 @@ mod tests {
         assert!(
             report.issues.iter().any(|i| i.contains("c_attn")),
             "should show found attention tensor: {:?}",
+            report.issues
+        );
+    }
+
+    #[test]
+    fn compatibility_check_points_mdlm_to_diffusion_feature() {
+        // MDLM masked-diffusion DiT tensors under a non-`mdlm` config — the
+        // structural `backbone.*` / `adaLN` signature must still be caught and
+        // routed to the diffusion backend, not buried in missing-tensor noise.
+        let json = serde_json::json!({ "model_type": "llama" });
+        let names = tensor_names(&[
+            "backbone.vocab_embed.embedding",
+            "backbone.blocks.0.adaLN_modulation.weight",
+            "backbone.blocks.0.attn_qkv.weight",
+            "backbone.output_layer.linear.weight",
+        ]);
+        let report = TransformerConfig::check_auto_compatibility(&json, &names);
+        assert!(!report.compatible);
+        // A single targeted hint, not a wall of "missing model.layers.*" noise.
+        assert_eq!(report.issues.len(), 1);
+        assert!(
+            report
+                .issues
+                .iter()
+                .any(|i| i.contains("MDLM") && i.contains("diffusion")),
+            "should point MDLM checkpoints at the diffusion feature: {:?}",
             report.issues
         );
     }
