@@ -49,6 +49,11 @@ pub const SUPPORTED_MODEL_TYPES: &[&str] = &[
     "qwen2",
     "qwen3",
     "starcoder2",
+    // Decoder-style masked-diffusion LMs — same weight layout as Qwen2/Qwen3,
+    // loaded as a bidirectional `GenericTransformer` (see `from_hf_config`).
+    "Dream",
+    "a2d-qwen2",
+    "a2d-qwen3",
 ];
 
 // ---------------------------------------------------------------------------
@@ -449,6 +454,18 @@ impl TransformerConfig {
             "phi3" => Self::parse_phi3(config),
             "starcoder2" => Self::parse_starcoder2(config),
             "mistral" => Self::parse_mistral(config),
+            // Decoder-style masked-diffusion LMs reuse the Qwen weight layout
+            // verbatim; the only forward delta is bidirectional attention.
+            "Dream" | "a2d-qwen2" => {
+                let mut cfg = Self::parse_qwen2(config)?;
+                cfg.bidirectional = true;
+                Ok(cfg)
+            }
+            "a2d-qwen3" => {
+                let mut cfg = Self::parse_qwen3(config)?;
+                cfg.bidirectional = true;
+                Ok(cfg)
+            }
             other => Err(MIError::Config(format!(
                 "unsupported model_type: '{other}'"
             ))),
@@ -1916,6 +1933,53 @@ mod tests {
         assert!(config.tie_word_embeddings);
         // `Qwen2` has plain `ReLU`-style attention (no `QK norm`).
         assert!(!config.use_qk_norm);
+        // Autoregressive family: causal, not bidirectional.
+        assert!(!config.bidirectional);
+    }
+
+    #[test]
+    fn parse_dream_bidirectional() {
+        // `Dream-7B` — `Qwen2.5-7B` layout, run non-causally (masked diffusion).
+        let json = serde_json::json!({
+            "model_type": "Dream",
+            "hidden_size": 3584,
+            "num_hidden_layers": 28,
+            "num_attention_heads": 28,
+            "num_key_value_heads": 4,
+            "intermediate_size": 18944,
+            "vocab_size": 152064,
+            "rms_norm_eps": 1e-6,
+            "rope_theta": 1_000_000.0,
+            "tie_word_embeddings": false
+        });
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+        assert!(config.bidirectional, "Dream runs the decoder non-causally");
+        // Same Qwen2 signature: Q/K/V bias, no `o_proj` bias, GQA, head_dim 128.
+        assert!(config.qkv_bias);
+        assert!(!config.o_proj_bias);
+        assert_eq!(config.num_kv_heads, 4);
+        assert_eq!(config.head_dim, 128);
+    }
+
+    #[test]
+    fn parse_a2d_qwen2_bidirectional() {
+        // `dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm` (the forward-parity oracle) —
+        // a standard `Qwen2.5` config under `model_type` `"a2d-qwen2"`.
+        let json = serde_json::json!({
+            "model_type": "a2d-qwen2",
+            "hidden_size": 896,
+            "num_hidden_layers": 24,
+            "num_attention_heads": 14,
+            "num_key_value_heads": 2,
+            "intermediate_size": 4864,
+            "vocab_size": 151936,
+            "attention_bias": true,
+            "tie_word_embeddings": true
+        });
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+        assert!(config.bidirectional);
+        assert!(config.qkv_bias);
+        assert_eq!(config.num_kv_heads, 2);
     }
 
     #[test]

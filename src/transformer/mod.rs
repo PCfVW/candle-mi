@@ -189,7 +189,12 @@ impl GenericTransformer {
         )?;
 
         // --- LM head ---
-        let lm_head = if config.tie_word_embeddings {
+        // Prefer a materialized `lm_head.weight` whenever it is present: it is
+        // authoritative even if `tie_word_embeddings` is set (A2D-converted
+        // diffusion checkpoints ship a separate head despite the tie flag).
+        // Only tie to the embedding when the flag is set *and* no head ships;
+        // otherwise load the head (an untied model missing it surfaces here).
+        let lm_head = if config.tie_word_embeddings && !vb.contains_tensor("lm_head.weight") {
             None
         } else {
             Some(candle_nn::linear_no_bias(
