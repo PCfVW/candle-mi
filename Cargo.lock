@@ -339,7 +339,7 @@ dependencies = [
 
 [[package]]
 name = "candle-mi"
-version = "0.1.13"
+version = "0.1.14"
 dependencies = [
  "anamnesis",
  "anyhow",

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-06-20
+
 ### Added
 
 - **Decoder-style masked-diffusion LMs via a bidirectional transformer**
