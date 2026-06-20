@@ -627,6 +627,12 @@ impl GenericTransformer {
         device: &Device,
         dtype: DType,
     ) -> Result<Tensor> {
+        // Masked-diffusion LMs (e.g. Dream) run the decoder non-causally: every
+        // position attends to every other, so no causal/sliding mask applies.
+        if self.config.bidirectional {
+            return masks::create_bidirectional_mask(seq_len, device, dtype);
+        }
+
         let use_sliding = match (
             self.config.sliding_window,
             self.config.alternating_sliding_window,

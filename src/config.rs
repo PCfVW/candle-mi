@@ -407,6 +407,14 @@ pub struct TransformerConfig {
     /// [`norm_eps`](Self::norm_eps) so a non-`Qwen3` model that ever flips the
     /// flag picks up a sensible default.
     pub qk_norm_eps: f64,
+
+    // --- Attention direction (masked-diffusion LMs) --------------------------
+    /// Whether attention is fully **bidirectional** (no causal mask).  `true`
+    /// for decoder-style masked-diffusion LMs (e.g. Dream, run non-causally);
+    /// `false` for every autoregressive family.  When `true`,
+    /// [`crate::transformer`] applies an all-zeros attention mask instead of the
+    /// causal (or sliding-causal) one — every position attends to every other.
+    pub bidirectional: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -499,6 +507,7 @@ impl TransformerConfig {
 
             use_qk_norm: false,
             qk_norm_eps: norm_eps,
+            bidirectional: false,
         })
     }
 
@@ -556,6 +565,7 @@ impl TransformerConfig {
 
             use_qk_norm: true,
             qk_norm_eps: norm_eps,
+            bidirectional: false,
         })
     }
 
@@ -605,6 +615,7 @@ impl TransformerConfig {
 
             use_qk_norm: false,
             qk_norm_eps: norm_eps,
+            bidirectional: false,
         })
     }
 
@@ -660,6 +671,7 @@ impl TransformerConfig {
 
             use_qk_norm: false,
             qk_norm_eps: norm_eps,
+            bidirectional: false,
         })
     }
 
@@ -717,6 +729,7 @@ impl TransformerConfig {
 
             use_qk_norm: false,
             qk_norm_eps: norm_eps,
+            bidirectional: false,
         })
     }
 
@@ -765,6 +778,7 @@ impl TransformerConfig {
 
             use_qk_norm: false,
             qk_norm_eps: norm_eps,
+            bidirectional: false,
         })
     }
 
@@ -821,6 +835,7 @@ impl TransformerConfig {
 
             use_qk_norm: false,
             qk_norm_eps: norm_eps,
+            bidirectional: false,
         })
     }
 
@@ -869,6 +884,7 @@ impl TransformerConfig {
 
             use_qk_norm: false,
             qk_norm_eps: norm_eps,
+            bidirectional: false,
         })
     }
 }
@@ -1351,6 +1367,7 @@ impl TransformerConfig {
 
             use_qk_norm,
             qk_norm_eps: norm_eps,
+            bidirectional: false,
         })
     }
 }

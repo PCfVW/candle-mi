@@ -28,12 +28,17 @@ type CausalMaskCache = LazyLock<Mutex<HashMap<(usize, DeviceLocation, DType), Te
 /// that masks on different GPUs are cached independently.
 static CAUSAL_MASK_CACHE: CausalMaskCache = LazyLock::new(|| Mutex::new(HashMap::new()));
 
+/// Cache for bidirectional (all-zeros) masks, keyed identically to the causal
+/// cache.  Bidirectional masks share the causal masks' key shape but never the
+/// same values, so they live in a separate map.
+static BIDIRECTIONAL_MASK_CACHE: CausalMaskCache = LazyLock::new(|| Mutex::new(HashMap::new()));
+
 /// Type alias for the mask cache guard.
 type CacheGuard = std::sync::MutexGuard<'static, HashMap<(usize, DeviceLocation, DType), Tensor>>;
 
-/// Acquire the mask cache lock, mapping poison errors to [`MIError`].
-fn lock_cache() -> Result<CacheGuard> {
-    CAUSAL_MASK_CACHE
+/// Acquire a mask cache lock, mapping poison errors to [`MIError`].
+fn lock_cache(cache: &'static CausalMaskCache) -> Result<CacheGuard> {
+    cache
         .lock()
         .map_err(|e| MIError::Hook(format!("mask cache lock poisoned: {e}")))
 }
@@ -67,7 +72,7 @@ pub fn create_causal_mask(seq_len: usize, device: &Device, dtype: DType) -> Resu
 
     // Try to get from cache first.
     {
-        let cache = lock_cache()?;
+        let cache = lock_cache(&CAUSAL_MASK_CACHE)?;
         if let Some(cached) = cache.get(&cache_key) {
             return Ok(cached.clone()); // Shallow clone (Arc bump, no data copy)
         }
@@ -81,7 +86,45 @@ pub fn create_causal_mask(seq_len: usize, device: &Device, dtype: DType) -> Resu
 
     // Store in cache.
     {
-        let mut cache = lock_cache()?;
+        let mut cache = lock_cache(&CAUSAL_MASK_CACHE)?;
+        cache.insert(cache_key, mask_tensor.clone());
+    }
+
+    Ok(mask_tensor)
+}
+
+/// Create or retrieve a cached **bidirectional** attention mask.
+///
+/// Returns an all-zeros additive mask, so every query position may attend to
+/// every key position (no causal or sliding restriction).  Used by
+/// masked-diffusion language models, which run their decoder non-causally.
+///
+/// # Shapes
+///
+/// - returns: `[1, 1, seq_len, seq_len]` (all `0.0`)
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`] if tensor creation fails, or
+/// [`MIError::Hook`] if the cache lock is poisoned.
+pub fn create_bidirectional_mask(seq_len: usize, device: &Device, dtype: DType) -> Result<Tensor> {
+    let cache_key = (seq_len, device.location(), dtype);
+
+    // Try to get from cache first.
+    {
+        let cache = lock_cache(&BIDIRECTIONAL_MASK_CACHE)?;
+        if let Some(cached) = cache.get(&cache_key) {
+            return Ok(cached.clone()); // Shallow clone (Arc bump, no data copy)
+        }
+    }
+
+    // All-zeros mask: adding it to the attention scores is a no-op, i.e. full
+    // bidirectional attention.
+    let mask_tensor = Tensor::zeros((1, 1, seq_len, seq_len), dtype, device)?;
+
+    // Store in cache.
+    {
+        let mut cache = lock_cache(&BIDIRECTIONAL_MASK_CACHE)?;
         cache.insert(cache_key, mask_tensor.clone());
     }
 
@@ -154,7 +197,8 @@ pub fn create_generation_mask(
 ///
 /// Returns [`MIError::Hook`] if the cache lock is poisoned.
 pub fn clear_mask_caches() -> Result<()> {
-    lock_cache()?.clear();
+    lock_cache(&CAUSAL_MASK_CACHE)?.clear();
+    lock_cache(&BIDIRECTIONAL_MASK_CACHE)?.clear();
     Ok(())
 }
 
@@ -197,6 +241,17 @@ mod tests {
         assert_eq!(data[6], 0.0);
         assert_eq!(data[7], 0.0);
         assert_eq!(data[8], 0.0);
+    }
+
+    #[test]
+    fn bidirectional_mask_is_all_zeros() {
+        clear_mask_caches().unwrap();
+        let device = Device::Cpu;
+        let mask = create_bidirectional_mask(4, &device, DType::F32).unwrap();
+        assert_eq!(mask.dims(), &[1, 1, 4, 4]);
+        let data: Vec<f32> = mask.flatten_all().unwrap().to_vec1().unwrap();
+        // Every cell is 0.0 — no position is masked (full bidirectional attention).
+        assert!(data.iter().all(|&v| v == 0.0));
     }
 
     #[test]
