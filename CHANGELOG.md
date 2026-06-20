@@ -73,6 +73,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   tokenizer; the three diffusion examples now call it instead of each
   duplicating cache-discovery boilerplate.
 
+### Changed
+
+- **Trimmed the published crate package** — excluded repo content that crate
+  consumers never need (`docs/` + experiment data, validation `scripts/` +
+  oracle reference JSONs, `examples/results/` incl. a 3 MB demo gif,
+  `screenshots/`, `design/`, `data/`, `tests/fixtures/`). The package dropped
+  from **444 files / 8.3 MiB compressed → 134 files / ~0.6 MiB**, well clear of
+  the crates.io 10 MiB limit. All `[[example]]`/`[[test]]` `.rs` sources are
+  retained; nothing excluded is referenced at compile time.
+
 ### Documentation
 
 - Documented the MDLM masked-diffusion backend across the crate's docs: the

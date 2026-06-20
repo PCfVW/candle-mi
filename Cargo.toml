@@ -11,7 +11,21 @@ documentation = "https://docs.rs/candle-mi"
 keywords = ["interpretability", "transformers", "mechanistic", "candle", "rust"]
 categories = ["science"]
 rust-version = "1.88"
-exclude = ["docs/dogfooding-feedbacks/", "docs/audit/", "docs/quickstart-examples-proposal.md"]
+# Keep the published package lean (the library is just `src/`). Excludes repo
+# content crate consumers never need: docs + experiment data, validation
+# scripts/oracle reference JSONs, screenshots/gifs, design notes, test fixtures,
+# and example output data. All `[[example]]`/`[[test]]` `.rs` sources are kept;
+# nothing here is referenced at compile time (verified: no `include_*!`).
+exclude = [
+    "docs/",
+    "data/",
+    "design/",
+    "scripts/",
+    "examples/results/",
+    "examples/screenshots/",
+    "examples/figure13/",
+    "tests/fixtures/",
+]
 
 [dependencies]
 # Candle ML framework (pinned to 0.9.x per design/candle-version.md)
