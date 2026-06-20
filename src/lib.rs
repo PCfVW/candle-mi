@@ -332,7 +332,9 @@ pub use steering::contrastive::{
 };
 
 // Utility — masks
-pub use util::masks::{clear_mask_caches, create_causal_mask, create_generation_mask};
+pub use util::masks::{
+    clear_mask_caches, create_bidirectional_mask, create_causal_mask, create_generation_mask,
+};
 
 // Utility — PCA
 pub use util::pca::{PcaResult, pca_top_k};
