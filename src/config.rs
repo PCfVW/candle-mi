@@ -2016,6 +2016,34 @@ mod tests {
     }
 
     #[test]
+    fn parse_a2d_qwen3_bidirectional() {
+        // `dllm-hub/Qwen3-0.6B-diffusion-mdlm` — a `Qwen3` config under
+        // `model_type` `"a2d-qwen3"`: no QKV bias, per-head-dim Q/K `RMSNorm`.
+        let json = serde_json::json!({
+            "model_type": "a2d-qwen3",
+            "hidden_size": 1024,
+            "num_hidden_layers": 28,
+            "num_attention_heads": 16,
+            "num_key_value_heads": 8,
+            "head_dim": 128,
+            "intermediate_size": 3072,
+            "vocab_size": 151936,
+            "rms_norm_eps": 1e-6,
+            "rope_theta": 1_000_000.0,
+            "tie_word_embeddings": true
+        });
+        let config = TransformerConfig::from_hf_config(&json).unwrap();
+        assert!(
+            config.bidirectional,
+            "a2d-qwen3 runs the decoder non-causally"
+        );
+        // Qwen3 traits carry through: no QKV bias, per-head-dim Q/K `RMSNorm`.
+        assert!(!config.qkv_bias);
+        assert!(config.use_qk_norm);
+        assert_eq!(config.head_dim, 128);
+    }
+
+    #[test]
     fn parse_qwen3_no_bias_and_qk_norm() {
         // `Qwen3-1.7B-Base` — actual `config.json` scalar values
         let json = serde_json::json!({

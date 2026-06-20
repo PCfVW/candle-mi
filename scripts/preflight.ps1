@@ -125,6 +125,11 @@ function Invoke-Lanes {
     Invoke-Cargo "[$Tc] Tests (Diffusion)" $Tc `
         @("test", "--no-default-features", "--features", "diffusion", "--lib", "--test", "validate_mdlm_forward")
 
+    # validate_bidirectional_sampler needs transformer + diffusion together; no
+    # single-feature lane builds it, so compile-check it explicitly.
+    Invoke-Cargo "[$Tc] Tests compile (transformer+diffusion)" $Tc `
+        @("test", "--no-default-features", "--features", "transformer,diffusion", "--test", "validate_bidirectional_sampler", "--no-run")
+
     Invoke-Cargo "[$Tc] Build (no default features)" $Tc `
         @("build", "--no-default-features")
     Invoke-Cargo "[$Tc] Build (all software features)" $Tc `

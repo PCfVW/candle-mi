@@ -68,6 +68,9 @@ fn main() -> candle_mi::Result<()> {
         return Ok(());
     };
 
+    // MDLM convention: [MASK] is the final vocab id. Decoder-style diffusion LMs
+    // (Dream, a2d-qwen2) use a distinct `<|mask|>` token id instead — supply it
+    // when reusing this on them.
     let mask_id = u32::try_from(model.vocab_size() - 1).map_err(|e| {
         candle_mi::MIError::Model(candle_core::Error::Msg(format!("mask id overflow: {e}")))
     })?;

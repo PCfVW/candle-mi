@@ -98,6 +98,12 @@ jobs:
       - name: Tests (Diffusion)
         run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward
 
+      # The validate_bidirectional_sampler test needs BOTH `transformer` (to load
+      # the model) and `diffusion` (the sampler), so no single-feature lane above
+      # compiles it. Compile-check it explicitly (the test itself is #[ignore]).
+      - name: Tests compile (transformer + diffusion)
+        run: cargo test --no-default-features --features "transformer,diffusion" --test validate_bidirectional_sampler --no-run
+
       # Check 5 (Rule 15): Bare no-default-features build
       - name: Build (no default features)
         run: cargo build --no-default-features

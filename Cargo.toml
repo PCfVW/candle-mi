@@ -134,6 +134,10 @@ name = "validate_bidirectional_forward"
 required-features = ["transformer"]
 
 [[test]]
+name = "validate_bidirectional_sampler"
+required-features = ["transformer", "diffusion"]
+
+[[test]]
 name = "validate_rwkv6"
 required-features = ["rwkv", "rwkv-tokenizer"]
 

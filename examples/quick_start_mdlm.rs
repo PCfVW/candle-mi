@@ -51,7 +51,10 @@ fn main() -> candle_mi::Result<()> {
     // 3. Mask the word " Paris" and let MDLM fill it back in.
     let text = "The capital of France is Paris.";
     let target = " Paris";
-    let mask_id = model.vocab_size() - 1; // [MASK] = vocab_size - 1 = 50257
+    // MDLM convention: [MASK] is the final vocab id (50257). Decoder-style
+    // diffusion LMs (Dream, a2d-qwen2) instead use a distinct `<|mask|>` token
+    // id (e.g. 151666 / 151665) — supply that when reusing this elsewhere.
+    let mask_id = model.vocab_size() - 1;
     let mask_u32 = u32::try_from(mask_id).map_err(|e| {
         candle_mi::MIError::Model(candle_core::Error::Msg(format!("mask id overflow: {e}")))
     })?;

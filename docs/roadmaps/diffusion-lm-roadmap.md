@@ -98,7 +98,10 @@ LLaDA needs a weight-name remap subsystem (`model.transformer.blocks.{i}.{q,k,v}
 rope_theta 5e5, mask 126336), and is only checkable on CPU-F32 (8B) — a separable
 follow-up. Sampling reuse is already free: the SUBS sampler takes `&dyn MIBackend` +
 `mask_token_id`, so running the diffusion MI examples on Dream needs only the mask id
-(151666) passed in — no backend change.
+(Dream = 151666; a2d-qwen2 = 151665, **not** `vocab − 1`) passed in — no backend change.
+Demonstrated end-to-end on a2d-qwen2 in `tests/validate_bidirectional_sampler.rs` (the SUBS
+invariants hold on a bidirectional `GenericTransformer`); it needs both the `transformer` and
+`diffusion` features, so a dedicated `--no-run` compile-check guards it in CI/preflight.
 
 ## Further out
 
