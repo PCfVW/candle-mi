@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Decoder-style masked-diffusion LMs via a bidirectional transformer**
+  (`transformer` feature). `TransformerConfig` gains a `bidirectional` flag;
+  when set, `GenericTransformer` runs the decoder **non-causally** (an all-zeros
+  attention mask via `masks::create_bidirectional_mask`). `from_pretrained` now
+  loads `model_type` `"Dream"` / `"a2d-qwen2"` / `"a2d-qwen3"` — decoder-style
+  masked-diffusion checkpoints that reuse the Qwen2/Qwen3 weight layout verbatim
+  (Dream is Qwen2.5-7B run non-causally) — as bidirectional transformers. The
+  LM-head loader now prefers a materialized `lm_head.weight` when present, even
+  under `tie_word_embeddings` (A2D-converted checkpoints ship a separate head).
+  Auto-config also flags DiT-style MDLM checkpoints (`backbone.*` / `adaLN`, or
+  `model_type "mdlm"`) with a targeted *"load it with the `diffusion` feature"*
+  error instead of a wall of missing-tensor diagnostics. Validated against an
+  external fp32 oracle on
+  `dllm-hub/Qwen2.5-Coder-0.5B-Instruct-diffusion-mdlm-v0.1`: top-10 logits
+  exact, max abs-diff **2.61×10⁻⁴ (CPU)** / within **5×10⁻³ (GPU)**, checked at
+  early positions where bidirectional attention differs from causal
+  (`tests/validate_bidirectional_forward.rs` +
+  `scripts/bidirectional_forward_validation.py`).
 - **MDLM masked-diffusion backend** (`diffusion` feature, `src/diffusion/`) — the
   first **diffusion-language-model** family in candle-mi, and the first
   **bidirectional** backend. Ports `kuleshov-group/mdlm-owt` (Sahoo et al.,

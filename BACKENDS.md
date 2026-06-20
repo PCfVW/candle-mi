@@ -107,6 +107,7 @@ Auto-config does **not** handle:
 - Architectures that aren't decoder-only transformers (RWKV, Mamba, masked diffusion, encoder-decoder)
 - Novel attention mechanisms (linear attention, local-global hybrid)
 - Custom activations not in the standard set (`SiLU`, `GELU`, `GELU tanh`)
+- **Bidirectional attention** — decoder-style masked-diffusion LMs (Dream, `a2d-qwen2`) share the Qwen layout *exactly*, so auto-config cannot distinguish them from a causal model; they load as registered `model_type`s with `bidirectional: true` (Path 2). DiT-style MDLM checkpoints (`backbone.*`) instead get a targeted *"enable the `diffusion` feature"* error.
 
 If auto-config fails, write a config parser (Path 2) or a custom backend
 (Path 3).
@@ -443,9 +444,10 @@ dispatched from `MIModel::from_pretrained()` via
 forward pass is validated bit-faithfully against an fp32 oracle (max abs-diff
 1.3e-5 on GPU).  See
 [`docs/roadmaps/diffusion-lm-roadmap.md`](docs/roadmaps/diffusion-lm-roadmap.md)
-for the DiT-vs-decoder split and the planned bidirectional-`GenericTransformer`
-path that will bring decoder-style diffusion LMs (Dream, LLaDA) in as a *config
-flag* on Path 2 rather than new backends.
+for the DiT-vs-decoder split.  Decoder-style diffusion LMs (Dream, `a2d-qwen2`)
+do **not** need a backend at all — they load as a bidirectional
+`GenericTransformer` via a one-field config flag (Path 2, Stage 3); only LLaDA's
+OLMo-style weight naming still needs a remap (deferred, Stage 3e).
 
 ---
 
@@ -480,6 +482,7 @@ The `GenericTransformer` is parameterized by these fields:
 | `tie_word_embeddings` | `bool` | Share `embed_tokens` and `lm_head` weights |
 | `alternating_sliding_window` | `bool` | Alternating full/sliding attention (Gemma 2) |
 | `sliding_window` | `Option<usize>` | Sliding window size |
+| `bidirectional` | `bool` | Non-causal attention — decoder-style masked-diffusion LMs (Dream, `a2d-qwen2`) |
 
 ### Existing Parsers as Templates
 
@@ -492,6 +495,8 @@ The `GenericTransformer` is parameterized by these fields:
 | Phi-3 | `parse_phi3` | + fused QKV, fused gate+up MLP |
 | StarCoder2 | `parse_starcoder2` | + `LayerNorm`, `Plain` MLP, `use_bias: true`, `GeluApprox` |
 | Mistral | `parse_mistral` | + sliding window attention |
+| Dream / a2d-qwen2 | `parse_qwen2` + flag | + `bidirectional: true` (non-causal masked-diffusion decoder) |
+| a2d-qwen3 | `parse_qwen3` + flag | + `bidirectional: true` |
 
 ---
 

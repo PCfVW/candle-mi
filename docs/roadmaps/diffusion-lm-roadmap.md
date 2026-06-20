@@ -62,23 +62,43 @@ Both examples operate on raw residual-stream hooks (no SAE). They are
 provenance-agnostic and are reused unchanged in Stage 3. The full
 SAE-feature-stability decoding-order experiment needs a trained SAE (deferred).
 
-## Stage 3 — Decoder-style DLMs via a bidirectional `GenericTransformer` — AFTER Stage 2
+## Stage 3 — Decoder-style DLMs via a bidirectional `GenericTransformer` — DONE
 
-- **3a** — add `bidirectional: bool` to `TransformerConfig`; `mask_for_layer`
-  returns a zeros mask instead of the causal one (the trick `GenericMdlm` uses).
-- **3b** — dispatch / auto-config wiring so decoder-style DLM `model_type`s run
-  on `GenericTransformer` with `bidirectional = true`. Dream = Qwen2.5 (already
-  auto-inferred); LLaDA's OLMo-ish naming (`transformer.blocks`/`ff_out`/`ln_f`)
-  needs a small naming map — stretch.
-- **3c** — defensive auto-compat error: detect MDLM-shaped checkpoints in
-  `check_auto_compatibility` and emit *"enable the `diffusion` feature"* instead
-  of a cryptic *"missing hidden_size"* when the `diffusion` feature is off.
-- **3d** — Dream forward-parity oracle.
+Commits `8c60a61` (3a) → `5260d67` (3d). Decoder-style masked-diffusion LMs reuse
+the Qwen weight layout verbatim; the only forward delta is bidirectional attention.
 
-**Caveat:** Dream-7B / LLaDA-8B do not fit 16 GB at F32, so the GPU path runs
-BF16 (looser parity than MDLM's 1.34×10⁻⁵); exact F32 survives only on CPU
-(slow). This mirrors the existing Mistral-7B `#[ignore]` CPU-F32 + GPU pattern —
-a known, manageable shape, but without MDLM's tight-everywhere guarantee.
+- **3a** (`8c60a61`) — `TransformerConfig.bidirectional: bool`;
+  `masks::create_bidirectional_mask` (cached all-zeros `[1,1,S,S]`); `mask_for_layer`
+  short-circuits to it. Default `false` for every autoregressive family.
+- **3b** (`399bab6`) — `from_hf_config` routes `model_type` `"Dream"` / `"a2d-qwen2"`
+  (→ `parse_qwen2`) and `"a2d-qwen3"` (→ `parse_qwen3`) to `GenericTransformer` with
+  `bidirectional = true`. The LM-head loader now prefers a materialized
+  `lm_head.weight` even under `tie_word_embeddings` (A2D-converted checkpoints ship a
+  separate head).
+- **3c** (`87bb3a7`) — `check_auto_compatibility` short-circuits MDLM-shaped checkpoints
+  (`backbone.*` / `adaLN`) with a single *"load with the `diffusion` feature"* hint
+  instead of a wall of missing-tensor noise.
+- **3d** (`5260d67`) — external fp32 oracle (`scripts/bidirectional_forward_validation.py`)
+  on `dllm-hub/Qwen2.5-Coder-0.5B-Instruct-diffusion-mdlm-v0.1` (exact Qwen2.5 layout,
+  fits 16 GB at F32). Loaded with stock `Qwen2ForCausalLM` + untied head + all-zeros 4D
+  mask (the A2D model = Qwen2 + untied `lm_head` + bidirectional attention).
+  **top-10 exact, max abs-diff 2.61×10⁻⁴ (CPU) / within 5×10⁻³ (GPU)**, checked at early
+  positions where bidirectional ≠ causal. See `tests/validate_bidirectional_forward.rs`.
+
+**Oracle choice:** the 0.5B `a2d-qwen2` validates the *same* bidirectional code path as
+Dream-7B but fits 16 GB at F32 (tight parity), sidestepping the BF16-only caveat that
+7B/8B models would impose. Its shipped `lm_head.weight` is value-identical to the
+embeddings (max diff 0.0), so the tie question is moot.
+
+## Stage 3e — LLaDA-8B (OLMo-style remap) — DEFERRED
+
+LLaDA needs a weight-name remap subsystem (`model.transformer.blocks.{i}.{q,k,v}_proj`,
+`attn_out`, `attn_norm`, `ff_proj`/`up_proj`/`ff_out`, `ff_norm`, `wte`/`ln_f`/top-level
+`ff_out`) + OLMo→`TransformerConfig` translation (full MHA, no bias, SwiGLU, rms_eps 1e-5,
+rope_theta 5e5, mask 126336), and is only checkable on CPU-F32 (8B) — a separable
+follow-up. Sampling reuse is already free: the SUBS sampler takes `&dyn MIBackend` +
+`mask_token_id`, so running the diffusion MI examples on Dream needs only the mask id
+(151666) passed in — no backend change.
 
 ## Further out
 

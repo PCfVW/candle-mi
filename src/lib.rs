@@ -15,7 +15,7 @@
 //!
 //! | Backend | Models | Feature flag |
 //! |---------|--------|-------------|
-//! | [`GenericTransformer`] | `LLaMA`, `Qwen2`, `Qwen3`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral (+ auto-config for unknown families) | `transformer` |
+//! | [`GenericTransformer`] | `LLaMA`, `Qwen2`, `Qwen3`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral; bidirectional masked-diffusion decoders (Dream, `a2d-qwen2`); + auto-config for unknown families | `transformer` |
 //! | `GenericRwkv` | RWKV-6 (Finch), RWKV-7 (Goose) | `rwkv` |
 //! | `GenericMdlm` | MDLM masked-diffusion `DiT` (bidirectional) | `diffusion` |
 //! | `StoicheiaRnn` / `StoicheiaTransformer` | `AlgZoo` `ReLU` RNN, attention-only transformer (8–1,408 params) | `stoicheia` |
