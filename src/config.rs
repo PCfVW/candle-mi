@@ -303,7 +303,7 @@ impl fmt::Display for RopeScaling {
 /// per-head-dim `RMSNorm` on `Q` and `K` before `RoPE` (`use_qk_norm: true`,
 /// `qk_norm_eps` parsed from `rms_norm_eps`).  The `q_norm.weight` and
 /// `k_norm.weight` tensors live alongside the QKV projections in each
-/// attention block and are loaded by [`crate::transformer`].
+/// attention block and are loaded by `crate::transformer`.
 ///
 /// **Gemma / Gemma 2** — hardcodes `embedding_scale` to `sqrt(hidden_size)`,
 /// `tie_word_embeddings` defaults to `true`, and `norm_eps` defaults to 1e-6.
@@ -403,7 +403,7 @@ pub struct TransformerConfig {
     // --- Qwen3 extensions ----------------------------------------------------
     /// Whether per-head-dim `RMSNorm` is applied to `Q` and `K` before `RoPE`.
     /// `true` for `Qwen3`; `false` for all other supported families.  When
-    /// `true`, [`crate::transformer`] loads `q_norm.weight` and `k_norm.weight`
+    /// `true`, `crate::transformer` loads `q_norm.weight` and `k_norm.weight`
     /// of shape `[head_dim]` from each layer's `self_attn` namespace.
     pub use_qk_norm: bool,
     /// Epsilon used by the per-head-dim `Q`/`K` `RMSNorm` when
@@ -417,7 +417,7 @@ pub struct TransformerConfig {
     /// Whether attention is fully **bidirectional** (no causal mask).  `true`
     /// for decoder-style masked-diffusion LMs (e.g. Dream, run non-causally);
     /// `false` for every autoregressive family.  When `true`,
-    /// [`crate::transformer`] applies an all-zeros attention mask instead of the
+    /// `crate::transformer` applies an all-zeros attention mask instead of the
     /// causal (or sliding-causal) one — every position attends to every other.
     pub bidirectional: bool,
 }
@@ -536,7 +536,7 @@ impl TransformerConfig {
     /// (`use_qk_norm: true`, `qk_norm_eps` parsed from `rms_norm_eps`).
     /// The `q_norm.weight` and `k_norm.weight` tensors live alongside
     /// the QKV projections in each attention block and are loaded by
-    /// [`crate::transformer`].
+    /// `crate::transformer`.
     ///
     /// `max_position_embeddings` defaults to 40 960 (the `Qwen3-1.7B-Base`
     /// release default); upstream variants override the key explicitly.
