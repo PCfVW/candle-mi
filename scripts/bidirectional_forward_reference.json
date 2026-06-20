@@ -1,0 +1,317 @@
+{
+  "repo": "dllm-hub/Qwen2.5-Coder-0.5B-Instruct-diffusion-mdlm-v0.1",
+  "methodology": "fp32 bidirectional forward (stock Qwen2ForCausalLM, untied lm_head, all-zeros 4D mask, eager, CPU); raw logits at first/middle/last",
+  "torch_version": "2.10.0+cu130",
+  "transformers_version": "5.1.0",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "hidden_size": 896,
+  "num_hidden_layers": 24,
+  "num_attention_heads": 14,
+  "num_key_value_heads": 2,
+  "vocab_size": 151936,
+  "model_type": "a2d-qwen2",
+  "head_tied_runtime": false,
+  "head_vs_embed_max_diff": 0.0,
+  "bidirectional_sanity_pos0_diff": 22.14617919921875,
+  "test_cases": [
+    {
+      "prompt": "The capital of France is Paris.",
+      "tokens": [
+        785,
+        6722,
+        315,
+        9625,
+        374,
+        12095,
+        13
+      ],
+      "positions": [
+        {
+          "position": 0,
+          "top_10": [
+            {
+              "index": 785,
+              "logit": 26.308305740356445
+            },
+            {
+              "index": 1782,
+              "logit": 20.14870262145996
+            },
+            {
+              "index": 576,
+              "logit": 19.12440299987793
+            },
+            {
+              "index": 32,
+              "logit": 17.21718978881836
+            },
+            {
+              "index": 47,
+              "logit": 16.732152938842773
+            },
+            {
+              "index": 30424,
+              "logit": 16.37714195251465
+            },
+            {
+              "index": 198,
+              "logit": 16.07762336730957
+            },
+            {
+              "index": 6722,
+              "logit": 15.976531982421875
+            },
+            {
+              "index": 8420,
+              "logit": 15.680275917053223
+            },
+            {
+              "index": 10022,
+              "logit": 15.616755485534668
+            }
+          ]
+        },
+        {
+          "position": 3,
+          "top_10": [
+            {
+              "index": 9625,
+              "logit": 24.99656105041504
+            },
+            {
+              "index": 12095,
+              "logit": 20.830657958984375
+            },
+            {
+              "index": 374,
+              "logit": 19.404754638671875
+            },
+            {
+              "index": 13,
+              "logit": 16.31641387939453
+            },
+            {
+              "index": 892,
+              "logit": 16.258060455322266
+            },
+            {
+              "index": 198,
+              "logit": 16.13282012939453
+            },
+            {
+              "index": 419,
+              "logit": 15.989953994750977
+            },
+            {
+              "index": 11,
+              "logit": 15.836098670959473
+            },
+            {
+              "index": 4311,
+              "logit": 15.803380966186523
+            },
+            {
+              "index": 320,
+              "logit": 15.800262451171875
+            }
+          ]
+        },
+        {
+          "position": 6,
+          "top_10": [
+            {
+              "index": 13,
+              "logit": 20.42296028137207
+            },
+            {
+              "index": 19,
+              "logit": 18.382204055786133
+            },
+            {
+              "index": 12095,
+              "logit": 18.28464126586914
+            },
+            {
+              "index": 17,
+              "logit": 17.02178382873535
+            },
+            {
+              "index": 576,
+              "logit": 15.726449012756348
+            },
+            {
+              "index": 23,
+              "logit": 15.011929512023926
+            },
+            {
+              "index": 21,
+              "logit": 14.974897384643555
+            },
+            {
+              "index": 382,
+              "logit": 14.933008193969727
+            },
+            {
+              "index": 25,
+              "logit": 14.650832176208496
+            },
+            {
+              "index": 2223,
+              "logit": 14.48298454284668
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "prompt": "Water is made of hydrogen and oxygen.",
+      "tokens": [
+        28253,
+        374,
+        1865,
+        315,
+        34684,
+        323,
+        23552,
+        13
+      ],
+      "positions": [
+        {
+          "position": 0,
+          "top_10": [
+            {
+              "index": 28253,
+              "logit": 24.86901092529297
+            },
+            {
+              "index": 9959,
+              "logit": 20.1019229888916
+            },
+            {
+              "index": 3015,
+              "logit": 17.52943992614746
+            },
+            {
+              "index": 54,
+              "logit": 16.898231506347656
+            },
+            {
+              "index": 374,
+              "logit": 16.464723587036133
+            },
+            {
+              "index": 13,
+              "logit": 16.275772094726562
+            },
+            {
+              "index": 54550,
+              "logit": 15.950529098510742
+            },
+            {
+              "index": 12987,
+              "logit": 15.80078125
+            },
+            {
+              "index": 962,
+              "logit": 15.747581481933594
+            },
+            {
+              "index": 8420,
+              "logit": 15.353067398071289
+            }
+          ]
+        },
+        {
+          "position": 4,
+          "top_10": [
+            {
+              "index": 34684,
+              "logit": 17.64004898071289
+            },
+            {
+              "index": 23552,
+              "logit": 13.499037742614746
+            },
+            {
+              "index": 323,
+              "logit": 13.165385246276855
+            },
+            {
+              "index": 16643,
+              "logit": 12.03115463256836
+            },
+            {
+              "index": 69722,
+              "logit": 11.591495513916016
+            },
+            {
+              "index": 3015,
+              "logit": 10.756143569946289
+            },
+            {
+              "index": 8628,
+              "logit": 10.72083568572998
+            },
+            {
+              "index": 3738,
+              "logit": 10.697192192077637
+            },
+            {
+              "index": 11483,
+              "logit": 10.463300704956055
+            },
+            {
+              "index": 13753,
+              "logit": 10.455029487609863
+            }
+          ]
+        },
+        {
+          "position": 7,
+          "top_10": [
+            {
+              "index": 13,
+              "logit": 21.32642364501953
+            },
+            {
+              "index": 198,
+              "logit": 18.30017852783203
+            },
+            {
+              "index": 715,
+              "logit": 18.14170265197754
+            },
+            {
+              "index": 624,
+              "logit": 17.978534698486328
+            },
+            {
+              "index": 4710,
+              "logit": 16.885299682617188
+            },
+            {
+              "index": 256,
+              "logit": 16.854137420654297
+            },
+            {
+              "index": 382,
+              "logit": 16.784591674804688
+            },
+            {
+              "index": 220,
+              "logit": 16.775554656982422
+            },
+            {
+              "index": 23,
+              "logit": 16.41600227355957
+            },
+            {
+              "index": 20,
+              "logit": 16.36395263671875
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
