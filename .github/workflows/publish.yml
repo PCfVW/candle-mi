@@ -69,11 +69,39 @@ jobs:
       - name: Tests (Stoicheia)
         run: cargo test --no-default-features --features stoicheia --lib --test stoicheia_analysis --test validate_stoicheia
 
+      # CLT pairs with `transformer`; without a dedicated lane, clt-only
+      # regressions escape the transformer + rwkv lanes (mirrors ci.yml).
+      - name: Build (CLT)
+        run: cargo build --no-default-features --features "clt,transformer"
+
+      - name: Clippy (CLT, pedantic)
+        run: cargo clippy --no-default-features --features "clt,transformer" -- -W clippy::pedantic
+
+      - name: Tests (CLT)
+        run: cargo test --no-default-features --features "clt,transformer" --lib
+
+      # Diffusion is a standalone backend (MDLM masked-diffusion DiT) that does
+      # NOT imply `transformer`, so none of the lanes above compile it. Without
+      # this lane the whole `src/diffusion/` module ships unverified by publish.
+      - name: Build (Diffusion)
+        run: cargo build --no-default-features --features diffusion
+
+      - name: Clippy (Diffusion, pedantic)
+        run: cargo clippy --no-default-features --features diffusion -- -W clippy::pedantic
+
+      - name: Tests (Diffusion)
+        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward
+
+      # validate_bidirectional_sampler needs transformer + diffusion together; no
+      # single-feature lane builds it, so compile-check it explicitly.
+      - name: Tests compile (transformer + diffusion)
+        run: cargo test --no-default-features --features "transformer,diffusion" --test validate_bidirectional_sampler --no-run
+
       - name: Build (no default features)
         run: cargo build --no-default-features
 
       - name: Build (all software features)
-        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,clt,sae,stoicheia,probing"
+        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing"
 
       # Publish
       - name: Publish to crates.io
