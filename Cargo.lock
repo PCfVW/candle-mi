@@ -1473,9 +1473,9 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hf-fetch-model"
-version = "0.10.6"
+version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8dee936df37a1c24477d1e74e4fcd11efeca0f57dd2326a0c4a2bc34c42033a1"
+checksum = "0d9413069ba9be74fe3461849a19c9789704f24f9facfc9214a1cb0931c3d44c"
 dependencies = [
  "anamnesis",
  "dirs",
