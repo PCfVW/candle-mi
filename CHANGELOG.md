@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-06-28
+
 ### Added
 
 - **`OthelloGpt` — a plain GPT-2-style bidirectional backbone** (`diffusion`
