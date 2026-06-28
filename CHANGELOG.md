@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Bump `anamnesis` 0.6.7 → 0.6.8 (optional dependency behind the `sae`,
+  `stoicheia`, and `quantized` features). anamnesis 0.6.8 adds new
+  `AnamnesisError` variants; the `sae` error bridge keeps collapsing
+  non-special-cased variants to `MIError::Config` via its catch-all (the
+  external `#[non_exhaustive]` enum requires the wildcard).
+
 ## [0.1.15] - 2026-06-28
 
 ### Added

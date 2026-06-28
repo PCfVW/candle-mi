@@ -52,6 +52,12 @@ pub enum MIError {
 /// catch-all arm ensures forward compatibility with future variants.
 #[cfg(feature = "sae")]
 impl From<anamnesis::AnamnesisError> for MIError {
+    // `AnamnesisError` is an external `#[non_exhaustive]` error type. We map the
+    // few variants we act on and deliberately collapse the rest (and any future
+    // ones) to `Config` via the catch-all, rather than re-enumerating upstream's
+    // variants on every anamnesis release. The wildcard is required for the
+    // `#[non_exhaustive]` enum, so allow the otherwise-denied lint here.
+    #[allow(clippy::wildcard_enum_match_arm)]
     fn from(e: anamnesis::AnamnesisError) -> Self {
         match e {
             anamnesis::AnamnesisError::Parse { reason } => Self::Config(reason),
@@ -59,7 +65,6 @@ impl From<anamnesis::AnamnesisError> for MIError {
                 Self::Config(format!("unsupported {format}: {detail}"))
             }
             anamnesis::AnamnesisError::Io(io_err) => Self::Io(io_err),
-            // AnamnesisError is #[non_exhaustive] — forward-compatible catch-all
             _ => Self::Config(e.to_string()),
         }
     }

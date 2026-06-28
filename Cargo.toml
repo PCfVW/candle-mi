@@ -64,7 +64,7 @@ libloading = { version = "0.9", optional = true }
 # - sae feature activates "npz" (Gemma Scope SAE weights)
 # - stoicheia feature activates "pth" (AlgZoo .pth agnostic loading)
 # - quantized feature activates "bnb"/"awq"/"gptq" (dequant-to-BF16 weight loading)
-anamnesis = { version = "0.6.5", optional = true }
+anamnesis = { version = "0.6.8", optional = true }
 
 # Optional: per-process VRAM on Windows via DXGI (IDXGIAdapter3::QueryVideoMemoryInfo)
 [target.'cfg(windows)'.dependencies]
