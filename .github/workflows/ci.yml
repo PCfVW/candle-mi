@@ -89,14 +89,14 @@ jobs:
       # NOT imply `transformer`, so none of the lanes above ever compile it.
       # Without a dedicated lane the whole `src/diffusion/` module, its three
       # examples, and its forward-parity test escape CI entirely.
-      - name: Build (Diffusion)
-        run: cargo build --no-default-features --features diffusion
+      - name: Build (Diffusion + examples)
+        run: cargo build --no-default-features --features diffusion --examples
 
       - name: Clippy (Diffusion, pedantic)
         run: cargo clippy --no-default-features --features diffusion -- -W clippy::pedantic
 
       - name: Tests (Diffusion)
-        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward
+        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward
 
       # The validate_bidirectional_sampler test needs BOTH `transformer` (to load
       # the model) and `diffusion` (the sampler), so no single-feature lane above

@@ -83,14 +83,14 @@ jobs:
       # Diffusion is a standalone backend (MDLM masked-diffusion DiT) that does
       # NOT imply `transformer`, so none of the lanes above compile it. Without
       # this lane the whole `src/diffusion/` module ships unverified by publish.
-      - name: Build (Diffusion)
-        run: cargo build --no-default-features --features diffusion
+      - name: Build (Diffusion + examples)
+        run: cargo build --no-default-features --features diffusion --examples
 
       - name: Clippy (Diffusion, pedantic)
         run: cargo clippy --no-default-features --features diffusion -- -W clippy::pedantic
 
       - name: Tests (Diffusion)
-        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward
+        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward
 
       # validate_bidirectional_sampler needs transformer + diffusion together; no
       # single-feature lane builds it, so compile-check it explicitly.
