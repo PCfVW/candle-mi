@@ -1592,7 +1592,7 @@ impl TransformerConfig {
     /// benign metadata.
     ///
     /// Returns the sorted top-level keys that are in neither
-    /// [`CONSUMED_CONFIG_KEYS`] (read by a parser) nor [`BENIGN_CONFIG_KEYS`]
+    /// `CONSUMED_CONFIG_KEYS` (read by a parser) nor `BENIGN_CONFIG_KEYS`
     /// (tokenizer/training/runtime/quantization metadata that does not affect
     /// the forward pass).  An empty result means every key is either consumed
     /// or known-benign.

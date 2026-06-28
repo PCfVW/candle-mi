@@ -449,6 +449,32 @@ do **not** need a backend at all — they load as a bidirectional
 `GenericTransformer` via a one-field config flag (Path 2, Stage 3); only LLaDA's
 OLMo-style weight naming still needs a remap (deferred, Stage 3e).
 
+### OthelloGpt: A Plain GPT-2-Style Backbone
+
+The `diffusion` module also implements `OthelloGpt`, a custom `MIBackend` for the
+`OthelloMDLM` masked-diffusion world model — a nanoGPT/minGPT-lineage GPT-2
+backbone. It is the template for the **most common interpretability target after
+LLaMA**: a classic GPT-2 recipe that fits *neither* generic backbone, because
+
+- **learned absolute positions** (`nn.Embedding`, added at the input) — RoPE
+  cannot express these, which is why `GenericTransformer` (RoPE-only) does not
+  fit and a dedicated module beats adding a learned-pos branch to seven RoPE
+  families' hot path; and
+- **full `LayerNorm`, with-bias attention/MLP, exact-erf `GELU`, untied head** —
+  the exact opposite of MDLM's weight-only `LayerNorm` / no-bias / GELU-tanh DiT.
+
+It loads via `OthelloGpt::load` over the state dict **verbatim** (candle's
+`VarBuilder` `pp`-paths match the PyTorch module paths, so no remap and no
+transpose), populates the standard `HookPoint` surface (here `AttnOut`/`MlpOut`
+are the *ungated* residual contributions), and was validated against an fp32
+PyTorch oracle to 4.18e-5 (logits) / 2.59e-4 (per-layer residuals) on CPU.  It is
+not dispatched from `from_pretrained` (the checkpoint is a bare `torch.save`
+dict, not an HF repo) — construct it directly.
+
+The recurring traps when porting any PyTorch backbone (the GELU variant, bias
+presence, norm type, positional scheme, conditioning) are written up in
+[`docs/adding-a-model.md`](docs/adding-a-model.md).
+
 ---
 
 ## TransformerConfig Reference

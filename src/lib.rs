@@ -18,6 +18,7 @@
 //! | [`GenericTransformer`] | `LLaMA`, `Qwen2`, `Qwen3`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral; bidirectional masked-diffusion decoders (Dream, `a2d-qwen2`); + auto-config for unknown families | `transformer` |
 //! | `GenericRwkv` | RWKV-6 (Finch), RWKV-7 (Goose) | `rwkv` |
 //! | `GenericMdlm` | MDLM masked-diffusion `DiT` (bidirectional) | `diffusion` |
+//! | `OthelloGpt` | Plain GPT-2-style backbone (learned absolute positions, full `LayerNorm`, exact-`GELU`); the `OthelloMDLM` world model | `diffusion` |
 //! | `StoicheiaRnn` / `StoicheiaTransformer` | `AlgZoo` `ReLU` RNN, attention-only transformer (8–1,408 params) | `stoicheia` |
 //!
 //! See [`BACKENDS.md`](https://github.com/PCfVW/candle-mi/blob/main/BACKENDS.md)
@@ -271,7 +272,8 @@ pub use rwkv::{GenericRwkv, RwkvConfig, RwkvLoraDims, RwkvVersion};
 // Diffusion backend (MDLM)
 #[cfg(feature = "diffusion")]
 pub use diffusion::{
-    DiffusionSamplingConfig, GenericMdlm, MdlmConfig, SUPPORTED_DIFFUSION_MODEL_TYPES,
+    DiffusionSamplingConfig, GenericMdlm, MdlmConfig, OthelloGpt, OthelloGptConfig,
+    SUPPORTED_DIFFUSION_MODEL_TYPES,
 };
 
 // Stoicheia (AlgZoo) backends — Phase A

@@ -19,6 +19,7 @@
 | Decoder-only transformer | LLaMA 1/2/3, Mistral, Qwen 2/2.5, Qwen 3, Phi-3/4, Gemma, Gemma 2, StarCoder2 | LLaMA 3.2 1B, Qwen2.5-Coder-3B, Qwen3-1.7B-Base, Gemma 2 2B, Phi-3 Mini, StarCoder2 3B, Mistral 7B | `transformer` |
 | Linear RNN | RWKV-6 (Finch), RWKV-7 (Goose) | RWKV-7 1.6B | `rwkv` |
 | Masked diffusion (bidirectional `DiT`) | MDLM | MDLM-owt (0.2B) | `diffusion` |
+| Masked diffusion (plain GPT-2 backbone) | `OthelloGpt` (learned absolute positions, full `LayerNorm`, exact-`GELU`) | OthelloMDLM world model (25M) | `diffusion` |
 | Masked diffusion (decoder-style) | Dream (←Qwen2.5), `a2d-qwen2`/`a2d-qwen3` | `a2d-qwen2` 0.5B (forward-parity oracle) | `transformer` |
 | [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny models | Single-layer ReLU RNN, attention-only transformer (8–1,408 params) | M₂,₂ (10 params), M₁₆,₁₀ (432 params), transformer h4n4 (176 params) | `stoicheia` |
 
@@ -197,6 +198,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | [API docs (docs.rs)](https://docs.rs/candle-mi) | Crate-level documentation with quick start and examples |
 | [HOOKS.md](HOOKS.md) | Hook point reference, intervention API walkthrough, and worked examples |
 | [BACKENDS.md](BACKENDS.md) | How to add a new model architecture (auto-config, config parser, custom backend) |
+| [docs/adding-a-model.md](docs/adding-a-model.md) | Porting a PyTorch backbone: the five silent-divergence traps (GELU, bias, norm, positions, conditioning) and the parity-test recipe |
 | [examples/README.md](examples/README.md) | Runnable examples covering inference, logit lens, knockout, steering, AlgZoo analysis, masked-diffusion MI, and more |
 | [docs/roadmaps/diffusion-lm-roadmap.md](docs/roadmaps/diffusion-lm-roadmap.md) | Masked-diffusion-LM support: the DiT vs decoder-style split, MDLM (done), and the Stage 2/3 plan |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |

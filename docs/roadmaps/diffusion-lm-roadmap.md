@@ -103,6 +103,20 @@ Demonstrated end-to-end on a2d-qwen2 in `tests/validate_bidirectional_sampler.rs
 invariants hold on a bidirectional `GenericTransformer`); it needs both the `transformer` and
 `diffusion` features, so a dedicated `--no-run` compile-check guards it in CI/preflight.
 
+## OthelloGpt — plain GPT-2 backbone (Othello world model) — DONE
+
+A third weight layout, distinct from both rows of the table above: the
+`OthelloMDLM` world model is a **plain GPT-2-style** backbone (learned *absolute*
+positions, full `LayerNorm`, with-bias attention/MLP, exact-erf `GELU`, untied
+head) run bidirectionally. It fits neither `GenericMdlm` (DiT/adaLN) nor
+`GenericTransformer` (RoPE), so it ships as a small dedicated `OthelloGpt` backend
+under the `diffusion` feature. State dict loads verbatim (no remap/transpose);
+forward + per-layer `ResidPost` capture validated against the askesis fp32 oracle
+to 4.18e-5 / 2.59e-4 (CPU). The SUBS sampler / diffusion logit-lens are reused as
+they take `&dyn MIBackend`. Intervention parity (the askesis P4 study) lands
+later and reuses the already-tested hook path. See
+[`adding-a-model.md`](../adding-a-model.md) for the porting checklist.
+
 ## Further out
 
 - SAE / CLT / PLT training on diffusion activations (the DLM-Scope experiments

@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`OthelloGpt` — a plain GPT-2-style bidirectional backbone** (`diffusion`
+  feature, `src/diffusion/othello.rs`). The first non-DiT, non-RoPE, non-Qwen
+  backbone in candle-mi: learned **absolute** positional embeddings
+  (`nn.Embedding`, which RoPE cannot express — the blocker that motivated a
+  dedicated module over generalizing `GenericTransformer`), full `LayerNorm`
+  (weight + bias), with-bias fused QKV / attention-output / both MLP linears, an
+  exact **erf** `GELU` MLP (`gelu_erf`, *not* the tanh approximation), and an
+  untied no-bias head. Attention is bidirectional by default; an opt-in
+  `causal` flag loads an autoregressive Othello-GPT control from the same
+  module. New public API: `OthelloGpt`, `OthelloGptConfig`. Loads via
+  `OthelloGpt::load` from a `VarBuilder` over the `OthelloMDLM` state dict —
+  weight keys are read **verbatim** (candle's `VarBuilder` `pp`-paths match the
+  PyTorch module paths, so no remap and no transpose). Validated against the
+  askesis fp32 PyTorch oracle (`export_fixtures.py`): forward + per-layer
+  `ResidPost` capture parity reproduced to **4.18×10⁻⁵ (logits)** /
+  **2.59×10⁻⁴ (worst of 8 `resid_post` layers)** on CPU, within the 1e-3 bar
+  (`tests/validate_othello_forward.rs`, fixtures via the `OTHELLO_MDLM_FIXTURES`
+  env var). Adds `scripts/convert_othello_mdlm.py` (`.pt → safetensors`,
+  verbatim keys) and `docs/adding-a-model.md`, a framework-agnostic checklist of
+  the five silent-divergence traps (GELU variant, bias presence, norm
+  type/affine, positional scheme, conditioning) for porting any PyTorch
+  backbone.
+
 ## [0.1.14] - 2026-06-20
 
 ### Added
