@@ -501,10 +501,10 @@ character count, and performs PCA on the resulting mean vectors. Expected result
 
 The `--text` flag lets you supply your own prose file to test whether the helix
 generalises across different text content. Add `--features memory` for
-per-process VRAM reporting (via DXGI on Windows, NVML on Linux) and GPU
-adapter identification (e.g., `[NVIDIA GeForce RTX 5060 Ti]`). Use
-`--features memory-debug` to additionally print raw DXGI values and
-per-chunk VRAM measurements to stderr.
+per-process VRAM reporting (via the `hypomnesis` crate — DXGI on Windows,
+NVML on Linux) and GPU adapter identification (e.g.,
+`[NVIDIA GeForce RTX 5060 Ti]`). Use `--features memory-debug` to additionally
+print the raw backend values to stderr.
 
 **CLI flags — "what to analyse" vs "how to iterate":**
 
@@ -685,10 +685,11 @@ Full results, cross-model comparison, and prolepsis analysis in
   (fast, standardize, piecewise, ablation, probing, surprise) on the M₂,₂
   fixture.
 - **`memory` feature** enables per-process VRAM reporting and GPU adapter
-  identification. On Windows, uses DXGI (`IDXGIAdapter3::QueryVideoMemoryInfo`)
-  — the only reliable per-process method under WDDM (NVML returns
-  `NOT_AVAILABLE`). On Linux, uses NVML per-process queries. Falls back to
-  `nvidia-smi` (device-wide) if both fail. The `memory-debug` feature (implies
-  `memory`) prints raw DXGI values and per-chunk VRAM measurements to stderr.
+  identification, delegated to the [`hypomnesis`](https://crates.io/crates/hypomnesis)
+  crate. On Windows it uses DXGI (`IDXGIAdapter3::QueryVideoMemoryInfo`) — the
+  only reliable per-process method under WDDM (NVML returns `NOT_AVAILABLE`); on
+  Linux, NVML per-process queries; with an `nvidia-smi` (device-wide) fallback,
+  and Apple Metal on macOS. The `memory-debug` feature (implies `memory`)
+  forwards `hypomnesis/debug-output`, printing the raw backend values to stderr.
 - **GPU recommended** for models larger than 1B parameters. candle-mi is
   developed on an RTX 5060 Ti (16 GB VRAM) with 64 GB RAM and CUDA 13.1.

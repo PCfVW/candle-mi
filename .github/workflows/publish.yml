@@ -97,6 +97,17 @@ jobs:
       - name: Tests compile (transformer + diffusion)
         run: cargo test --no-default-features --features "transformer,diffusion" --test validate_bidirectional_sampler --no-run
 
+      # Memory measurement (delegated to hypomnesis); standalone feature, no
+      # other lane compiles it. Live CUDA checks are #[ignore]; CPU runs here.
+      - name: Build (memory)
+        run: cargo build --no-default-features --features memory
+
+      - name: Clippy (memory, pedantic)
+        run: cargo clippy --no-default-features --features memory -- -W clippy::pedantic
+
+      - name: Tests (memory)
+        run: cargo test --no-default-features --features memory --lib --test validate_memory
+
       - name: Build (no default features)
         run: cargo build --no-default-features
 

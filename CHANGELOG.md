@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Memory measurement delegated to the [`hypomnesis`](https://crates.io/crates/hypomnesis)
+  crate** (`memory` feature). `src/memory.rs` no longer hand-rolls the platform
+  FFI — ~600 lines of `unsafe` (Windows `K32GetProcessMemoryInfo`, DXGI COM, NVML
+  dynamic loading, `nvidia-smi` parsing) are removed; `MemorySnapshot::now`
+  flattens a `hypomnesis::Snapshot` instead. The public API
+  (`MemorySnapshot`, `MemoryReport`, `sync_and_trim_gpu`, `print_before_after`/
+  `print_delta`) is unchanged — examples need no edits. Effects:
+  - **Deps:** the `memory` feature now pulls `hypomnesis 0.2.3` (lean set:
+    `nvml`, `dxgi`, `nvidia-smi-fallback`, `metal`) instead of `libloading` +
+    `windows`; both are dropped.
+  - **Unsafe surface tightened:** the only remaining `unsafe` is the CUDA
+    pool-trim in `sync_and_trim_gpu`, so `memory` **without** `cuda` is now
+    `forbid(unsafe_code)`.
+  - **macOS/Metal** memory reporting now works (`MemorySnapshot::now` measures
+    on `is_metal()` devices), previously unsupported.
+  - **Reported VRAM *total* now comes from NVML** (matches `nvidia-smi`, e.g.
+    16311 MiB on a 16 GB RTX 5060 Ti) rather than DXGI `DedicatedVideoMemory`
+    (the nominal 16384 MiB). Per-process *used*, GPU name, and RAM are
+    unchanged. Validated live: a 512 MiB GPU allocation produces an exact
+    512 MB VRAM delta (`tests/validate_memory.rs`).
 - Bump `anamnesis` 0.6.7 → 0.6.8 (optional dependency behind the `sae`,
   `stoicheia`, and `quantized` features). anamnesis 0.6.8 adds new
   `AnamnesisError` variants; the `sae` error bridge keeps collapsing

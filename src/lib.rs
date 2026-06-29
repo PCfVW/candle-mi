@@ -187,11 +187,22 @@
 //!   knockout, steering, activation patching, `CounterFact` replication,
 //!   CLT circuits, SAE encoding, RWKV inference, `AlgZoo` analysis, and more.
 
-#![deny(warnings)] // All warns → errors in CI
-// Rule 5: safe by default
-#![cfg_attr(not(any(feature = "mmap", feature = "memory")), forbid(unsafe_code))]
-// mmap/memory: deny for scoped FFI
-#![cfg_attr(any(feature = "mmap", feature = "memory"), deny(unsafe_code))]
+#![deny(warnings)]
+// All warns → errors in CI
+// Rule 5: safe by default. The only `unsafe` in the crate is the `mmap`
+// safetensors loader and the CUDA pool-trim in `memory::sync_and_trim_gpu`
+// (gated behind `cuda`). Since the hypomnesis migration, the `memory` feature
+// carries NO unsafe on its own — all measurement FFI lives in hypomnesis — so
+// `memory` without `cuda` stays `forbid(unsafe_code)`.
+#![cfg_attr(
+    not(any(feature = "mmap", all(feature = "memory", feature = "cuda"))),
+    forbid(unsafe_code)
+)]
+// mmap, or memory+cuda (the pool-trim FFI): deny for scoped unsafe.
+#![cfg_attr(
+    any(feature = "mmap", all(feature = "memory", feature = "cuda")),
+    deny(unsafe_code)
+)]
 // Test-code relaxations: the strict `unwrap_used`/`indexing_slicing`/`panic` denies in
 // `Cargo.toml` target *library* code (Rule 3). Inside `#[cfg(test)]` blocks, `unwrap()`,
 // `assert_eq!(v[0], …)`, and `panic!` are the canonical Rust test idioms — failure-by-panic

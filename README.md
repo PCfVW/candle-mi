@@ -186,8 +186,8 @@ This is a research-first design: MI analyses need to see everything, and the per
 | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
 | `stoicheia` | no | [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
 | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
-| `memory` | no | RAM/VRAM memory reporting |
-| `memory-debug` | no | Raw DXGI/NVML values and per-chunk VRAM on stderr (implies `memory`) |
+| `memory` | no | RAM/VRAM reporting (delegated to the [`hypomnesis`](https://crates.io/crates/hypomnesis) crate) |
+| `memory-debug` | no | Raw GPU-backend measurement values on stderr (via `hypomnesis`; implies `memory`) |
 | `probing` | no | Linear probing via linfa (experimental) |
 | `metal` | no | Apple Metal GPU acceleration |
 

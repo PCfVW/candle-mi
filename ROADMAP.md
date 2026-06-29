@@ -698,8 +698,8 @@ rwkv = []                  # RWKV v6-v7 backends
 rwkv-tokenizer = []        # RWKV World tokenizer
 clt = []                   # Cross-layer transcoder support
 sae = []                   # Sparse autoencoder support
-memory = ["dep:libloading", "dep:windows"]  # RAM + VRAM reporting (DXGI/NVML/nvidia-smi)
-memory-debug = ["memory"]  # Raw DXGI/NVML debug output + per-chunk VRAM measurements
+memory = ["dep:hypomnesis"]  # RAM + VRAM reporting (delegated to the hypomnesis crate)
+memory-debug = ["memory", "hypomnesis/debug-output"]  # Raw GPU-backend debug values on stderr
 probing = ["linfa", "linfa-logistic", "ndarray"]  # Linear probing
 ```
 

@@ -270,7 +270,14 @@ relax this to `#![deny(unsafe_code)]` for narrowly scoped platform FFI:
 | Feature | Accepted `unsafe` scope |
 |---------|------------------------|
 | `mmap` | Memory-mapped file I/O for sharded safetensors |
-| `memory` | OS/GPU memory queries (`GetProcessMemoryInfo`, NVML FFI, DXGI COM) |
+| `memory` + `cuda` | CUDA memory-pool trim (`cuMemPoolTrimTo`) in `sync_and_trim_gpu` |
+
+Process-RAM and GPU-VRAM **measurement** FFI (`GetProcessMemoryInfo`, NVML, DXGI,
+`nvidia-smi`, Metal) lives in the external [`hypomnesis`](https://crates.io/crates/hypomnesis)
+crate as of the v0.1.16 migration — so the `memory` feature carries **no** unsafe
+on its own. The only remaining `unsafe` under `memory` is the CUDA pool-trim,
+which is additionally gated behind `cuda`; `memory` without `cuda` is therefore
+`forbid(unsafe_code)`.
 
 Each accepted use must satisfy all of:
 1. The `unsafe` block is in a **single, dedicated module** (e.g., `src/mmap.rs`,

@@ -57,8 +57,16 @@ tracing = "0.1"
 hf-fetch-model = { version = "0.10.7", features = ["indicatif"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
-# Optional: memory reporting (NVML FFI for per-process VRAM)
-libloading = { version = "0.9", optional = true }
+# Optional: process RAM + GPU VRAM measurement, delegated to the standalone
+# `hypomnesis` crate (DXGI/NVML/nvidia-smi/Metal). Lean feature set — candle-mi
+# only measures its own process and device totals, so `pdh` (foreign-process
+# listing) is omitted; `metal` keeps macOS support.
+hypomnesis = { version = "0.2.3", optional = true, default-features = false, features = [
+    "nvml",
+    "dxgi",
+    "nvidia-smi-fallback",
+    "metal",
+] }
 
 # Optional: tensor format parsing via anamnesis
 # - sae feature activates "npz" (Gemma Scope SAE weights)
@@ -66,13 +74,9 @@ libloading = { version = "0.9", optional = true }
 # - quantized feature activates "bnb"/"awq"/"gptq" (dequant-to-BF16 weight loading)
 anamnesis = { version = "0.6.8", optional = true }
 
-# Optional: per-process VRAM on Windows via DXGI (IDXGIAdapter3::QueryVideoMemoryInfo)
+# Windows-only deps. The `probing` feature's linear-probe stack is developed and
+# exercised on Windows, so its crates are gated to `cfg(windows)`.
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.62", optional = true, features = [
-    "Win32_Graphics_Dxgi",
-    "Win32_Graphics_Dxgi_Common",
-] }
-
 # Optional: probing
 ndarray = { version = "0.15", optional = true }
 linfa = { version = "0.7", optional = true }
@@ -186,6 +190,10 @@ required-features = ["transformer"]
 [[test]]
 name = "validate_sae"
 required-features = ["sae", "transformer"]
+
+[[test]]
+name = "validate_memory"
+required-features = ["memory"]
 
 [[test]]
 name = "validate_stoicheia"
@@ -364,8 +372,8 @@ stoicheia = ["dep:anamnesis", "anamnesis/pth"]
 # dequantizing to BF16 in memory via anamnesis, then loading the standard
 # safetensors bytes through candle's VarBuilder. See `backend::from_pretrained`.
 quantized = ["dep:anamnesis", "anamnesis/bnb", "anamnesis/awq", "anamnesis/gptq"]
-memory = ["dep:libloading", "dep:windows"]
-memory-debug = ["memory"]
+memory = ["dep:hypomnesis"]
+memory-debug = ["memory", "hypomnesis/debug-output"]
 probing = ["linfa", "linfa-logistic", "ndarray"]
 
 [lints.rust]

@@ -75,7 +75,7 @@ function Invoke-Cargo {
 }
 
 # Feature sets and the all-software set — keep in sync with ci.yml.
-$featureSets = @("transformer", "rwkv,rwkv-tokenizer", "stoicheia", "clt,transformer", "diffusion")
+$featureSets = @("transformer", "rwkv,rwkv-tokenizer", "stoicheia", "clt,transformer", "diffusion", "memory")
 $allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing"
 
 # Skip the bench_hook_* benches unless -Full (see header note).
@@ -129,6 +129,13 @@ function Invoke-Lanes {
     # single-feature lane builds it, so compile-check it explicitly.
     Invoke-Cargo "[$Tc] Tests compile (transformer+diffusion)" $Tc `
         @("test", "--no-default-features", "--features", "transformer,diffusion", "--test", "validate_bidirectional_sampler", "--no-run")
+
+    # Memory measurement (delegated to hypomnesis); live CUDA checks are
+    # #[ignore], the CPU invariant runs here.
+    Invoke-Cargo "[$Tc] Build (memory)" $Tc `
+        @("build", "--no-default-features", "--features", "memory")
+    Invoke-Cargo "[$Tc] Tests (memory)" $Tc `
+        @("test", "--no-default-features", "--features", "memory", "--lib", "--test", "validate_memory")
 
     Invoke-Cargo "[$Tc] Build (no default features)" $Tc `
         @("build", "--no-default-features")
