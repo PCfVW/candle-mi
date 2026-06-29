@@ -1,6 +1,6 @@
 [package]
 name = "candle-mi"
-version = "0.1.16"
+version = "0.1.17"
 edition = "2024"
 authors = ["Eric Jacopin"]
 description = "Mechanistic interpretability for language models in Rust, built on candle"
@@ -61,7 +61,7 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 # `hypomnesis` crate (DXGI/NVML/nvidia-smi/Metal). Lean feature set — candle-mi
 # only measures its own process and device totals, so `pdh` (foreign-process
 # listing) is omitted; `metal` keeps macOS support.
-hypomnesis = { version = "0.2.3", optional = true, default-features = false, features = [
+hypomnesis = { version = "0.2.4", optional = true, default-features = false, features = [
     "nvml",
     "dxgi",
     "nvidia-smi-fallback",

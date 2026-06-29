@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-06-29
+
+### Added
+
+- **VRAM reserved (driver/firmware) breakdown** (`memory` feature). Bumps
+  `hypomnesis` 0.2.3 → 0.2.4 to consume its new NVML-v2 `reserved_bytes`, exposed
+  as a new `MemorySnapshot::vram_reserved_bytes: Option<u64>` field plus a
+  `MemorySnapshot::vram_reserved_mb()` accessor. `MemoryReport::print_before_after`
+  now appends the carve-out, e.g. `VRAM 192 MB → 704 MB (+512 MB / 16311 MB,
+  259 MB reserved) [per-process] [NVIDIA GeForce RTX 5060 Ti]`. The reserved
+  figure is a **subset** of the device total (NVML reports
+  `total = reserved + free + used`), matching `nvidia-smi -q -d MEMORY`'s
+  `Reserved` line; it is `Some` only on the NVML path with an R510+ driver and
+  `None` otherwise (DXGI-only, `nvidia-smi`, Metal, older drivers).
+  `vram_total_bytes` is unchanged (the NVML usable total). Validated live on an
+  RTX 5060 Ti: reserved = 259 MiB. This closes the candle-mi side of the v0.1.16
+  hypomnesis dogfooding loop. (Note: 259 MiB is the directly-measured NVML v2
+  `reserved`, *not* the ~73 MiB the original dogfood report inferred from
+  `DXGI nominal − NVML total` — that gap is board/ECC overhead below NVML's
+  total, a different quantity.)
+
+### Changed
+
+- **`MemorySnapshot` is now `#[non_exhaustive]`.** It is obtained via
+  `MemorySnapshot::now`, so future measurement fields (like the new
+  `vram_reserved_bytes`) are additive rather than breaking. Downstream code that
+  constructed it by struct literal must switch to `MemorySnapshot::now`.
+
 ## [0.1.16] - 2026-06-29
 
 ### Changed

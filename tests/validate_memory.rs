@@ -85,13 +85,22 @@ fn cuda_snapshot_is_sane() {
                 "used VRAM {used} must not exceed total {total}"
             );
         }
+        // Reserved (NVML v2 carve-out) is a subset of total when present.
+        if let Some(reserved) = snap.vram_reserved_bytes {
+            assert!(
+                reserved < total,
+                "reserved VRAM {reserved} must be a subset of total {total}"
+            );
+        }
     }
 
     println!(
-        "CUDA snapshot: ram={:.0} MB, vram={:?} MB / total={:?} MB, per_process={:?}, gpu={:?}",
+        "CUDA snapshot: ram={:.0} MB, vram={:?} MB / total={:?} MB \
+         (reserved={:?} MB), per_process={:?}, gpu={:?}",
         snap.ram_mb(),
         snap.vram_mb().map(|v| v as u64),
         snap.vram_total_bytes.map(|t| t / 1_048_576),
+        snap.vram_reserved_bytes.map(|r| r / 1_048_576),
         snap.vram_per_process,
         snap.gpu_name,
     );

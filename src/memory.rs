@@ -19,7 +19,13 @@
 //! | RAM (`RSS`) | `K32GetProcessMemoryInfo` | `/proc/self/status` `VmRSS` | `task_info` `phys_footprint` |
 //! | VRAM (per-process) | `DXGI` `IDXGIAdapter3` | `NVML` | Apple `Metal` ledger |
 //! | VRAM (device total) | `NVML` / `DXGI` | `NVML` | `sysctl` + `Metal` |
+//! | VRAM (reserved) | `NVML` v2 (R510+) | `NVML` v2 (R510+) | — |
 //! | VRAM (fallback) | `nvidia-smi` (device-wide) | `nvidia-smi` (device-wide) | — |
+//!
+//! The reserved figure (driver/firmware carve-out) is a **subset** of the
+//! device total — NVML reports `total = reserved + free + used` — so allocation
+//! headroom is `total - reserved`.  It is `None` on non-`NVML` backends and on
+//! pre-R510 drivers.
 //!
 //! # Feature gates
 //!
@@ -54,6 +60,10 @@ use crate::{MIError, Result};
 /// println!("RAM delta: {:+.1} MB", report.ram_delta_mb());
 /// # Ok::<(), candle_mi::MIError>(())
 /// ```
+// `#[non_exhaustive]`: obtained via [`MemorySnapshot::now`], not literal-
+// constructed by downstream code — so new measurement fields (like
+// `vram_reserved_bytes`) can be added without a breaking change.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct MemorySnapshot {
     /// Process resident set size (working set on Windows) in bytes.
@@ -71,6 +81,14 @@ pub struct MemorySnapshot {
     /// GPU adapter name (e.g., `NVIDIA GeForce RTX 5060 Ti`).
     /// `None` if not available (no GPU, or the backend did not report a name).
     pub gpu_name: Option<String>,
+    /// GPU memory reserved for system use (driver/firmware) in bytes — the
+    /// `NVML` v2 `reserved` carve-out (page tables, context/channel structures,
+    /// ECC parity).  A **subset of** [`vram_total_bytes`](Self::vram_total_bytes)
+    /// (NVML reports `total = reserved + free + used`), not an addition to it;
+    /// allocation headroom is `total - reserved`.  `Some` only on the `NVML`
+    /// path with an R510+ driver — `None` on older drivers and on the
+    /// `DXGI`-only, `nvidia-smi`, and `Metal` paths.
+    pub vram_reserved_bytes: Option<u64>,
 }
 
 /// Memory delta between two snapshots.
@@ -117,6 +135,7 @@ impl MemorySnapshot {
                 vram_total_bytes: None,
                 vram_per_process: None,
                 gpu_name: None,
+                vram_reserved_bytes: None,
             })
         }
     }
@@ -124,15 +143,18 @@ impl MemorySnapshot {
     /// Flatten a [`hypomnesis::Snapshot`] into candle-mi's flat snapshot.
     ///
     /// Maps `snapshot.gpu` (per-process used + per-process flag) and
-    /// `snapshot.gpu_device` (device total + adapter name) onto the flat fields.
+    /// `snapshot.gpu_device` (device total + adapter name + reserved carve-out)
+    /// onto the flat fields.
     fn from_hypomnesis(snapshot: &hypomnesis::Snapshot) -> Self {
         let (vram_bytes, vram_per_process) = snapshot.gpu.as_ref().map_or((None, None), |gpu| {
             (Some(gpu.used_bytes), Some(gpu.is_per_process))
         });
-        let (vram_total_bytes, gpu_name) =
-            snapshot.gpu_device.as_ref().map_or((None, None), |dev| {
+        let (vram_total_bytes, gpu_name, vram_reserved_bytes) = snapshot
+            .gpu_device
+            .as_ref()
+            .map_or((None, None, None), |dev| {
                 // BORROW: clone the adapter name out of the borrowed `Option<String>`
-                (Some(dev.total_bytes), dev.name.clone())
+                (Some(dev.total_bytes), dev.name.clone(), dev.reserved_bytes)
             });
         Self {
             ram_bytes: snapshot.ram_bytes,
@@ -140,6 +162,7 @@ impl MemorySnapshot {
             vram_total_bytes,
             vram_per_process,
             gpu_name,
+            vram_reserved_bytes,
         }
     }
 
@@ -159,6 +182,16 @@ impl MemorySnapshot {
         // CAST: u64 → f64, same justification as ram_mb
         #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
         self.vram_bytes.map(|b| b as f64 / 1_048_576.0)
+    }
+
+    /// Format reserved VRAM (the driver/firmware carve-out) as megabytes, if
+    /// available.  A subset of [`vram_mb`](Self::vram_mb)'s device total — see
+    /// [`vram_reserved_bytes`](Self::vram_reserved_bytes).
+    #[must_use]
+    pub fn vram_reserved_mb(&self) -> Option<f64> {
+        // CAST: u64 → f64, same justification as ram_mb
+        #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+        self.vram_reserved_bytes.map(|b| b as f64 / 1_048_576.0)
     }
 }
 
@@ -276,6 +309,12 @@ impl MemoryReport {
             let total = self.after.vram_total_bytes.map_or(String::new(), |t| {
                 format!(" / {:.0} MB", t as f64 / 1_048_576.0)
             });
+            // Reserved is a subset of total (NVML v2: total = reserved + free + used).
+            // CAST: u64 → f64, same justification as ram_mb
+            #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+            let reserved = self.after.vram_reserved_bytes.map_or(String::new(), |r| {
+                format!(", {:.0} MB reserved", r as f64 / 1_048_576.0)
+            });
             let qualifier = self.vram_qualifier();
             let gpu = self
                 .after
@@ -283,7 +322,7 @@ impl MemoryReport {
                 .as_deref()
                 .map_or(String::new(), |name| format!(" [{name}]"));
             println!(
-                "  {label}: VRAM {before:.0} MB → {after:.0} MB ({:+.0} MB{total}){qualifier}{gpu}",
+                "  {label}: VRAM {before:.0} MB → {after:.0} MB ({:+.0} MB{total}{reserved}){qualifier}{gpu}",
                 after - before,
             );
         }
@@ -330,6 +369,7 @@ mod tests {
             vram_total_bytes: Some(16_384 * 1_048_576),
             vram_per_process: Some(true),
             gpu_name: None,
+            vram_reserved_bytes: None,
         };
         let after = MemorySnapshot {
             ram_bytes: 200 * 1_048_576, // 200 MB
@@ -337,6 +377,7 @@ mod tests {
             vram_total_bytes: Some(16_384 * 1_048_576),
             vram_per_process: Some(true),
             gpu_name: None,
+            vram_reserved_bytes: None,
         };
         let report = MemoryReport::new(before, after);
 
@@ -361,6 +402,7 @@ mod tests {
             vram_total_bytes: None,
             vram_per_process: None,
             gpu_name: None,
+            vram_reserved_bytes: None,
         };
         let after = MemorySnapshot {
             ram_bytes: 200,
@@ -368,6 +410,7 @@ mod tests {
             vram_total_bytes: None,
             vram_per_process: None,
             gpu_name: None,
+            vram_reserved_bytes: None,
         };
         let report = MemoryReport::new(before, after);
         assert!(report.vram_delta_mb().is_none());
@@ -381,8 +424,37 @@ mod tests {
             vram_total_bytes: None,
             vram_per_process: None,
             gpu_name: None,
+            vram_reserved_bytes: None,
         };
         assert!((snap.ram_mb() - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn vram_reserved_mb_conversion() {
+        let snap = MemorySnapshot {
+            ram_bytes: 100,
+            vram_bytes: Some(500 * 1_048_576),
+            vram_total_bytes: Some(16_311 * 1_048_576),
+            vram_per_process: Some(true),
+            gpu_name: None,
+            vram_reserved_bytes: Some(259 * 1_048_576),
+        };
+        assert!((snap.vram_reserved_mb().unwrap() - 259.0).abs() < 0.001);
+        // Reserved is a subset of total: total - reserved is the usable headroom.
+        assert!(snap.vram_reserved_bytes.unwrap() < snap.vram_total_bytes.unwrap());
+    }
+
+    #[test]
+    fn vram_reserved_mb_none_when_absent() {
+        let snap = MemorySnapshot {
+            ram_bytes: 100,
+            vram_bytes: Some(500),
+            vram_total_bytes: Some(1000),
+            vram_per_process: Some(true),
+            gpu_name: None,
+            vram_reserved_bytes: None,
+        };
+        assert!(snap.vram_reserved_mb().is_none());
     }
 
     #[test]
@@ -393,6 +465,7 @@ mod tests {
             vram_total_bytes: Some(1000),
             vram_per_process: Some(true),
             gpu_name: None,
+            vram_reserved_bytes: None,
         };
         let report = MemoryReport::new(snap.clone(), snap);
         assert_eq!(report.vram_qualifier(), " [per-process]");
@@ -406,6 +479,7 @@ mod tests {
             vram_total_bytes: Some(1000),
             vram_per_process: Some(false),
             gpu_name: None,
+            vram_reserved_bytes: None,
         };
         let report = MemoryReport::new(snap.clone(), snap);
         assert_eq!(report.vram_qualifier(), " [device-wide]");
