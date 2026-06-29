@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.16] - 2026-06-29
+
 ### Changed
 
 - **Memory measurement delegated to the [`hypomnesis`](https://crates.io/crates/hypomnesis)
