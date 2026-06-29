@@ -36,8 +36,8 @@
 //! | `clt` | no | Cross-Layer Transcoder support |
 //! | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
 //! | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
-//! | `memory` | no | RAM/VRAM memory reporting |
-//! | `memory-debug` | no | Raw DXGI/NVML values and per-chunk VRAM on stderr (implies `memory`) |
+//! | `memory` | no | RAM/VRAM reporting (delegated to the `hypomnesis` crate) |
+//! | `memory-debug` | no | Raw GPU-backend measurement values on stderr (via `hypomnesis`; implies `memory`) |
 //! | `stoicheia` | no | `AlgZoo` tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
 //! | `probing` | no | Linear probing via linfa (experimental) |
 //! | `metal` | no | Apple Metal GPU acceleration |

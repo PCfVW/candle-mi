@@ -191,7 +191,7 @@ cargo run --release --features transformer,mmap --example character_count_helix
 # Character count helix — with memory reporting (GPU name, per-process VRAM)
 cargo run --release --features transformer,mmap,memory --example character_count_helix
 
-# Character count helix — with memory debug output (DXGI info + per-chunk VRAM on stderr)
+# Character count helix — with memory debug output (raw GPU-backend values + per-chunk VRAM on stderr)
 cargo run --release --features transformer,mmap,memory-debug --example character_count_helix
 
 # Character count helix — with JSON output for Mathematica plotting
