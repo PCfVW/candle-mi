@@ -684,9 +684,12 @@ Full results, cross-model comparison, and prolepsis analysis in
   `stoicheia_analysis` integration test exercises all six Phase B MI modules
   (fast, standardize, piecewise, ablation, probing, surprise) on the M₂,₂
   fixture.
-- **`memory` feature** enables per-process VRAM reporting and GPU adapter
-  identification, delegated to the [`hypomnesis`](https://crates.io/crates/hypomnesis)
-  crate. On Windows it uses DXGI (`IDXGIAdapter3::QueryVideoMemoryInfo`) — the
+- **`memory` feature** enables per-process VRAM reporting, GPU adapter
+  identification, and — on the NVML path with an R510+ driver — the
+  driver/firmware **reserved** carve-out (a subset of the device total, matching
+  `nvidia-smi -q -d MEMORY`'s `Reserved` line), delegated to the
+  [`hypomnesis`](https://crates.io/crates/hypomnesis) crate. On Windows it uses
+  DXGI (`IDXGIAdapter3::QueryVideoMemoryInfo`) — the
   only reliable per-process method under WDDM (NVML returns `NOT_AVAILABLE`); on
   Linux, NVML per-process queries; with an `nvidia-smi` (device-wide) fallback,
   and Apple Metal on macOS. The `memory-debug` feature (implies `memory`)
