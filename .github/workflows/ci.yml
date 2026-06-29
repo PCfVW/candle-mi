@@ -117,6 +117,13 @@ jobs:
       - name: Tests (memory)
         run: cargo test --no-default-features --features memory --lib --test validate_memory
 
+      # The memory module's `no_run` doc example isn't reached by `--lib` above,
+      # and a memory-only `--doc` run can't compile the crate-level examples
+      # (they call MIModel::from_pretrained, which needs a model backend). Doctest
+      # it in the transformer+memory combo.
+      - name: Doctests (transformer + memory)
+        run: cargo test --no-default-features --features "transformer,memory" --doc
+
       # Check 5 (Rule 15): Bare no-default-features build
       - name: Build (no default features)
         run: cargo build --no-default-features

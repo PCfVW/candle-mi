@@ -108,6 +108,11 @@ jobs:
       - name: Tests (memory)
         run: cargo test --no-default-features --features memory --lib --test validate_memory
 
+      # Doctest the memory module's example in the transformer+memory combo
+      # (memory-only --doc can't compile the from_pretrained crate examples).
+      - name: Doctests (transformer + memory)
+        run: cargo test --no-default-features --features "transformer,memory" --doc
+
       - name: Build (no default features)
         run: cargo build --no-default-features
 

@@ -136,6 +136,10 @@ function Invoke-Lanes {
         @("build", "--no-default-features", "--features", "memory")
     Invoke-Cargo "[$Tc] Tests (memory)" $Tc `
         @("test", "--no-default-features", "--features", "memory", "--lib", "--test", "validate_memory")
+    # Doctest the memory module's example (transformer+memory; memory-only --doc
+    # can't compile the from_pretrained crate examples).
+    Invoke-Cargo "[$Tc] Doctests (transformer+memory)" $Tc `
+        @("test", "--no-default-features", "--features", "transformer,memory", "--doc")
 
     Invoke-Cargo "[$Tc] Build (no default features)" $Tc `
         @("build", "--no-default-features")
