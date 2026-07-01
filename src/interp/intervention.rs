@@ -994,6 +994,7 @@ pub fn apply_set_value_steering(
             for (&row, target_cols) in &edges_by_row {
                 let current_target_sum: f32 =
                     target_cols.iter().map(|&col| head_data[row][col]).sum();
+                // CAST: usize → f32, target-column count is small and fits in f32
                 let new_target_sum = target_value * target_cols.len() as f32;
                 let delta = new_target_sum - current_target_sum;
 
@@ -1005,6 +1006,7 @@ pub fn apply_set_value_steering(
                 }
 
                 if !non_target_cols.is_empty() {
+                    // CAST: usize → f32, non-target-column count is small and fits in f32
                     let adjustment = delta / non_target_cols.len() as f32;
                     for col in non_target_cols {
                         head_data[row][col] = (head_data[row][col] - adjustment).max(0.0);

@@ -230,11 +230,6 @@ pub fn sync_and_trim_gpu(device: &candle_core::Device) {
         let _ = cuda_dev.synchronize();
 
         // Trim the default memory pool to release all unused reserved VRAM.
-        // SAFETY: cuDeviceGetDefaultMemPool and cuMemPoolTrimTo are
-        // documented CUDA driver APIs for pool management. The CUdevice
-        // handle comes from candle's CudaContext (valid after synchronize).
-        // cuMemPoolTrimTo(pool, 0) releases all unused memory — it cannot
-        // free memory that is still in use by live tensors.
         #[allow(unsafe_code)]
         {
             use candle_core::cuda_backend::cudarc::driver::sys;
@@ -245,6 +240,11 @@ pub fn sync_and_trim_gpu(device: &candle_core::Device) {
             if let Ok(probe) = stream.null::<u8>() {
                 let ctx = probe.context();
                 let cu_device = ctx.cu_device();
+                // SAFETY: cuDeviceGetDefaultMemPool and cuMemPoolTrimTo are
+                // documented CUDA driver APIs for pool management. The CUdevice
+                // handle comes from candle's CudaContext (valid after synchronize).
+                // cuMemPoolTrimTo(pool, 0) releases all unused memory — it cannot
+                // free memory that is still in use by live tensors.
                 unsafe {
                     let mut pool = std::mem::zeroed();
                     let rc = sys::cuDeviceGetDefaultMemPool(&raw mut pool, cu_device);
