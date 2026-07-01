@@ -31,7 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   and corrected the "Status: Implemented" design notes
   `design/intervention-api.md` (documents the real `HookSpec` API, not the
   never-built `ForwardConfig`) and `design/rwkv7-effective-attention.md`
-  (records that the numerical `compute_effective_attention_v7` shipped).
+  (records that the numerical `compute_effective_attention_v7` shipped); aligned
+  `design/candle-version.md`'s dependency recommendation to the shipped caret
+  range (`"0.9"`, not the exact pin `"=0.9"`); and marked
+  `docs/roadmaps/PLAN-GEOMETRIC-CALCULATOR.md` "postponed, not abandoned"
+  (the v0.1.13 target slipped behind more urgent work).
 - **CONVENTIONS.md annotation gaps** (same audit, §3): tagged the two
   `.len() as f32` casts in `interp/intervention.rs` with `// CAST:`, retagged the
   `.contiguous()` comment in `transformer/rope.rs` as `// CONTIGUOUS:`, and moved
