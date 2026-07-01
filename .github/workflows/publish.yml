@@ -120,10 +120,11 @@ jobs:
       - name: Tests (memory)
         run: cargo test --no-default-features --features memory --lib --test validate_memory
 
-      # Doctest the memory module's example in the transformer+memory combo
-      # (memory-only --doc can't compile the from_pretrained crate examples).
-      - name: Doctests (transformer + memory)
-        run: cargo test --no-default-features --features "transformer,memory" --doc
+      # Doctests for every feature-gated public example in one pass (audit §1.10);
+      # the old transformer+memory-only lane left clt/sae/rwkv doc examples
+      # uncovered. Mirrors ci.yml so publish can't ship a broken doctest.
+      - name: Doctests (all software features)
+        run: cargo test --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory" --doc
 
       - name: Build (no default features)
         run: cargo build --no-default-features
