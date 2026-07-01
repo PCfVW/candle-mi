@@ -390,17 +390,16 @@ fn sae_injection_shifts_logits() {
 #[serial]
 fn sae_vs_python_reference() {
     let ref_path = std::path::Path::new("scripts/sae_reference.json");
-    if !ref_path.exists() {
-        println!(
-            "SKIP: scripts/sae_reference.json not found. Run scripts/sae_validation.py first."
-        );
-        return;
-    }
 
     let device = cuda_device().expect("CUDA required for SAE reference test");
 
-    // Parse Python reference.
-    let ref_text = std::fs::read_to_string(ref_path).unwrap();
+    // Parse Python reference. Hard-fail (not a silent SKIP+return) if the fixture
+    // is missing, so a developer running `--ignored` without first generating it
+    // gets a clear error instead of a false green — matching the PLT/CLT-Qwen3
+    // sibling tests (validate_plt.rs, validate_clt_qwen3.rs).
+    let ref_text = std::fs::read_to_string(ref_path).expect(
+        "failed to read scripts/sae_reference.json — run scripts/sae_validation.py first",
+    );
     let reference: serde_json::Value = serde_json::from_str(&ref_text).unwrap();
 
     let py_d_in = reference["d_in"].as_u64().unwrap() as usize;
