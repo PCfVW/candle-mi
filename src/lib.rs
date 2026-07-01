@@ -15,7 +15,7 @@
 //!
 //! | Backend | Models | Feature flag |
 //! |---------|--------|-------------|
-//! | [`GenericTransformer`] | `LLaMA`, `Qwen2`, `Qwen3`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral; bidirectional masked-diffusion decoders (Dream, `a2d-qwen2`); + auto-config for unknown families | `transformer` |
+//! | [`GenericTransformer`] | `LLaMA`, `Qwen2`, `Qwen3`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral; bidirectional masked-diffusion decoders (Dream, `a2d-qwen2`, `a2d-qwen3`); + auto-config for unknown families | `transformer` |
 //! | `GenericRwkv` | RWKV-6 (Finch), RWKV-7 (Goose) | `rwkv` |
 //! | `GenericMdlm` | MDLM masked-diffusion `DiT` (bidirectional) | `diffusion` |
 //! | `OthelloGpt` | Plain GPT-2-style backbone (learned absolute positions, full `LayerNorm`, exact-`GELU`); the `OthelloMDLM` world model | `diffusion` |
@@ -35,6 +35,7 @@
 //! | `diffusion` | no | MDLM masked-diffusion backend (bidirectional `DiT`; standalone) |
 //! | `clt` | no | Cross-Layer Transcoder support |
 //! | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
+//! | `quantized` | no | Load quantized checkpoints (bitsandbytes `NF4`/`FP4`/`INT8`, AWQ, GPTQ) by dequantizing to BF16 via `anamnesis` |
 //! | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
 //! | `memory` | no | RAM/VRAM reporting (delegated to the `hypomnesis` crate) |
 //! | `memory-debug` | no | Raw GPU-backend measurement values on stderr (via `hypomnesis`; implies `memory`) |

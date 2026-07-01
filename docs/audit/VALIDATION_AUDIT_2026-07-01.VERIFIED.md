@@ -108,6 +108,25 @@ Every item below was independently re-derived from source and **CONFIRMED**. Sev
 
 ---
 
+## 5. Rustdoc accuracy (coverage extension — 2026-07-01)
+
+**Not in the original audit.** The source audit's §4 scoped "documentation staleness" to **markdown** files only (`README.md`, `ROADMAP.md`, `BACKENDS.md`, `HOOKS.md`, `docs/`, `design/`); it never audited the in-source **rustdoc** (`//!`/`///` comments), which is what renders on docs.rs. A follow-up pass (three parallel deep-reads over `src/`, each independently re-derived from code) closed that gap. It found the **same "`quantized` is new and got forgotten" pattern** the markdown audit caught in `ROADMAP.md §6.1`, plus a few genuine stale-doc inaccuracies — all now fixed.
+
+**`quantized` documentation gaps (found + fixed):**
+- **`src/lib.rs` feature-flags table omitted `quantized`** — the docs.rs landing page listed every feature except the one just wired into CI. **✅ Added.**
+- **`Cargo.toml [package.metadata.docs.rs].features` omitted `quantized`** — docs.rs built without the dequant path. **✅ Added.** (Audit-of-the-audit: the docs.rs list is otherwise complete; `memory-debug` gates no unique `pub` item, `cuda`/`metal` are hardware-gated — omissions there are correct.)
+- **`MIModel::from_pretrained` rustdoc never mentioned quantized support** — the bnb/AWQ/GPTQ auto-detection was documented only on the *private* `load_quantized_var_builder`, which never renders on docs.rs, so the capability was undiscoverable. **✅ Added a "Quantized checkpoints" section** (accurate to the `MIError::Config` disabled-feature fallback and the single-file-only limit).
+
+**Stale/inaccurate rustdoc (found + fixed):**
+- **`src/clt/mod.rs:2416`** — `GemmaScopeNpz` doc said "loading is deferred to v0.1.10," but that loader shipped (`load_encoder_npz`, routed via `open_gemmascope`). Confirmed by two independent passes. **✅ Reworded** to "loaded via `load_encoder_npz`."
+- **`src/config.rs:533`** — `parse_qwen3` doc said "Differs from `parse_qwen2` in **three** places" but the sentence enumerates exactly **two** (drops QKV bias; adds per-head-dim QK-norm). **✅ Corrected to "two."**
+- **`src/lib.rs:18`** — the "Supported backends" table listed only `Dream, a2d-qwen2`, but `SUPPORTED_MODEL_TYPES` (`config.rs:54-56`) routes **three** decoder families including `a2d-qwen3`. **✅ Added `a2d-qwen3`.**
+- **`src/transformer/rope.rs:297`** — the `start_pos` doc implied a KV-cache generation path, but every caller passes `0` and the backend has no KV cache (it recomputes the full sequence). **✅ Softened** to note the parameter is reserved and the backend always passes `0`.
+
+**Verified clean (no rustdoc defect — spot-checked and dismissed):** no `ForwardConfig` reference anywhere in `src/` (the design-doc defect never leaked into rustdoc); the RWKV-7 effective-attention docs correctly describe `compute_effective_attention_v7` as **shipped** (not the open question the *design doc* framed); the `rwkv/config.rs` doctest's `num_heads == 32` from `num_attention_heads: 64` is a **documented head-dim remap** (HF stores `head_size` there), not a bug; every `//!`/`///` doctest example uses real, current symbols (`HookSpec`, `Intervention::{Replace,Add,Knockout,Scale,Zero}` with correct arities — no phantom `Steer`); and the `lib.rs` feature/backends tables are otherwise complete against `Cargo.toml`. Two items were deliberately **left as-is**: `clt/gemmascope.rs:25`'s "v0.1.10 GemmaScope arm" (a provenance marker naming the release it landed in, not a deferral claim) and the self-consistent-but-unwired `cache/kv.rs`/`util/masks.rs` generation utilities (accurate to what they do; not an inaccuracy).
+
+---
+
 ## What the audit got right about its own limits
 
 The source audit's "What's genuinely solid" and "Verification addendum" sections were themselves spot-checked. They hold — with the **single exception** noted in C2 (the addendum wrongly claims to have re-confirmed `src/diffusion/rope.rs:95` as untagged; it carries the tag). The audit's own numeric self-corrections (661 lines, 10 CLT tests, 22/23 enums, the `validate_plt_gemma` "never compiles" sharpening, the "1 of 11" roadmap-link count) were all independently reproduced and are correct.

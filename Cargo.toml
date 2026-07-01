@@ -431,7 +431,7 @@ must_use_candidate        = "warn"      # Rule 17
 # CPU-safe features so the generated docs cover the full public API surface.
 [package.metadata.docs.rs]
 no-default-features = true
-features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "mmap", "memory", "probing", "stoicheia"]
+features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "quantized", "mmap", "memory", "probing", "stoicheia"]
 
 [profile.release]
 lto = true

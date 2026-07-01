@@ -138,6 +138,17 @@ impl MIModel {
     /// 16 GB VRAM at F32.  For larger models or when speed matters more than
     /// precision, use the backend-specific `load()` API with `DType::BF16`.
     ///
+    /// # Quantized checkpoints
+    ///
+    /// When the model's `config.json` carries a `quantization_config` block and
+    /// candle-mi is built with the `quantized` feature, the weights are
+    /// transparently dequantized to BF16 in memory (bitsandbytes `NF4`/`FP4`/
+    /// `INT8`, AWQ, GPTQ, auto-detected via `anamnesis`) before the forward
+    /// pass — no separate API call is needed.  Without the `quantized` feature,
+    /// such a checkpoint returns a clear [`MIError::Config`] telling you to enable
+    /// it.  Single-file safetensors only for now (sharded quantized checkpoints
+    /// are not yet supported).
+    ///
     /// # Errors
     ///
     /// Returns [`MIError::Config`] if the model type is unsupported, or

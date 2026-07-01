@@ -294,9 +294,10 @@ impl RopeCache {
     /// - `x`: `[batch, n_heads, seq_len, head_dim]`
     /// - returns: `[batch, n_heads, seq_len, head_dim]`
     ///
-    /// The `start_pos` parameter supports incremental generation (KV-cache):
-    /// positions are offset by `start_pos` so that cached keys keep their
-    /// original positional encoding.
+    /// The `start_pos` parameter offsets positions for incremental generation
+    /// (KV-cache) so cached keys keep their original positional encoding. The
+    /// transformer backend currently recomputes the full sequence each step and
+    /// always passes `start_pos = 0`; the offset is reserved for cached generation.
     ///
     /// # Errors
     ///

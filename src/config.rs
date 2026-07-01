@@ -530,7 +530,7 @@ impl TransformerConfig {
 
     /// Parse a `Qwen3` config.
     ///
-    /// Differs from [`parse_qwen2`](Self::parse_qwen2) in three places:
+    /// Differs from [`parse_qwen2`](Self::parse_qwen2) in two places:
     /// drops the QKV bias (`Qwen3` has no `attention_bias`), and adds
     /// per-head-dim `RMSNorm` on `Q` and `K` before `RoPE`
     /// (`use_qk_norm: true`, `qk_norm_eps` parsed from `rms_norm_eps`).

@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `.contiguous()` comment in `transformer/rope.rs` as `// CONTIGUOUS:`, and moved
   the `// SAFETY:` block in `memory.rs` immediately above its `unsafe` block. No
   behavioral change.
+- **Rustdoc accuracy** (a coverage extension — the audit only checked markdown
+  docs): documented the `quantized` feature on the docs.rs landing page (feature
+  table + `[package.metadata.docs.rs]` build list) and in `MIModel::from_pretrained`
+  (bnb/AWQ/GPTQ auto-detection); corrected a stale "loading is deferred to v0.1.10"
+  note on the shipped GemmaScope NPZ loader (`clt`), a `parse_qwen3` "three
+  places"→"two" miscount, an omitted `a2d-qwen3` in the backends table, and a
+  `RopeCache::apply` `start_pos` doc that implied a nonexistent KV-cache path.
 
 ## [0.1.17] - 2026-06-29
 

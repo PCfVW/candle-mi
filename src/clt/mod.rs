@@ -2413,7 +2413,7 @@ fn classify_transcoder_schema(filenames: &[&str]) -> Result<TranscoderSchema> {
 /// - `PltBundle`: `layer_{layer}.safetensors` + un-suffixed `W_enc` + `b_enc` —
 ///   bundled with `W_dec`/`W_skip`/`b_dec` in the same file.
 /// - `GemmaScopeNpz`: `gemmascope_npz_paths[layer]` + un-suffixed `W_enc` +
-///   `b_enc` — per-layer NPZ file; loading is deferred to v0.1.10.
+///   `b_enc` — per-layer NPZ file, loaded via `load_encoder_npz`.
 ///
 /// # Errors
 ///
