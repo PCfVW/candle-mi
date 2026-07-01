@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **`tokenizers` now built with `default-features = false, features = ["onig",
+  "esaxx_fast"]`** — drops the default `progressbar` feature, which candle-mi
+  never uses (its download progress bars come from `hf-fetch-model`'s indicatif
+  0.18). This removes the otherwise-unused `indicatif 0.17 → console 0.15 →
+  windows-sys 0.59` chain, collapsing the dev dependency tree to a single active
+  `windows-sys` (0.61.2) on Windows. Tokenization is byte-identical (`onig`
+  Oniguruma backend kept); the transformer lib suite (153 tests) passes. Note:
+  `windows-sys` is `cfg(windows)`-only and a library's `Cargo.lock` isn't
+  consumed downstream, so this is a dev-tree cleanup, not a runtime change.
+
 ### Fixed
 
 - **Documentation staleness** flagged by the 2026-07-01 validation audit: bumped
