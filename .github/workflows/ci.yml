@@ -85,6 +85,22 @@ jobs:
       - name: Tests (CLT)
         run: cargo test --no-default-features --features "clt,transformer" --lib
 
+      # Quantized loading (bnb NF4/FP4/INT8, AWQ, GPTQ dequant via anamnesis) is
+      # opt-in and pairs with `transformer`. It had ZERO CI presence before, so a
+      # regression in the anamnesis dequant path (which already broke once from an
+      # upstream signature change) could merge undetected. The parity tests in
+      # validate_quantized_loading are #[ignore] (need cached quantized checkpoints
+      # + a GPU); this lane still compiles that test binary, catching signature/API
+      # breaks even though the ignored cases don't run on CI.
+      - name: Build (Quantized)
+        run: cargo build --no-default-features --features "quantized,transformer"
+
+      - name: Clippy (Quantized, pedantic)
+        run: cargo clippy --no-default-features --features "quantized,transformer" -- -W clippy::pedantic
+
+      - name: Tests (Quantized)
+        run: cargo test --no-default-features --features "quantized,transformer" --lib --test validate_quantized_loading
+
       # Diffusion is a standalone backend (MDLM masked-diffusion DiT) that does
       # NOT imply `transformer`, so none of the lanes above ever compile it.
       # Without a dedicated lane the whole `src/diffusion/` module, its three
@@ -131,4 +147,4 @@ jobs:
       # Check 6 (Rule 15): All software features build
       # Note: cuda/metal features require hardware; test all software features instead
       - name: Build (all software features)
-        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing"
+        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized"

@@ -80,6 +80,18 @@ jobs:
       - name: Tests (CLT)
         run: cargo test --no-default-features --features "clt,transformer" --lib
 
+      # Quantized loading (bnb/AWQ/GPTQ dequant via anamnesis), opt-in, pairs with
+      # `transformer`. Mirrors ci.yml so a quantized-path regression can't slip
+      # through publish either. Parity tests are #[ignore]; this compiles them.
+      - name: Build (Quantized)
+        run: cargo build --no-default-features --features "quantized,transformer"
+
+      - name: Clippy (Quantized, pedantic)
+        run: cargo clippy --no-default-features --features "quantized,transformer" -- -W clippy::pedantic
+
+      - name: Tests (Quantized)
+        run: cargo test --no-default-features --features "quantized,transformer" --lib --test validate_quantized_loading
+
       # Diffusion is a standalone backend (MDLM masked-diffusion DiT) that does
       # NOT imply `transformer`, so none of the lanes above compile it. Without
       # this lane the whole `src/diffusion/` module ships unverified by publish.
@@ -117,7 +129,7 @@ jobs:
         run: cargo build --no-default-features
 
       - name: Build (all software features)
-        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing"
+        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized"
 
       # Publish
       - name: Publish to crates.io
