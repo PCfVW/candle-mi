@@ -19,24 +19,31 @@ the same convention used by
 
 ---
 
-## Status (2026-06-04)
+## Status (last updated 2026-07-01)
 
-Design phase. No code written yet. This document is the pre-flight plan; it
-will be reviewed before any implementation begins.
+**Concluded at Step A with a negative (modality) result; Steps B–E not pursued.**
+Step 0 scaffolding and the Step A baseline shipped; the Step A gate failed — base
+Gemma 2 2B is at **chance** on single-action gridworld selection across coord,
+ASCII, and direct-direction encodings at 0–20 shots. The blocker is spatial
+reasoning (coordinate comparison), not the token mapping. The prolepsis question
+moved to the *linguistic* modality instead — see the means-ends prolepsis cell
+(`docs/experiments/means-ends-prolepsis/`), where the `on_off` cell passes
+decisively (1.00/1.00 on Gemma 2 2B). Full result JSONs for this experiment are
+under `docs/experiments/gridworld-prolepsis/`; see also `CHANGELOG.md`.
 
-| Step | Status | Artefact (planned) |
+| Step | Status | Artefact |
 |---|---|---|
-| 0 — Gridworld generator + prompt formatter | ⏳ Not started | `scripts/gridworld_generator.py`, prompt module in `examples/gridworld_prolepsis.rs` |
-| A — Baseline feasibility on Gemma 2 2B | ⏳ Not started | `docs/experiments/gridworld-prolepsis/baseline_gemma2_2b_2.5m.json` |
-| B — Prolepsis replication (suppress-plus-inject) | ⏳ Not started | `docs/experiments/gridworld-prolepsis/prolepsis_gemma2_2b_2.5m.json` |
-| C — Permutation test (spatial vs lexical commitment) | ⏳ Not started | `docs/experiments/gridworld-prolepsis/permutation_gemma2_2b_2.5m.json` |
-| D — Irrevocability test (Appendix G analogue) | ⏳ Not started | `docs/experiments/gridworld-prolepsis/irrevocability_gemma2_2b_2.5m.json` |
-| E — Write-up + figures + ship | ⏳ Not started | `findings.md`, `gridworld_prolepsis_plot.wl` + `plots/*.png`, README row, `CHANGELOG.md` |
+| 0 — Gridworld generator + prompt formatter | ✅ Done | `scripts/gridworld_generator.py`, `examples/gridworld_prolepsis` |
+| A — Baseline feasibility on Gemma 2 2B | ✅ Done — **negative** (base at chance; modality finding) | `docs/experiments/gridworld-prolepsis/baseline_gemma2_2b_2.5m*.json`, `sweep_k*.json`, `control_*.json` |
+| B — Prolepsis replication (suppress-plus-inject) | ⛔ Not pursued (gated by Step A) | superseded by the means-ends linguistic cell |
+| C — Permutation test (spatial vs lexical commitment) | ⛔ Not pursued (gated by Step A) | superseded by the means-ends linguistic cell |
+| D — Irrevocability test (Appendix G analogue) | ⛔ Not pursued (gated by Step A) | superseded by the means-ends linguistic cell |
+| E — Write-up + figures + ship | ⛔ Not pursued (gated by Step A) | — |
 
-**Result in one sentence (to be filled at Step E).** _TBD — whether the
-prolepsis spike geometry replicates in gridworld action planning, and whether
-the commitment layer is mapping-invariant (spatial) or mapping-dependent
-(lexical)._
+**Result in one sentence.** The prolepsis spike geometry could not be tested in
+gridworld action planning because base Gemma 2 2B lacks the spatial prior to
+select even a single correct move — a modality finding that redirected the work
+to a linguistic (means-ends STRIPS) planning cell, which does replicate.
 
 ---
 

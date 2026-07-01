@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Documentation staleness** flagged by the 2026-07-01 validation audit: bumped
+  the `README.md` version banner from v0.1.12 to v0.1.17; added a "historical
+  planning document" banner to `ROADMAP.md` pointing at `CHANGELOG.md` as the
+  authoritative status source; and rewrote the `PLAN-GRIDWORLD-PROLEPSIS.md`
+  status section to reflect that the experiment concluded at Step A with a
+  negative (modality) result rather than "not started."
+- **CONVENTIONS.md annotation gaps** (same audit, §3): tagged the two
+  `.len() as f32` casts in `interp/intervention.rs` with `// CAST:`, retagged the
+  `.contiguous()` comment in `transformer/rope.rs` as `// CONTIGUOUS:`, and moved
+  the `// SAFETY:` block in `memory.rs` immediately above its `unsafe` block. No
+  behavioral change.
+
 ## [0.1.17] - 2026-06-29
 
 ### Added
