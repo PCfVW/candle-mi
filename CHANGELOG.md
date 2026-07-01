@@ -14,8 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   planning document" banner to `ROADMAP.md` pointing at `CHANGELOG.md` as the
   authoritative status source; and rewrote the `PLAN-GRIDWORLD-PROLEPSIS.md`
   status section to reflect that the experiment concluded at Step A with a
-  negative (modality) result rather than "not started"; and added the
-  `RwkvEffectiveAttn` hook point to the `design/hook-system.md` enum listing.
+  negative (modality) result rather than "not started"; added the
+  `RwkvEffectiveAttn` hook point to the `design/hook-system.md` enum listing;
+  and corrected the "Status: Implemented" design notes
+  `design/intervention-api.md` (documents the real `HookSpec` API, not the
+  never-built `ForwardConfig`) and `design/rwkv7-effective-attention.md`
+  (records that the numerical `compute_effective_attention_v7` shipped).
 - **CONVENTIONS.md annotation gaps** (same audit, §3): tagged the two
   `.len() as f32` casts in `interp/intervention.rs` with `// CAST:`, retagged the
   `.contiguous()` comment in `transformer/rope.rs` as `// CONTIGUOUS:`, and moved

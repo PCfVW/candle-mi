@@ -1,6 +1,9 @@
 # Design: RWKV-7 Effective Attention Formula
 
-**Status:** Implemented
+**Status:** Implemented — approach 1 (numerical) shipped as
+`compute_effective_attention_v7` (`src/rwkv/mod.rs`), exposed via
+`HookPoint::RwkvEffectiveAttn`. See "Resolution" below; the "Possible approaches"
+section records the design-time options, not open questions.
 **Relates to:** Roadmap §8 item 7, Phase 2
 
 ## Question
@@ -29,8 +32,25 @@ Each factor is diag + rank-1, but their product is **not** diag + rank-1 in gene
 2. **Low-rank approximation**: Truncate the cumulative product to diag + low-rank after each step. Accuracy depends on spectral properties.
 3. **Defer**: Ship RWKV-7 without effective attention initially; add it when the math is worked out.
 
-## Open questions
+## Resolution (as implemented)
 
-- Is there a closed-form for the product of (diag + rank-1) matrices?
-- Does the RWKV-7 paper or fla codebase provide any equivalent computation?
-- Is effective attention even the right abstraction for RWKV-7, or should we use a different interpretability primitive?
+**Approach 1 (numerical) was chosen and shipped** as
+`compute_effective_attention_v7` in `src/rwkv/mod.rs`. It builds the effective
+attention matrix row by row from the diag+rank-1 recurrence inputs
+(`r, k, w, kk, a`), materialising the cumulative contribution of each source
+position to each query position rather than seeking a closed form. The result is
+normalised (`ReLU` + L1) and surfaced through `HookPoint::RwkvEffectiveAttn(i)`
+with shape `[batch, heads, seq_query, seq_source]`.
+
+This is exact (no low-rank truncation) and validated to 6 decimal places against
+the reference — acceptable because MI analyses run on short sequences where the
+`O(T² · D²)` cost is not a bottleneck. Approaches 2 (low-rank approximation) and 3
+(defer) were not needed.
+
+### Design-time open questions, retrospectively
+
+- *Closed-form for the product of (diag + rank-1) matrices?* — Not required; the
+  numerical row-by-row build is exact and fast enough for interpretability
+  workloads.
+- *Right abstraction for RWKV-7?* — Yes; effective attention transfers cleanly and
+  is the primitive exposed to users, consistent with the RWKV-6 path.
