@@ -397,9 +397,8 @@ fn sae_vs_python_reference() {
     // is missing, so a developer running `--ignored` without first generating it
     // gets a clear error instead of a false green — matching the PLT/CLT-Qwen3
     // sibling tests (validate_plt.rs, validate_clt_qwen3.rs).
-    let ref_text = std::fs::read_to_string(ref_path).expect(
-        "failed to read scripts/sae_reference.json — run scripts/sae_validation.py first",
-    );
+    let ref_text = std::fs::read_to_string(ref_path)
+        .expect("failed to read scripts/sae_reference.json — run scripts/sae_validation.py first");
     let reference: serde_json::Value = serde_json::from_str(&ref_text).unwrap();
 
     let py_d_in = reference["d_in"].as_u64().unwrap() as usize;
