@@ -37,6 +37,7 @@ pub enum HookPoint {
     // RWKV-specific
     RwkvState(usize),
     RwkvDecay(usize),
+    RwkvEffectiveAttn(usize),
     // Escape hatch
     Custom(String),
 }

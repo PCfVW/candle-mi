@@ -96,7 +96,7 @@ Every item below was independently re-derived from source and **CONFIRMED**. Sev
 - **`candle_mi_v019_roadmap{,_V2,_V3}.md`** — three superseding variants, zero "supersed*" markers, none point to what shipped (v0.1.9–v0.1.11). **Medium.**
 - **`design/intervention-api.md`** marked "Status: Implemented" (`:3`) but describes a `ForwardConfig::new().capture(...).intervene(...)` API that does not exist (`grep ForwardConfig src/` → zero); actual API is `HookSpec`-based. **High.**
 - **`design/rwkv7-effective-attention.md`** marked "Status: Implemented" (`:3`) but body (`:26-37`) still reads as an open research question ("Defer: ship without it"); `compute_effective_attention_v7` was in fact built (`src/rwkv/mod.rs:1181`). **Medium.**
-- **`design/hook-system.md`** HookPoint listing (`:19-42`) omits `RwkvEffectiveAttn(usize)`, which exists and is fully wired (`src/hooks.rs:93,119,171,510`). **Low.**
+- **`design/hook-system.md`** HookPoint listing (`:19-42`) omits `RwkvEffectiveAttn(usize)`, which exists and is fully wired (`src/hooks.rs:93,119,171,510`). **Low.** — **✅ RESOLVED:** added `RwkvEffectiveAttn(usize)` to the enum listing, immediately after `RwkvDecay(usize)`, mirroring source order.
 - **`design/candle-version.md`** recommends exact-pin `candle-core = "=0.9"` (`:19-22`); actual `Cargo.toml:32-33` uses caret `"0.9"`. **Low.**
 - **`scripts/README.md`** accurate through ~v0.1.12; ~20 newer scripts undocumented (omission, not false claim; see §4-row-13 caveat re: no quantized *Python* script). **Low.**
 - **`CHANGELOG.md`** body accurate/complete for 0.1.9–0.1.17; sole defect is a dangling version-link footer stuck at `[0.1.8]`. **Low.**
