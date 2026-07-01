@@ -92,6 +92,20 @@ jobs:
       - name: Tests (Quantized)
         run: cargo test --no-default-features --features "quantized,transformer" --lib --test validate_quantized_loading
 
+      # SAE clippy (only appeared in a plain build before — no pedantic lint).
+      - name: Build (SAE)
+        run: cargo build --no-default-features --features "sae,transformer"
+
+      - name: Clippy (SAE, pedantic)
+        run: cargo clippy --no-default-features --features "sae,transformer" -- -W clippy::pedantic
+
+      # mmap gates the unsafe mmapped-safetensors loader; lint that path too.
+      - name: Build (mmap)
+        run: cargo build --no-default-features --features "mmap,transformer"
+
+      - name: Clippy (mmap, pedantic)
+        run: cargo clippy --no-default-features --features "mmap,transformer" -- -W clippy::pedantic
+
       # Diffusion is a standalone backend (MDLM masked-diffusion DiT) that does
       # NOT imply `transformer`, so none of the lanes above compile it. Without
       # this lane the whole `src/diffusion/` module ships unverified by publish.
@@ -119,6 +133,13 @@ jobs:
 
       - name: Tests (memory)
         run: cargo test --no-default-features --features memory --lib --test validate_memory
+
+      # memory-debug (memory + hypomnesis/debug-output): feature-resolution guard.
+      - name: Build (memory-debug)
+        run: cargo build --no-default-features --features memory-debug
+
+      - name: Clippy (memory-debug, pedantic)
+        run: cargo clippy --no-default-features --features memory-debug -- -W clippy::pedantic
 
       # Doctests for every feature-gated public example in one pass (audit §1.10);
       # the old transformer+memory-only lane left clt/sae/rwkv doc examples

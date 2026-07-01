@@ -101,6 +101,24 @@ jobs:
       - name: Tests (Quantized)
         run: cargo test --no-default-features --features "quantized,transformer" --lib --test validate_quantized_loading
 
+      # SAE (~1.5k lines in src/sae/) is opt-in and pairs with `transformer`. It
+      # only ever appeared inside the combined `cargo build` (no clippy), so
+      # sae-specific pedantic lints escaped CI entirely. This lane lints it.
+      - name: Build (SAE)
+        run: cargo build --no-default-features --features "sae,transformer"
+
+      - name: Clippy (SAE, pedantic)
+        run: cargo clippy --no-default-features --features "sae,transformer" -- -W clippy::pedantic
+
+      # mmap is a weight-loading mode that gates the unsafe mmapped-safetensors
+      # loader in backend.rs (6 cfg sites, incl. the deny(unsafe_code)+mmap path).
+      # No lane ever compiled it, so that unsafe path was never clippy'd on CI.
+      - name: Build (mmap)
+        run: cargo build --no-default-features --features "mmap,transformer"
+
+      - name: Clippy (mmap, pedantic)
+        run: cargo clippy --no-default-features --features "mmap,transformer" -- -W clippy::pedantic
+
       # Diffusion is a standalone backend (MDLM masked-diffusion DiT) that does
       # NOT imply `transformer`, so none of the lanes above ever compile it.
       # Without a dedicated lane the whole `src/diffusion/` module, its three
@@ -132,6 +150,15 @@ jobs:
 
       - name: Tests (memory)
         run: cargo test --no-default-features --features memory --lib --test validate_memory
+
+      # memory-debug = memory + hypomnesis/debug-output. It gates no candle-mi
+      # source of its own, so this lane is a feature-resolution guard: it catches
+      # a hypomnesis debug-output combo that stops resolving/compiling on a bump.
+      - name: Build (memory-debug)
+        run: cargo build --no-default-features --features memory-debug
+
+      - name: Clippy (memory-debug, pedantic)
+        run: cargo clippy --no-default-features --features memory-debug -- -W clippy::pedantic
 
       # Doctests for every feature-gated public example in ONE pass. The previous
       # `transformer,memory`-only lane left the clt, sae, and rwkv doc examples

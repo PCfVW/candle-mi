@@ -75,8 +75,8 @@ function Invoke-Cargo {
 }
 
 # Feature sets and the all-software set — keep in sync with ci.yml.
-$featureSets = @("transformer", "rwkv,rwkv-tokenizer", "stoicheia", "clt,transformer", "diffusion", "memory")
-$allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing"
+$featureSets = @("transformer", "rwkv,rwkv-tokenizer", "stoicheia", "clt,transformer", "quantized,transformer", "sae,transformer", "mmap,transformer", "diffusion", "memory", "memory-debug")
+$allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized"
 
 # Skip the bench_hook_* benches unless -Full (see header note).
 $benchArgs = if ($Full) { @() } else { @("--", "--skip", "bench_hook") }
@@ -120,6 +120,13 @@ function Invoke-Lanes {
     Invoke-Cargo "[$Tc] Tests (CLT)" $Tc `
         @("test", "--no-default-features", "--features", "clt,transformer", "--lib")
 
+    # Quantized loading (bnb/AWQ/GPTQ dequant); parity tests are #[ignore], so
+    # this compiles the test binary to catch signature/API breaks.
+    Invoke-Cargo "[$Tc] Build (Quantized)" $Tc `
+        @("build", "--no-default-features", "--features", "quantized,transformer")
+    Invoke-Cargo "[$Tc] Tests (Quantized)" $Tc `
+        @("test", "--no-default-features", "--features", "quantized,transformer", "--lib", "--test", "validate_quantized_loading")
+
     Invoke-Cargo "[$Tc] Build (Diffusion + examples)" $Tc `
         @("build", "--no-default-features", "--features", "diffusion", "--examples")
     Invoke-Cargo "[$Tc] Tests (Diffusion)" $Tc `
@@ -136,10 +143,10 @@ function Invoke-Lanes {
         @("build", "--no-default-features", "--features", "memory")
     Invoke-Cargo "[$Tc] Tests (memory)" $Tc `
         @("test", "--no-default-features", "--features", "memory", "--lib", "--test", "validate_memory")
-    # Doctest the memory module's example (transformer+memory; memory-only --doc
-    # can't compile the from_pretrained crate examples).
-    Invoke-Cargo "[$Tc] Doctests (transformer+memory)" $Tc `
-        @("test", "--no-default-features", "--features", "transformer,memory", "--doc")
+    # Doctest every feature-gated public example in one pass (clt/sae/rwkv were
+    # uncovered by the old transformer+memory-only lane). Mirrors ci.yml §1.10.
+    Invoke-Cargo "[$Tc] Doctests (all software features)" $Tc `
+        @("test", "--no-default-features", "--features", ($allSoftware + ",memory"), "--doc")
 
     Invoke-Cargo "[$Tc] Build (no default features)" $Tc `
         @("build", "--no-default-features")
