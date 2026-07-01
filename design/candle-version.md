@@ -13,15 +13,21 @@ candle is pre-1.0 (currently 0.9.x). Breaking changes between minor versions are
 
 ## Recommendation
 
-Pin to a specific minor version in `Cargo.toml` and update incrementally:
+Track a minor version in `Cargo.toml` and update incrementally:
 
 ```toml
 [dependencies]
-candle-core = "=0.9"
-candle-nn = "=0.9"
+candle-core = "0.9"
+candle-nn = "0.9"
 ```
 
-Test against the pinned version in CI. Update the pin only after verifying compatibility.
+> **As implemented:** the shipped `Cargo.toml` uses the caret range `"0.9"`
+> (`>=0.9.0, <0.10.0`), not the exact pin `"=0.9"` this note originally proposed.
+> The caret admits compatible `0.9.x` patch upgrades automatically; CI's rolling
+> matrix plus the pinned `Cargo.lock` provide the compatibility check the exact
+> pin was meant to guarantee.
+
+Test against the resolved version in CI. Widen the range only after verifying compatibility.
 
 ## Open questions
 
