@@ -1,8 +1,9 @@
 # Geometric Calculator — Minimum-Architecture Sweep — Experiment Plan
 
 **Scope:** a single experimental question, tracked separately from the master
-roadmap, targeting candle-mi **v0.1.13**. (`v0.2.0` is reserved for the NLnet
-grant work; this is a `v0.1.x` patch.)
+roadmap. Originally targeted candle-mi **v0.1.13**; **postponed** (see Status
+below) — still a `v0.1.x` patch when picked up, since `v0.2.0` is reserved for
+the NLnet grant work.
 
 **The question:** does the "geometric calculator" mechanism — circular (Fourier)
 number representations manipulated by a parallel modular-addition module —
@@ -17,7 +18,15 @@ target without infrastructure noise — the same convention used by
 
 ---
 
-## Status (2026-06-03)
+## Status (2026-06-03; updated 2026-07-01)
+
+> **Postponed, not abandoned.** This experiment is still planned; it has simply
+> not started yet. The original **v0.1.13** target slipped because a run of more
+> urgent work landed first (the MDLM/diffusion + OthelloGpt backends, the
+> hypomnesis memory migration, quantized loading, and the exact-parity validation
+> pass across v0.1.13–v0.1.17). The design below stands and will be picked up as a
+> future `v0.1.x` patch; the steps remain "Not started" only because no code has
+> been written for *this* experiment, not because it was dropped.
 
 Design phase. No code written yet. This document is the pre-flight plan; it will
 be reviewed before any implementation begins.
