@@ -390,4 +390,59 @@ mod tests {
             assert!(n.correlation >= 0.0);
         }
     }
+
+    /// Eight synthetic probe inputs (`seq_len == 4`), all positive so the ReLU in
+    /// the reference signals is a no-op.
+    fn synthetic_probe_inputs() -> Vec<Vec<f32>> {
+        vec![
+            vec![3.0, 1.0, 2.0, 0.5],
+            vec![1.0, 5.0, 2.0, 1.0],
+            vec![0.2, 0.1, 4.0, 1.0],
+            vec![2.0, 2.0, 2.0, 6.0],
+            vec![1.0, 1.5, 1.0, 1.2],
+            vec![7.0, 0.0, 0.0, 0.0],
+            vec![0.5, 0.5, 0.5, 8.0],
+            vec![2.5, 3.5, 1.0, 0.0],
+        ]
+    }
+
+    #[test]
+    fn best_probe_match_selects_running_max() {
+        let inputs = synthetic_probe_inputs();
+        // Per-input running max (== column-wise max, all positive).
+        let activations = vec![3.0_f32, 5.0, 4.0, 6.0, 1.5, 7.0, 8.0, 3.5];
+        let (role, corr) = best_probe_match(&activations, &inputs, 4);
+        assert!(
+            matches!(role, NeuronRole::RunningMax),
+            "expected RunningMax, got {role:?} (corr {corr})"
+        );
+        assert!(corr > 0.99, "corr = {corr}");
+    }
+
+    #[test]
+    fn best_probe_match_selects_recent_input() {
+        let inputs = synthetic_probe_inputs();
+        // Per-input last element (the RecentInput reference signal).
+        let activations = vec![0.5_f32, 1.0, 1.0, 6.0, 1.2, 0.0, 8.0, 0.0];
+        let (role, corr) = best_probe_match(&activations, &inputs, 4);
+        assert!(
+            matches!(role, NeuronRole::RecentInput),
+            "expected RecentInput, got {role:?} (corr {corr})"
+        );
+        assert!(corr > 0.99, "corr = {corr}");
+    }
+
+    #[test]
+    fn best_probe_match_constant_activation_is_unknown() {
+        let inputs = synthetic_probe_inputs();
+        // Zero-variance activations correlate with nothing (pearson_abs → 0), so
+        // the best correlation stays below CORRELATION_THRESHOLD → Unknown.
+        let activations = vec![4.0_f32; 8];
+        let (role, corr) = best_probe_match(&activations, &inputs, 4);
+        assert!(
+            matches!(role, NeuronRole::Unknown),
+            "expected Unknown, got {role:?} (corr {corr})"
+        );
+        assert!(corr < 1e-6, "corr = {corr}");
+    }
 }

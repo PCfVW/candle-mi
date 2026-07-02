@@ -113,3 +113,78 @@ pub fn longest_cycle(input: &Tensor) -> Result<Tensor> {
 
     Ok(Tensor::new(&results[..], input.device())?)
 }
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use candle_core::Device;
+
+    /// Build a `[batch, seq_len]` U32 tensor from a flat row-major vec.
+    fn u32_tensor(rows: &[u32], batch: usize, seq_len: usize) -> Tensor {
+        Tensor::from_vec(rows.to_vec(), (batch, seq_len), &Device::Cpu).unwrap()
+    }
+
+    #[test]
+    fn longest_cycle_identity_is_one() {
+        // f(x) = x for all x → every element is a fixed point (cycle length 1).
+        let input = u32_tensor(&[0, 1, 2, 3], 1, 4);
+        let out: Vec<u32> = longest_cycle(&input).unwrap().to_vec1().unwrap();
+        assert_eq!(out, vec![1]);
+    }
+
+    #[test]
+    fn longest_cycle_single_full_cycle() {
+        // 0→1→2→3→0 is one 4-cycle.
+        let input = u32_tensor(&[1, 2, 3, 0], 1, 4);
+        let out: Vec<u32> = longest_cycle(&input).unwrap().to_vec1().unwrap();
+        assert_eq!(out, vec![4]);
+    }
+
+    #[test]
+    fn longest_cycle_two_two_cycles() {
+        // 0↔1 and 2↔3 → the longest cycle is length 2.
+        let input = u32_tensor(&[1, 0, 3, 2], 1, 4);
+        let out: Vec<u32> = longest_cycle(&input).unwrap().to_vec1().unwrap();
+        assert_eq!(out, vec![2]);
+    }
+
+    #[test]
+    fn longest_cycle_mixed_takes_the_max() {
+        // 0→1→2→0 (3-cycle) plus fixed point 3 → longest is 3.
+        let input = u32_tensor(&[1, 2, 0, 3], 1, 4);
+        let out: Vec<u32> = longest_cycle(&input).unwrap().to_vec1().unwrap();
+        assert_eq!(out, vec![3]);
+    }
+
+    #[test]
+    fn longest_cycle_batches_independently() {
+        // Row 0: identity (1); row 1: full 4-cycle (4); row 2: two 2-cycles (2).
+        let input = u32_tensor(&[0, 1, 2, 3, 1, 2, 3, 0, 1, 0, 3, 2], 3, 4);
+        let out: Vec<u32> = longest_cycle(&input).unwrap().to_vec1().unwrap();
+        assert_eq!(out, vec![1, 4, 2]);
+    }
+
+    #[test]
+    fn second_argmax_picks_runner_up_position() {
+        // Values 0.1, 0.9, 0.5, 0.3 → desc order positions [1, 2, 3, 0];
+        // the second-largest is at position 2.
+        let input = Tensor::new(&[[0.1_f32, 0.9, 0.5, 0.3]], &Device::Cpu).unwrap();
+        let out: Vec<u32> = second_argmax(&input).unwrap().to_vec1().unwrap();
+        assert_eq!(out, vec![2]);
+    }
+
+    #[test]
+    fn median_and_argmedian_agree() {
+        // Ascending sort of [1, 3, 2, 4] is [1, 2, 3, 4]; median index = 4/2 = 2 →
+        // value 3.0 at original position 1.
+        let input = Tensor::new(&[[1.0_f32, 3.0, 2.0, 4.0]], &Device::Cpu).unwrap();
+        let med: Vec<f32> = median(&input).unwrap().to_vec1().unwrap();
+        let pos: Vec<u32> = argmedian(&input).unwrap().to_vec1().unwrap();
+        assert!((med[0] - 3.0).abs() < 1e-6, "median = {}", med[0]);
+        assert_eq!(pos, vec![1]);
+    }
+}

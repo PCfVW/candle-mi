@@ -292,6 +292,26 @@ mod tests {
 
         // Ablating any single neuron should change accuracy
         assert_eq!(sweep.results.len(), 2);
+
+        // Targets are the model's own argmax, so baseline accuracy is exactly 1.0
+        // and ablation can only preserve or DAMAGE accuracy — every
+        // `accuracy_delta` must be <= 0. A sign flip in
+        // `accuracy_delta = ablated_accuracy - baseline_accuracy` would make these
+        // positive and fail here (the defect this guards against).
+        assert!(
+            (sweep.baseline_accuracy - 1.0).abs() < 1e-6,
+            "baseline = {}",
+            sweep.baseline_accuracy
+        );
+        for r in &sweep.results {
+            assert!(
+                r.accuracy_delta <= 1e-6,
+                "neuron {} delta {} should be <= 0 (ablation cannot improve a \
+                 model-derived target)",
+                r.neuron,
+                r.accuracy_delta
+            );
+        }
     }
 
     #[test]
@@ -314,5 +334,28 @@ mod tests {
         assert_eq!(pairs.len(), 1);
         assert_eq!(pairs[0].neuron_a, 0);
         assert_eq!(pairs[0].neuron_b, 1);
+
+        // The interaction score must equal `pair_delta - (delta_a + delta_b)`,
+        // re-derived here from the single-ablation sweep. This pins the arithmetic
+        // in `ablate_neuron_pairs` (a sign flip or wrong-term bug fails here).
+        let delta_a = sweep
+            .results
+            .iter()
+            .find(|r| r.neuron == 0)
+            .map(|r| r.accuracy_delta)
+            .expect("neuron 0 in single sweep");
+        let delta_b = sweep
+            .results
+            .iter()
+            .find(|r| r.neuron == 1)
+            .map(|r| r.accuracy_delta)
+            .expect("neuron 1 in single sweep");
+        let expected = pairs[0].accuracy_delta - (delta_a + delta_b);
+        assert!(
+            (pairs[0].interaction_score - expected).abs() < 1e-6,
+            "interaction_score {} != pair_delta - (delta_a + delta_b) = {}",
+            pairs[0].interaction_score,
+            expected
+        );
     }
 }
