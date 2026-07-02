@@ -128,16 +128,16 @@ cargo test --test validate_plt --features clt,transformer -- --ignored --test-th
 
 | File | Purpose |
 |------|---------|
-| `plt_gemma_validation.py` | From-first-principles encoder oracle for the GemmaScope PLT. Two-repo flow: parses `mntss/gemma-scope-transcoders/config.yaml` to discover per-layer NPZ paths, then loads each `params.npz` from `google/gemma-scope-2b-pt-transcoders` directly via `huggingface_hub` + `numpy`, applies `pre = W_enc.T @ residual + b_enc; acts = pre * (pre > threshold)` in torch on CPU. No circuit-tracer involvement. |
-| `plt_gemma_reference.json` | Python reference output: 9 test cases (3 seeds × layers {0, 12, 25}) with top-10 feature indices and activations. Frozen oracle for the Rust parity test. |
+| `plt_gemma_validation.py` | **Independent-library** encoder oracle for the GemmaScope PLT (audit §1.11): loads each transcoder through **`sae_lens`** (`SAE.from_pretrained`) and encodes with `sae_lens`'s own `encode()` — a separate implementation of the transpose/JumpReLU/bias, not a re-derivation of candle-mi's formula. candle-mi loads the same underlying `google/gemma-scope-2b-pt-transcoders` weights independently (via the `mntss/gemma-scope-transcoders` curation repo). |
+| `plt_gemma_reference.json` | `sae_lens` reference output: 9 test cases (3 seeds × layers {0, 12, 25}) with top-10 feature indices and activations. Frozen oracle for the Rust parity test (candle-mi matches to < 1e-4, indices exact). |
 
 **Regeneration:**
 ```bash
 python scripts/plt_gemma_validation.py
 ```
-Requires `torch`, `numpy`, `huggingface_hub`, `pyyaml`. Outputs
-`plt_gemma_reference.json` (~610 KB). First run downloads ~864 MiB
-(3 NPZs × ~288 MiB each FP32) into the HF cache.
+Requires `torch` + **`sae_lens`** (validation tooling only — NOT a crate
+dependency). Outputs `plt_gemma_reference.json` (~610 KB). The GemmaScope
+transcoders (~864 MiB, 3 NPZs) are fetched into the HF cache on first run.
 
 The methodology mirrors `plt_llama_validation.py`, adapted for the
 `GemmaScopeNpz` schema:
