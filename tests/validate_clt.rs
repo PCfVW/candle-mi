@@ -587,6 +587,80 @@ fn clt_position_sweep_activations() {
         );
     }
 
+    // --- Oracle comparison (scripts/clt_position_sweep_reference.json) ---
+    //
+    // The reference was captured in BF16 on CUDA (Python), while candle-mi runs
+    // F32, so activation magnitudes only agree to a few percent (see
+    // scripts/clt_position_sweep_comparison.md). The robust, hard-checked signal
+    // is the **top-1 feature index** (8/8 in the comparison doc); magnitudes get a
+    // loose relative bar and counts a small absolute margin. Hard-fail on a
+    // missing fixture, matching validate_plt.rs (never a silent skip).
+    let ref_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("scripts")
+        .join("clt_position_sweep_reference.json");
+    let ref_text = std::fs::read_to_string(&ref_path).expect(
+        "failed to read scripts/clt_position_sweep_reference.json — run \
+         scripts/clt_position_sweep_validation.py first",
+    );
+    let reference: serde_json::Value = serde_json::from_str(&ref_text).unwrap();
+
+    // Tokenizer parity: our token ids must match the oracle's.
+    let ref_token_ids: Vec<u32> = reference["token_ids"]
+        .as_array()
+        .unwrap()
+        .iter()
+        // CAST: u64 → u32, HF token ids fit in u32
+        .map(|v| v.as_u64().unwrap() as u32)
+        .collect();
+    assert_eq!(token_ids, ref_token_ids, "tokenizer mismatch vs oracle");
+
+    let ref_positions = reference["correlational"]["positions"].as_array().unwrap();
+    assert_eq!(
+        ref_positions.len(),
+        seq_len,
+        "oracle records a different position count"
+    );
+
+    for pos in 0..seq_len {
+        let ref_pos = &ref_positions[pos];
+        let ref_top = ref_pos["top_features"].as_array().unwrap();
+        // CAST: u64 → usize, feature index within the layer
+        let ref_top1_idx = ref_top[0][0].as_u64().unwrap() as usize;
+        // PROMOTE: oracle activation is a JSON f64; compare against the f32 forward
+        let ref_top1_act = ref_top[0][1].as_f64().unwrap() as f32;
+        // CAST: u64 → usize, active-feature count
+        let ref_n_active = ref_pos["n_active"].as_u64().unwrap() as usize;
+
+        let (rust_fid, rust_act) = per_position_top_features[pos][0];
+
+        // Hard gate: top-1 feature index must match the oracle exactly.
+        assert_eq!(
+            rust_fid.index, ref_top1_idx,
+            "pos {pos}: top-1 feature index {} != oracle {ref_top1_idx}",
+            rust_fid.index
+        );
+
+        // Loose gate: top-1 activation within 15% relative (BF16 oracle vs F32
+        // forward — the comparison doc sees up to ~8% on near-zero activations).
+        let rel = (rust_act - ref_top1_act).abs() / ref_top1_act.abs().max(1e-3);
+        assert!(
+            rel < 0.15,
+            "pos {pos}: top-1 activation {rust_act} vs oracle {ref_top1_act} (rel {rel:.3})"
+        );
+
+        // Active count within a small absolute margin (a broken encoder would be
+        // off by hundreds, not 3).
+        let diff = per_position_counts[pos].abs_diff(ref_n_active);
+        assert!(
+            diff <= 3,
+            "pos {pos}: n_active {} vs oracle {ref_n_active} (diff {diff})",
+            per_position_counts[pos]
+        );
+    }
+    println!(
+        "Oracle comparison passed: top-1 indices exact, top-1 activations within 15%, counts ±3"
+    );
+
     // Free GPU memory before next test.
     drop(clt);
     drop(result);
@@ -641,6 +715,25 @@ fn clt_position_sweep_causal() {
     );
     let (chosen_feature, chosen_act) = top1.features[0];
     println!("Chosen feature: {chosen_feature} (activation={chosen_act:.4})");
+
+    // Oracle cross-check: the feature picked at the planning site must match the
+    // one the Python reference chose (scripts/clt_position_sweep_reference.json).
+    let ref_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("scripts")
+        .join("clt_position_sweep_reference.json");
+    let ref_text = std::fs::read_to_string(&ref_path).expect(
+        "failed to read scripts/clt_position_sweep_reference.json — run \
+         scripts/clt_position_sweep_validation.py first",
+    );
+    let reference: serde_json::Value = serde_json::from_str(&ref_text).unwrap();
+    // CAST: u64 → usize, feature index within the layer
+    let ref_chosen = reference["causal"]["chosen_feature"].as_u64().unwrap() as usize;
+    assert_eq!(
+        chosen_feature.index, ref_chosen,
+        "planning-site feature {} != oracle chosen_feature {ref_chosen}",
+        chosen_feature.index
+    );
+    println!("Oracle cross-check: chosen feature index {ref_chosen} matches");
 
     // --- Cache decoders for ALL downstream layers (melometis Version C) ---
     clt.cache_steering_vectors_all_downstream(&[chosen_feature], &device)
@@ -1120,6 +1213,8 @@ fn clt_injection_shifts_logits_llama() {
 #[ignore = "requires cached CLT models and a CUDA GPU with at least 16 GiB VRAM"]
 #[serial]
 fn clt_position_sweep_activations_llama() {
+    // Self-consistency only: no Llama oracle exists — clt_position_sweep_reference.json
+    // is Gemma-2-2B (see the Gemma sweep tests above for the oracle-backed checks).
     let device = cuda_device().expect("CUDA required for CLT position sweep");
     if find_snapshot("meta-llama/Llama-3.2-1B").is_none() {
         panic!("meta-llama/Llama-3.2-1B not in HF cache");
