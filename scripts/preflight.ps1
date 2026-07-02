@@ -181,3 +181,8 @@ else {
     Write-Host "`nAll preflight checks passed (full stable mirror + MSRV clippy)." -ForegroundColor Green
     Write-Host "Run './scripts/preflight.ps1 -Ci' for the full both-toolchain mirror before important pushes." -ForegroundColor Yellow
 }
+
+# Nudge: how stale is the #[ignore]d oracle/parity suite? (reads RESURRECTION.md;
+# runs nothing, downloads nothing). Refresh with scripts/resurrect.ps1.
+Write-Host ''
+& (Join-Path $PSScriptRoot 'resurrect.ps1') -Status

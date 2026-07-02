@@ -289,4 +289,10 @@ log with a per-test `PASS` / `SKIP (uncached)` / `FAIL` outcome. It keeps the
 scripts/resurrect.ps1          # default: everything except the two slow outliers (~40-50 min)
 scripts/resurrect.ps1 -Quick   # cheap ungated CPU encoder-parity smoke (clt_qwen3, plt_gemma; ~5 min)
 scripts/resurrect.ps1 -Full    # + Mistral-7B CPU forward + anacrousis 28x15 matrix (~1.5-3 h)
+scripts/resurrect.ps1 -Status  # report per-entry staleness (runs nothing); -StaleDays N sets the threshold (default 50)
 ```
+
+Staleness is tracked **per entry** — each test's "Last verified" date advances
+only on a real `PASS`, so a `-Quick` run refreshes only its two rows. `-Status`
+(also printed at the end of `preflight.ps1`) reports the oldest entry and lists
+anything past the threshold or never run.
