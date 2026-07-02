@@ -626,7 +626,7 @@ fn clt_position_sweep_activations() {
         let ref_top = ref_pos["top_features"].as_array().unwrap();
         // CAST: u64 → usize, feature index within the layer
         let ref_top1_idx = ref_top[0][0].as_u64().unwrap() as usize;
-        // PROMOTE: oracle activation is a JSON f64; compare against the f32 forward
+        // CAST: f64 → f32, oracle activation is JSON f64; compare against the f32 forward
         let ref_top1_act = ref_top[0][1].as_f64().unwrap() as f32;
         // CAST: u64 → usize, active-feature count
         let ref_n_active = ref_pos["n_active"].as_u64().unwrap() as usize;

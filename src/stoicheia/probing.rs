@@ -391,7 +391,7 @@ mod tests {
         }
     }
 
-    /// Eight synthetic probe inputs (`seq_len == 4`), all positive so the ReLU in
+    /// Eight synthetic probe inputs (`seq_len == 4`), all positive so the `ReLU` in
     /// the reference signals is a no-op.
     fn synthetic_probe_inputs() -> Vec<Vec<f32>> {
         vec![

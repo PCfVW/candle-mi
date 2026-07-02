@@ -35,7 +35,7 @@
 //! | `diffusion` | no | MDLM masked-diffusion backend (bidirectional `DiT`; standalone) |
 //! | `clt` | no | Cross-Layer Transcoder support |
 //! | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
-//! | `quantized` | no | Load quantized checkpoints (bitsandbytes `NF4`/`FP4`/`INT8`, AWQ, GPTQ) by dequantizing to BF16 via `anamnesis` |
+//! | `quantized` | no | Load quantized checkpoints (bitsandbytes `NF4`/`FP4`/`INT8`, `AWQ`, `GPTQ`) by dequantizing to `BF16` via `anamnesis` |
 //! | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
 //! | `memory` | no | RAM/VRAM reporting (delegated to the `hypomnesis` crate) |
 //! | `memory-debug` | no | Raw GPU-backend measurement values on stderr (via `hypomnesis`; implies `memory`) |

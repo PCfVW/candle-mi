@@ -142,8 +142,8 @@ impl MIModel {
     ///
     /// When the model's `config.json` carries a `quantization_config` block and
     /// candle-mi is built with the `quantized` feature, the weights are
-    /// transparently dequantized to BF16 in memory (bitsandbytes `NF4`/`FP4`/
-    /// `INT8`, AWQ, GPTQ, auto-detected via `anamnesis`) before the forward
+    /// transparently dequantized to `BF16` in memory (bitsandbytes `NF4`/`FP4`/
+    /// `INT8`, `AWQ`, `GPTQ`, auto-detected via `anamnesis`) before the forward
     /// pass — no separate API call is needed.  Without the `quantized` feature,
     /// such a checkpoint returns a clear [`MIError::Config`] telling you to enable
     /// it.  Single-file safetensors only for now (sharded quantized checkpoints
