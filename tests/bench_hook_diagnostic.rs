@@ -255,6 +255,8 @@ fn run_diagnostic(label: &str, device: &Device) {
     let empty_hooks = HookSpec::new();
     let full_hooks = full_capture_spec(num_layers);
     let n_caps = full_hooks.num_captures();
+    // Deterministic capture count: 12 per-layer points + Embed + FinalNorm.
+    assert_eq!(n_caps, num_layers * 12 + 2, "unexpected capture count");
 
     println!("\n=== Hook diagnostic micro-bench: {MODEL_ID} ({label}) ===");
     println!("  Layers: {num_layers}, total captures (full spec): {n_caps}");
@@ -284,6 +286,13 @@ fn run_diagnostic(label: &str, device: &Device) {
         })
         .collect();
     println!("  Sanity check — top-3 next tokens for \"{PROMPT}\": {top3:?}");
+    // Bind the end-to-end forward correctness: "Paris" must be a top-3 next token
+    // for this prompt. Previously this block only printed — a broken forward would
+    // have produced no test failure.
+    assert!(
+        top3.iter().any(|t| t.contains("Paris")),
+        "expected 'Paris' among top-3 next tokens for \"{PROMPT}\", got {top3:?}"
+    );
 
     // ------------------------------------------------------------------
     // B. Real forward overhead (empty vs full)

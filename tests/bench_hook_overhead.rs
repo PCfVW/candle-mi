@@ -118,6 +118,88 @@ fn full_capture_spec(num_layers: usize) -> HookSpec {
     hooks
 }
 
+/// Non-flaky correctness checks for the capture path (independent of any
+/// wall-clock timing): the capture count is exactly `12*num_layers + 2`, every
+/// requested hook point is present, the capture-only forward is numerically
+/// identical to the no-hook forward (capture is pure observation), and captured
+/// activations are finite. A hook-path regression that silently corrupts the
+/// forward — invisible to the timing loop — fails here.
+fn verify_capture_correctness(model: &GenericTransformer, input: &Tensor, num_layers: usize) {
+    let empty = HookSpec::new();
+    let full = full_capture_spec(num_layers);
+
+    assert_eq!(
+        full.num_captures(),
+        num_layers * 12 + 2,
+        "capture count should be 12/layer + Embed + FinalNorm"
+    );
+
+    let captured = model.forward(input, &full).unwrap();
+    let baseline = model.forward(input, &empty).unwrap();
+
+    // Every requested per-layer hook point (plus Embed / FinalNorm) is present.
+    for i in 0..num_layers {
+        for hp in [
+            HookPoint::ResidPre(i),
+            HookPoint::AttnQ(i),
+            HookPoint::AttnK(i),
+            HookPoint::AttnV(i),
+            HookPoint::AttnScores(i),
+            HookPoint::AttnPattern(i),
+            HookPoint::AttnOut(i),
+            HookPoint::ResidMid(i),
+            HookPoint::MlpPre(i),
+            HookPoint::MlpPost(i),
+            HookPoint::MlpOut(i),
+            HookPoint::ResidPost(i),
+        ] {
+            assert!(captured.get(&hp).is_some(), "missing capture: {hp:?}");
+        }
+    }
+    assert!(captured.get(&HookPoint::Embed).is_some());
+    assert!(captured.get(&HookPoint::FinalNorm).is_some());
+
+    // Capture-only hooks must not change the forward: logits must match the
+    // no-hook run (both F32 here). A capture path that mutates the residual
+    // stream would diverge and fail this.
+    let cap = captured
+        .output()
+        .flatten_all()
+        .unwrap()
+        .to_vec1::<f32>()
+        .unwrap();
+    let base = baseline
+        .output()
+        .flatten_all()
+        .unwrap()
+        .to_vec1::<f32>()
+        .unwrap();
+    assert_eq!(cap.len(), base.len(), "output length mismatch");
+    let max_abs = cap
+        .iter()
+        .zip(&base)
+        .map(|(x, y)| (x - y).abs())
+        .fold(0.0_f32, f32::max);
+    assert!(
+        max_abs < 1e-4,
+        "capture changed the forward output (max abs diff {max_abs})"
+    );
+
+    // Captured activations are finite (sample the residual stream at layer 0).
+    let sample = captured
+        .get(&HookPoint::ResidPost(0))
+        .expect("ResidPost(0) captured")
+        .flatten_all()
+        .unwrap()
+        .to_vec1::<f32>()
+        .unwrap();
+    assert!(!sample.is_empty(), "captured activation is empty");
+    assert!(
+        sample.iter().all(|v| v.is_finite()),
+        "ResidPost(0) has non-finite values"
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Benchmark
 // ---------------------------------------------------------------------------
@@ -146,6 +228,9 @@ fn bench_hook_overhead_cpu() {
     let num_layers = model.num_layers();
     let empty_hooks = HookSpec::new();
     let full_hooks = full_capture_spec(num_layers);
+
+    // Correctness (non-flaky) checks before the timing loops.
+    verify_capture_correctness(&model, &input, num_layers);
 
     println!("\n=== Hook Overhead Benchmark: {MODEL_ID} (CPU F32) ===");
     println!(
@@ -224,6 +309,9 @@ fn bench_hook_overhead_gpu() {
     let num_layers = model.num_layers();
     let empty_hooks = HookSpec::new();
     let full_hooks = full_capture_spec(num_layers);
+
+    // Correctness (non-flaky) checks before the timing loops.
+    verify_capture_correctness(&model, &input, num_layers);
 
     println!("\n=== Hook Overhead Benchmark: {MODEL_ID} (CUDA BF16) ===");
     println!(
