@@ -110,6 +110,14 @@ jobs:
       - name: Clippy (SAE, pedantic)
         run: cargo clippy --no-default-features --features "sae,transformer" -- -W clippy::pedantic
 
+      # validate_plt_gemma needs clt+sae+transformer together (sae → anamnesis/npz
+      # for the GemmaScope NPZ loader). No single-feature lane builds that test
+      # binary, so it never compiled on CI. The test is #[ignore] (needs cached
+      # NPZs), so a --no-run compile-check is the right coverage (mirrors the
+      # validate_bidirectional_sampler precedent).
+      - name: Tests compile (clt + sae + transformer)
+        run: cargo test --no-default-features --features "clt,sae,transformer" --test validate_plt_gemma --no-run
+
       # mmap is a weight-loading mode that gates the unsafe mmapped-safetensors
       # loader in backend.rs (6 cfg sites, incl. the deny(unsafe_code)+mmap path).
       # No lane ever compiled it, so that unsafe path was never clippy'd on CI.

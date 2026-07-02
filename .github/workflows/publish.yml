@@ -99,6 +99,11 @@ jobs:
       - name: Clippy (SAE, pedantic)
         run: cargo clippy --no-default-features --features "sae,transformer" -- -W clippy::pedantic
 
+      # validate_plt_gemma needs clt+sae+transformer together; compile-check it
+      # (the test is #[ignore]) so publish can't ship it broken.
+      - name: Tests compile (clt + sae + transformer)
+        run: cargo test --no-default-features --features "clt,sae,transformer" --test validate_plt_gemma --no-run
+
       # mmap gates the unsafe mmapped-safetensors loader; lint that path too.
       - name: Build (mmap)
         run: cargo build --no-default-features --features "mmap,transformer"

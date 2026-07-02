@@ -127,6 +127,11 @@ function Invoke-Lanes {
     Invoke-Cargo "[$Tc] Tests (Quantized)" $Tc `
         @("test", "--no-default-features", "--features", "quantized,transformer", "--lib", "--test", "validate_quantized_loading")
 
+    # validate_plt_gemma needs clt+sae+transformer together; no single-feature
+    # lane builds that test binary. The test is #[ignore], so compile-check it.
+    Invoke-Cargo "[$Tc] Tests compile (clt+sae+transformer)" $Tc `
+        @("test", "--no-default-features", "--features", "clt,sae,transformer", "--test", "validate_plt_gemma", "--no-run")
+
     Invoke-Cargo "[$Tc] Build (Diffusion + examples)" $Tc `
         @("build", "--no-default-features", "--features", "diffusion", "--examples")
     Invoke-Cargo "[$Tc] Tests (Diffusion)" $Tc `
