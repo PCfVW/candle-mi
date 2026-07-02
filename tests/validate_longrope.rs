@@ -47,7 +47,7 @@
 use std::path::PathBuf;
 
 use candle_core::{DType, Device, IndexOp, Tensor};
-use candle_mi::{HookSpec, MIBackend, MIModel, RopeScaling, TransformerConfig};
+use candle_mi::{HookSpec, MIModel, RopeScaling, TransformerConfig};
 
 const MODEL_ID: &str = "microsoft/Phi-3.5-mini-instruct";
 const ABS_DIFF_BAR: f32 = 5e-3;
