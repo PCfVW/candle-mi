@@ -64,6 +64,16 @@ If it touches CLT/SAE code, add `--features clt` or `--features sae`.
 
 A PR that fails `cargo fmt --check` will be rejected by CI immediately.
 
+### Oracle/parity tests (the `#[ignore]`d suite)
+
+The numeric-parity tests that compare candle-mi against Python/PyTorch oracles are
+`#[ignore]`d — they need cached (often gated) HF models and, for many, a CUDA GPU
+with ≥ 16 GiB VRAM, so CI can't run them. If your change touches a forward /
+CLT / SAE / quantized numeric path, run them locally with
+[`scripts/resurrect.ps1`](scripts/resurrect.ps1) (`-Quick` for a ~5-minute
+ungated-CPU smoke, no flag for the ~40–50-minute default, `-Full` for everything)
+and commit the refreshed [`RESURRECTION.md`](RESURRECTION.md) staleness log.
+
 ### Check for existing helpers
 
 Before writing a new utility function, search the codebase for similar

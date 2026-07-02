@@ -276,3 +276,17 @@ cargo test --test validate_plt --features clt,transformer -- --ignored --test-th
 # PLT validation (Gemma 2 2B GemmaScope, v0.1.10 — Phase A.7, CPU)
 cargo test --test validate_plt_gemma --features clt,sae,transformer -- --ignored
 ```
+
+## `resurrect.ps1` — run the whole `#[ignore]`d oracle suite + stamp `RESURRECTION.md`
+
+Rather than remembering each `--ignored` recipe above, `resurrect.ps1` runs the
+entire oracle/parity suite locally (GPU tests on the GPU, CPU-parity tests on the
+CPU) and rewrites the top-level [`RESURRECTION.md`](../RESURRECTION.md) staleness
+log with a per-test `PASS` / `SKIP (uncached)` / `FAIL` outcome. It keeps the
+`cuda` default on and adds each test's extra feature(s) automatically.
+
+```powershell
+scripts/resurrect.ps1          # default: everything except the two slow outliers (~40-50 min)
+scripts/resurrect.ps1 -Quick   # cheap ungated CPU encoder-parity smoke (clt_qwen3, plt_gemma; ~5 min)
+scripts/resurrect.ps1 -Full    # + Mistral-7B CPU forward + anacrousis 28x15 matrix (~1.5-3 h)
+```
