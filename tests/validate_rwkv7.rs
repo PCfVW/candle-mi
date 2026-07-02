@@ -41,6 +41,7 @@ struct ReferenceData {
     test_prompt: String,
     token_ids: Vec<u32>,
     top_predictions: Vec<(u32, String, f32)>, // (token_id, token_str, logit)
+    generated_token_ids: Vec<u32>,            // 20-token greedy generation
 }
 
 fn load_reference() -> ReferenceData {
@@ -69,10 +70,19 @@ fn load_reference() -> ReferenceData {
         })
         .collect();
 
+    let generated_token_ids: Vec<u32> = json["generated_token_ids"]
+        .as_array()
+        .unwrap()
+        .iter()
+        // CAST: u64 → u32, token ids fit in u32
+        .map(|v| v.as_u64().unwrap() as u32)
+        .collect();
+
     ReferenceData {
         test_prompt,
         token_ids,
         top_predictions,
+        generated_token_ids,
     }
 }
 
@@ -230,6 +240,51 @@ fn top_k_last_token(
             (*idx as u32, token, *logit)
         })
         .collect()
+}
+
+/// Greedy-decode `n_new` tokens from `prompt_ids`, recomputing the full sequence
+/// each step (RWKV has no incremental state API) — exactly how the Python
+/// reference generated `generated_token_ids`. Returns the generated ids.
+fn greedy_generate(
+    model: &GenericRwkv,
+    device: &Device,
+    prompt_ids: &[u32],
+    n_new: usize,
+) -> Vec<u32> {
+    let hooks = HookSpec::new();
+    let mut ids: Vec<u32> = prompt_ids.to_vec();
+    let mut generated = Vec::with_capacity(n_new);
+
+    for _ in 0..n_new {
+        let input = Tensor::new(&ids[..], device).unwrap().unsqueeze(0).unwrap();
+        let result = model.forward(&input, &hooks).unwrap();
+        let seq_len = ids.len();
+        let last: Vec<f32> = result
+            .output()
+            .i((0, seq_len - 1))
+            .unwrap()
+            .to_device(&Device::Cpu)
+            .unwrap()
+            .to_dtype(DType::F32)
+            .unwrap()
+            .to_vec1()
+            .unwrap();
+
+        // Greedy argmax over the vocabulary.
+        let mut best_idx = 0_usize;
+        let mut best_val = f32::NEG_INFINITY;
+        for (i, &v) in last.iter().enumerate() {
+            if v > best_val {
+                best_val = v;
+                best_idx = i;
+            }
+        }
+        // CAST: usize → u32, vocab index fits in u32
+        let next = best_idx as u32;
+        ids.push(next);
+        generated.push(next);
+    }
+    generated
 }
 
 fn print_top_k(device_name: &str, prompt: &str, top_k: &[(u32, String, f32)]) {
@@ -495,6 +550,47 @@ fn rwkv7_hook_capture_state() {
     assert_eq!(resid_dims.0, 1, "batch");
     assert_eq!(resid_dims.1, token_ids.len(), "seq_len");
     assert_eq!(resid_dims.2, config.hidden_size, "hidden_size");
+
+    // --- Value checks (not just shapes) ---
+    // State: the accumulated WKV recurrence must be finite and non-trivial
+    // (a real prompt leaves a nonzero state). Catches a NaN/blow-up.
+    let state_vals: Vec<f32> = state
+        .flatten_all()
+        .unwrap()
+        .to_dtype(DType::F32)
+        .unwrap()
+        .to_vec1()
+        .unwrap();
+    assert!(
+        state_vals.iter().all(|v| v.is_finite()),
+        "RwkvState has non-finite values"
+    );
+    assert!(
+        state_vals.iter().any(|&v| v != 0.0),
+        "RwkvState is all zero"
+    );
+
+    // Decay (RWKV-7): the captured value is the RAW log-decay
+    // `w = sigmoid(...)·(−0.6065)`, so every element lies strictly in
+    // (−0.6065, 0). A regression to a V6-style (0,1) decay, a sign flip, or a
+    // NaN fails here — a shape check can't. (Version-specific: V6 differs.)
+    let decay_vals: Vec<f32> = decay
+        .flatten_all()
+        .unwrap()
+        .to_dtype(DType::F32)
+        .unwrap()
+        .to_vec1()
+        .unwrap();
+    assert!(
+        decay_vals.iter().all(|v| v.is_finite()),
+        "RwkvDecay has non-finite values"
+    );
+    let dmin = decay_vals.iter().copied().fold(f32::INFINITY, f32::min);
+    let dmax = decay_vals.iter().copied().fold(f32::NEG_INFINITY, f32::max);
+    assert!(
+        dmin >= -0.6066 && dmax <= 1e-4,
+        "RWKV-7 log-decay out of range (−0.6065, 0): [{dmin}, {dmax}]"
+    );
 }
 
 // ===========================================================================
@@ -529,4 +625,43 @@ fn rwkv7_from_pretrained() {
     assert_eq!(dims.0, 1, "batch");
     assert_eq!(dims.1, 3, "seq_len");
     assert_eq!(dims.2, 65536, "vocab_size");
+}
+
+// ===========================================================================
+// Multi-step greedy generation — the only intermediate-timestep parity check
+// ===========================================================================
+
+/// Greedy-decode 20 tokens and compare to the Python reference's
+/// `generated_token_ids`. Unlike the single-last-token forward tests, this
+/// exercises the WKV recurrence across many timesteps: each step's argmax feeds
+/// the next, so a recurrence/decay bug that only manifests after several tokens
+/// diverges the sequence here. `#[ignore]` because it runs ~20 full forwards of a
+/// 1.5B model — heavier than the other lanes; run via `scripts/resurrect.ps1`
+/// (or `--include-ignored`).
+#[test]
+#[ignore = "20-step generation on a 1.5B model — run via resurrect.ps1 / --include-ignored"]
+fn rwkv7_greedy_generation_matches_python() {
+    if find_snapshot(MODEL_ID).is_none() {
+        eprintln!("SKIP: {MODEL_ID} not in HF cache");
+        return;
+    }
+
+    let device = Device::Cpu;
+    let (model, tokenizer, _config) = load_rwkv7_on(&device);
+    let reference = load_reference();
+
+    let token_ids = tokenizer.encode(&reference.test_prompt).unwrap();
+    assert_eq!(
+        token_ids, reference.token_ids,
+        "tokenizer mismatch vs reference"
+    );
+
+    let n_new = reference.generated_token_ids.len();
+    let generated = greedy_generate(&model, &device, &token_ids, n_new);
+
+    assert_eq!(
+        generated, reference.generated_token_ids,
+        "greedy generation diverged from the Python reference over {n_new} steps"
+    );
+    println!("RWKV-7 greedy generation matches Python reference ({n_new} tokens)");
 }
