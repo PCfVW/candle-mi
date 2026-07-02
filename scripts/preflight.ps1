@@ -140,7 +140,7 @@ function Invoke-Lanes {
     # validate_bidirectional_sampler needs transformer + diffusion together; no
     # single-feature lane builds it, so compile-check it explicitly.
     Invoke-Cargo "[$Tc] Tests compile (transformer+diffusion)" $Tc `
-        @("test", "--no-default-features", "--features", "transformer,diffusion", "--test", "validate_bidirectional_sampler", "--no-run")
+        @("test", "--no-default-features", "--features", "transformer,diffusion", "--test", "validate_bidirectional_sampler", "--test", "validate_bidirectional_forward", "--no-run")
 
     # Memory measurement (delegated to hypomnesis); live CUDA checks are
     # #[ignore], the CPU invariant runs here.

@@ -140,11 +140,11 @@ jobs:
       - name: Tests (Diffusion)
         run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward
 
-      # The validate_bidirectional_sampler test needs BOTH `transformer` (to load
-      # the model) and `diffusion` (the sampler), so no single-feature lane above
-      # compiles it. Compile-check it explicitly (the test itself is #[ignore]).
+      # validate_bidirectional_sampler needs `transformer` + `diffusion`; and
+      # validate_bidirectional_forward (a2d-qwen2 bidirectional attention parity)
+      # had zero CI presence. Both are #[ignore], so compile-check them here.
       - name: Tests compile (transformer + diffusion)
-        run: cargo test --no-default-features --features "transformer,diffusion" --test validate_bidirectional_sampler --no-run
+        run: cargo test --no-default-features --features "transformer,diffusion" --test validate_bidirectional_sampler --test validate_bidirectional_forward --no-run
 
       # Memory measurement (delegated to hypomnesis). Standalone — implied by no
       # other feature — so without a lane the module + its integration test
