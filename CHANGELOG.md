@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.18] - 2026-07-02
+
 ### Changed
 
 - **`tokenizers` now built with `default-features = false, features = ["onig",
@@ -1873,7 +1875,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.17...HEAD
+[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.18...HEAD
+[0.1.18]: https://github.com/PCfVW/candle-mi/compare/v0.1.17...v0.1.18
 [0.1.17]: https://github.com/PCfVW/candle-mi/compare/v0.1.16...v0.1.17
 [0.1.16]: https://github.com/PCfVW/candle-mi/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/PCfVW/candle-mi/compare/v0.1.14...v0.1.15
