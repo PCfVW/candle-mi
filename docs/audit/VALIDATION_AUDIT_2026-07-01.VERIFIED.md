@@ -7,6 +7,16 @@
 
 ## Bottom line
 
+> **Resolution status (updated through 2026-07-02):** this file began as a pure
+> verification snapshot, then accreted **✅ RESOLVED** notes as the work list was
+> executed. Nearly all of it is now closed — §1.1–§1.10, §2 (bar two low items),
+> §3, §4 (9 of 14 rows), §5, and §1.11 for the PLT-Gemma artifact. Still open:
+> §1.11 (PLT-Llama / CLT-Qwen3 follow-up), §1.12 (Metal — untestable on the
+> available CUDA-only hardware/CI), the `publish.yml` `needs`/`--dry-run` items in
+> §2, and the remaining §4 roadmap/`scripts/README` rows. See the per-finding ✅
+> markers for detail; the "Recommendations" section below is retained as a record
+> of the original plan.
+
 The audit is **substantially accurate and can be trusted as a work list.** Of ~50 discrete verifiable claims, exactly **three needed correction, and all three are narrow**: one Low-severity finding (§1.13) is wrong as stated and should be dropped or rewritten; one Low nit (§3 `.contiguous()`) is over-counted (two sites → one; the finding itself still stands for the one real site); one count ("~143 as-casts") is an imprecise ballpark. Every other finding survived intact. **None of the High/Medium findings — the ones that drive the recommendations — were weakened.** The central thesis (oracle-parity tests are `#[ignore]`d with no automated resurrection path, and several non-ignored tests pass vacuously via silent cache-miss SKIP branches) is fully confirmed.
 
 ---
@@ -68,7 +78,7 @@ Every item below was independently re-derived from source and **CONFIRMED**. Sev
   - **✅ RESOLVED (test strength — the vacuous-CI-pass remains a §1.1/§1.2 matter):** added the missing intermediate-timestep coverage. The 20-token `generated_token_ids` oracle (already in the reference JSONs, previously parsed by nothing) is now used by a new `rwkv{6,7}_greedy_generation_matches_python` test that greedy-decodes 20 tokens (full-recompute per step, exactly like the Python reference) and asserts an **exact** sequence match — exercising the WKV recurrence across many timesteps. `hook_capture_state` gained **value** assertions (was shapes-only): state finite + non-all-zero, and decay in its **version-specific** range (v6 `exp(−exp(w)) ∈ (0,1)`; v7 raw log-decay `∈ (−0.6065, 0)`). Empirically verified on both models — the 20-token match holds exactly and both decay checks pass. (`#[ignore]`; runs via `resurrect.ps1`.)
 - **§1.4 — Bidirectional forward-parity test unwired from CI/preflight. (High)** ✅ `validate_bidirectional_forward.rs` appears in neither `ci.yml` nor `preflight.ps1` (zero grep hits); sibling `validate_bidirectional_sampler.rs` gets a `--no-run` compile check (`ci.yml:105`, mirrored `preflight.ps1:131`) but has no oracle logit comparison (determinism/structure only; its own docstring says token values can't be matched against PyTorch). No CI-exercised numeric check of bidirectional attention exists. No a2d-qwen3 forward test/fixture in `tests/`+`scripts/` (see caveat above re: the src/ config-parse unit test).
   - **✅ RESOLVED (CI presence):** `validate_bidirectional_forward` (needs only `transformer`) added to the existing `transformer,diffusion --no-run` compile lane in `ci.yml`, `publish.yml`, and `preflight.ps1` — so it now compiles on CI (a build break is caught). `resurrect.ps1` runs the actual oracle comparison locally. (The a2d-qwen3 fixture gap is unchanged — no oracle exists for it.)
-- **§1.5 — `validate_clt.rs` has zero external-oracle comparison. (High)** ✅ 10 `#[test]` fns, 1479 lines, all self-consistency; thresholds `l2_dist > 0.01`/`> 1.0`, `jaccard < 0.8`, `concentration_ratio > 1.2`, `last_rank < 3` all present; `scripts/clt_position_sweep_reference.json` exists but is never read by any test. `validate_plt.rs`/`validate_plt_gemma.rs`/`validate_clt_qwen3.rs` do load oracle JSON and assert `abs diff < 1e-4` + exact top-k index match (see §1.11 caveat).
+- **§1.5 — `validate_clt.rs` has zero external-oracle comparison. (High)** ✅ 10 `#[test]` fns, 1479 lines, all self-consistency; thresholds `l2_dist > 0.01`/`> 1.0`, `jaccard < 0.8`, `concentration_ratio > 1.2`, `last_rank < 3` all present; `scripts/clt_position_sweep_reference.json` exists but is never read by any test. `validate_plt.rs`/`validate_plt_gemma.rs`/`validate_clt_qwen3.rs` do load oracle JSON and assert `abs diff < 1e-4` + exact top-k index match (see §1.11).
   - **✅ RESOLVED:** wired the orphaned oracle into the two Gemma sweep tests — `clt_position_sweep_activations` now asserts token-id parity + per-position **top-1 feature index exactly** (the robust 8/8 signal) + top-1 activation within 15% relative (loose because the oracle is BF16-on-CUDA vs candle-mi's F32) + `n_active` ±3; `clt_position_sweep_causal` cross-checks the planning-site chosen-feature index vs `causal.chosen_feature`. Hard-fails on a missing fixture (matching `validate_plt`). The two `*_llama` sweeps stay self-consistency (no Llama oracle JSON) with a code comment. Stays `#[ignore]`+CUDA; run via `resurrect.ps1`.
 - **§1.6 — Bench files assert no correctness/perf thresholds. (High)** ✅ `bench_hook_overhead.rs`/`bench_hook_diagnostic.rs` are `[[test]]` (`Cargo.toml:138-144`, `required-features=["transformer"]`), run in the transformer lane (`ci.yml:55`, no `--skip`), assert only `result.get(&HookPoint::...).is_some()`; `overhead_pct`/timings are printed, never asserted; both silently `return` on cache miss.
   - **✅ RESOLVED:** added non-flaky correctness assertions (no wall-clock thresholds). `bench_hook_overhead` gained a `verify_capture_correctness` helper (run in both CPU + GPU tests): capture count == `12*layers + 2` (194), **all** 194 hook points present, capture-only forward numerically identical to the no-hook forward (max abs diff < 1e-4 — capture is pure observation), captured activations finite. `bench_hook_diagnostic` asserts the capture count and that "Paris" is a top-3 next token. Empirically validated: `bench_hook_overhead_cpu` passes on Llama-3.2-1B (194 captures, output-equality holds).
@@ -84,6 +94,7 @@ Every item below was independently re-derived from source and **CONFIRMED**. Sev
 - **§1.11 — PLT/CLT-Qwen3 oracles share the algorithm under test, not just data. (Medium)** ✅ Each generator script's docstring discloses "from-first-principles… NO circuit-tracer" and re-implements the same `ReLU(W_enc @ x + b_enc)` encoder formula that `src/clt/mod.rs:18` implements (`plt_llama_validation.py:6-9`, `plt_gemma_validation.py:5-11`, `clt_qwen3_validation.py:5-11`). They catch transcription bugs but not a shared conceptual error. `validate_sae.rs`'s oracle is comparatively stronger — its Python side drives real `AutoModelForCausalLM` (`sae_validation.py:30,130`).
   - **✅ RESOLVED (PLT-Gemma, scoped POC):** `scripts/plt_gemma_validation.py` was rewritten to produce the oracle via an **independent library** — it loads each GemmaScope transcoder through **`sae_lens`** (`SAE.from_pretrained`) and encodes with `sae_lens`'s own `encode()`, so the transpose/JumpReLU/bias are a separate implementation, not a re-derivation of candle-mi's. candle-mi **passes** against it (9/9 cases, top-10 indices exact, `n_active` exact, max abs-diff **7.25e-5** < 1e-4, F32). The prior from-first-principles oracle produced numerically identical values, so this is a strict provenance upgrade. `sae_lens` is a validation-tooling-only dep (`scripts/`), never a crate dep — chosen over `circuit-tracer` because the latter would downgrade `huggingface_hub` 1.19→0.36 in the base env (very likely the original reason the from-first-principles path was taken). **Still open (documented):** `validate_plt.rs` (PLT-Llama) and `validate_clt_qwen3.rs` remain from-first-principles — extending the sae_lens/circuit-tracer treatment to them is a follow-up; the audit's concern is now demonstrably closeable and closed for one representative artifact.
 - **§1.12 — Memory module: Metal path entirely untested. (Medium)** ✅ Exactly 3 tests; `cpu_snapshot_is_ram_only` always runs (asserts VRAM fields `None`); the two CUDA ground-truth tests (512 MiB alloc → delta `>256` MB) are `#[ignore]`+CUDA-gated and silent-no-op without a GPU. `src/memory.rs:125` has `device.is_cuda() || device.is_metal()`; hypomnesis `metal` feature enabled (`Cargo.toml`); no live test constructs a Metal device; CI is `ubuntu-latest` only.
+  - **OPEN (hardware-bound):** the live Metal path is untestable on the available hardware (Windows + CUDA GPU; CI is `ubuntu-latest`), so it can't be closed here. A compile-only macOS CI lane would catch Metal-path *build* breaks, but the "512 MiB → exact delta" runtime check needs an Apple device.
 
 ### CI / workflow (§2)
 
@@ -139,6 +150,21 @@ Every item below was independently re-derived from source and **CONFIRMED**. Sev
 
 The source audit's "What's genuinely solid" and "Verification addendum" sections were themselves spot-checked. They hold — with the **single exception** noted in C2 (the addendum wrongly claims to have re-confirmed `src/diffusion/rope.rs:95` as untagged; it carries the tag). The audit's own numeric self-corrections (661 lines, 10 CLT tests, 22/23 enums, the `validate_plt_gemma` "never compiles" sharpening, the "1 of 11" roadmap-link count) were all independently reproduced and are correct.
 
-## Recommendations — unchanged from the source audit
+## Recommendations — original plan (now actioned; see per-finding ✅ markers)
 
-Because every High/Medium finding survived verification, the source audit's prioritized recommendations stand as written (resurrection path for the `#[ignore]`d suite; close the `quantized` CI gap; give `validate_clt.rs` a real oracle via the orphaned `clt_position_sweep_reference.json`; add assertions to the bench files; fix the `validate_sae.rs` silent-pass; unit-test `stoicheia` ablation/`longest_cycle`; the one-line doc-version/roadmap-banner fixes; correct the two `design/*.md` status headers). The only edits to the audit itself are: **drop or rewrite §1.13**, and **halve the §3 `.contiguous()` nit to one site.**
+Every High/Medium finding survived verification, and the source audit's eight
+prioritized recommendations have since been **actioned** (each traces to a ✅
+RESOLVED marker above): resurrection path for the `#[ignore]`d suite (§1.1 →
+`resurrect.ps1`); close the `quantized` CI gap (§1.9); give `validate_clt.rs` a
+real oracle via the orphaned `clt_position_sweep_reference.json` (§1.5); add
+assertions to the bench files (§1.6); fix the `validate_sae.rs` silent-pass
+(§1.8); unit-test `stoicheia` ablation/`longest_cycle` (§1.7); the one-line
+doc-version/roadmap-banner fixes (§4); correct the two `design/*.md` status
+headers (§4). The two edits to the audit itself were also applied: **§1.13
+dropped/rewritten** and the **§3 `.contiguous()` nit halved to one site**.
+
+**Still open** (deliberately, or hardware/scope-bound): §1.11 for PLT-Llama /
+CLT-Qwen3 (a scoped follow-up — PLT-Gemma is done); §1.12 (Metal, untestable on
+the available hardware); the `publish.yml` `needs`/`--dry-run` items (§2); and the
+remaining §4 rows (ROADMAP §6.1 / self-contradiction, `docs/roadmaps/` index, the
+`candle_mi_v019` superseded banners, `scripts/README.md`).

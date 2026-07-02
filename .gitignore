@@ -3,6 +3,10 @@ CLAUDE.md
 .claude/
 /experiments/
 
+# Python bytecode cache from the scripts/*.py validation generators
+__pycache__/
+*.pyc
+
 # Generated experiment outputs (keep showcase images)
 examples/results/**/plots/*
 !examples/results/**/plots/L12_helix_rotating.gif
