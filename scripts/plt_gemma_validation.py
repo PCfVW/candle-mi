@@ -1,41 +1,38 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT OR Apache-2.0
-"""Generate Gemma 2 2B GemmaScope PLT reference encodings for Rust validation.
+"""Generate Gemma 2 2B GemmaScope PLT reference encodings via SAE Lens.
 
-From-first-principles encoder oracle for the candle-mi GemmaScope loader:
-fetches `config.yaml` from `mntss/gemma-scope-transcoders` (the curation
-entry-point) to discover the per-layer NPZ paths, downloads the 3 layer
-NPZs from `google/gemma-scope-2b-pt-transcoders` (the actual weights repo),
-applies the GemmaScope encoder formula
-``pre = W_enc.T @ residual + b_enc; acts = pre * (pre > threshold)`` in
-torch on CPU, and saves top-10 activations to JSON for cross-validation
-with the Rust implementation in `src/clt/mod.rs`.
+**Independent-library oracle** for the candle-mi GemmaScope loader (audit §1.11).
+Unlike a from-first-principles script that re-derives the same
+``W_enc.T @ x + b_enc`` + JumpReLU algebra candle-mi implements — which cannot
+catch a *shared* conceptual error (wrong transpose, `>` vs `>=`, hook point) —
+this generator loads each GemmaScope transcoder through **SAE Lens**
+(`SAE.from_pretrained`) and encodes via **SAE Lens's own** `sae.encode()`. The
+transpose convention, the JumpReLU threshold gate, and the bias handling are
+therefore an *independent* implementation; agreement validates candle-mi against
+a second codebase, not against our own re-derivation.
 
-The methodology mirrors `plt_llama_validation.py` (V3 Step 1.4) for the
-Llama PLT arm, adapted for the GemmaScopeNpz schema:
+Provenance note: the previous from-first-principles generator (in git history)
+produced numerically identical results — top-10 indices 10/10, activations within
+< 1e-4, `n_active` exact across all 9 cases — so the migration is a strict
+provenance upgrade, not a change in the validated numbers.
 
-- Two-repo flow: curation YAML on mntss, weights on google/. The
-  curation YAML lists 26 paths, one per layer of Gemma 2 2B.
-- File format: `.npz` (NumPy archive) instead of safetensors. Each NPZ
-  contains `W_enc`, `W_dec`, `b_enc`, `b_dec`, `threshold`. No `W_skip`.
-- W_enc transpose: GemmaScope stores `W_enc` as
-  `[d_model, n_features] = [2304, 16384]` on disk — transposed vs the
-  Llama PLT convention `[n_features, d_model]`. The oracle applies `.T`
-  to canonicalise the orientation, matching circuit-tracer's
-  `load_gemma_scope_transcoder()` reference loader.
-- JumpReLU activation: ``acts = pre * (pre > threshold)`` element-wise
-  with a per-feature `threshold [n_features]` tensor, instead of plain
-  `ReLU` (Llama PLT) or `ReLU` after CLT decoder skip.
+candle-mi still loads the *same underlying weights* independently: the Rust test
+opens the transcoder via the `mntss/gemma-scope-transcoders` curation repo (which
+resolves the same `google/gemma-scope-2b-pt-transcoders` NPZs SAE Lens loads —
+confirmed: `n_active` matches exactly, so both sides load the same `average_l0`
+variant per layer).
 
-Test layers `{0, 12, 25}` cover the ends and middle of Gemma 2 2B's
-26-layer stack. Three random seeds per layer, deterministic via
-`torch.manual_seed(seed * 100 + layer)`, total 9 test cases.
+Test layers `{0, 12, 25}` cover the ends and middle of the 26-layer stack. Three
+seeds per layer, deterministic via `torch.manual_seed(seed_idx * 100 + layer)`,
+total 9 test cases. Synthetic `torch.randn` residuals — SAE Lens's `encode()`
+takes an activation directly, so no base-model forward pass is needed (the
+encoder is what §1.11 validates).
 
-The reference JSON is consumed by `tests/validate_plt_gemma.rs`
-(V3 Step 1.6 / Phase A.7). Acceptance bar: top-10 feature indices match
-exactly, activation magnitudes within abs-diff < 1e-4 (F32, CPU vs CPU).
+Acceptance bar (in `tests/validate_plt_gemma.rs`): top-10 feature indices match
+exactly, `n_active` exact, activation magnitudes within abs-diff < 1e-4 (F32).
 
-Dependencies: `torch`, `numpy`, `huggingface_hub`, `pyyaml`.
+Dependencies: `torch`, `sae_lens` (validation tooling only; NOT a crate dep).
 
 Usage:
     python scripts/plt_gemma_validation.py
@@ -49,58 +46,48 @@ import os
 import platform
 from pathlib import Path
 
-import numpy as np
+import sae_lens
 import torch
-import yaml
-from huggingface_hub import hf_hub_download
+from sae_lens import SAE
+from sae_lens.loading.pretrained_saes_directory import get_pretrained_saes_directory
 
 CURATION_REPO = "mntss/gemma-scope-transcoders"
 WEIGHTS_REPO = "google/gemma-scope-2b-pt-transcoders"
-# Ends + middle of Gemma 2 2B's 26-layer stack, mirroring plip-rs's [0, 12, 25]
-# choice. Llama 3.2 1B used [0, 7, 15] for its 16-layer stack.
+SAE_LENS_RELEASE = "gemma-scope-2b-pt-transcoders"
+# Ends + middle of Gemma 2 2B's 26-layer stack, mirroring plip-rs's [0, 12, 25].
 TEST_LAYERS = [0, 12, 25]
 N_SEEDS_PER_LAYER = 3
 TOP_K = 10
 
 
 def main() -> None:
-    # Determinism — CPU-only script so CUBLAS config is a no-op but set anyway
-    # per the V3 Step 1.4 / 1.6 spec.
+    # Determinism — CPU-only script; set the CUBLAS knob anyway for parity with
+    # the historical generator.
     os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":16:8")
     torch.use_deterministic_algorithms(True)
 
-    print(f"GemmaScope PLT reference generation for {WEIGHTS_REPO}")
-    print(f"Curation: {CURATION_REPO}/config.yaml")
+    print(f"GemmaScope PLT reference generation (SAE Lens oracle) for {WEIGHTS_REPO}")
+    print(f"SAE Lens release: {SAE_LENS_RELEASE} (sae_lens {sae_lens.__version__})")
     print(f"Test layers: {TEST_LAYERS}, seeds per layer: {N_SEEDS_PER_LAYER}")
     print(f"torch {torch.__version__} on {platform.platform()}")
     print()
 
-    # Two-repo flow step 1: fetch curation YAML and parse the transcoders list.
-    yaml_path = hf_hub_download(CURATION_REPO, "config.yaml")
-    with open(yaml_path) as f:
-        curation = yaml.safe_load(f)
-    transcoders_urls: list[str] = curation["transcoders"]
-    assert len(transcoders_urls) == 26, (
-        f"expected 26 entries (one per Gemma 2 2B layer), got {len(transcoders_urls)}"
-    )
-
-    # Map "layer_N" → relative NPZ path inside WEIGHTS_REPO.
-    layer_to_relpath: dict[int, str] = {}
-    for url in transcoders_urls:
-        # Strip "hf://" + WEIGHTS_REPO + "/".
-        prefix = f"hf://{WEIGHTS_REPO}/"
-        assert url.startswith(prefix), f"unexpected URL prefix: {url}"
-        relpath = url.removeprefix(prefix)
-        # First path segment is "layer_N".
-        layer_id = int(relpath.split("/")[0].removeprefix("layer_"))
-        layer_to_relpath[layer_id] = relpath
+    # Map layer index -> SAE Lens sae_id (one canonical average_l0 per layer).
+    directory = get_pretrained_saes_directory()[SAE_LENS_RELEASE]
+    layer_to_sae_id: dict[int, str] = {}
+    for sae_id in directory.saes_map:
+        layer = int(sae_id.split("/")[0].removeprefix("layer_"))
+        layer_to_sae_id[layer] = sae_id
 
     results: dict = {
         "weights_repo": WEIGHTS_REPO,
         "curation_repo": CURATION_REPO,
-        "methodology": "from-first-principles encoder oracle (no circuit-tracer)",
+        "methodology": "independent oracle via SAE Lens SAE.from_pretrained().encode()",
+        "sae_lens_version": sae_lens.__version__,
+        "oracle_release": SAE_LENS_RELEASE,
+        "oracle_sae_ids": {},
         "schema": "GemmaScopeNpz",
-        "encoder_formula": "pre = W_enc.T @ residual + b_enc; acts = pre * (pre > threshold)",
+        "encoder_formula": "sae_lens JumpReLU transcoder encode() (independent impl)",
         "torch_version": torch.__version__,
         "platform": platform.platform(),
         "d_model": None,
@@ -109,47 +96,17 @@ def main() -> None:
     }
 
     for layer in TEST_LAYERS:
-        relpath = layer_to_relpath[layer]
-        # Download the layer's NPZ (cache hit if already fetched).
-        npz_path = hf_hub_download(WEIGHTS_REPO, relpath)
-        params = np.load(npz_path)
-
-        # GemmaScope on-disk shapes:
-        #   W_enc:     [d_model, n_features]   (transposed vs PltBundle)
-        #   W_dec:     [n_features, d_model]
-        #   b_enc:     [n_features]
-        #   b_dec:     [d_model]
-        #   threshold: [n_features]
-        w_enc_disk = torch.from_numpy(params["W_enc"]).float()
-        b_enc = torch.from_numpy(params["b_enc"]).float()
-        threshold = torch.from_numpy(params["threshold"]).float()
-        # Logged for completeness; encoder oracle does not use them.
-        w_dec = params["W_dec"]
-        b_dec = params["b_dec"]
-
-        d_model_disk, n_features = w_enc_disk.shape
-        # Transpose to canonical [n_features, d_model] orientation, matching
-        # circuit-tracer's load_gemma_scope_transcoder() and candle-mi's
-        # in-memory LoadedEncoder layout.
-        w_enc = w_enc_disk.T.contiguous()
-        d_model = d_model_disk
-        assert w_enc.shape == (n_features, d_model)
-        assert b_enc.shape == (n_features,), f"b_enc shape {tuple(b_enc.shape)}"
-        assert threshold.shape == (n_features,), (
-            f"threshold shape {tuple(threshold.shape)}"
-        )
-        assert w_dec.shape == (n_features, d_model), (
-            f"W_dec shape {w_dec.shape}"
-        )
-        assert b_dec.shape == (d_model,), f"b_dec shape {b_dec.shape}"
-        assert "W_skip" not in params.files, (
-            "GemmaScope is a pure JumpReLU transcoder; W_skip should not be present"
-        )
+        sae_id = layer_to_sae_id[layer]
+        loaded = SAE.from_pretrained(SAE_LENS_RELEASE, sae_id)
+        sae = loaded[0] if isinstance(loaded, tuple) else loaded
+        sae = sae.to("cpu")
+        dtype = next(sae.parameters()).dtype
+        d_model = int(sae.cfg.d_in)
+        n_features = int(sae.cfg.d_sae)
+        results["oracle_sae_ids"][str(layer)] = sae_id
 
         print(
-            f"Layer {layer} ({relpath}): W_enc [{d_model}, {n_features}] -> "
-            f"transposed to [{n_features}, {d_model}], "
-            f"threshold [{threshold.shape[0]}], W_skip absent"
+            f"Layer {layer} ({sae_id}): d_in={d_model}, d_sae={n_features}, dtype={dtype}"
         )
 
         if results["d_model"] is None:
@@ -166,11 +123,8 @@ def main() -> None:
             torch.manual_seed(seed)
             residual = torch.randn(d_model)
 
-            # GemmaScope encoder formula. JumpReLU: pre * (pre > threshold)
-            # element-wise. The Llama PLT analog uses plain ReLU instead.
-            pre_acts = w_enc @ residual + b_enc
-            mask = (pre_acts > threshold).float()
-            acts = pre_acts * mask
+            with torch.no_grad():
+                acts = sae.encode(residual.to(dtype)).detach().float()
 
             n_active = int((acts > 0).sum())
             top_vals, top_idx = acts.topk(min(TOP_K, n_active))
@@ -187,9 +141,7 @@ def main() -> None:
             }
             results["test_cases"].append(test_case)
 
-            top_feat = (
-                f"L{layer}:{int(top_idx[0])}" if len(top_idx) > 0 else "none"
-            )
+            top_feat = f"L{layer}:{int(top_idx[0])}" if len(top_idx) > 0 else "none"
             top_act = f"{float(top_vals[0]):.4f}" if len(top_vals) > 0 else "N/A"
             print(
                 f"  seed={seed:4d}: {n_active:6d} active / {n_features} features, "
@@ -202,10 +154,7 @@ def main() -> None:
 
     n_cases = len(results["test_cases"])
     file_size = out_path.stat().st_size
-    print(
-        f"\nSaved {n_cases} test cases to {out_path} "
-        f"({file_size / 1024:.1f} KB)"
-    )
+    print(f"\nSaved {n_cases} test cases to {out_path} ({file_size / 1024:.1f} KB)")
 
 
 if __name__ == "__main__":

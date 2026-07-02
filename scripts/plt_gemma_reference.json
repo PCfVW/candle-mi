@@ -1,9 +1,16 @@
 {
   "weights_repo": "google/gemma-scope-2b-pt-transcoders",
   "curation_repo": "mntss/gemma-scope-transcoders",
-  "methodology": "from-first-principles encoder oracle (no circuit-tracer)",
+  "methodology": "independent oracle via SAE Lens SAE.from_pretrained().encode()",
+  "sae_lens_version": "6.37.6",
+  "oracle_release": "gemma-scope-2b-pt-transcoders",
+  "oracle_sae_ids": {
+    "0": "layer_0/width_16k/average_l0_76",
+    "12": "layer_12/width_16k/average_l0_6",
+    "25": "layer_25/width_16k/average_l0_41"
+  },
   "schema": "GemmaScopeNpz",
-  "encoder_formula": "pre = W_enc.T @ residual + b_enc; acts = pre * (pre > threshold)",
+  "encoder_formula": "sae_lens JumpReLU transcoder encode() (independent impl)",
   "torch_version": "2.10.0+cu130",
   "platform": "Windows-11-10.0.26200-SP0",
   "d_model": 2304,
@@ -2322,43 +2329,43 @@
       "top_10": [
         {
           "index": 2783,
-          "activation": 11.09428596496582
+          "activation": 11.094282150268555
         },
         {
           "index": 4592,
-          "activation": 9.97242546081543
+          "activation": 9.972406387329102
         },
         {
           "index": 3207,
-          "activation": 9.82606029510498
+          "activation": 9.826059341430664
         },
         {
           "index": 2511,
-          "activation": 8.940513610839844
+          "activation": 8.940522193908691
         },
         {
           "index": 9026,
-          "activation": 8.12932014465332
+          "activation": 8.129319190979004
         },
         {
           "index": 1509,
-          "activation": 8.006370544433594
+          "activation": 8.006364822387695
         },
         {
           "index": 1073,
-          "activation": 7.988056182861328
+          "activation": 7.988072395324707
         },
         {
           "index": 13699,
-          "activation": 7.596378803253174
+          "activation": 7.5963826179504395
         },
         {
           "index": 10996,
-          "activation": 7.53507137298584
+          "activation": 7.5350799560546875
         },
         {
           "index": 8723,
-          "activation": 7.502624988555908
+          "activation": 7.502636432647705
         }
       ]
     },
@@ -4679,35 +4686,35 @@
         },
         {
           "index": 9026,
-          "activation": 7.36552619934082
+          "activation": 7.365525722503662
         },
         {
           "index": 7641,
-          "activation": 6.783939838409424
+          "activation": 6.7839226722717285
         },
         {
           "index": 9554,
-          "activation": 6.694698810577393
+          "activation": 6.69470739364624
         },
         {
           "index": 7929,
-          "activation": 6.58777379989624
+          "activation": 6.587770938873291
         },
         {
           "index": 8664,
-          "activation": 6.421364784240723
+          "activation": 6.421365737915039
         },
         {
           "index": 3418,
-          "activation": 5.906418800354004
+          "activation": 5.906414031982422
         },
         {
           "index": 11179,
-          "activation": 5.892505645751953
+          "activation": 5.892516136169434
         },
         {
           "index": 401,
-          "activation": 5.693678379058838
+          "activation": 5.693697452545166
         },
         {
           "index": 8788,
@@ -7028,43 +7035,43 @@
       "top_10": [
         {
           "index": 3132,
-          "activation": 12.444961547851562
+          "activation": 12.444950103759766
         },
         {
           "index": 4111,
-          "activation": 9.752131462097168
+          "activation": 9.752140998840332
         },
         {
           "index": 11169,
-          "activation": 7.777262210845947
+          "activation": 7.777273654937744
         },
         {
           "index": 15472,
-          "activation": 7.244450092315674
+          "activation": 7.244445323944092
         },
         {
           "index": 9026,
-          "activation": 7.065474987030029
+          "activation": 7.065474033355713
         },
         {
           "index": 14636,
-          "activation": 6.740314483642578
+          "activation": 6.740306854248047
         },
         {
           "index": 10085,
-          "activation": 6.654201030731201
+          "activation": 6.654200077056885
         },
         {
           "index": 869,
-          "activation": 6.619968891143799
+          "activation": 6.61996603012085
         },
         {
           "index": 1561,
-          "activation": 6.547183036804199
+          "activation": 6.547171592712402
         },
         {
           "index": 10264,
-          "activation": 6.155458927154541
+          "activation": 6.155459880828857
         }
       ]
     },
@@ -9381,43 +9388,43 @@
       "top_10": [
         {
           "index": 15487,
-          "activation": 15.55426025390625
+          "activation": 15.554262161254883
         },
         {
           "index": 16265,
-          "activation": 14.717279434204102
+          "activation": 14.717277526855469
         },
         {
           "index": 10271,
-          "activation": 13.766389846801758
+          "activation": 13.766414642333984
         },
         {
           "index": 793,
-          "activation": 13.73033332824707
+          "activation": 13.730327606201172
         },
         {
           "index": 7232,
-          "activation": 13.54013442993164
+          "activation": 13.540122985839844
         },
         {
           "index": 4419,
-          "activation": 12.595195770263672
+          "activation": 12.59521484375
         },
         {
           "index": 4441,
-          "activation": 11.708688735961914
+          "activation": 11.70867919921875
         },
         {
           "index": 3423,
-          "activation": 11.663087844848633
+          "activation": 11.663080215454102
         },
         {
           "index": 3661,
-          "activation": 11.522184371948242
+          "activation": 11.522195816040039
         },
         {
           "index": 10246,
-          "activation": 10.989859580993652
+          "activation": 10.989853858947754
         }
       ]
     },
@@ -11738,39 +11745,39 @@
         },
         {
           "index": 8239,
-          "activation": 19.215360641479492
+          "activation": 19.21535301208496
         },
         {
           "index": 5144,
-          "activation": 15.915058135986328
+          "activation": 15.915071487426758
         },
         {
           "index": 12972,
-          "activation": 13.776437759399414
+          "activation": 13.776422500610352
         },
         {
           "index": 15762,
-          "activation": 11.997856140136719
+          "activation": 11.99787712097168
         },
         {
           "index": 13549,
-          "activation": 11.143322944641113
+          "activation": 11.14331340789795
         },
         {
           "index": 10581,
-          "activation": 10.782485961914062
+          "activation": 10.782464981079102
         },
         {
           "index": 1043,
-          "activation": 9.846894264221191
+          "activation": 9.846895217895508
         },
         {
           "index": 3791,
-          "activation": 9.834447860717773
+          "activation": 9.83444595336914
         },
         {
           "index": 944,
-          "activation": 9.692039489746094
+          "activation": 9.692020416259766
         }
       ]
     },
@@ -14087,15 +14094,15 @@
       "top_10": [
         {
           "index": 10090,
-          "activation": 13.201691627502441
+          "activation": 13.201693534851074
         },
         {
           "index": 7914,
-          "activation": 13.024541854858398
+          "activation": 13.024545669555664
         },
         {
           "index": 16302,
-          "activation": 12.866964340209961
+          "activation": 12.866954803466797
         },
         {
           "index": 8944,
@@ -14103,27 +14110,27 @@
         },
         {
           "index": 263,
-          "activation": 11.092521667480469
+          "activation": 11.092510223388672
         },
         {
           "index": 2773,
-          "activation": 10.862715721130371
+          "activation": 10.862740516662598
         },
         {
           "index": 13971,
-          "activation": 10.846440315246582
+          "activation": 10.846423149108887
         },
         {
           "index": 11113,
-          "activation": 10.692276000976562
+          "activation": 10.692293167114258
         },
         {
           "index": 9516,
-          "activation": 9.862409591674805
+          "activation": 9.86240005493164
         },
         {
           "index": 7825,
-          "activation": 9.600905418395996
+          "activation": 9.600886344909668
         }
       ]
     },
@@ -16440,43 +16447,43 @@
       "top_10": [
         {
           "index": 7888,
-          "activation": 32.553184509277344
+          "activation": 32.553096771240234
         },
         {
           "index": 6777,
-          "activation": 31.79132652282715
+          "activation": 31.791357040405273
         },
         {
           "index": 6731,
-          "activation": 26.623428344726562
+          "activation": 26.62350082397461
         },
         {
           "index": 3891,
-          "activation": 26.095413208007812
+          "activation": 26.095375061035156
         },
         {
           "index": 6510,
-          "activation": 25.22386932373047
+          "activation": 25.223922729492188
         },
         {
           "index": 12525,
-          "activation": 24.09210777282715
+          "activation": 24.092092514038086
         },
         {
           "index": 654,
-          "activation": 23.911706924438477
+          "activation": 23.91166877746582
         },
         {
           "index": 8266,
-          "activation": 23.85874366760254
+          "activation": 23.858781814575195
         },
         {
           "index": 5811,
-          "activation": 22.59828758239746
+          "activation": 22.5982608795166
         },
         {
           "index": 13330,
-          "activation": 22.148700714111328
+          "activation": 22.148693084716797
         }
       ]
     },
@@ -18793,19 +18800,19 @@
       "top_10": [
         {
           "index": 15920,
-          "activation": 47.64910888671875
+          "activation": 47.649085998535156
         },
         {
           "index": 4717,
-          "activation": 43.61944580078125
+          "activation": 43.619449615478516
         },
         {
           "index": 3204,
-          "activation": 37.6361083984375
+          "activation": 37.636112213134766
         },
         {
           "index": 706,
-          "activation": 35.5622673034668
+          "activation": 35.56226348876953
         },
         {
           "index": 2607,
@@ -18813,23 +18820,23 @@
         },
         {
           "index": 6150,
-          "activation": 22.535964965820312
+          "activation": 22.535934448242188
         },
         {
           "index": 6892,
-          "activation": 22.19281578063965
+          "activation": 22.192842483520508
         },
         {
           "index": 10605,
-          "activation": 20.683345794677734
+          "activation": 20.68334197998047
         },
         {
           "index": 9256,
-          "activation": 20.565343856811523
+          "activation": 20.565326690673828
         },
         {
           "index": 13625,
-          "activation": 20.301177978515625
+          "activation": 20.30120086669922
         }
       ]
     },
@@ -21146,43 +21153,43 @@
       "top_10": [
         {
           "index": 8816,
-          "activation": 47.711692810058594
+          "activation": 47.711700439453125
         },
         {
           "index": 15920,
-          "activation": 43.78326416015625
+          "activation": 43.78331756591797
         },
         {
           "index": 13881,
-          "activation": 37.72817611694336
+          "activation": 37.72821807861328
         },
         {
           "index": 3145,
-          "activation": 35.55860137939453
+          "activation": 35.55856704711914
         },
         {
           "index": 8830,
-          "activation": 34.17093276977539
+          "activation": 34.17097473144531
         },
         {
           "index": 9882,
-          "activation": 29.250564575195312
+          "activation": 29.250553131103516
         },
         {
           "index": 8050,
-          "activation": 28.72670555114746
+          "activation": 28.72673988342285
         },
         {
           "index": 14022,
-          "activation": 25.409027099609375
+          "activation": 25.409000396728516
         },
         {
           "index": 2606,
-          "activation": 24.992490768432617
+          "activation": 24.992528915405273
         },
         {
           "index": 15440,
-          "activation": 24.531940460205078
+          "activation": 24.531871795654297
         }
       ]
     }
