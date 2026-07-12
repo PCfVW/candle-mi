@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Refreshed the transitive dependency lockfile** (`cargo update`, no
+  `Cargo.toml` changes — all bumps are within existing caret ranges). Notably
+  `cudarc 0.19.4 → 0.19.8` (the CUDA driver bindings on the default `cuda` path;
+  CUDA build re-verified), plus `tokio`, `openssl`, `anyhow`, `zerocopy`,
+  `time`, `indicatif`, and ~50 other in-range patches.
 - **The `steering` module is now gated behind a backend feature**
   (`any(feature = "transformer", "rwkv", "diffusion")`), matching the predicate
   on `hooks::apply_intervention` — the builder and the applier now appear and
