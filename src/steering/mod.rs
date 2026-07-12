@@ -16,3 +16,10 @@
 //!   [`Intervention::Add`](crate::Intervention::Add).
 
 pub mod contrastive;
+
+// Re-export the general-purpose intervention-payload builders at the module
+// root. `position_delta` and `contrastive_intervention` are not specific to the
+// contrastive method — they are generic payload builders that happen to live in
+// the [`contrastive`] submodule — so surface them here for discoverability
+// (e.g. a single-position residual edit needs `steering::position_delta`).
+pub use contrastive::{build_contrastive_direction, contrastive_intervention, position_delta};

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`steering::position_delta` (and its sibling builders) re-exported at the
+  `steering` module root.** `position_delta`, `contrastive_intervention`, and
+  `build_contrastive_direction` are generic intervention-payload builders that
+  happen to live in the `contrastive` submodule; they now resolve at
+  `candle_mi::steering::position_delta` too (previously only at the crate root
+  or the full `steering::contrastive::` path). The `Intervention::Add` doc now
+  points at `position_delta` for single-position residual edits. Surfaced by the
+  `diakrisis` intervention dogfood.
+
+### Changed
+
+- **The `steering` module is now gated behind a backend feature**
+  (`any(feature = "transformer", "rwkv", "diffusion")`), matching the predicate
+  on `hooks::apply_intervention` — the builder and the applier now appear and
+  disappear together, so a backend-less build no longer exposes steering
+  builders whose output can never be applied. (`sparse` stays ungated: it is
+  shared data types consumed by the backend-independent `clt`/`sae` features.)
+
 ## [0.1.18] - 2026-07-02
 
 ### Changed

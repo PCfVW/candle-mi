@@ -192,6 +192,10 @@ pub enum Intervention {
     Replace(Tensor),
 
     /// Add a vector to the activation (e.g., residual stream steering).
+    ///
+    /// To fire at a single sequence position (zero elsewhere), build the
+    /// broadcast payload with `steering::position_delta` (requires a backend
+    /// feature).
     Add(Tensor),
 
     /// Apply a pre-softmax knockout mask.

@@ -243,6 +243,12 @@ pub mod rwkv;
 #[cfg(feature = "sae")]
 pub mod sae;
 pub mod sparse;
+// Steering builders are only useful when a backend can apply their output; gate
+// the module behind the same predicate as `hooks::apply_intervention` so builder
+// and applier appear/disappear together. `sparse` stays ungated — it is shared
+// data types (`FeatureId`/`SparseActivations`) consumed by the backend-independent
+// `clt`/`sae` features, not a builder with a backend-gated applier.
+#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 pub mod steering;
 #[cfg(feature = "stoicheia")]
 pub mod stoicheia;
@@ -340,6 +346,8 @@ pub use interp::logit_lens::{LogitLensAnalysis, LogitLensResult, TokenPrediction
 pub use interp::steering::{DoseResponseCurve, DoseResponsePoint, SteeringCalibration};
 
 // Steering — contrastive activation steering (Maar et al. 2026)
+// Gated with the `steering` module above (needs a backend to apply its output).
+#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 pub use steering::contrastive::{
     ContrastiveDirection, PositionStrategy, build_contrastive_direction, contrastive_intervention,
     position_delta,
