@@ -52,7 +52,7 @@
 use std::path::PathBuf;
 
 use candle_core::{DType, Device, IndexOp, Tensor};
-use candle_mi::{HookSpec, MIBackend, MIModel};
+use candle_mi::{HookSpec, MIModel};
 
 /// bnb dequant → BF16 vs an **F32** oracle (the checkpoint's compute dtype):
 /// residual is the full BF16-vs-F32 weight-precision gap (observed max ~1.0).

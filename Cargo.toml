@@ -28,9 +28,9 @@ exclude = [
 ]
 
 [dependencies]
-# Candle ML framework (pinned to 0.9.x per design/candle-version.md)
-candle-core = "0.9"
-candle-nn = "0.9"
+# Candle ML framework (pinned to 0.11.x per design/candle-version.md)
+candle-core = "0.11"
+candle-nn = "0.11"
 
 # HuggingFace integration.
 # `default-features = false` drops the `progressbar` feature (tokenizers' training

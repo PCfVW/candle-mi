@@ -20,6 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Upgraded `candle-core`/`candle-nn` from `0.9` to `0.11`** (`0.9.2 → 0.11.0`).
+  The jump required **no library source changes** — the full feature surface
+  (`transformer`, `rwkv`, `diffusion`, `clt`, `sae`, `quantized`, `memory`,
+  `stoicheia`, `probing`, `mmap`) plus every example and test compiles as-is, and
+  the default `cuda` path builds cleanly via candle 0.11's new `cudaforge`
+  kernel-build crate (`cudarc 0.19.8`). candle 0.11 pulls `tokenizers 0.22.2` as
+  a direct dependency (a dev-tree duplicate alongside the crate's own `0.21` pin);
+  the `windows-sys` hygiene from v0.1.18 is preserved (still only the active
+  `0.61.2` + the inactive TLS-pin `0.52`, no `0.59`). Removed a now-unused
+  `MIBackend` test import surfaced by the rebuild.
 - **Refreshed the transitive dependency lockfile** (`cargo update`, no
   `Cargo.toml` changes — all bumps are within existing caret ranges). Notably
   `cudarc 0.19.4 → 0.19.8` (the CUDA driver bindings on the default `cuda` path;
