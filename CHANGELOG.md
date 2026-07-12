@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Bumped the `tokenizers` pin `0.21 → 0.22`** to match candle 0.11's own
+  `tokenizers 0.22.2` dependency, collapsing the dev-tree duplicate the candle
+  upgrade introduced back to a **single** resolved `tokenizers` version.
+  `default-features = false` (`onig` + `esaxx_fast`) is unchanged and the active
+  `windows-sys` stays `0.61.2`-only (no `0.59` regression); 153-test transformer
+  lib suite green.
 - **Upgraded `candle-core`/`candle-nn` from `0.9` to `0.11`** (`0.9.2 → 0.11.0`).
   The jump required **no library source changes** — the full feature surface
   (`transformer`, `rwkv`, `diffusion`, `clt`, `sae`, `quantized`, `memory`,

@@ -33,13 +33,14 @@ candle-core = "0.11"
 candle-nn = "0.11"
 
 # HuggingFace integration.
-# `default-features = false` drops the `progressbar` feature (tokenizers' training
-# progress bars, which candle-mi never uses — its download bars are hf-fetch-model's
-# indicatif 0.18). This removes the unused indicatif 0.17 → console 0.15 →
-# windows-sys 0.59 chain, collapsing the dev tree to a single windows-sys (0.61.2).
-# `onig` (Oniguruma regex — tokenization parity) and `esaxx_fast` are the other two
-# default features, kept unchanged.
-tokenizers = { version = "0.21", default-features = false, features = ["onig", "esaxx_fast"] }
+# Pinned to `0.22` to match candle-core 0.11's own `tokenizers` dependency — a
+# single resolved `tokenizers` version (no dev-tree duplicate). `default-features
+# = false` drops the `progressbar` feature (tokenizers' training progress bars,
+# which candle-mi never uses — its download bars are hf-fetch-model's indicatif
+# 0.18); `onig` (Oniguruma regex — tokenization parity) and `esaxx_fast` are the
+# other two default features, kept unchanged. The dev tree stays on a single
+# active `windows-sys` (0.61.2) — see the v0.1.18 windows-sys dedup.
+tokenizers = { version = "0.22", default-features = false, features = ["onig", "esaxx_fast"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
