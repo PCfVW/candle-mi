@@ -30,7 +30,7 @@ use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
 /// `HuggingFace` repo id of the MDLM masked-diffusion checkpoint.
-const MODEL_ID: &str = "kuleshov-group/mdlm-owt";
+const MODEL_ID: &str = "TheQweaker/mdlm-owt-noflash";
 /// Number of masked positions to fill after the prompt.
 const GEN_LEN: usize = 6;
 /// RNG seed for the random order (fixes the comparison).
@@ -64,7 +64,10 @@ fn main() -> candle_mi::Result<()> {
         .or_else(|_| MITokenizer::from_hf_cache("gpt2"))
     else {
         println!("GPT-2 tokenizer not found in the HuggingFace cache.");
-        println!("  hf-fm download-file openai-community/gpt2 tokenizer.json");
+        println!("Get tokenizer.json from https://huggingface.co/openai-community/gpt2");
+        println!(
+            "e.g. (dogfooding hf-fm):  hf-fm download-file openai-community/gpt2 tokenizer.json"
+        );
         return Ok(());
     };
 

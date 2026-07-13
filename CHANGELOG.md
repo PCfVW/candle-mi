@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **MDLM examples and the parity test now load weights from
+  `TheQweaker/mdlm-owt-noflash`** instead of `kuleshov-group/mdlm-owt` — a
+  flash-attn-free, byte-identical-weights reimplementation (same 647 MiB F32
+  `backbone.*` safetensors; the Rust port's `kuleshov-group/mdlm-owt` provenance
+  is unchanged). Forward parity is unchanged: CPU 3.05e-5 / GPU 1.34e-5 vs the
+  fp32 oracle. The examples' "tokenizer not cached" hint now also prints the
+  direct `https://huggingface.co/openai-community/gpt2` URL, for users without
+  the `hf-fm` CLI.
 - **Bumped the `tokenizers` pin `0.21 → 0.22`** to match candle 0.11's own
   `tokenizers 0.22.2` dependency, collapsing the dev-tree duplicate the candle
   upgrade introduced back to a **single** resolved `tokenizers` version.

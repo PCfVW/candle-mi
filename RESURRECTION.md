@@ -36,7 +36,7 @@ Staleness is per-entry, so a `-Quick` run only refreshes its two rows.
 | deepseek forward | deepseek-ai/deepseek-coder-1.3b-base | CPU+GPU | 2026-07-13 | ✅ PASS |
 | longrope forward | microsoft/Phi-3.5-mini-instruct (~15 GiB) | GPU | 2026-07-13 | ✅ PASS |
 | bidirectional (a2d-qwen2) | dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm (~1.2 GiB) | CPU+GPU | 2026-07-13 | ✅ PASS |
-| mdlm + othello | kuleshov-group/mdlm-owt; Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | never | ⏭️ SKIP (uncached) |
+| mdlm + othello | TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | never | ⏭️ SKIP (uncached) |
 | quantized (bnb/AWQ/GPTQ) | medmekk/...-bnb-nf4; casperhansen/...-awq; shuyuej/...-GPTQ | GPU | 2026-07-13 | ✅ PASS |
 | clt (encode/inject/sweep) | gemma-2-2b + llama-3.2-1b + mntss CLTs (>=16 GiB VRAM) | GPU | 2026-07-13 | ✅ PASS |
 | sae (encode/inject/parity) | gemma-2-2b + gemma-scope-2b-pt-res | GPU | 2026-07-13 | ✅ PASS |

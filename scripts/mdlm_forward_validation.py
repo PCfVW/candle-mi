@@ -12,8 +12,9 @@ Why the noflash port: the upstream ``modeling_mdlm.py`` hard-depends on
 ``flash-attn`` (CUDA-only) and runs its block stack under a bf16 autocast.  The
 noflash port removes both — full-bidirectional ``scaled_dot_product_attention``
 and an fp32 forward — so it runs anywhere and is the right numerical oracle for
-candle-mi (also fp32 throughout).  The Rust side loads the *original*
-``kuleshov-group/mdlm-owt`` weights, which are identical.
+candle-mi (also fp32 throughout).  The Rust side loads the same
+``TheQweaker/mdlm-owt-noflash`` weights (byte-identical to the original
+``kuleshov-group/mdlm-owt``).
 
 The reference JSON is consumed by ``tests/validate_mdlm_forward.rs``.
 Acceptance bar (per test case): top-10 logit indices match exactly, magnitudes
@@ -40,7 +41,7 @@ from transformers import AutoModelForMaskedLM, AutoTokenizer
 # the repo the Rust side loads.
 ORACLE_REPO = "TheQweaker/mdlm-owt-noflash"
 # Repo the Rust test loads (same weights, original modeling code).
-WEIGHTS_REPO = "kuleshov-group/mdlm-owt"
+WEIGHTS_REPO = "TheQweaker/mdlm-owt-noflash"
 MASK_ID = 50257  # GPT-2 has 50257 tokens (0..50256); 50257 is MDLM's [MASK].
 TOP_K = 10
 

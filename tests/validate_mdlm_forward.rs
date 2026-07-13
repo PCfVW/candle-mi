@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Integration test: `kuleshov-group/mdlm-owt` forward-pass parity against the
+//! Integration test: MDLM (`TheQweaker/mdlm-owt-noflash`) forward-pass parity against the
 //! fp32 Python oracle in `scripts/mdlm_forward_validation.py`.
 //!
 //! Consumes the frozen reference JSON (`scripts/mdlm_forward_reference.json`)
@@ -12,9 +12,9 @@
 //!   magnitudes within `abs diff < 1e-3` (CPU vs CPU `F32`) or `< 5e-3`
 //!   (GPU `F32` vs CPU `F32`).
 //!
-//! The oracle uses the flash-attn-free `TheQweaker/mdlm-owt-noflash` modeling
-//! code; its weights are byte-identical to `kuleshov-group/mdlm-owt`, which is
-//! what this test loads.
+//! Both the fp32 oracle and the weights this test loads come from the
+//! flash-attn-free `TheQweaker/mdlm-owt-noflash` — a byte-identical-weights
+//! reimplementation of `kuleshov-group/mdlm-owt` (only the modeling code differs).
 //!
 //! Run CPU:
 //!   `cargo test --test validate_mdlm_forward --features diffusion,mmap -- --ignored mdlm_owt_forward_parity_cpu`
@@ -46,7 +46,7 @@ use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::{DiffusionSamplingConfig, GenericMdlm, HookSpec, MIBackend, MdlmConfig};
 use serial_test::serial;
 
-const MODEL_ID: &str = "kuleshov-group/mdlm-owt";
+const MODEL_ID: &str = "TheQweaker/mdlm-owt-noflash";
 const ABS_DIFF_BAR_CPU: f32 = 1e-3;
 const ABS_DIFF_BAR_GPU: f32 = 5e-3;
 
@@ -224,7 +224,7 @@ fn run_mdlm_forward_parity(device: &Device, device_name: &str, abs_diff_bar: f32
 /// matched against `PyTorch` — different RNGs — so we assert falsifiable
 /// structural properties instead, on top of the already-exact forward pass.)
 #[test]
-#[ignore = "requires kuleshov-group/mdlm-owt cached (~648 MiB); run with --ignored"]
+#[ignore = "requires TheQweaker/mdlm-owt-noflash cached (~648 MiB); run with --ignored"]
 #[serial]
 fn mdlm_sampler_invariants() {
     let Some(snapshot) = find_snapshot(MODEL_ID) else {
@@ -293,7 +293,7 @@ fn mdlm_sampler_invariants() {
 }
 
 #[test]
-#[ignore = "requires kuleshov-group/mdlm-owt cached (~648 MiB); run with --ignored"]
+#[ignore = "requires TheQweaker/mdlm-owt-noflash cached (~648 MiB); run with --ignored"]
 #[serial]
 fn mdlm_owt_forward_parity_cpu() {
     if find_snapshot(MODEL_ID).is_none() {
@@ -304,7 +304,7 @@ fn mdlm_owt_forward_parity_cpu() {
 }
 
 #[test]
-#[ignore = "requires kuleshov-group/mdlm-owt cached (~648 MiB) and a CUDA device; run with --ignored"]
+#[ignore = "requires TheQweaker/mdlm-owt-noflash cached (~648 MiB) and a CUDA device; run with --ignored"]
 #[serial]
 fn mdlm_owt_forward_parity_gpu() {
     if find_snapshot(MODEL_ID).is_none() {

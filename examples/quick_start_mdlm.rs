@@ -8,7 +8,8 @@
 //!
 //! **What it does:**
 //!
-//! 1. Loads `kuleshov-group/mdlm-owt` via
+//! 1. Loads `TheQweaker/mdlm-owt-noflash` (byte-identical weights of
+//!    `kuleshov-group/mdlm-owt`) via
 //!    [`MIModel::from_pretrained`](candle_mi::MIModel::from_pretrained)
 //!    (downloads to the `HuggingFace` cache on first run, ~648 MB).
 //! 2. Locates a `GPT-2` `tokenizer.json` in the cache — the `MDLM` repo ships
@@ -25,7 +26,7 @@ use candle_core::{IndexOp, Tensor};
 use candle_mi::{HookSpec, MIModel, MITokenizer};
 
 /// `HuggingFace` repo id of the MDLM masked-diffusion checkpoint.
-const MODEL_ID: &str = "kuleshov-group/mdlm-owt";
+const MODEL_ID: &str = "TheQweaker/mdlm-owt-noflash";
 
 fn main() -> candle_mi::Result<()> {
     // 1. Load MDLM (cache hit if already downloaded).
@@ -43,8 +44,10 @@ fn main() -> candle_mi::Result<()> {
         .or_else(|_| MITokenizer::from_hf_cache("gpt2"))
     else {
         println!("\nGPT-2 tokenizer not found in the HuggingFace cache.");
-        println!("Fetch it (dogfooding hf-fm):");
-        println!("  hf-fm download-file openai-community/gpt2 tokenizer.json");
+        println!("Get tokenizer.json from https://huggingface.co/openai-community/gpt2");
+        println!(
+            "e.g. (dogfooding hf-fm):  hf-fm download-file openai-community/gpt2 tokenizer.json"
+        );
         return Ok(());
     };
 

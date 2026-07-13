@@ -23,7 +23,7 @@ use candle_core::{IndexOp, Tensor};
 use candle_mi::{DiffusionSamplingConfig, HookPoint, HookSpec, MIModel, MITokenizer};
 
 /// `HuggingFace` repo id of the MDLM masked-diffusion checkpoint.
-const MODEL_ID: &str = "kuleshov-group/mdlm-owt";
+const MODEL_ID: &str = "TheQweaker/mdlm-owt-noflash";
 /// Number of denoising steps in the sampled trajectory.
 const NUM_STEPS: usize = 8;
 /// Number of positions to fill after the prompt.
@@ -35,7 +35,10 @@ fn main() -> candle_mi::Result<()> {
         .or_else(|_| MITokenizer::from_hf_cache("gpt2"))
     else {
         println!("GPT-2 tokenizer not found in the HuggingFace cache.");
-        println!("  hf-fm download-file openai-community/gpt2 tokenizer.json");
+        println!("Get tokenizer.json from https://huggingface.co/openai-community/gpt2");
+        println!(
+            "e.g. (dogfooding hf-fm):  hf-fm download-file openai-community/gpt2 tokenizer.json"
+        );
         return Ok(());
     };
 
