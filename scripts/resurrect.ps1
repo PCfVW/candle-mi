@@ -1,4 +1,4 @@
-# resurrect.ps1 — run the #[ignore]d oracle/parity suite locally and stamp
+﻿# resurrect.ps1 — run the #[ignore]d oracle/parity suite locally and stamp
 # RESURRECTION.md with a PER-TEST "last verified" date.
 #
 # The oracle/parity tests are #[ignore]d because they need cached HuggingFace

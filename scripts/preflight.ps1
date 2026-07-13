@@ -1,4 +1,4 @@
-# Preflight checks — run before every push.
+﻿# Preflight checks — run before every push.
 #
 # Mirrors the per-feature lanes in .github/workflows/ci.yml so that a clean run
 # here predicts a clean run on CI. CI runs a matrix of two toolchains:
