@@ -48,6 +48,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   builders whose output can never be applied. (`sparse` stays ungated: it is
   shared data types consumed by the backend-independent `clt`/`sae` features.)
 
+### Fixed
+
+- **Documentation staleness** from the candle upgrade: the `README.md` version
+  banner (v0.1.17 → v0.1.18) and the `trace_2d` doc comment in `util/pca.rs`
+  (dropped the stale "Candle 0.9" pin — candle still exposes no `diagonal()`
+  method as of 0.11, so the manual narrow-and-sum workaround stands).
+
 ## [0.1.18] - 2026-07-02
 
 ### Changed

@@ -156,8 +156,8 @@ fn power_iterate(mat: &Tensor, n: usize, n_iter: usize, device: &Device) -> Resu
 /// Compute the trace of a 2-D square tensor as an `f32` by extracting
 /// diagonal elements one by one.
 ///
-/// Candle 0.9 has no `diagonal()` method, so we narrow each row to
-/// a single element and sum.
+/// Candle has no `diagonal()` method (still true as of 0.11), so we narrow
+/// each row to a single element and sum.
 fn trace_2d(mat: &Tensor, n: usize) -> Result<f32> {
     let mut sum = 0.0_f32;
     for i in 0..n {
