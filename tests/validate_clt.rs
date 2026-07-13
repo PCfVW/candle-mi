@@ -648,17 +648,26 @@ fn clt_position_sweep_activations() {
             "pos {pos}: top-1 activation {rust_act} vs oracle {ref_top1_act} (rel {rel:.3})"
         );
 
-        // Active count within a small absolute margin (a broken encoder would be
-        // off by hundreds, not 3).
+        // Active count within a margin that scales with the count. At
+        // high-density positions (notably `<bos>`: ~1600 active on gemma-2-2b)
+        // dozens of features sit within ~0.1 of the ReLU boundary at 0 (this CLT
+        // carries no learned JumpReLU threshold), so a sub-epsilon forward change
+        // — e.g. the candle 0.9 -> 0.11 F32-matmul rounding — flips ~10-20 of
+        // them (measured: 69 features within +/-0.1, 11 within +/-0.01 at `<bos>`).
+        // A hard +/-3 gate is over-tight there; a relative 2% margin (~+/-32 at
+        // `<bos>`, +/-3 elsewhere via the floor) tracks that near-boundary density
+        // while still catching a genuinely broken encoder (off by hundreds). See
+        // the 2026-07-13 BOS margin investigation (candle 0.11 upgrade).
+        let allowed = ref_n_active.div_ceil(50).max(3);
         let diff = per_position_counts[pos].abs_diff(ref_n_active);
         assert!(
-            diff <= 3,
-            "pos {pos}: n_active {} vs oracle {ref_n_active} (diff {diff})",
+            diff <= allowed,
+            "pos {pos}: n_active {} vs oracle {ref_n_active} (diff {diff}, allowed {allowed})",
             per_position_counts[pos]
         );
     }
     println!(
-        "Oracle comparison passed: top-1 indices exact, top-1 activations within 15%, counts ±3"
+        "Oracle comparison passed: top-1 indices exact, top-1 activations within 15%, counts within max(3, 2%)"
     );
 
     // Free GPU memory before next test.
