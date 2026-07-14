@@ -124,6 +124,16 @@ pub struct MIModel {
     tokenizer: Option<MITokenizer>,
 }
 
+/// Shared parts resolved for a random-model control: `(config, tokenizer,
+/// cached repo files, device)`. Returned by `resolve_transformer_control`.
+#[cfg(feature = "transformer")]
+type TransformerControlParts = (
+    crate::config::TransformerConfig,
+    Option<MITokenizer>,
+    std::collections::HashMap<String, std::path::PathBuf>,
+    Device,
+);
+
 impl MIModel {
     /// Load a model from a `HuggingFace` model ID or local path.
     ///
@@ -255,6 +265,138 @@ impl MIModel {
                 "unsupported model_type: '{other}' (enable the `transformer` feature for auto-config)"
             ))),
         }
+    }
+
+    /// Load `model_id`'s architecture and tokenizer but fill every weight with
+    /// seeded Gaussian noise — a "dead-salmon" random-model control (the
+    /// interpretability-illusion baseline: an analysis pipeline must not
+    /// manufacture structure on a randomly initialized network).
+    ///
+    /// The config and tokenizer are read from the (cached) repo and the
+    /// checkpoint's **tensor names are read from the safetensors header** so the
+    /// random model is architecturally identical to the real one (e.g. tied
+    /// embeddings stay tied). **No weight values are read** — every tensor the
+    /// loader requests is generated as `N(0, std)` from a `seed`-seeded RNG, in
+    /// the deterministic order the loader requests them, so the same
+    /// `(seed, std)` reproduces the same random model. `std = 0.02` matches the
+    /// usual transformer init scale. Only transformer model types are supported.
+    ///
+    /// See [`from_pretrained_shuffled`](Self::from_pretrained_shuffled) for the
+    /// stricter norm-preserving variant.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Download`] if the repo cannot be resolved,
+    /// [`MIError::Config`] if the config is missing or is not a supported
+    /// transformer type, and [`MIError::Model`] if model construction fails.
+    #[cfg(feature = "transformer")]
+    pub fn from_pretrained_random_init(model_id: &str, seed: u64, std: f64) -> Result<Self> {
+        use crate::transformer::GenericTransformer;
+
+        let dtype = DType::F32;
+        let (config, tokenizer, files, device) = Self::resolve_transformer_control(model_id)?;
+
+        // Real tensor name set (header-only read) so the random model keeps the
+        // real architecture — notably tied embeddings via `contains_tensor`.
+        let names: std::collections::HashSet<String> =
+            extract_tensor_names(&files)?.into_iter().collect();
+
+        let backend = RandnBackend::new(seed, std, names);
+        let vb = candle_nn::VarBuilder::from_backend(Box::new(backend), dtype, device.clone());
+        let transformer = GenericTransformer::load(config, &device, dtype, vb)?;
+        Ok(Self::with_tokenizer(
+            Box::new(transformer),
+            device,
+            tokenizer,
+        ))
+    }
+
+    /// Load `model_id` but **permute the elements of every weight tensor**
+    /// (seeded) — a stricter dead-salmon control than fresh random init.
+    ///
+    /// Each tensor keeps its exact value multiset (and hence its norm and scale
+    /// statistics) while its learned structure is destroyed, so this rules out
+    /// the objection that the published effect is "just the weight scales" that a
+    /// fresh Gaussian init changes. The permutation is independent per tensor and
+    /// reproducible from `seed` (paths and names are visited in sorted order).
+    /// Only transformer model types with `safetensors` weights are supported.
+    ///
+    /// # Memory
+    ///
+    /// Loads the checkpoint into CPU RAM one `safetensors` shard at a time,
+    /// up-casting each to `F32`, and accumulates the shuffled weights as an
+    /// `F32` CPU map before the model is built on `device`. Peak: roughly the
+    /// `F32` model size on CPU (~10 GB for `Gemma 2 2B`) plus one shard, then
+    /// the model again on the device.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Download`] if the repo cannot be resolved,
+    /// [`MIError::Config`] if the config is not a supported transformer type or
+    /// the weights are not `safetensors`, and [`MIError::Model`] if a weight
+    /// file cannot be loaded or model construction fails.
+    #[cfg(feature = "transformer")]
+    pub fn from_pretrained_shuffled(model_id: &str, seed: u64) -> Result<Self> {
+        use crate::transformer::GenericTransformer;
+
+        let dtype = DType::F32;
+        let (config, tokenizer, files, device) = Self::resolve_transformer_control(model_id)?;
+
+        let (weights_paths, format) = resolve_weight_paths(&files)?;
+        if format != WeightFormat::Safetensors {
+            return Err(MIError::Config(
+                "from_pretrained_shuffled requires safetensors weights".into(),
+            ));
+        }
+        let shuffled = shuffle_checkpoint_tensors(&weights_paths, seed, dtype)?;
+        let vb = candle_nn::VarBuilder::from_tensors(shuffled, dtype, &device);
+        let transformer = GenericTransformer::load(config, &device, dtype, vb)?;
+        Ok(Self::with_tokenizer(
+            Box::new(transformer),
+            device,
+            tokenizer,
+        ))
+    }
+
+    /// Shared resolution for the random-model controls: device, cached repo
+    /// files, transformer config, and tokenizer. Errors unless the repo is a
+    /// supported transformer type.
+    #[cfg(feature = "transformer")]
+    fn resolve_transformer_control(model_id: &str) -> Result<TransformerControlParts> {
+        use crate::config::TransformerConfig;
+
+        let device = Self::select_device()?;
+        let fetch_config = crate::download::fetch_config_builder()
+            .build()
+            .map_err(|e| MIError::Download(format!("failed to build fetch config: {e}")))?;
+        let files =
+            hf_fetch_model::download_files_with_config_blocking(model_id.to_owned(), &fetch_config)
+                .map(hf_fetch_model::DownloadOutcome::into_inner)
+                .map_err(|e| MIError::Download(e.to_string()))?;
+
+        let config_path = files
+            .get("config.json")
+            .ok_or_else(|| MIError::Config("config.json not found in downloaded files".into()))?;
+        let config_str = std::fs::read_to_string(config_path)
+            .map_err(|e| MIError::Config(format!("read config.json: {e}")))?;
+        let json: serde_json::Value = serde_json::from_str(&config_str)
+            .map_err(|e| MIError::Config(format!("parse config.json: {e}")))?;
+
+        let model_type = json
+            .get("model_type")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| MIError::Config("missing 'model_type' field".into()))?;
+        if !crate::config::SUPPORTED_MODEL_TYPES.contains(&model_type) {
+            return Err(MIError::Config(format!(
+                "random-model controls support transformer model types only, got '{model_type}'"
+            )));
+        }
+
+        let tokenizer = files
+            .get("tokenizer.json")
+            .and_then(|p| MITokenizer::from_hf_path(p).ok());
+        let config = TransformerConfig::from_hf_config(&json)?;
+        Ok((config, tokenizer, files, device))
     }
 
     /// Select the best available device (CUDA GPU 0, or CPU fallback).
@@ -660,6 +802,148 @@ fn extract_tensor_names(
     ))
 }
 
+/// A [`candle_nn::var_builder::SimpleBackend`] that fabricates every requested
+/// tensor as seeded `N(0, std)` Gaussian noise — the weight source for
+/// [`MIModel::from_pretrained_random_init`]'s random-model (dead-salmon)
+/// control.
+///
+/// `contains_tensor` reflects the *real* checkpoint's tensor set (read from the
+/// safetensors header) so the architecture is preserved (e.g. tied embeddings);
+/// `get` ignores the value and returns noise of the requested shape.
+#[cfg(feature = "transformer")]
+struct RandnBackend {
+    /// Seeded RNG behind a `Mutex` (the loader drives `get` sequentially; the
+    /// `Mutex` keeps the backend `Send + Sync` while giving deterministic draws
+    /// for a fixed request order).
+    rng: std::sync::Mutex<rand::rngs::StdRng>,
+    /// Standard deviation of the `N(0, std)` weight noise.
+    std: f64,
+    /// The real checkpoint's tensor names, so `contains_tensor` preserves the
+    /// architecture (e.g. tied embeddings).
+    names: std::collections::HashSet<String>,
+}
+
+#[cfg(feature = "transformer")]
+impl RandnBackend {
+    /// Build a backend seeded by `seed`, drawing `N(0, std)` weights, reporting
+    /// `names` as the present tensor set.
+    fn new(seed: u64, std: f64, names: std::collections::HashSet<String>) -> Self {
+        use rand::SeedableRng;
+        Self {
+            rng: std::sync::Mutex::new(rand::rngs::StdRng::seed_from_u64(seed)),
+            std,
+            names,
+        }
+    }
+}
+
+#[cfg(feature = "transformer")]
+impl candle_nn::var_builder::SimpleBackend for RandnBackend {
+    fn get(
+        &self,
+        s: candle_core::Shape,
+        _name: &str,
+        _h: candle_nn::Init,
+        dtype: DType,
+        dev: &Device,
+    ) -> candle_core::Result<Tensor> {
+        let n = s.elem_count();
+        let data = {
+            let mut rng = self
+                .rng
+                .lock()
+                .map_err(|_| candle_core::Error::Msg("RandnBackend RNG poisoned".into()))?;
+            randn_f32(&mut rng, n, self.std)
+        };
+        // Build on CPU, then move to the target device and dtype.
+        Tensor::from_vec(data, s, &Device::Cpu)?
+            .to_dtype(dtype)?
+            .to_device(dev)
+    }
+
+    fn get_unchecked(
+        &self,
+        name: &str,
+        _dtype: DType,
+        _dev: &Device,
+    ) -> candle_core::Result<Tensor> {
+        Err(candle_core::Error::Msg(format!(
+            "RandnBackend: get_unchecked('{name}') is unsupported (shape unknown)"
+        )))
+    }
+
+    fn contains_tensor(&self, name: &str) -> bool {
+        self.names.contains(name)
+    }
+}
+
+/// Load every safetensors weight (CPU, up-cast to F32) and permute the elements
+/// of each tensor independently with a `seed`-seeded RNG, preserving shapes and
+/// per-tensor value multisets. Files and tensor names are visited in sorted
+/// order so the shuffle is reproducible. Returns a `name -> shuffled` map at
+/// `dtype`.
+#[cfg(feature = "transformer")]
+fn shuffle_checkpoint_tensors(
+    weights_paths: &[std::path::PathBuf],
+    seed: u64,
+    dtype: DType,
+) -> Result<std::collections::HashMap<String, Tensor>> {
+    use rand::{Rng, SeedableRng};
+
+    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+    let mut out: std::collections::HashMap<String, Tensor> = std::collections::HashMap::new();
+
+    let mut paths: Vec<&std::path::PathBuf> = weights_paths.iter().collect();
+    paths.sort();
+    for path in paths {
+        let tensors = candle_core::safetensors::load(path, &Device::Cpu)?;
+        // Sort (name, tensor) pairs so the seeded shuffle order is reproducible.
+        let mut entries: Vec<(String, Tensor)> = tensors.into_iter().collect();
+        entries.sort_by(|a, b| a.0.cmp(&b.0));
+        for (name, tensor) in entries {
+            let shape = tensor.shape().clone();
+            // PROMOTE: shuffle in F32 so BF16/F16 checkpoints round-trip through a
+            // single canonical element type before casting to `dtype`.
+            let mut data = tensor
+                .to_dtype(DType::F32)?
+                .flatten_all()?
+                .to_vec1::<f32>()?;
+            // Fisher-Yates in place: destroys structure, preserves the multiset.
+            for i in (1..data.len()).rev() {
+                let j = rng.gen_range(0..=i);
+                data.swap(i, j);
+            }
+            let shuffled = Tensor::from_vec(data, shape, &Device::Cpu)?.to_dtype(dtype)?;
+            out.insert(name, shuffled);
+        }
+    }
+    Ok(out)
+}
+
+/// `n` seeded `N(0, std)` samples via Box-Muller (deterministic given `rng`).
+#[cfg(feature = "transformer")]
+// The `f64 -> f32` sample narrowings below store each standard-normal at model
+// (`F32`) precision; the lost mantissa bits are irrelevant to a random control.
+#[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
+fn randn_f32(rng: &mut rand::rngs::StdRng, n: usize, std: f64) -> Vec<f32> {
+    use rand::Rng;
+    let mut v: Vec<f32> = Vec::with_capacity(n);
+    while v.len() < n {
+        let u1 = rng.r#gen::<f64>().max(1e-12);
+        let u2 = rng.r#gen::<f64>();
+        let r = (-2.0 * u1.ln()).sqrt();
+        let ang = 2.0 * std::f64::consts::PI * u2;
+        // CAST: f64 → f32, standard-normal sample stored at model precision.
+        v.push((r * ang.cos() * std) as f32);
+        if v.len() < n {
+            // CAST: f64 → f32, as above (Box-Muller's second sample).
+            v.push((r * ang.sin() * std) as f32);
+        }
+    }
+    v.truncate(n);
+    v
+}
+
 /// Weight storage format detected among the downloaded files.
 ///
 /// Private internal enum, matched exhaustively within this module.
@@ -969,5 +1253,33 @@ mod tests {
     fn resolve_no_weights_errors() {
         let files = file_map(&["config.json", "tokenizer.json"]);
         assert!(resolve_weight_paths(&files).is_err());
+    }
+
+    // The random-model control weights (`from_pretrained_random_init`) must be
+    // reproducible from the seed and correctly scaled.
+    #[cfg(feature = "transformer")]
+    // CAST: len -> f32 for a sample-statistic check; test-only, 4096 is exact.
+    #[allow(clippy::as_conversions, clippy::cast_precision_loss)]
+    #[test]
+    fn randn_f32_is_seed_deterministic_and_scaled() {
+        use rand::SeedableRng;
+
+        let draw = |seed: u64, std: f64| {
+            let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+            super::randn_f32(&mut rng, 4096, std)
+        };
+
+        let a = draw(7, 0.02);
+        let b = draw(7, 0.02);
+        let c = draw(8, 0.02);
+        assert_eq!(a.len(), 4096);
+        assert_eq!(a, b, "same seed must reproduce the same weights");
+        assert_ne!(a, c, "different seeds must differ");
+
+        // Sample standard deviation should sit near the requested 0.02.
+        let mean = a.iter().sum::<f32>() / a.len() as f32;
+        let var = a.iter().map(|x| (x - mean).powi(2)).sum::<f32>() / a.len() as f32;
+        let sd = var.sqrt();
+        assert!((0.015..0.025).contains(&sd), "std {sd} not near 0.02");
     }
 }

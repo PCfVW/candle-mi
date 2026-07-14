@@ -1577,6 +1577,27 @@ impl CrossLayerTranscoder {
         self.steering_cache.len()
     }
 
+    /// Number of transcoder layers (source layers `0..n_layers`).
+    #[must_use]
+    pub const fn n_layers(&self) -> usize {
+        self.config.n_layers
+    }
+
+    /// Number of features per layer (feature indices `0..n_features_per_layer`).
+    ///
+    /// Useful for uniformly sampling a random feature index within a layer,
+    /// e.g. for layer-matched random-feature controls.
+    #[must_use]
+    pub const fn n_features_per_layer(&self) -> usize {
+        self.config.n_features_per_layer
+    }
+
+    /// Residual-stream width the transcoder decodes into.
+    #[must_use]
+    pub const fn d_model(&self) -> usize {
+        self.config.d_model
+    }
+
     // --- Injection ---
 
     /// Build a [`crate::HookSpec`] that injects CLT decoder vectors into the residual stream.
