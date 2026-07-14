@@ -1,6 +1,6 @@
-# Newline feature census (Experiment 1) — findings
+# Newline experiments — findings (Exp 1 census · reconciliation · Exp 2 steering)
 
-**Date**: 2026-07-13
+**Date**: 2026-07-13 – 07-14
 **Hardware**: RTX 5060 Ti 16 GB, Windows 11, candle 0.11
 **Spec**: `BlackboxNLP 2026/Figure-13/docs/newline-experiments-spec.md` (amended 2026-07-13)
 **Paper**: BlackboxNLP 2026 Reproducibility Challenge, `Figure-13/main.tex`
@@ -176,7 +176,7 @@ horizon. Harness: [`figure13_newline_steering.rs`](../../../examples/figure13_ne
 (m1). candle-mi is KV-cache-free, so the newline hook is re-applied at every
 generation step (`route: "recompute-per-step"`).
 
-## 7. m4 — position sweep of `P(inject)` (the Figure-13 curve)
+## 6. m4 — position sweep of `P(inject)` (the Figure-13 curve)
 
 At each cell's Table-2 best strength (2.5M at 10; k = 20 sampled lines):
 
@@ -197,7 +197,7 @@ Anthropic's "ordinary features representing that word" — shows the **same**
 inert newline (5.5 × 10⁻⁷) and emission-only spike (0.579). So planning is
 absent even at the resolution where Anthropic found planned-word features.
 
-## 8. m1 — does steering redirect the *composed line's* rhyme?
+## 7. m1 — does steering redirect the *composed line's* rhyme?
 
 Final-word CMUdict-rime group of the k = 20 sampled lines, inject-group fraction
 with exact Clopper-Pearson 95% CIs, baseline vs suppress+inject:
@@ -213,7 +213,7 @@ with exact Clopper-Pearson 95% CIs, baseline vs suppress+inject:
 **No cell moves the inject-group fraction beyond CI overlap** — the registered
 criterion for *improvisation supported*, uniformly.
 
-## 9. m2 — surface leakage, not replanning
+## 8. m2 — surface leakage, not replanning
 
 The greedy lines expose the mechanism. Injecting at the newline changes the line
 *content* — the inject word surfaces, almost always at the **start** of the
@@ -230,7 +230,7 @@ surface behaviour), but the model never installs a plan that redirects the
 **rhyme**. Only m2+m3+m4 together — impossible without the composition horizon —
 separate surface leakage from genuine planning.
 
-## 10. Conclusion — small open models sit below the planning floor
+## 9. Conclusion — small open models sit below the planning floor
 
 Across **3 model families, 2 CLT pipelines, and both group-level and word-level
 CLT granularities**, the composition-horizon Figure-13 test gives one answer:
@@ -250,7 +250,7 @@ a *late-committing* echo of prolepsis rather than newline planning. Whether
 "late but hard-to-budge" is improvisation or a distinct regime is the natural
 next question.
 
-## 11. Reproduce (Exp 2)
+## 10. Reproduce (Exp 2)
 
 ```powershell
 $env:HF_TOKEN = (Get-Content "$env:USERPROFILE\.cache\huggingface\token" -Raw).Trim()
@@ -260,12 +260,15 @@ cargo run --release --features clt,transformer,mmap --example figure13_newline_s
 python scripts/newline_steering_classify.py docs/experiments/figure13-newline/fullline_gemma2-2b-426k.json
 ```
 
-## 12. Status
+## 11. Status
 
 - **Experiment 1.5** (bridge) — not triggered: Exp 1 surfaced no newline-enriched
   plan-like features, and Exp 2 confirms no newline redirect, so there is nothing
   to suppress/inject at a census-identified newline site.
-- Copy `census_*.json` + `fullline_*.json` into `Figure-13/data/`; the m4 arrays
-  drive the paper's position-sweep-with-horizon figure. (The dense Qwen
-  `census_*.json` are 55–248 MB — gzip or emit a summary variant before
-  committing.)
+- **Committed artifacts**: `findings.md`, all `fullline_*.json`, and the small
+  mntss `census_gemma2-2b-426k.json` / `census_llama3.2-1b-524k.json`. The dense
+  BlueLightAI (Qwen) `census_qwen3-*.json` are 53–237 MB each and are
+  `.gitignore`d — kept locally, regenerable via `figure13_newline_census`.
+- Copy `fullline_*.json` (and, from disk, the Qwen `census_*.json`) into
+  `Figure-13/data/`; the m4 arrays drive the paper's position-sweep-with-horizon
+  figure.

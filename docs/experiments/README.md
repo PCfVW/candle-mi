@@ -28,20 +28,21 @@ Qwen3 0.6B/1.7B) are the complete set with open CLTs on consumer hardware, so
    features, inject an alternative, sweep the *steering position* across the
    prompt, and measure `P(inject word)`. The Figure-13 *signature* is a flat
    baseline with a single sharp spike. → the per-cell `figure13-*` folders.
-   Result: the signature **reproduces** across three model families and three
-   CLT scales — but the spike is at **emission**. These prompts truncate so the
-   rhyme word is the *next token*: there is no line to compose, so "planning
-   site" collapses onto emission.
+   Result: the signature **reproduces** across three model families and CLT
+   widths from 16K to 2.5M features — but the spike is at **emission**. These
+   prompts truncate so the rhyme word is the *next token*: there is no line to
+   compose, so "planning site" collapses onto emission.
 
 2. **With planning — the composition horizon.** Anthropic's phenomenon *is*
    planning ahead over a line the model writes. `figure13-newline` restores
    that: truncate after the line-3 newline, let the model **compose line 4**,
    and ask whether steering at the newline shapes the rhyme (planning) or only
    emission-adjacent steering does (improvisation). Result: **emission,
-   uniformly** — on all 0.6B–2B open models, including the word-level 2.5M CLT
-   whose features are the closest analogue to Anthropic's "planned-word"
-   features. These models sit **below the planning floor**: they improvise the
-   rhyme at emission and do not plan it at the newline.
+   uniformly** — across three model families and two CLT pipelines (mntss ReLU,
+   BlueLightAI JumpReLU), on all 0.6B–2B open models, including the word-level
+   2.5M CLT whose features are the closest analogue to Anthropic's
+   "planned-word" features. These models sit **below the planning floor**: they
+   improvise the rhyme at emission and do not plan it at the newline.
 
 A prerequisite for trusting (2) is knowing the CLT encoder reads the right
 residual. `figure13-newline/findings.md` §0 documents the **CLT-hook
