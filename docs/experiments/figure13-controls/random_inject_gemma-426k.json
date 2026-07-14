@@ -1,0 +1,3993 @@
+{
+  "model": "google/gemma-2-2b",
+  "clt_repo": "mntss/clt-gemma-2-2b-426k",
+  "prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark about,\nAnd found a hidden passage",
+  "tokens": [
+    "<bos>",
+    "The",
+    " stars",
+    " were",
+    " twinkling",
+    " in",
+    " the",
+    " night",
+    ",",
+    "\n",
+    "The",
+    " lanterns",
+    " cast",
+    " a",
+    " golden",
+    " light",
+    ".",
+    "\n",
+    "She",
+    " wandered",
+    " in",
+    " the",
+    " dark",
+    " about",
+    ",",
+    "\n",
+    "And",
+    " found",
+    " a",
+    " hidden",
+    " passage",
+    " "
+  ],
+  "target_word": "around",
+  "target_token_id": 2449,
+  "baseline_prob": 4.8360118e-8,
+  "strength": 25.0,
+  "seed": 42,
+  "real_inject": {
+    "feature": {
+      "layer": 22,
+      "index": 10243
+    },
+    "max_p_target": 0.48238635,
+    "max_ratio_target": 9974880.0,
+    "max_position": 31,
+    "per_position": [
+      {
+        "position": 0,
+        "token": "<bos>",
+        "p_target": 4.4142663e-8
+      },
+      {
+        "position": 1,
+        "token": "The",
+        "p_target": 4.7646424e-8
+      },
+      {
+        "position": 2,
+        "token": " stars",
+        "p_target": 4.7754646e-8
+      },
+      {
+        "position": 3,
+        "token": " were",
+        "p_target": 4.875941e-8
+      },
+      {
+        "position": 4,
+        "token": " twinkling",
+        "p_target": 4.8784223e-8
+      },
+      {
+        "position": 5,
+        "token": " in",
+        "p_target": 4.8462944e-8
+      },
+      {
+        "position": 6,
+        "token": " the",
+        "p_target": 4.8672174e-8
+      },
+      {
+        "position": 7,
+        "token": " night",
+        "p_target": 4.8317883e-8
+      },
+      {
+        "position": 8,
+        "token": ",",
+        "p_target": 4.868885e-8
+      },
+      {
+        "position": 9,
+        "token": "\n",
+        "p_target": 4.707413e-8
+      },
+      {
+        "position": 10,
+        "token": "The",
+        "p_target": 4.963688e-8
+      },
+      {
+        "position": 11,
+        "token": " lanterns",
+        "p_target": 4.8597016e-8
+      },
+      {
+        "position": 12,
+        "token": " cast",
+        "p_target": 4.882902e-8
+      },
+      {
+        "position": 13,
+        "token": " a",
+        "p_target": 4.937238e-8
+      },
+      {
+        "position": 14,
+        "token": " golden",
+        "p_target": 4.854152e-8
+      },
+      {
+        "position": 15,
+        "token": " light",
+        "p_target": 4.903994e-8
+      },
+      {
+        "position": 16,
+        "token": ".",
+        "p_target": 4.9105044e-8
+      },
+      {
+        "position": 17,
+        "token": "\n",
+        "p_target": 4.720566e-8
+      },
+      {
+        "position": 18,
+        "token": "She",
+        "p_target": 4.8728904e-8
+      },
+      {
+        "position": 19,
+        "token": " wandered",
+        "p_target": 5.1825772e-8
+      },
+      {
+        "position": 20,
+        "token": " in",
+        "p_target": 4.9557013e-8
+      },
+      {
+        "position": 21,
+        "token": " the",
+        "p_target": 4.984997e-8
+      },
+      {
+        "position": 22,
+        "token": " dark",
+        "p_target": 4.7940407e-8
+      },
+      {
+        "position": 23,
+        "token": " about",
+        "p_target": 6.0260035e-8
+      },
+      {
+        "position": 24,
+        "token": ",",
+        "p_target": 4.9640516e-8
+      },
+      {
+        "position": 25,
+        "token": "\n",
+        "p_target": 4.562518e-8
+      },
+      {
+        "position": 26,
+        "token": "And",
+        "p_target": 5.1210257e-8
+      },
+      {
+        "position": 27,
+        "token": " found",
+        "p_target": 5.2072473e-8
+      },
+      {
+        "position": 28,
+        "token": " a",
+        "p_target": 5.3845252e-8
+      },
+      {
+        "position": 29,
+        "token": " hidden",
+        "p_target": 5.42755e-8
+      },
+      {
+        "position": 30,
+        "token": " passage",
+        "p_target": 1.2001091e-7
+      },
+      {
+        "position": 31,
+        "token": " ",
+        "p_target": 0.48238635
+      }
+    ]
+  },
+  "random_inject_layer": 22,
+  "random_inject": [
+    {
+      "draw": 0,
+      "feature": {
+        "layer": 22,
+        "index": 8627
+      },
+      "own_top_token": "opo",
+      "own_top_token_id": 74869,
+      "max_p_target": 6.5208766e-8,
+      "max_ratio_target": 1.3483996,
+      "max_position_target": 30,
+      "max_p_own": 8.690836e-7,
+      "max_position_own": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.203288e-8,
+          "p_own": 1.5052397e-11
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.6729564e-8,
+          "p_own": 1.0744965e-11
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.7517005e-8,
+          "p_own": 1.0284317e-11
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8607582e-8,
+          "p_own": 1.0617965e-11
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.86077e-8,
+          "p_own": 1.0538676e-11
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.83664e-8,
+          "p_own": 1.062376e-11
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.861883e-8,
+          "p_own": 1.0534034e-11
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8155133e-8,
+          "p_own": 1.0509222e-11
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.836631e-8,
+          "p_own": 1.0529974e-11
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.5759748e-8,
+          "p_own": 9.059503e-12
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9369802e-8,
+          "p_own": 1.0757901e-11
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8602676e-8,
+          "p_own": 1.0533809e-11
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.858544e-8,
+          "p_own": 1.0636696e-11
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9361635e-8,
+          "p_own": 1.0496379e-11
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.8409152e-8,
+          "p_own": 1.0481725e-11
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.867833e-8,
+          "p_own": 1.05987935e-11
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.695352e-8,
+          "p_own": 1.0196044e-11
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.4555495e-8,
+          "p_own": 8.17607e-12
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8352426e-8,
+          "p_own": 1.11829495e-11
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.0632053e-8,
+          "p_own": 1.1217174e-11
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9328182e-8,
+          "p_own": 1.07603e-11
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9705662e-8,
+          "p_own": 1.0652757e-11
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7536883e-8,
+          "p_own": 1.1344582e-11
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.8324577e-8,
+          "p_own": 1.2898547e-11
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.8631343e-8,
+          "p_own": 1.1160695e-11
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.294845e-8,
+          "p_own": 1.0308044e-11
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.113045e-8,
+          "p_own": 1.1037447e-11
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.154612e-8,
+          "p_own": 1.1719802e-11
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.120408e-8,
+          "p_own": 1.36252025e-11
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.8710106e-8,
+          "p_own": 1.9631368e-11
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 6.5208766e-8,
+          "p_own": 2.0994753e-11
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 1.4840635e-8,
+          "p_own": 8.690836e-7
+        }
+      ]
+    },
+    {
+      "draw": 1,
+      "feature": {
+        "layer": 22,
+        "index": 8892
+      },
+      "own_top_token": " wą",
+      "own_top_token_id": 114027,
+      "max_p_target": 5.965868e-8,
+      "max_ratio_target": 1.2336339,
+      "max_position_target": 30,
+      "max_p_own": 1.1433123e-8,
+      "max_position_own": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 4.211307e-8,
+          "p_own": 4.1492814e-9
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.7209006e-8,
+          "p_own": 2.669061e-9
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.738469e-8,
+          "p_own": 2.5643956e-9
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.854082e-8,
+          "p_own": 2.5792315e-9
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.849161e-8,
+          "p_own": 2.5874023e-9
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.827992e-8,
+          "p_own": 2.5134763e-9
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8319286e-8,
+          "p_own": 2.510292e-9
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8032465e-8,
+          "p_own": 2.4952767e-9
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.797246e-8,
+          "p_own": 2.4873867e-9
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.150142e-8,
+          "p_own": 2.4062226e-9
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9127006e-8,
+          "p_own": 2.5675124e-9
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.849469e-8,
+          "p_own": 2.6170544e-9
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.859627e-8,
+          "p_own": 2.552951e-9
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9499082e-8,
+          "p_own": 2.591932e-9
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.857871e-8,
+          "p_own": 2.527276e-9
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 5.0040896e-8,
+          "p_own": 2.4882456e-9
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.6622574e-8,
+          "p_own": 2.6106877e-9
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.021803e-8,
+          "p_own": 2.8251388e-9
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.7988998e-8,
+          "p_own": 2.6208862e-9
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 4.981707e-8,
+          "p_own": 2.4269768e-9
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.97385e-8,
+          "p_own": 2.45659e-9
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9752945e-8,
+          "p_own": 2.6022602e-9
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7960967e-8,
+          "p_own": 2.4411957e-9
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.731711e-8,
+          "p_own": 1.8017569e-9
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.8693714e-8,
+          "p_own": 2.590585e-9
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.2129976e-8,
+          "p_own": 2.6037477e-9
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.015265e-8,
+          "p_own": 2.495425e-9
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.026045e-8,
+          "p_own": 2.3987454e-9
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.0790216e-8,
+          "p_own": 2.2539213e-9
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.9447337e-8,
+          "p_own": 2.9436202e-9
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 5.965868e-8,
+          "p_own": 4.1960857e-9
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 7.7803115e-9,
+          "p_own": 1.1433123e-8
+        }
+      ]
+    },
+    {
+      "draw": 2,
+      "feature": {
+        "layer": 22,
+        "index": 6650
+      },
+      "own_top_token": "the",
+      "own_top_token_id": 1175,
+      "max_p_target": 5.82226e-8,
+      "max_ratio_target": 1.2039384,
+      "max_position_target": 23,
+      "max_p_own": 0.0000035493317,
+      "max_position_own": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.24534e-8,
+          "p_own": 2.88789e-9
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.705455e-8,
+          "p_own": 2.4810372e-9
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.763351e-8,
+          "p_own": 2.4011908e-9
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.866534e-8,
+          "p_own": 2.3950013e-9
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8645195e-8,
+          "p_own": 2.3578786e-9
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.823722e-8,
+          "p_own": 2.3833642e-9
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.867277e-8,
+          "p_own": 2.3980364e-9
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.809282e-8,
+          "p_own": 2.3688849e-9
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.7663377e-8,
+          "p_own": 2.3385966e-9
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.692055e-8,
+          "p_own": 2.1754083e-9
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.94277e-8,
+          "p_own": 2.4007156e-9
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8283013e-8,
+          "p_own": 2.3670974e-9
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.866827e-8,
+          "p_own": 2.413208e-9
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.926092e-8,
+          "p_own": 2.4012052e-9
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.8298094e-8,
+          "p_own": 2.375686e-9
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.8377665e-8,
+          "p_own": 2.3993567e-9
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.678303e-8,
+          "p_own": 2.2696083e-9
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.5402523e-8,
+          "p_own": 2.0073325e-9
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.822201e-8,
+          "p_own": 2.4230893e-9
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.03331e-8,
+          "p_own": 2.4093527e-9
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.895408e-8,
+          "p_own": 2.3937705e-9
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9512423e-8,
+          "p_own": 2.4421096e-9
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7093693e-8,
+          "p_own": 2.4800106e-9
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.82226e-8,
+          "p_own": 2.7235383e-9
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.746403e-8,
+          "p_own": 2.400519e-9
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.3182652e-8,
+          "p_own": 2.1188193e-9
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.0715773e-8,
+          "p_own": 2.420144e-9
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.1951297e-8,
+          "p_own": 2.4349165e-9
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.2646033e-8,
+          "p_own": 2.5907034e-9
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 5.0230767e-8,
+          "p_own": 3.0171157e-9
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 4.5618357e-8,
+          "p_own": 4.037723e-9
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 1.7598915e-9,
+          "p_own": 0.0000035493317
+        }
+      ]
+    },
+    {
+      "draw": 3,
+      "feature": {
+        "layer": 22,
+        "index": 13914
+      },
+      "own_top_token": "M",
+      "own_top_token_id": 235296,
+      "max_p_target": 5.958101e-8,
+      "max_ratio_target": 1.2320278,
+      "max_position_target": 23,
+      "max_p_own": 2.0410223e-8,
+      "max_position_own": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.333688e-8,
+          "p_own": 3.114917e-12
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.7231016e-8,
+          "p_own": 2.554496e-12
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.7500954e-8,
+          "p_own": 2.547188e-12
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8753105e-8,
+          "p_own": 2.568799e-12
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8584813e-8,
+          "p_own": 2.500588e-12
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.830368e-8,
+          "p_own": 2.5500604e-12
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.874054e-8,
+          "p_own": 2.5716707e-12
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8075655e-8,
+          "p_own": 2.5003717e-12
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.7598945e-8,
+          "p_own": 2.5397672e-12
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.429082e-8,
+          "p_own": 2.731198e-12
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9624358e-8,
+          "p_own": 2.5784823e-12
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8631307e-8,
+          "p_own": 2.5364639e-12
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8796654e-8,
+          "p_own": 2.582619e-12
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.965275e-8,
+          "p_own": 2.5977935e-12
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.832437e-8,
+          "p_own": 2.506227e-12
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.8139107e-8,
+          "p_own": 2.4412232e-12
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.79573e-8,
+          "p_own": 2.4530564e-12
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.452482e-8,
+          "p_own": 2.404239e-12
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8147623e-8,
+          "p_own": 2.5740712e-12
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.033175e-8,
+          "p_own": 2.5468867e-12
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9155332e-8,
+          "p_own": 2.5220743e-12
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.975651e-8,
+          "p_own": 2.5745428e-12
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.722114e-8,
+          "p_own": 2.4607913e-12
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.958101e-8,
+          "p_own": 3.015772e-12
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.7986497e-8,
+          "p_own": 2.5667981e-12
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.2195023e-8,
+          "p_own": 2.2765975e-12
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.0486346e-8,
+          "p_own": 2.565232e-12
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.106982e-8,
+          "p_own": 2.447409e-12
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.1439326e-8,
+          "p_own": 2.4706996e-12
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.6826816e-8,
+          "p_own": 2.3688933e-12
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 4.485005e-8,
+          "p_own": 1.3259216e-12
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 1.3171748e-8,
+          "p_own": 2.0410223e-8
+        }
+      ]
+    },
+    {
+      "draw": 4,
+      "feature": {
+        "layer": 22,
+        "index": 53
+      },
+      "own_top_token": " carried",
+      "own_top_token_id": 8405,
+      "max_p_target": 7.552098e-8,
+      "max_ratio_target": 1.5616376,
+      "max_position_target": 31,
+      "max_p_own": 5.3504685e-9,
+      "max_position_own": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.8995324e-8,
+          "p_own": 1.2015397e-10
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.7297323e-8,
+          "p_own": 1.0012484e-10
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.7587637e-8,
+          "p_own": 9.641855e-11
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8739093e-8,
+          "p_own": 9.658787e-11
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8587747e-8,
+          "p_own": 9.657211e-11
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8264074e-8,
+          "p_own": 9.7004044e-11
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.860315e-8,
+          "p_own": 9.840383e-11
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8043045e-8,
+          "p_own": 9.7552785e-11
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.8399002e-8,
+          "p_own": 9.6795696e-11
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.6974588e-8,
+          "p_own": 9.2524814e-11
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9622418e-8,
+          "p_own": 9.73701e-11
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8664155e-8,
+          "p_own": 9.369894e-11
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8755098e-8,
+          "p_own": 9.611212e-11
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.952409e-8,
+          "p_own": 9.7765754e-11
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.8311193e-8,
+          "p_own": 9.454656e-11
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.8674092e-8,
+          "p_own": 9.606413e-11
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.8398892e-8,
+          "p_own": 9.073376e-11
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.6896872e-8,
+          "p_own": 8.019535e-11
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8355997e-8,
+          "p_own": 9.62265e-11
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.052998e-8,
+          "p_own": 9.704975e-11
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9237272e-8,
+          "p_own": 9.529935e-11
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9679695e-8,
+          "p_own": 9.7317335e-11
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7363983e-8,
+          "p_own": 9.224978e-11
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.9440605e-8,
+          "p_own": 9.6420406e-11
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.859447e-8,
+          "p_own": 9.6878096e-11
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.5137092e-8,
+          "p_own": 8.6542794e-11
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.1106053e-8,
+          "p_own": 9.822904e-11
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.0933398e-8,
+          "p_own": 1.0191002e-10
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.073683e-8,
+          "p_own": 9.5809534e-11
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.735488e-8,
+          "p_own": 9.627254e-11
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 5.6863364e-8,
+          "p_own": 1.7627245e-10
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 7.552098e-8,
+          "p_own": 5.3504685e-9
+        }
+      ]
+    },
+    {
+      "draw": 5,
+      "feature": {
+        "layer": 22,
+        "index": 15272
+      },
+      "own_top_token": " tend",
+      "own_top_token_id": 7323,
+      "max_p_target": 5.9991976e-8,
+      "max_ratio_target": 1.2405258,
+      "max_position_target": 23,
+      "max_p_own": 4.460331e-7,
+      "max_position_own": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 4.0446803e-8,
+          "p_own": 3.5882816e-10
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.735707e-8,
+          "p_own": 4.997349e-10
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.7876355e-8,
+          "p_own": 4.920546e-10
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.874977e-8,
+          "p_own": 4.950542e-10
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.906339e-8,
+          "p_own": 4.839361e-10
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8469392e-8,
+          "p_own": 4.9060794e-10
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8703328e-8,
+          "p_own": 4.96064e-10
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8214016e-8,
+          "p_own": 4.9058024e-10
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.821528e-8,
+          "p_own": 4.794772e-10
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.422204e-8,
+          "p_own": 4.3005716e-10
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9527028e-8,
+          "p_own": 4.959863e-10
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8452236e-8,
+          "p_own": 4.8479826e-10
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8760967e-8,
+          "p_own": 4.94595e-10
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9454965e-8,
+          "p_own": 4.9257787e-10
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.87647e-8,
+          "p_own": 4.960103e-10
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.933975e-8,
+          "p_own": 4.744907e-10
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.919596e-8,
+          "p_own": 4.788519e-10
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.5144503e-8,
+          "p_own": 4.167279e-10
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8192415e-8,
+          "p_own": 4.9921234e-10
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.151755e-8,
+          "p_own": 5.05601e-10
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.978319e-8,
+          "p_own": 4.9412024e-10
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9843692e-8,
+          "p_own": 5.007194e-10
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7563752e-8,
+          "p_own": 4.970582e-10
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.9991976e-8,
+          "p_own": 4.624459e-10
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.883568e-8,
+          "p_own": 4.7042226e-10
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.358429e-8,
+          "p_own": 4.0938533e-10
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.0439223e-8,
+          "p_own": 4.831344e-10
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.1220745e-8,
+          "p_own": 4.665601e-10
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.2174776e-8,
+          "p_own": 4.8557114e-10
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.8698144e-8,
+          "p_own": 4.8168763e-10
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 4.8896347e-8,
+          "p_own": 2.8140004e-10
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 2.6010717e-8,
+          "p_own": 4.460331e-7
+        }
+      ]
+    },
+    {
+      "draw": 6,
+      "feature": {
+        "layer": 22,
+        "index": 6400
+      },
+      "own_top_token": " SIX",
+      "own_top_token_id": 71560,
+      "max_p_target": 6.6568234e-8,
+      "max_ratio_target": 1.376511,
+      "max_position_target": 30,
+      "max_p_own": 9.010795e-10,
+      "max_position_own": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.057707e-8,
+          "p_own": 3.8618878e-14
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.7186983e-8,
+          "p_own": 4.5070156e-14
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.8157034e-8,
+          "p_own": 4.5593327e-14
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.869422e-8,
+          "p_own": 4.5964328e-14
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.877815e-8,
+          "p_own": 4.5099456e-14
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8388596e-8,
+          "p_own": 4.572902e-14
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8755318e-8,
+          "p_own": 4.5697665e-14
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8004935e-8,
+          "p_own": 4.4351723e-14
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.7315485e-8,
+          "p_own": 4.3901995e-14
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.3032585e-8,
+          "p_own": 3.7254203e-14
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9428813e-8,
+          "p_own": 4.5307274e-14
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8419178e-8,
+          "p_own": 4.4069047e-14
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8820915e-8,
+          "p_own": 4.5996545e-14
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9613202e-8,
+          "p_own": 4.6191027e-14
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.8854925e-8,
+          "p_own": 4.5360468e-14
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.884557e-8,
+          "p_own": 4.3062874e-14
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.9308298e-8,
+          "p_own": 4.327327e-14
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.429971e-8,
+          "p_own": 3.2140137e-14
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8106443e-8,
+          "p_own": 4.460848e-14
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.0981903e-8,
+          "p_own": 4.5606046e-14
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9746287e-8,
+          "p_own": 4.5896253e-14
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 5.0072163e-8,
+          "p_own": 4.680025e-14
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7393673e-8,
+          "p_own": 4.132988e-14
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.9464124e-8,
+          "p_own": 4.442275e-14
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.8819256e-8,
+          "p_own": 4.4908694e-14
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.3853866e-8,
+          "p_own": 3.572417e-14
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.0457814e-8,
+          "p_own": 4.3969507e-14
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.1618578e-8,
+          "p_own": 4.4207358e-14
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.270669e-8,
+          "p_own": 4.854738e-14
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.89673e-8,
+          "p_own": 5.79177e-14
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 6.6568234e-8,
+          "p_own": 1.7961614e-13
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 2.0894825e-8,
+          "p_own": 9.010795e-10
+        }
+      ]
+    },
+    {
+      "draw": 7,
+      "feature": {
+        "layer": 22,
+        "index": 2308
+      },
+      "own_top_token": " Gas",
+      "own_top_token_id": 13108,
+      "max_p_target": 5.9399873e-8,
+      "max_ratio_target": 1.2282822,
+      "max_position_target": 23,
+      "max_p_own": 3.0574467e-9,
+      "max_position_own": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.3442483e-8,
+          "p_own": 1.2149101e-9
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.708218e-8,
+          "p_own": 1.0669299e-9
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.769302e-8,
+          "p_own": 1.0264173e-9
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8666553e-8,
+          "p_own": 1.0522607e-9
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.870399e-8,
+          "p_own": 1.0484904e-9
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8488793e-8,
+          "p_own": 1.0450432e-9
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8766225e-8,
+          "p_own": 1.0480656e-9
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8178705e-8,
+          "p_own": 1.0473766e-9
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.8000434e-8,
+          "p_own": 1.0001525e-9
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.506513e-8,
+          "p_own": 8.1940155e-10
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9326232e-8,
+          "p_own": 1.0546838e-9
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8591446e-8,
+          "p_own": 1.0068342e-9
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.868027e-8,
+          "p_own": 1.0510185e-9
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.942008e-8,
+          "p_own": 1.057725e-9
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.849744e-8,
+          "p_own": 1.0325696e-9
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.8612986e-8,
+          "p_own": 9.866588e-10
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.841248e-8,
+          "p_own": 9.893877e-10
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.6263303e-8,
+          "p_own": 8.731246e-10
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8067424e-8,
+          "p_own": 1.0133697e-9
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.0395645e-8,
+          "p_own": 1.0100293e-9
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.951106e-8,
+          "p_own": 1.0365672e-9
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9612733e-8,
+          "p_own": 1.0503505e-9
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.738529e-8,
+          "p_own": 9.708996e-10
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.9399873e-8,
+          "p_own": 6.680775e-10
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.873211e-8,
+          "p_own": 9.830226e-10
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.4292527e-8,
+          "p_own": 8.842497e-10
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.052712e-8,
+          "p_own": 1.060488e-9
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.108057e-8,
+          "p_own": 1.0425693e-9
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.116112e-8,
+          "p_own": 9.660803e-10
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.7567756e-8,
+          "p_own": 8.676667e-10
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 4.2313747e-8,
+          "p_own": 6.3002636e-10
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 6.1028946e-9,
+          "p_own": 3.0574467e-9
+        }
+      ]
+    },
+    {
+      "draw": 8,
+      "feature": {
+        "layer": 22,
+        "index": 8569
+      },
+      "own_top_token": " child",
+      "own_top_token_id": 2047,
+      "max_p_target": 5.978728e-8,
+      "max_ratio_target": 1.2362932,
+      "max_position_target": 23,
+      "max_p_own": 4.575968e-10,
+      "max_position_own": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 4.3401933e-8,
+          "p_own": 4.963195e-11
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.767387e-8,
+          "p_own": 4.1126078e-11
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.805887e-8,
+          "p_own": 4.0947544e-11
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8841255e-8,
+          "p_own": 4.1437766e-11
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8793364e-8,
+          "p_own": 4.1345927e-11
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8382407e-8,
+          "p_own": 4.0702792e-11
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8761795e-8,
+          "p_own": 4.0835224e-11
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.811557e-8,
+          "p_own": 4.0913908e-11
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.8390202e-8,
+          "p_own": 4.04236e-11
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.687696e-8,
+          "p_own": 3.5730894e-11
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9584102e-8,
+          "p_own": 4.056412e-11
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.86117e-8,
+          "p_own": 4.14132e-11
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.887387e-8,
+          "p_own": 4.1084646e-11
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.967891e-8,
+          "p_own": 4.256313e-11
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.860789e-8,
+          "p_own": 4.0526065e-11
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.882619e-8,
+          "p_own": 3.9417254e-11
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.9321677e-8,
+          "p_own": 4.1100165e-11
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.8206775e-8,
+          "p_own": 3.132846e-11
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8933963e-8,
+          "p_own": 4.1292855e-11
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.0757947e-8,
+          "p_own": 3.8445008e-11
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9319752e-8,
+          "p_own": 3.9966048e-11
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.984051e-8,
+          "p_own": 4.0896092e-11
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7365795e-8,
+          "p_own": 3.7971765e-11
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.978728e-8,
+          "p_own": 4.1095644e-11
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.9318846e-8,
+          "p_own": 4.1158438e-11
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.5853383e-8,
+          "p_own": 3.1801187e-11
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.1553343e-8,
+          "p_own": 4.0589924e-11
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.194554e-8,
+          "p_own": 4.048473e-11
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.2156054e-8,
+          "p_own": 2.8522481e-11
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.863201e-8,
+          "p_own": 2.1219197e-11
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 5.8232256e-8,
+          "p_own": 1.3398788e-11
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 2.2627747e-8,
+          "p_own": 4.575968e-10
+        }
+      ]
+    },
+    {
+      "draw": 9,
+      "feature": {
+        "layer": 22,
+        "index": 3583
+      },
+      "own_top_token": " users",
+      "own_top_token_id": 6211,
+      "max_p_target": 7.670691e-8,
+      "max_ratio_target": 1.5861605,
+      "max_position_target": 30,
+      "max_p_own": 2.7680347e-8,
+      "max_position_own": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.5485566e-8,
+          "p_own": 2.826556e-12
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.790651e-8,
+          "p_own": 4.82839e-12
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.750253e-8,
+          "p_own": 4.797207e-12
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.865632e-8,
+          "p_own": 4.7552496e-12
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8170875e-8,
+          "p_own": 4.6394446e-12
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.827336e-8,
+          "p_own": 4.722243e-12
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8643628e-8,
+          "p_own": 4.7736346e-12
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.814262e-8,
+          "p_own": 4.7065433e-12
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.8013376e-8,
+          "p_own": 4.5520263e-12
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.464494e-8,
+          "p_own": 4.0281285e-12
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9584187e-8,
+          "p_own": 4.7984177e-12
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.849208e-8,
+          "p_own": 4.6926412e-12
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8801816e-8,
+          "p_own": 4.7689777e-12
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9530698e-8,
+          "p_own": 4.7640286e-12
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.839793e-8,
+          "p_own": 4.624923e-12
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.8838853e-8,
+          "p_own": 4.5962795e-12
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.8676956e-8,
+          "p_own": 4.2973238e-12
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.6156515e-8,
+          "p_own": 3.7309517e-12
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8228525e-8,
+          "p_own": 4.7299304e-12
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.029736e-8,
+          "p_own": 4.99406e-12
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9156363e-8,
+          "p_own": 4.763734e-12
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9666088e-8,
+          "p_own": 4.8445297e-12
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7418713e-8,
+          "p_own": 4.7488493e-12
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.9076925e-8,
+          "p_own": 4.2608395e-12
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.8944646e-8,
+          "p_own": 4.7067805e-12
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.45148e-8,
+          "p_own": 4.1097746e-12
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.0505918e-8,
+          "p_own": 4.8621953e-12
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.1039496e-8,
+          "p_own": 5.065911e-12
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.3026675e-8,
+          "p_own": 5.7005854e-12
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 5.275539e-8,
+          "p_own": 7.963007e-12
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 7.670691e-8,
+          "p_own": 2.3912879e-11
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 1.6419374e-8,
+          "p_own": 2.7680347e-8
+        }
+      ]
+    }
+  ],
+  "random_direction": [
+    {
+      "draw": 0,
+      "seed": 42,
+      "max_p_target": 6.399373e-8,
+      "max_ratio_target": 1.323275,
+      "max_position_target": 30,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 4.1491564e-8
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.7351456e-8
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.7313534e-8
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.865038e-8
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8444516e-8
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8758835e-8
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8634867e-8
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8090104e-8
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.881971e-8
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.6391573e-8
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.951114e-8
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8267086e-8
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8733217e-8
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9564317e-8
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.8489216e-8
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.878352e-8
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.8938684e-8
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.7766274e-8
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8270046e-8
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.0810193e-8
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 5.0497576e-8
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.989524e-8
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7248008e-8
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 6.009998e-8
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 5.089164e-8
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.5505804e-8
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.1364268e-8
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.1743367e-8
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.202324e-8
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.9119876e-8
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 6.399373e-8
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 3.3564802e-8
+        }
+      ]
+    },
+    {
+      "draw": 1,
+      "seed": 42,
+      "max_p_target": 5.9255136e-8,
+      "max_ratio_target": 1.2252893,
+      "max_position_target": 23,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.4310705e-8
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.728886e-8
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.786004e-8
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8711158e-8
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8725532e-8
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8372396e-8
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8661388e-8
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.811189e-8
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.841033e-8
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.865008e-8
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.949289e-8
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.847759e-8
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.876238e-8
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9454968e-8
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.8494165e-8
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.8904386e-8
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.9032444e-8
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.8104642e-8
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8081734e-8
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.083187e-8
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9610296e-8
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9887646e-8
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7664248e-8
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.9255136e-8
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.9016307e-8
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.5579405e-8
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.078348e-8
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.11379e-8
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.249683e-8
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.9772883e-8
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 5.6556487e-8
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 1.1279066e-8
+        }
+      ]
+    },
+    {
+      "draw": 2,
+      "seed": 42,
+      "max_p_target": 1.9549809e-7,
+      "max_ratio_target": 4.0425477,
+      "max_position_target": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.3684767e-8
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.7657117e-8
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.734916e-8
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8589026e-8
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8272728e-8
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8491454e-8
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8522587e-8
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.799439e-8
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.907338e-8
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 5.33463e-8
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9555645e-8
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8319347e-8
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8698116e-8
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9541494e-8
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.826297e-8
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.9282338e-8
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.786031e-8
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 5.063641e-8
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8530964e-8
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.1282363e-8
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 5.017642e-8
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9818105e-8
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.739487e-8
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.758413e-8
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.958317e-8
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.8301033e-8
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.1278164e-8
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.158313e-8
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.1630465e-8
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.8173863e-8
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 5.0749307e-8
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 1.9549809e-7
+        }
+      ]
+    },
+    {
+      "draw": 3,
+      "seed": 42,
+      "max_p_target": 6.048924e-8,
+      "max_ratio_target": 1.2508084,
+      "max_position_target": 23,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.8347554e-8
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.7880057e-8
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.7747683e-8
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.872144e-8
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8836167e-8
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8299473e-8
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.882931e-8
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8182113e-8
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.8364534e-8
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.8315208e-8
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9687895e-8
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8499643e-8
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.886255e-8
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9691973e-8
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.890078e-8
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.9537345e-8
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.9522086e-8
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.8015956e-8
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8423974e-8
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.0818553e-8
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.937322e-8
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9938112e-8
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.772621e-8
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 6.048924e-8
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.9613355e-8
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.6568246e-8
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.0809746e-8
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.1084204e-8
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.192951e-8
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.6980173e-8
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 4.5813078e-8
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 5.0963667e-8
+        }
+      ]
+    },
+    {
+      "draw": 4,
+      "seed": 42,
+      "max_p_target": 5.9399817e-8,
+      "max_ratio_target": 1.228281,
+      "max_position_target": 23,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.465306e-8
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.733089e-8
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.7143008e-8
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8583548e-8
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.837919e-8
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8292634e-8
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8563898e-8
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.799888e-8
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.819044e-8
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.9179047e-8
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9371565e-8
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.837629e-8
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8578226e-8
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9344877e-8
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.840487e-8
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.87737e-8
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.820887e-8
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.8492993e-8
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8111385e-8
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.0360313e-8
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9431787e-8
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.966601e-8
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7291998e-8
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.9399817e-8
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.8979476e-8
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.612483e-8
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.0471137e-8
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.088218e-8
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.1399258e-8
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.711314e-8
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 4.619176e-8
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 2.024475e-8
+        }
+      ]
+    },
+    {
+      "draw": 5,
+      "seed": 42,
+      "max_p_target": 8.325688e-8,
+      "max_ratio_target": 1.7216021,
+      "max_position_target": 31,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.429212e-8
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.7598324e-8
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.7608523e-8
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8691344e-8
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.880332e-8
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8295092e-8
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8544006e-8
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.793155e-8
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.8029452e-8
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.182136e-8
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9360228e-8
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8554625e-8
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8763596e-8
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9456848e-8
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.8416094e-8
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.8567667e-8
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.8241112e-8
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.3207702e-8
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.78385e-8
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.064747e-8
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.957774e-8
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9755688e-8
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7495664e-8
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.8783606e-8
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.858408e-8
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.242662e-8
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.0330865e-8
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.112326e-8
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.2493004e-8
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.971878e-8
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 5.0114515e-8
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 8.325688e-8
+        }
+      ]
+    },
+    {
+      "draw": 6,
+      "seed": 42,
+      "max_p_target": 5.8740863e-8,
+      "max_ratio_target": 1.214655,
+      "max_position_target": 23,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.792893e-8
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.7676764e-8
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.7873634e-8
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8729458e-8
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.9048218e-8
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.85339e-8
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8687944e-8
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.810133e-8
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.8071488e-8
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.1792084e-8
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9464145e-8
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.835849e-8
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8720935e-8
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.952006e-8
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.8673837e-8
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.8783793e-8
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.797345e-8
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.2345047e-8
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8096407e-8
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.0707136e-8
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9979604e-8
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.990162e-8
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7140006e-8
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.8740863e-8
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.937141e-8
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.2647244e-8
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.0421598e-8
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.1038054e-8
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.301475e-8
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.9760626e-8
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 5.3804133e-8
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 1.7731338e-9
+        }
+      ]
+    },
+    {
+      "draw": 7,
+      "seed": 42,
+      "max_p_target": 6.001903e-8,
+      "max_ratio_target": 1.2410853,
+      "max_position_target": 23,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 4.303504e-8
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.7435048e-8
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.749066e-8
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8612588e-8
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8529916e-8
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8207e-8
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.857658e-8
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8153318e-8
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.8697093e-8
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 5.0968197e-8
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.9528126e-8
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.847734e-8
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8890566e-8
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.934713e-8
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.851699e-8
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.9639848e-8
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.8955258e-8
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 5.0126875e-8
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.8610605e-8
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.0768495e-8
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9155524e-8
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9613732e-8
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.777133e-8
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 6.001903e-8
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.9792884e-8
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.916121e-8
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.1429307e-8
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.1835165e-8
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.2000246e-8
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.996603e-8
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 4.7774357e-8
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 1.0812671e-9
+        }
+      ]
+    },
+    {
+      "draw": 8,
+      "seed": 42,
+      "max_p_target": 6.1527146e-8,
+      "max_ratio_target": 1.2722704,
+      "max_position_target": 30,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.9120085e-8
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.746642e-8
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.755408e-8
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8563926e-8
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.845007e-8
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.8031833e-8
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8590636e-8
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.8038007e-8
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.7459594e-8
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.272224e-8
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.930741e-8
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8393815e-8
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8561095e-8
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9514465e-8
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.827179e-8
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.8186592e-8
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.5879705e-8
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.4763503e-8
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.754696e-8
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.1054297e-8
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.9308728e-8
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.953277e-8
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7431538e-8
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.5772087e-8
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.721821e-8
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.1296865e-8
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.008445e-8
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.0760967e-8
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.220449e-8
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 5.0733668e-8
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 6.1527146e-8
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 1.2241788e-8
+        }
+      ]
+    },
+    {
+      "draw": 9,
+      "seed": 42,
+      "max_p_target": 5.654312e-8,
+      "max_ratio_target": 1.1692097,
+      "max_position_target": 23,
+      "per_position": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "p_target": 3.738662e-8
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "p_target": 4.6995414e-8
+        },
+        {
+          "position": 2,
+          "token": " stars",
+          "p_target": 4.7512458e-8
+        },
+        {
+          "position": 3,
+          "token": " were",
+          "p_target": 4.8633947e-8
+        },
+        {
+          "position": 4,
+          "token": " twinkling",
+          "p_target": 4.8561258e-8
+        },
+        {
+          "position": 5,
+          "token": " in",
+          "p_target": 4.827054e-8
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "p_target": 4.8483212e-8
+        },
+        {
+          "position": 7,
+          "token": " night",
+          "p_target": 4.7921507e-8
+        },
+        {
+          "position": 8,
+          "token": ",",
+          "p_target": 4.7922867e-8
+        },
+        {
+          "position": 9,
+          "token": "\n",
+          "p_target": 4.2754703e-8
+        },
+        {
+          "position": 10,
+          "token": "The",
+          "p_target": 4.922238e-8
+        },
+        {
+          "position": 11,
+          "token": " lanterns",
+          "p_target": 4.8231453e-8
+        },
+        {
+          "position": 12,
+          "token": " cast",
+          "p_target": 4.8538283e-8
+        },
+        {
+          "position": 13,
+          "token": " a",
+          "p_target": 4.9286e-8
+        },
+        {
+          "position": 14,
+          "token": " golden",
+          "p_target": 4.822228e-8
+        },
+        {
+          "position": 15,
+          "token": " light",
+          "p_target": 4.840467e-8
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "p_target": 4.706916e-8
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "p_target": 4.3339064e-8
+        },
+        {
+          "position": 18,
+          "token": "She",
+          "p_target": 4.7725905e-8
+        },
+        {
+          "position": 19,
+          "token": " wandered",
+          "p_target": 5.0958274e-8
+        },
+        {
+          "position": 20,
+          "token": " in",
+          "p_target": 4.947786e-8
+        },
+        {
+          "position": 21,
+          "token": " the",
+          "p_target": 4.9634334e-8
+        },
+        {
+          "position": 22,
+          "token": " dark",
+          "p_target": 4.7267232e-8
+        },
+        {
+          "position": 23,
+          "token": " about",
+          "p_target": 5.654312e-8
+        },
+        {
+          "position": 24,
+          "token": ",",
+          "p_target": 4.8450232e-8
+        },
+        {
+          "position": 25,
+          "token": "\n",
+          "p_target": 4.3311847e-8
+        },
+        {
+          "position": 26,
+          "token": "And",
+          "p_target": 5.0658294e-8
+        },
+        {
+          "position": 27,
+          "token": " found",
+          "p_target": 5.142133e-8
+        },
+        {
+          "position": 28,
+          "token": " a",
+          "p_target": 5.22564e-8
+        },
+        {
+          "position": 29,
+          "token": " hidden",
+          "p_target": 4.8787065e-8
+        },
+        {
+          "position": 30,
+          "token": " passage",
+          "p_target": 5.296958e-8
+        },
+        {
+          "position": 31,
+          "token": " ",
+          "p_target": 2.706277e-9
+        }
+      ]
+    }
+  ],
+  "real_max_ratio": 9974880.0,
+  "random_inject_max_ratio": 1.5861605,
+  "random_direction_max_ratio": 4.0425477
+}

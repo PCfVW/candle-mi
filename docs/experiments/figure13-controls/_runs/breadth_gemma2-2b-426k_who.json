@@ -1,0 +1,433 @@
+{
+  "model": "google/gemma-2-2b",
+  "clt_repo": "mntss/clt-gemma-2-2b-426k",
+  "prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers who,\nWould come to find a way back",
+  "tokens": [
+    "<bos>",
+    "The",
+    " sun",
+    " goes",
+    " up",
+    ",",
+    " the",
+    " sun",
+    " goes",
+    " down",
+    ",",
+    "\n",
+    "The",
+    " moon",
+    " shines",
+    " bright",
+    " above",
+    " the",
+    " town",
+    ".",
+    "\n",
+    "Nobody",
+    " knows",
+    " or",
+    " remembers",
+    " who",
+    ",",
+    "\n",
+    "Would",
+    " come",
+    " to",
+    " find",
+    " a",
+    " way",
+    " back",
+    " "
+  ],
+  "suppress_word": "out",
+  "inject_word": "around",
+  "suppress_features": [
+    {
+      "layer": 16,
+      "index": 13725
+    },
+    {
+      "layer": 25,
+      "index": 9385
+    }
+  ],
+  "inject_feature": {
+    "layer": 22,
+    "index": 10243
+  },
+  "no_suppress": false,
+  "strength": 25.0,
+  "baseline_prob": 4.1179474e-10,
+  "sweep": [
+    {
+      "position": 0,
+      "token": "<bos>",
+      "prob": 3.030358e-10
+    },
+    {
+      "position": 1,
+      "token": "The",
+      "prob": 3.9596526e-10
+    },
+    {
+      "position": 2,
+      "token": " sun",
+      "prob": 4.1330284e-10
+    },
+    {
+      "position": 3,
+      "token": " goes",
+      "prob": 4.1671844e-10
+    },
+    {
+      "position": 4,
+      "token": " up",
+      "prob": 4.1435744e-10
+    },
+    {
+      "position": 5,
+      "token": ",",
+      "prob": 4.1047862e-10
+    },
+    {
+      "position": 6,
+      "token": " the",
+      "prob": 4.1658116e-10
+    },
+    {
+      "position": 7,
+      "token": " sun",
+      "prob": 4.137461e-10
+    },
+    {
+      "position": 8,
+      "token": " goes",
+      "prob": 4.1586518e-10
+    },
+    {
+      "position": 9,
+      "token": " down",
+      "prob": 4.2933407e-10
+    },
+    {
+      "position": 10,
+      "token": ",",
+      "prob": 4.1056405e-10
+    },
+    {
+      "position": 11,
+      "token": "\n",
+      "prob": 4.1680273e-10
+    },
+    {
+      "position": 12,
+      "token": "The",
+      "prob": 4.1184697e-10
+    },
+    {
+      "position": 13,
+      "token": " moon",
+      "prob": 4.112212e-10
+    },
+    {
+      "position": 14,
+      "token": " shines",
+      "prob": 4.1135925e-10
+    },
+    {
+      "position": 15,
+      "token": " bright",
+      "prob": 4.153067e-10
+    },
+    {
+      "position": 16,
+      "token": " above",
+      "prob": 4.2318057e-10
+    },
+    {
+      "position": 17,
+      "token": " the",
+      "prob": 4.1491968e-10
+    },
+    {
+      "position": 18,
+      "token": " town",
+      "prob": 4.2160173e-10
+    },
+    {
+      "position": 19,
+      "token": ".",
+      "prob": 4.085863e-10
+    },
+    {
+      "position": 20,
+      "token": "\n",
+      "prob": 3.8490292e-10
+    },
+    {
+      "position": 21,
+      "token": "Nobody",
+      "prob": 4.0013154e-10
+    },
+    {
+      "position": 22,
+      "token": " knows",
+      "prob": 4.1478165e-10
+    },
+    {
+      "position": 23,
+      "token": " or",
+      "prob": 4.0233633e-10
+    },
+    {
+      "position": 24,
+      "token": " remembers",
+      "prob": 4.2898662e-10
+    },
+    {
+      "position": 25,
+      "token": " who",
+      "prob": 5.3100385e-10
+    },
+    {
+      "position": 26,
+      "token": ",",
+      "prob": 4.0045042e-10
+    },
+    {
+      "position": 27,
+      "token": "\n",
+      "prob": 3.879704e-10
+    },
+    {
+      "position": 28,
+      "token": "Would",
+      "prob": 4.0045917e-10
+    },
+    {
+      "position": 29,
+      "token": " come",
+      "prob": 3.923333e-10
+    },
+    {
+      "position": 30,
+      "token": " to",
+      "prob": 4.055055e-10
+    },
+    {
+      "position": 31,
+      "token": " find",
+      "prob": 4.3481643e-10
+    },
+    {
+      "position": 32,
+      "token": " a",
+      "prob": 4.0351433e-10
+    },
+    {
+      "position": 33,
+      "token": " way",
+      "prob": 4.0471962e-10
+    },
+    {
+      "position": 34,
+      "token": " back",
+      "prob": 1.0789044e-9
+    },
+    {
+      "position": 35,
+      "token": " ",
+      "prob": 0.38332677
+    }
+  ],
+  "sweep_grid": [
+    {
+      "strength": 25.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "prob": 3.030358e-10
+        },
+        {
+          "position": 1,
+          "token": "The",
+          "prob": 3.9596526e-10
+        },
+        {
+          "position": 2,
+          "token": " sun",
+          "prob": 4.1330284e-10
+        },
+        {
+          "position": 3,
+          "token": " goes",
+          "prob": 4.1671844e-10
+        },
+        {
+          "position": 4,
+          "token": " up",
+          "prob": 4.1435744e-10
+        },
+        {
+          "position": 5,
+          "token": ",",
+          "prob": 4.1047862e-10
+        },
+        {
+          "position": 6,
+          "token": " the",
+          "prob": 4.1658116e-10
+        },
+        {
+          "position": 7,
+          "token": " sun",
+          "prob": 4.137461e-10
+        },
+        {
+          "position": 8,
+          "token": " goes",
+          "prob": 4.1586518e-10
+        },
+        {
+          "position": 9,
+          "token": " down",
+          "prob": 4.2933407e-10
+        },
+        {
+          "position": 10,
+          "token": ",",
+          "prob": 4.1056405e-10
+        },
+        {
+          "position": 11,
+          "token": "\n",
+          "prob": 4.1680273e-10
+        },
+        {
+          "position": 12,
+          "token": "The",
+          "prob": 4.1184697e-10
+        },
+        {
+          "position": 13,
+          "token": " moon",
+          "prob": 4.112212e-10
+        },
+        {
+          "position": 14,
+          "token": " shines",
+          "prob": 4.1135925e-10
+        },
+        {
+          "position": 15,
+          "token": " bright",
+          "prob": 4.153067e-10
+        },
+        {
+          "position": 16,
+          "token": " above",
+          "prob": 4.2318057e-10
+        },
+        {
+          "position": 17,
+          "token": " the",
+          "prob": 4.1491968e-10
+        },
+        {
+          "position": 18,
+          "token": " town",
+          "prob": 4.2160173e-10
+        },
+        {
+          "position": 19,
+          "token": ".",
+          "prob": 4.085863e-10
+        },
+        {
+          "position": 20,
+          "token": "\n",
+          "prob": 3.8490292e-10
+        },
+        {
+          "position": 21,
+          "token": "Nobody",
+          "prob": 4.0013154e-10
+        },
+        {
+          "position": 22,
+          "token": " knows",
+          "prob": 4.1478165e-10
+        },
+        {
+          "position": 23,
+          "token": " or",
+          "prob": 4.0233633e-10
+        },
+        {
+          "position": 24,
+          "token": " remembers",
+          "prob": 4.2898662e-10
+        },
+        {
+          "position": 25,
+          "token": " who",
+          "prob": 5.3100385e-10
+        },
+        {
+          "position": 26,
+          "token": ",",
+          "prob": 4.0045042e-10
+        },
+        {
+          "position": 27,
+          "token": "\n",
+          "prob": 3.879704e-10
+        },
+        {
+          "position": 28,
+          "token": "Would",
+          "prob": 4.0045917e-10
+        },
+        {
+          "position": 29,
+          "token": " come",
+          "prob": 3.923333e-10
+        },
+        {
+          "position": 30,
+          "token": " to",
+          "prob": 4.055055e-10
+        },
+        {
+          "position": 31,
+          "token": " find",
+          "prob": 4.3481643e-10
+        },
+        {
+          "position": 32,
+          "token": " a",
+          "prob": 4.0351433e-10
+        },
+        {
+          "position": 33,
+          "token": " way",
+          "prob": 4.0471962e-10
+        },
+        {
+          "position": 34,
+          "token": " back",
+          "prob": 1.0789044e-9
+        },
+        {
+          "position": 35,
+          "token": " ",
+          "prob": 0.38332677
+        }
+      ]
+    }
+  ],
+  "best_ratio": 930868540.0,
+  "best_position": 35
+}

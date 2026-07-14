@@ -1,0 +1,221 @@
+{
+  "model": "google/gemma-2-2b",
+  "clt_repo": "mntss/clt-gemma-2-2b-426k",
+  "prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark about,\nAnd found a hidden passage",
+  "tokens": [
+    "<bos>",
+    "The",
+    " stars",
+    " were",
+    " twinkling",
+    " in",
+    " the",
+    " night",
+    ",",
+    "\n",
+    "The",
+    " lanterns",
+    " cast",
+    " a",
+    " golden",
+    " light",
+    ".",
+    "\n",
+    "She",
+    " wandered",
+    " in",
+    " the",
+    " dark",
+    " about",
+    ",",
+    "\n",
+    "And",
+    " found",
+    " a",
+    " hidden",
+    " passage",
+    " "
+  ],
+  "suppress_word": "out",
+  "inject_word": "around",
+  "suppress_features": [
+    {
+      "layer": 16,
+      "index": 13725
+    },
+    {
+      "layer": 25,
+      "index": 9385
+    }
+  ],
+  "inject_feature": {
+    "layer": 22,
+    "index": 10243
+  },
+  "no_suppress": false,
+  "strength": 25.0,
+  "baseline_prob": 0.000002413834,
+  "sweep": [
+    {
+      "position": 0,
+      "token": "<bos>",
+      "prob": 0.0000023764387
+    },
+    {
+      "position": 1,
+      "token": "The",
+      "prob": 0.0000023694781
+    },
+    {
+      "position": 2,
+      "token": " stars",
+      "prob": 0.0000024094568
+    },
+    {
+      "position": 3,
+      "token": " were",
+      "prob": 0.000002361168
+    },
+    {
+      "position": 4,
+      "token": " twinkling",
+      "prob": 0.0000023357472
+    },
+    {
+      "position": 5,
+      "token": " in",
+      "prob": 0.0000023791656
+    },
+    {
+      "position": 6,
+      "token": " the",
+      "prob": 0.0000024178748
+    },
+    {
+      "position": 7,
+      "token": " night",
+      "prob": 0.000002414245
+    },
+    {
+      "position": 8,
+      "token": ",",
+      "prob": 0.0000024467445
+    },
+    {
+      "position": 9,
+      "token": "\n",
+      "prob": 0.0000024562805
+    },
+    {
+      "position": 10,
+      "token": "The",
+      "prob": 0.0000023622356
+    },
+    {
+      "position": 11,
+      "token": " lanterns",
+      "prob": 0.0000024060384
+    },
+    {
+      "position": 12,
+      "token": " cast",
+      "prob": 0.0000023699638
+    },
+    {
+      "position": 13,
+      "token": " a",
+      "prob": 0.0000023919986
+    },
+    {
+      "position": 14,
+      "token": " golden",
+      "prob": 0.0000023886478
+    },
+    {
+      "position": 15,
+      "token": " light",
+      "prob": 0.0000024137078
+    },
+    {
+      "position": 16,
+      "token": ".",
+      "prob": 0.0000024104643
+    },
+    {
+      "position": 17,
+      "token": "\n",
+      "prob": 0.0000023694852
+    },
+    {
+      "position": 18,
+      "token": "She",
+      "prob": 0.0000023865825
+    },
+    {
+      "position": 19,
+      "token": " wandered",
+      "prob": 0.0000024293397
+    },
+    {
+      "position": 20,
+      "token": " in",
+      "prob": 0.0000024074045
+    },
+    {
+      "position": 21,
+      "token": " the",
+      "prob": 0.0000024406465
+    },
+    {
+      "position": 22,
+      "token": " dark",
+      "prob": 0.0000023883388
+    },
+    {
+      "position": 23,
+      "token": " about",
+      "prob": 0.000002456022
+    },
+    {
+      "position": 24,
+      "token": ",",
+      "prob": 0.000002401905
+    },
+    {
+      "position": 25,
+      "token": "\n",
+      "prob": 0.0000024092963
+    },
+    {
+      "position": 26,
+      "token": "And",
+      "prob": 0.0000024133853
+    },
+    {
+      "position": 27,
+      "token": " found",
+      "prob": 0.0000024268036
+    },
+    {
+      "position": 28,
+      "token": " a",
+      "prob": 0.0000024215349
+    },
+    {
+      "position": 29,
+      "token": " hidden",
+      "prob": 0.000002459186
+    },
+    {
+      "position": 30,
+      "token": " passage",
+      "prob": 0.0000024370427
+    },
+    {
+      "position": 31,
+      "token": " ",
+      "prob": 0.000007994414
+    }
+  ],
+  "weight_source": "random_init(seed=1, std=0.02)"
+}

@@ -1,0 +1,75 @@
+{
+  "cell": "llama-524k",
+  "preset": "llama3.2-1b-524k",
+  "strength": 25.0,
+  "note": "Exp 4 prompt breadth: the cell's preset suppress/inject features and inject word are held fixed; only the prompt varies. Prompt #1 is the reference cell (from the committed Table-2 grid); prompts #2-#4 are the other COLM-validated prompts, rerun at s=25.",
+  "n_prompts": 4,
+  "k_localize_final_token": 4,
+  "localization_rate": 1.0,
+  "clopper_pearson_95ci": [
+    0.3976353643835253,
+    1.0
+  ],
+  "null_all_final_prob": 9.854003090215367e-07,
+  "best_ratio_median": 262047.18871398678,
+  "best_ratio_min": 1106.8097559754176,
+  "best_ratio_max": 806260.2581172598,
+  "prompts": [
+    {
+      "natural_group": "-ee (free)",
+      "prompt": "The birds were singing in the tree,\nAnd everything was wild and free.\nThe river ran down to the sea,\nThere is so much we cannot",
+      "n_positions": 31,
+      "spike_position": 30,
+      "spike_token": " ",
+      "spike_site": "final",
+      "localizes_at_final": true,
+      "baseline_prob": 1.0573334e-06,
+      "best_prob": 0.8524859,
+      "best_ratio": 806260.2581172598,
+      "strength": 25.0,
+      "is_reference_prompt": true
+    },
+    {
+      "natural_group": "-oo",
+      "prompt": "The morning sky was painted blue,\nThe garden sparkled bright with dew.\nThe world had started fresh and new,\nAnd there was nothing left to",
+      "n_positions": 31,
+      "spike_position": 30,
+      "spike_token": " ",
+      "spike_site": "final",
+      "localizes_at_final": true,
+      "baseline_prob": 2.2226845e-06,
+      "best_prob": 0.85664755,
+      "best_ratio": 385411.2223304747,
+      "strength": 25.0,
+      "is_reference_prompt": false
+    },
+    {
+      "natural_group": "-at",
+      "prompt": "The old man wore a tattered hat,\nUpon the porch he always sat.\nHe told the tale of this and that,\nAnd in the corner slept the",
+      "n_positions": 33,
+      "spike_position": 32,
+      "spike_token": " ",
+      "spike_site": "final",
+      "localizes_at_final": true,
+      "baseline_prob": 0.00067733176,
+      "best_prob": 0.7496774,
+      "best_ratio": 1106.8097559754176,
+      "strength": 25.0,
+      "is_reference_prompt": false
+    },
+    {
+      "natural_group": "-ore",
+      "prompt": "The waves came crashing on the shore,\nThe wind was howling more and more.\nShe asked what all the fuss was for,\nAnd opened up the",
+      "n_positions": 32,
+      "spike_position": 31,
+      "spike_token": " ",
+      "spike_site": "final",
+      "localizes_at_final": true,
+      "baseline_prob": 5.800835e-06,
+      "best_prob": 0.8044781,
+      "best_ratio": 138683.15509749888,
+      "strength": 25.0,
+      "is_reference_prompt": false
+    }
+  ]
+}

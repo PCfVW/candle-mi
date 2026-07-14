@@ -1,0 +1,422 @@
+{
+  "model": "google/gemma-2-2b",
+  "clt_repo": "mntss/clt-gemma-2-2b-426k",
+  "prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a shout,\nThe truth was struggling to come",
+  "tokens": [
+    "<bos>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",",
+    "\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".",
+    "\n",
+    "He",
+    " raised",
+    " his",
+    " voice",
+    " and",
+    " gave",
+    " a",
+    " shout",
+    ",",
+    "\n",
+    "The",
+    " truth",
+    " was",
+    " struggling",
+    " to",
+    " come",
+    " "
+  ],
+  "suppress_word": "out",
+  "inject_word": "around",
+  "suppress_features": [
+    {
+      "layer": 16,
+      "index": 13725
+    },
+    {
+      "layer": 25,
+      "index": 9385
+    }
+  ],
+  "inject_feature": {
+    "layer": 22,
+    "index": 10243
+  },
+  "no_suppress": false,
+  "strength": 25.0,
+  "baseline_prob": 3.8651558e-9,
+  "sweep": [
+    {
+      "position": 0,
+      "token": "<bos>",
+      "prob": 3.1377325e-9
+    },
+    {
+      "position": 1,
+      "token": "A",
+      "prob": 3.8639634e-9
+    },
+    {
+      "position": 2,
+      "token": " sailor",
+      "prob": 3.977825e-9
+    },
+    {
+      "position": 3,
+      "token": " sailed",
+      "prob": 4.080897e-9
+    },
+    {
+      "position": 4,
+      "token": " across",
+      "prob": 4.3781734e-9
+    },
+    {
+      "position": 5,
+      "token": " the",
+      "prob": 3.9367865e-9
+    },
+    {
+      "position": 6,
+      "token": " bay",
+      "prob": 4.1208e-9
+    },
+    {
+      "position": 7,
+      "token": ",",
+      "prob": 4.0392822e-9
+    },
+    {
+      "position": 8,
+      "token": "\n",
+      "prob": 4.0201904e-9
+    },
+    {
+      "position": 9,
+      "token": "And",
+      "prob": 3.9514867e-9
+    },
+    {
+      "position": 10,
+      "token": " dreamed",
+      "prob": 3.990082e-9
+    },
+    {
+      "position": 11,
+      "token": " of",
+      "prob": 3.9368158e-9
+    },
+    {
+      "position": 12,
+      "token": " home",
+      "prob": 3.9801518e-9
+    },
+    {
+      "position": 13,
+      "token": " throughout",
+      "prob": 3.804282e-9
+    },
+    {
+      "position": 14,
+      "token": " the",
+      "prob": 3.961334e-9
+    },
+    {
+      "position": 15,
+      "token": " day",
+      "prob": 3.9750025e-9
+    },
+    {
+      "position": 16,
+      "token": ".",
+      "prob": 3.9410524e-9
+    },
+    {
+      "position": 17,
+      "token": "\n",
+      "prob": 4.2390975e-9
+    },
+    {
+      "position": 18,
+      "token": "He",
+      "prob": 3.959602e-9
+    },
+    {
+      "position": 19,
+      "token": " raised",
+      "prob": 4.1286525e-9
+    },
+    {
+      "position": 20,
+      "token": " his",
+      "prob": 3.904721e-9
+    },
+    {
+      "position": 21,
+      "token": " voice",
+      "prob": 3.969743e-9
+    },
+    {
+      "position": 22,
+      "token": " and",
+      "prob": 3.9714902e-9
+    },
+    {
+      "position": 23,
+      "token": " gave",
+      "prob": 3.971834e-9
+    },
+    {
+      "position": 24,
+      "token": " a",
+      "prob": 4.0123243e-9
+    },
+    {
+      "position": 25,
+      "token": " shout",
+      "prob": 4.7685265e-9
+    },
+    {
+      "position": 26,
+      "token": ",",
+      "prob": 3.9680272e-9
+    },
+    {
+      "position": 27,
+      "token": "\n",
+      "prob": 4.2998027e-9
+    },
+    {
+      "position": 28,
+      "token": "The",
+      "prob": 4.1140544e-9
+    },
+    {
+      "position": 29,
+      "token": " truth",
+      "prob": 3.9511594e-9
+    },
+    {
+      "position": 30,
+      "token": " was",
+      "prob": 3.994238e-9
+    },
+    {
+      "position": 31,
+      "token": " struggling",
+      "prob": 4.0181596e-9
+    },
+    {
+      "position": 32,
+      "token": " to",
+      "prob": 3.6645451e-9
+    },
+    {
+      "position": 33,
+      "token": " come",
+      "prob": 4.2723762e-9
+    },
+    {
+      "position": 34,
+      "token": " ",
+      "prob": 0.47761673
+    }
+  ],
+  "sweep_grid": [
+    {
+      "strength": 25.0,
+      "sweep": [
+        {
+          "position": 0,
+          "token": "<bos>",
+          "prob": 3.1377325e-9
+        },
+        {
+          "position": 1,
+          "token": "A",
+          "prob": 3.8639634e-9
+        },
+        {
+          "position": 2,
+          "token": " sailor",
+          "prob": 3.977825e-9
+        },
+        {
+          "position": 3,
+          "token": " sailed",
+          "prob": 4.080897e-9
+        },
+        {
+          "position": 4,
+          "token": " across",
+          "prob": 4.3781734e-9
+        },
+        {
+          "position": 5,
+          "token": " the",
+          "prob": 3.9367865e-9
+        },
+        {
+          "position": 6,
+          "token": " bay",
+          "prob": 4.1208e-9
+        },
+        {
+          "position": 7,
+          "token": ",",
+          "prob": 4.0392822e-9
+        },
+        {
+          "position": 8,
+          "token": "\n",
+          "prob": 4.0201904e-9
+        },
+        {
+          "position": 9,
+          "token": "And",
+          "prob": 3.9514867e-9
+        },
+        {
+          "position": 10,
+          "token": " dreamed",
+          "prob": 3.990082e-9
+        },
+        {
+          "position": 11,
+          "token": " of",
+          "prob": 3.9368158e-9
+        },
+        {
+          "position": 12,
+          "token": " home",
+          "prob": 3.9801518e-9
+        },
+        {
+          "position": 13,
+          "token": " throughout",
+          "prob": 3.804282e-9
+        },
+        {
+          "position": 14,
+          "token": " the",
+          "prob": 3.961334e-9
+        },
+        {
+          "position": 15,
+          "token": " day",
+          "prob": 3.9750025e-9
+        },
+        {
+          "position": 16,
+          "token": ".",
+          "prob": 3.9410524e-9
+        },
+        {
+          "position": 17,
+          "token": "\n",
+          "prob": 4.2390975e-9
+        },
+        {
+          "position": 18,
+          "token": "He",
+          "prob": 3.959602e-9
+        },
+        {
+          "position": 19,
+          "token": " raised",
+          "prob": 4.1286525e-9
+        },
+        {
+          "position": 20,
+          "token": " his",
+          "prob": 3.904721e-9
+        },
+        {
+          "position": 21,
+          "token": " voice",
+          "prob": 3.969743e-9
+        },
+        {
+          "position": 22,
+          "token": " and",
+          "prob": 3.9714902e-9
+        },
+        {
+          "position": 23,
+          "token": " gave",
+          "prob": 3.971834e-9
+        },
+        {
+          "position": 24,
+          "token": " a",
+          "prob": 4.0123243e-9
+        },
+        {
+          "position": 25,
+          "token": " shout",
+          "prob": 4.7685265e-9
+        },
+        {
+          "position": 26,
+          "token": ",",
+          "prob": 3.9680272e-9
+        },
+        {
+          "position": 27,
+          "token": "\n",
+          "prob": 4.2998027e-9
+        },
+        {
+          "position": 28,
+          "token": "The",
+          "prob": 4.1140544e-9
+        },
+        {
+          "position": 29,
+          "token": " truth",
+          "prob": 3.9511594e-9
+        },
+        {
+          "position": 30,
+          "token": " was",
+          "prob": 3.994238e-9
+        },
+        {
+          "position": 31,
+          "token": " struggling",
+          "prob": 4.0181596e-9
+        },
+        {
+          "position": 32,
+          "token": " to",
+          "prob": 3.6645451e-9
+        },
+        {
+          "position": 33,
+          "token": " come",
+          "prob": 4.2723762e-9
+        },
+        {
+          "position": 34,
+          "token": " ",
+          "prob": 0.47761673
+        }
+      ]
+    }
+  ],
+  "best_ratio": 123569860.0,
+  "best_position": 34
+}

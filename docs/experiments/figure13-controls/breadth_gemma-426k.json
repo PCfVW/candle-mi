@@ -1,0 +1,75 @@
+{
+  "cell": "gemma-426k",
+  "preset": "gemma2-2b-426k",
+  "strength": 25.0,
+  "note": "Exp 4 prompt breadth: the cell's preset suppress/inject features and inject word are held fixed; only the prompt varies. Prompt #1 is the reference cell (from the committed Table-2 grid); prompts #2-#4 are the other COLM-validated prompts, rerun at s=25.",
+  "n_prompts": 4,
+  "k_localize_final_token": 4,
+  "localization_rate": 1.0,
+  "clopper_pearson_95ci": [
+    0.3976353643835253,
+    1.0
+  ],
+  "null_all_final_prob": 7.294584500466853e-07,
+  "best_ratio_median": 527219197.9174122,
+  "best_ratio_min": 9974879.507117828,
+  "best_ratio_max": 46591172763.01081,
+  "prompts": [
+    {
+      "natural_group": "-out (about)",
+      "prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark about,\nAnd found a hidden passage",
+      "n_positions": 32,
+      "spike_position": 31,
+      "spike_token": " ",
+      "spike_site": "final",
+      "localizes_at_final": true,
+      "baseline_prob": 4.8360118e-08,
+      "best_prob": 0.48238635,
+      "best_ratio": 9974879.507117828,
+      "strength": 25.0,
+      "is_reference_prompt": true
+    },
+    {
+      "natural_group": "-ow",
+      "prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nThe world keeps spinning even so,\nThere is so much we do not",
+      "n_positions": 34,
+      "spike_position": 33,
+      "spike_token": " ",
+      "spike_site": "final",
+      "localizes_at_final": true,
+      "baseline_prob": 1.1989754e-11,
+      "best_prob": 0.5586167,
+      "best_ratio": 46591172763.01081,
+      "strength": 25.0,
+      "is_reference_prompt": false
+    },
+    {
+      "natural_group": "-out",
+      "prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a shout,\nThe truth was struggling to come",
+      "n_positions": 35,
+      "spike_position": 34,
+      "spike_token": " ",
+      "spike_site": "final",
+      "localizes_at_final": true,
+      "baseline_prob": 3.8651558e-09,
+      "best_prob": 0.47761673,
+      "best_ratio": 123569851.95784345,
+      "strength": 25.0,
+      "is_reference_prompt": false
+    },
+    {
+      "natural_group": "-oo",
+      "prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers who,\nWould come to find a way back",
+      "n_positions": 36,
+      "spike_position": 35,
+      "spike_token": " ",
+      "spike_site": "final",
+      "localizes_at_final": true,
+      "baseline_prob": 4.1179474e-10,
+      "best_prob": 0.38332677,
+      "best_ratio": 930868543.876981,
+      "strength": 25.0,
+      "is_reference_prompt": false
+    }
+  ]
+}
