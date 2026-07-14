@@ -86,13 +86,13 @@ See the [full comparison](examples/README.md#example-output-logit_lens) with per
 
 ### The flagship — Anthropic's circuit tracing on consumer hardware
 
-This library was built to replicate Anthropic's [circuit-tracing work](https://transformer-circuits.pub/2025/attribution-graphs/biology.html) on consumer hardware. Here is [Figure 13](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poem-location) from *"On the Biology of a Large Language Model"*, running on a single GPU:
+This library was originally built to replicate Anthropic's [circuit-tracing work](https://transformer-circuits.pub/2025/attribution-graphs/biology.html) on consumer hardware. Here is [Figure 13](https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-poem-location) from *"On the Biology of a Large Language Model"*, running on a single GPU:
 
 ```bash
 cargo run --release --features clt,transformer --example figure13_planning_poems
 ```
 
-This uses Llama 3.2 1B with a 524K-feature Cross-Layer Transcoder to suppress natural rhyme features and inject an alternative ("that" → P=0.69), sweeping injection position across all prompt tokens. See the [full output](examples/README.md#example-output-figure13_planning_poems) and the [27 examples](examples/README.md) covering logit lens, attention knockout, steering, activation patching, CLT circuits, SAE encoding, RWKV inference, AlgZoo analysis, masked-diffusion MI, and more.
+This uses Llama 3.2 1B with a 524K-feature Cross-Layer Transcoder to suppress natural rhyme features and inject an alternative ("that" → P=0.69), sweeping injection position across all prompt tokens. The [newline experiments](docs/experiments/figure13-newline/findings.md) then push past replication to *locate* the behaviour: give a sub-2B open model a full line to compose, and the Figure-13 spike lands at emission, not the newline — it improvises the rhyme rather than planning it. See the [full output](examples/README.md#example-output-figure13_planning_poems) and the [examples](examples/README.md) covering logit lens, attention knockout, steering, activation patching, CLT circuits, SAE encoding, RWKV inference, AlgZoo analysis, masked-diffusion MI, and more.
 
 ## Quick start
 

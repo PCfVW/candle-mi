@@ -53,9 +53,23 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
 | `clt_probe` | `clt`, `transformer` | Probe CLT feature activations at a token position — find suppress/inject candidates for `figure13_planning_poems` and `attention_routing` |
 | `correction_test` | `clt`, `transformer` | Test whether downstream layers can reverse a prolepsis commitment — injects a contradictory feature at late layers and measures whether the output redirects |
 | `vocab_scan` | `clt`, `transformer` | (v0.1.11) Anthropic Appendix B vocabulary scan: enumerate CLT features by decoder-cosine against the model embedding matrix, top-K tokens per feature.  Pair with `scripts/vocab_scan_cmudict_filter.py` for CMUdict-clustered rhyme-group discovery and `scripts/pick_inject_feature.py` for `figure13_planning_poems` preset construction |
+| `figure13_newline_census` | `clt`, `transformer` | BlackboxNLP Exp 1 — newline feature census: do any CLT features carry anticipatory rhyme content at the poem newlines? Encodes all active features per position; pairs with `scripts/newline_census_classify.py` |
+| `figure13_newline_steering` | `clt`, `transformer` | BlackboxNLP Exp 2 — composition-horizon steering: truncate after the line-3 newline, compose line 4, sweep steering position (m4). Does the newline shape the rhyme, or only emission? Pairs with `scripts/newline_steering_classify.py` |
+| `clt_hook_reconcile` | `clt`, `transformer` | Encode a CLT feature under `ResidPre` / `ResidMid` / `ResidPost` at a position — identifies which residual reproduces documented activations |
+| `clt_reconstruction_check` | `clt`, `transformer` | Decide which residual the CLT encoder was trained to read by reconstructing each layer's `MlpOut` from encode→decode (`ResidMid` vs `ResidPost`) |
+| `clt_vs_plt_planning_site` | `clt`, `transformer` | CLT vs PLT method-matched comparison on the Llama 3.2 1B rhyme planning site (Hanna & Ameisen, *Latent Planning Emerges with Scale*) |
+| `maar_contrastive_steering` | `transformer` | Maar et al. (2026) *What's the plan?* contrastive-activation-steering replication — raw mean-diff direction, generated-couplet last-word rhyme-family metric |
+| `gridworld_prolepsis` | `clt`, `transformer` | Gridworld prolepsis — does early irrevocable commitment appear in a spatial planning task? |
+| `means_ends_prolepsis` | `transformer` | Means-ends prolepsis — baseline feasibility (Step A) for the linguistic planning cell on base Gemma 2 2B |
+| `means_ends_sweep` | `clt`, `transformer` | Means-ends prolepsis Step B — suppress+inject planning-site position sweep |
+| `commitment_onset` | `clt`, `transformer` | Commitment-onset layer at the planning site (logit-lens + CLT activation) |
+| `contrastive_patch` | `transformer` | Contrastive activation patching of the goal→action signal (CLT-free) |
+| `action_dla` | `transformer` | MLP-vs-attention direct logit attribution of the goal→action signal (CLT-free) |
+| `decision_trace` | `transformer` | Depth-axis irrevocability — the running action margin `logit(correct) − logit(alt)` across layers |
 | `stoicheia_inference` | `stoicheia` | Run an AlgZoo RNN or transformer, compare predictions against ground-truth task function |
 | `stoicheia_analysis` | `stoicheia` | Full Phase B MI pipeline: standardize weights, ablate neurons, probe roles, enumerate regions, run surprise accounting |
 | `quick_start_mdlm` | `diffusion` | MDLM masked-diffusion fill-in-the-blank: mask `" Paris"`, run a bidirectional forward, apply `SUBS`, print the fill |
+| `quick_start_othello` | `diffusion` | Quick start: `OthelloGpt` masked-diffusion fill-in (plain GPT-2 backbone, learned absolute positions) |
 | `diffusion_logit_lens` | `diffusion` | Diffusion-time logit lens — the `(layer × denoising-step)` slice of the `(k, ℓ, π)` object at a masked target position; watch the prediction crystallize over denoising time |
 | `diffusion_decoding_order` | `diffusion` | Decoding-order analysis — fill a masked completion under random / confidence / entropy unmasking orders; report per-order reveal-confidence and prediction-stability |
 
