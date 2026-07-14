@@ -42,7 +42,6 @@
 #![allow(clippy::missing_docs_in_private_items)]
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::too_many_arguments)]
-#![allow(clippy::cast_precision_loss)]
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -439,7 +438,7 @@ fn run_experiment(cfg: &Config<'_>) -> candle_mi::Result<()> {
             cond.name, greedy_line
         );
         condition_results.push(ConditionResult {
-            condition: cond.name.to_owned(),
+            condition: cond.name.into(),
             greedy_line,
             m3_p_inject,
             m3_p_natural,
