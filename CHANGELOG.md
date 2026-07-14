@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Figure-13 newline experiments — Experiment 1 (newline feature census).**
+  New `figure13_newline_census` example + `scripts/newline_census_classify.py`
+  (two-stage: Rust encodes all active CLT features per position with a decoder→
+  natural-target cosine; Python joins the vocab-scan decoder tops and CMUdict
+  rime groups for the registered `plan_like` decision). Investigates whether any
+  CLT features carry anticipatory rhyme content at the newline on the seven
+  Table-2 cells. Shared Figure-13 cell presets lifted into
+  `examples/figure13_common/presets.rs` (`#[path]`-included by the Figure-13
+  examples; `figure13_planning_poems` refactored to use it, no behaviour change).
+
 - **`steering::position_delta` (and its sibling builders) re-exported at the
   `steering` module root.** `position_delta`, `contrastive_intervention`, and
   `build_contrastive_direction` are generic intervention-payload builders that

@@ -232,6 +232,10 @@ name = "figure13_planning_poems"
 required-features = ["clt", "transformer"]
 
 [[example]]
+name = "figure13_newline_census"
+required-features = ["clt", "transformer"]
+
+[[example]]
 name = "gridworld_prolepsis"
 required-features = ["clt", "transformer"]
 
