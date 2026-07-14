@@ -1,0 +1,504 @@
+{
+  "model": "Qwen/Qwen3-0.6B-Base",
+  "clt_repo": "bluelightai/clt-qwen3-0.6b-base-20k",
+  "preset": "qwen3-0.6b-20k-teen",
+  "prompt": "She counted thirteen, then fourteen,\nFollowed shortly by fifteen,\nAnd carefully whispered sixteen,\n",
+  "tokens": [
+    "She",
+    " counted",
+    " thirteen",
+    ",",
+    " then",
+    " fourteen",
+    ",\n",
+    "Follow",
+    "ed",
+    " shortly",
+    " by",
+    " fifteen",
+    ",\n",
+    "And",
+    " carefully",
+    " whispered",
+    " sixteen",
+    ",\n"
+  ],
+  "newline_index": 17,
+  "suppress_word": "seventeen",
+  "inject_word": "duration",
+  "suppress_features": [
+    {
+      "layer": 27,
+      "index": 16425
+    },
+    {
+      "layer": 23,
+      "index": 15839
+    },
+    {
+      "layer": 26,
+      "index": 6308
+    }
+  ],
+  "inject_feature": {
+    "layer": 19,
+    "index": 9578
+  },
+  "strength": 1.0,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 42,
+  "baseline_greedy_line": "And then seven, and eight",
+  "final_word_slot": 23,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "greedy_line": "And then seven, and eight",
+      "m3_p_inject": 1.4150984e-07,
+      "m3_p_natural": 0.0010793011,
+      "sampled_lines": [
+        "To me, as though I knew it too",
+        "And then even more, seventeen",
+        "To the sullen wolf that lay near",
+        "That is how many together",
+        "One, two, three, four, five",
+        "And then seventeen",
+        "And the number of seven was not spoken",
+        "To all the world that knew me",
+        "Then tally after tally",
+        "But then six was added to that",
+        "And in a loud fit seventeen",
+        "And eventually did not add seven",
+        "As he, with great haste, crossed the threshold",
+        "Just as she murmured seventeen",
+        "Seven and nine, seven and nine",
+        "Then seven, eight, nine",
+        "To her friend, who she had known",
+        "While the night world gleamed",
+        "In the cold grave of her grave",
+        "And when all were gone, seventeen"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "too",
+          "seventeen",
+          "near",
+          "together",
+          "five",
+          "seventeen",
+          "spoken",
+          "me",
+          "tally",
+          "that",
+          "seventeen",
+          "seven",
+          "threshold",
+          "seventeen",
+          "nine",
+          "nine",
+          "known",
+          "gleamed",
+          "grave",
+          "seventeen"
+        ],
+        "natural": {
+          "count": 5,
+          "fraction": 0.25,
+          "ci95": [
+            0.0866,
+            0.491
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 15,
+          "fraction": 0.75,
+          "ci95": [
+            0.509,
+            0.9134
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress-only",
+      "greedy_line": "Thirdly, seven, eight, nine",
+      "m3_p_inject": 1.4664465e-07,
+      "m3_p_natural": 0.0010460782,
+      "sampled_lines": [
+        "Secondly, seven",
+        "Third counting to seventeen",
+        "Thirdly, seven, eight, and nine, come",
+        "Thirdly, seven, and eight",
+        "Thirded by a count of seven",
+        "Thirdly, seventh, and tenth",
+        "Second, we count",
+        "Three, four, five, six, seven",
+        "Seconded by seventeen",
+        "Second time they spoke",
+        "Seconded by seven, eight, and nine",
+        "Fourth number of seven",
+        "Second, third, fourth, and fifth",
+        "Fourth and fifth numbers",
+        "“And yet there were nineteen",
+        "Third to seventh, ninth to tenth",
+        "Fewer still than that",
+        "Five fingers crossed, hands folded",
+        "Thirdly, seven, eight, nine",
+        "Third was seven, eight, nine"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "seven",
+          "seventeen",
+          "come",
+          "eight",
+          "seven",
+          "tenth",
+          "count",
+          "seven",
+          "seventeen",
+          "spoke",
+          "nine",
+          "seven",
+          "fifth",
+          "numbers",
+          "nineteen",
+          "tenth",
+          "that",
+          "folded",
+          "nine",
+          "nine"
+        ],
+        "natural": {
+          "count": 3,
+          "fraction": 0.15,
+          "ci95": [
+            0.0321,
+            0.3789
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 17,
+          "fraction": 0.85,
+          "ci95": [
+            0.6211,
+            0.9679
+          ]
+        }
+      }
+    },
+    {
+      "condition": "inject-only",
+      "greedy_line": "Then seven, eight, nine, ten",
+      "m3_p_inject": 1.4971069e-07,
+      "m3_p_natural": 0.0010613325,
+      "sampled_lines": [
+        "To me, as though I knew it too",
+        "Then slow, careful, seven",
+        "To the sullen wolf that lay near",
+        "Then to seven the soul was born",
+        "As she looked to her mother",
+        "Then finished with seventeen",
+        "And the number of seven was not spoken",
+        "All at once, all at once",
+        "Then swiftly guessed seventeen",
+        "Then seven and eight",
+        "Spoke of seventeen, and eight",
+        "Wondered what might be the end",
+        "This was the one she loved best",
+        "Then thirteen again",
+        "Then reached seven sixty",
+        "Then said seventeen, seventeen",
+        "Then there were seven more",
+        "And then seventeen",
+        "Finally, seven in a row",
+        "To one who heard"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "too",
+          "seven",
+          "near",
+          "born",
+          "mother",
+          "seventeen",
+          "spoken",
+          "once",
+          "seventeen",
+          "eight",
+          "eight",
+          "end",
+          "best",
+          "again",
+          "sixty",
+          "seventeen",
+          "more",
+          "seventeen",
+          "row",
+          "heard"
+        ],
+        "natural": {
+          "count": 4,
+          "fraction": 0.2,
+          "ci95": [
+            0.0573,
+            0.4366
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 16,
+          "fraction": 0.8,
+          "ci95": [
+            0.5634,
+            0.9427
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress+inject",
+      "greedy_line": "Thirdly, seven, eight, nine",
+      "m3_p_inject": 1.5363506e-07,
+      "m3_p_natural": 0.0010427958,
+      "sampled_lines": [
+        "Secondly, seven",
+        "Third counting of seventeen, eight",
+        "Secondly, seventh, and eight, nine",
+        "Thirdly, seven, and eight",
+        "Thirded by a count of seven",
+        "Third as she counted the latest seven",
+        "Careful, heart and mind",
+        "Thirdly, seven, and eight",
+        "Third, seventh, ninth, tenth",
+        "Third number, so great the number",
+        "Did you hear, thirteen and fourteen",
+        "Third of a dozen, and still, no more",
+        "Third number brought by sixth",
+        "Third number disappearing",
+        "Third to seventh, eleven to thirteen",
+        "Seven, eight, nine, ten",
+        "bursting into the air",
+        "Third, fourth, fifth, sixth",
+        "Third one, and fourth one all yet unseen",
+        "Secondly, seven"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "seven",
+          "eight",
+          "nine",
+          "eight",
+          "seven",
+          "seven",
+          "mind",
+          "eight",
+          "tenth",
+          "number",
+          "fourteen",
+          "more",
+          "sixth",
+          "disappearing",
+          "thirteen",
+          "ten",
+          "air",
+          "sixth",
+          "unseen",
+          "seven"
+        ],
+        "natural": {
+          "count": 3,
+          "fraction": 0.15,
+          "ci95": [
+            0.0321,
+            0.3789
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 17,
+          "fraction": 0.85,
+          "ci95": [
+            0.6211,
+            0.9679
+          ]
+        }
+      }
+    }
+  ],
+  "m4_position_sweep": [
+    {
+      "position": 0,
+      "token": "She",
+      "p_inject": 1.773939e-07,
+      "p_natural": 0.0010979171
+    },
+    {
+      "position": 1,
+      "token": " counted",
+      "p_inject": 1.4524265e-07,
+      "p_natural": 0.0010685965
+    },
+    {
+      "position": 2,
+      "token": " thirteen",
+      "p_inject": 1.3728548e-07,
+      "p_natural": 0.0010866236
+    },
+    {
+      "position": 3,
+      "token": ",",
+      "p_inject": 1.481916e-07,
+      "p_natural": 0.0010677325
+    },
+    {
+      "position": 4,
+      "token": " then",
+      "p_inject": 1.4956422e-07,
+      "p_natural": 0.0010731436
+    },
+    {
+      "position": 5,
+      "token": " fourteen",
+      "p_inject": 1.3950923e-07,
+      "p_natural": 0.0010881083
+    },
+    {
+      "position": 6,
+      "token": ",\n",
+      "p_inject": 1.5237127e-07,
+      "p_natural": 0.0010706898
+    },
+    {
+      "position": 7,
+      "token": "Follow",
+      "p_inject": 1.4201154e-07,
+      "p_natural": 0.001085858
+    },
+    {
+      "position": 8,
+      "token": "ed",
+      "p_inject": 1.4415166e-07,
+      "p_natural": 0.0010745123
+    },
+    {
+      "position": 9,
+      "token": " shortly",
+      "p_inject": 1.4939961e-07,
+      "p_natural": 0.0010797406
+    },
+    {
+      "position": 10,
+      "token": " by",
+      "p_inject": 1.4631864e-07,
+      "p_natural": 0.0010433644
+    },
+    {
+      "position": 11,
+      "token": " fifteen",
+      "p_inject": 1.370965e-07,
+      "p_natural": 0.001071341
+    },
+    {
+      "position": 12,
+      "token": ",\n",
+      "p_inject": 1.5090667e-07,
+      "p_natural": 0.0010681944
+    },
+    {
+      "position": 13,
+      "token": "And",
+      "p_inject": 1.5254963e-07,
+      "p_natural": 0.0010800093
+    },
+    {
+      "position": 14,
+      "token": " carefully",
+      "p_inject": 1.533838e-07,
+      "p_natural": 0.0010884926
+    },
+    {
+      "position": 15,
+      "token": " whispered",
+      "p_inject": 1.4622124e-07,
+      "p_natural": 0.0010414136
+    },
+    {
+      "position": 16,
+      "token": " sixteen",
+      "p_inject": 1.398229e-07,
+      "p_natural": 0.0010239853
+    },
+    {
+      "position": 17,
+      "token": ",\n",
+      "p_inject": 1.5363506e-07,
+      "p_natural": 0.0010427958
+    },
+    {
+      "position": 18,
+      "token": "And",
+      "p_inject": 1.602902e-07,
+      "p_natural": 0.0009901919
+    },
+    {
+      "position": 19,
+      "token": " then",
+      "p_inject": 1.5170319e-07,
+      "p_natural": 0.00084257626
+    },
+    {
+      "position": 20,
+      "token": " seven",
+      "p_inject": 1.4405677e-07,
+      "p_natural": 0.0010057945
+    },
+    {
+      "position": 21,
+      "token": ",",
+      "p_inject": 1.5256242e-07,
+      "p_natural": 0.0010648371
+    },
+    {
+      "position": 22,
+      "token": " and",
+      "p_inject": 1.4630041e-06,
+      "p_natural": 5.298856e-09
+    }
+  ],
+  "m1_classified": true
+}

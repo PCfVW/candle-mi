@@ -24,6 +24,12 @@ docs/experiments/**/vocab_scan_*_raw.json
 docs/experiments/**/vocab_scan_*_phonological.json
 !docs/experiments/**/vocab_scan_*_phonological_clean.json
 
+# Figure-13 newline census: the dense JumpReLU (Qwen) census JSONs are 53-237 MB
+# each (all active features x all positions x decoder-top lists). Kept locally
+# for re-analysis; the small mntss (Gemma/Llama) census, all fullline_*.json,
+# and findings.md are committed. Regenerate via `figure13_newline_census`.
+docs/experiments/figure13-newline/census_qwen3-*.json
+
 # Maar replication: keep prompts JSONs committed (small, audit-relevant);
 # ignore the downloaded supplementary .zip (large, license-uncertain) and
 # the extracted supplementary tree (60 MB of Maar's code; redownload via
