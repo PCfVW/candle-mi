@@ -236,6 +236,18 @@ name = "figure13_newline_census"
 required-features = ["clt", "transformer"]
 
 [[example]]
+name = "figure13_newline_steering"
+required-features = ["clt", "transformer"]
+
+[[example]]
+name = "clt_hook_reconcile"
+required-features = ["clt", "transformer"]
+
+[[example]]
+name = "clt_reconstruction_check"
+required-features = ["clt", "transformer"]
+
+[[example]]
 name = "gridworld_prolepsis"
 required-features = ["clt", "transformer"]
 

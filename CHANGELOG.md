@@ -18,6 +18,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   Table-2 cells. Shared Figure-13 cell presets lifted into
   `examples/figure13_common/presets.rs` (`#[path]`-included by the Figure-13
   examples; `figure13_planning_poems` refactored to use it, no behaviour change).
+- **CLT encoder-hook reconciliation diagnostics.** `clt_hook_reconcile` (encodes
+  a feature under `ResidPre`/`ResidMid`/`ResidPost` at a position) and
+  `clt_reconstruction_check` (reconstructs each layer's `MlpOut` from encode→
+  decode under each residual). Together they establish that the `mntss`/
+  BlueLightAI CLT encoder reads **`ResidMid`** (the MLP input; reconstruction
+  cosine 0.945 at layer 25 vs 0.45 for `ResidPost`) — the residual candle-mi's
+  census/`clt_probe`/`validate_clt` already use.
+- **Figure-13 newline experiments — Experiment 2 (composition-horizon
+  steering).** `figure13_newline_steering` truncates the prompt after the line-3
+  newline so the model composes line 4, steers the natural/alternative CLT
+  features at that newline, and reports the greedy line (m2), teacher-forced
+  final-slot probabilities (m3), and the position sweep of `P(inject)` (m4 — the
+  Figure-13 analogue with a composition horizon). `scripts/newline_steering_classify.py`
+  adds m1 (final-word CMUdict-rime group of the sampled lines, with exact
+  Clopper-Pearson 95% CIs).
 
 - **`steering::position_delta` (and its sibling builders) re-exported at the
   `steering` module root.** `position_delta`, `contrastive_intervention`, and
