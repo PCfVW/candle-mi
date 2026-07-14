@@ -33,6 +33,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   Figure-13 analogue with a composition horizon). `scripts/newline_steering_classify.py`
   adds m1 (final-word CMUdict-rime group of the sampled lines, with exact
   Clopper-Pearson 95% CIs).
+- **Figure-13 random-baseline controls and breadth (BlackboxNLP
+  reproducibility track).** `figure13_planning_poems` gains `--random-inject
+  N[:LAYER]`, `--random-direction N[:SEED]`, and `--seed` flags for Experiment
+  3a: with the suppress side and strength held fixed, it replaces the inject
+  with N layer-matched random CLT features (measuring `P(target)` and the drawn
+  feature's own top decoder token) or N per-layer norm-matched Gaussian
+  directions, writing a `random_inject_<cell>` JSON. Experiment 3b (random-model
+  "dead-salmon" control) adds `--random-init` and `--shuffle-weights` flags,
+  backed by new library methods `MIModel::from_pretrained_random_init` (build the
+  architecture with seeded Gaussian weights, no checkpoint values read) and
+  `MIModel::from_pretrained_shuffled` (seeded per-tensor element permutation,
+  preserving norm/scale statistics). New analysis scripts
+  `newline_localization_null.py` (null-model localization probability),
+  `breadth_aggregate.py` (per-prompt breadth with exact Clopper-Pearson CIs),
+  and `random_controls_aggregate.py`, plus the `run_breadth.sh`,
+  `run_random_controls.sh`, and `run_random_model.sh` drivers.
+  `CrossLayerTranscoder` gains public `n_layers()`, `n_features_per_layer()`, and
+  `d_model()` getters (used to sample layer-matched random features and build
+  norm-matched directions).
 
 - **`steering::position_delta` (and its sibling builders) re-exported at the
   `steering` module root.** `position_delta`, `contrastive_intervention`, and
