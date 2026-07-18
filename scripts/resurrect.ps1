@@ -1,5 +1,5 @@
 ﻿# resurrect.ps1 — run the #[ignore]d oracle/parity suite locally and stamp
-# RESURRECTION.md with a PER-TEST "last verified" date.
+# RESURRECTION.md with a PER-TEST "last verified" date and wall-clock.
 #
 # The oracle/parity tests are #[ignore]d because they need cached HuggingFace
 # models (some gated) and, for many, a CUDA GPU with >= 16 GiB VRAM — so they
@@ -24,6 +24,12 @@
 #             threshold, any failing) and exit — runs NOTHING, downloads NOTHING.
 #             `-StaleDays N` sets the threshold (default 50).
 #
+# Timing: each entry's end-to-end wall-clock is recorded in RESURRECTION.md (a
+#   per-entry column, advanced only on a PASS — same rule as "last verified") and
+#   printed as a "slowest first" summary. `-SpillWarnSeconds N` (default 300) flags
+#   a step slow enough to suspect VRAM spill to shared memory (e.g. longrope/
+#   Phi-3.5-mini at F32 overflows a 16 GiB card and crawls at ~15x its warm time).
+#
 # Device policy: GPU tests run on the GPU; CPU-parity tests (*_cpu, plt,
 # clt_qwen3) run on CPU by design. Runs with the default feature set so `cuda`
 # stays ON; each entry adds its extra feature(s).
@@ -33,7 +39,8 @@ param(
     [switch]$Quick,
     [switch]$Full,
     [switch]$Status,
-    [int]$StaleDays = 50
+    [int]$StaleDays = 50,
+    [int]$SpillWarnSeconds = 300
 )
 
 $ErrorActionPreference = 'Stop'
@@ -66,7 +73,7 @@ $entries = @(
     @{ Name = 'anacrousis (28x15 matrix)';  Features = 'mmap';                        Tests = @('validate_anacrousis');                            Device = 'GPU';     Models = 'meta-llama/Llama-3.2-1B (gated)'; FullOnly = $true }
 )
 
-# --- Read prior per-entry state back out of RESURRECTION.md (Name -> {Date, Outcome}) ---
+# --- Read prior per-entry state back out of RESURRECTION.md (Name -> {Date, Wall, Outcome}) ---
 function Read-PriorState {
     param([string]$Path)
     $state = @{}
@@ -77,7 +84,14 @@ function Read-PriorState {
         if ($cells.Count -lt 5) { continue }
         $name = $cells[0]
         if ($name -eq 'Test' -or $name -match '^-+$') { continue }
-        $state[$name] = @{ Date = $cells[3]; Outcome = $cells[4] }
+        # New 6-col rows carry a Wall-clock column (Date=3, Wall=4, Outcome=5);
+        # legacy 5-col rows (pre-instrumentation) have no wall-clock (Outcome=4).
+        if ($cells.Count -ge 6) {
+            $state[$name] = @{ Date = $cells[3]; Wall = $cells[4]; Outcome = $cells[5] }
+        }
+        else {
+            $state[$name] = @{ Date = $cells[3]; Wall = '—'; Outcome = $cells[4] }
+        }
     }
     return $state
 }
@@ -86,6 +100,20 @@ function Format-Age {
     param([int]$Days)
     if ($Days -ge 60) { return "~$([math]::Round($Days / 30)) months" }
     return "$Days days"
+}
+
+# Human-friendly wall-clock. Forces InvariantCulture so the decimal point stays a
+# '.' on a fr-FR host (a ',' would read oddly next to the file's other numbers).
+function Format-Duration {
+    param([double]$Seconds)
+    $inv = [System.Globalization.CultureInfo]::InvariantCulture
+    if ($Seconds -lt 90) { return ([math]::Round($Seconds, 1)).ToString($inv) + 's' }
+    $mins = [int][math]::Floor($Seconds / 60)
+    $secs = [int]($Seconds - $mins * 60)
+    if ($mins -lt 60) { return ('{0}m{1:D2}s' -f $mins, $secs) }
+    $hrs = [int][math]::Floor($mins / 60)
+    $rem = $mins - $hrs * 60
+    return ('{0}h{1:D2}m' -f $hrs, $rem)
 }
 
 # --- -Status: report staleness and exit; runs nothing ---
@@ -143,6 +171,7 @@ try {
     $rustc = (rustc --version)
 
     $resultByName = @{}
+    $durationByName = @{}
     foreach ($e in $selected) {
         $cargoArgs = @('test', '--features', $e.Features, '--release')
         foreach ($t in $e.Tests) { $cargoArgs += @('--test', $t) }
@@ -157,14 +186,21 @@ try {
         Write-Host "`n=== $($e.Name)$skipNote ===" -ForegroundColor Yellow
         Write-Host "cargo $($cargoArgs -join ' ')" -ForegroundColor DarkGray
 
+        # True end-to-end wall-clock (model load/download + compile + run), unlike
+        # cargo's own "finished in Xs" which times only the test-run phase.
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
         cargo @cargoArgs 2>&1 | Tee-Object -Variable teeOut
         $code = $LASTEXITCODE
+        $sw.Stop()
+        $elapsed = $sw.Elapsed.TotalSeconds
+        $durationByName[$e.Name] = $elapsed
 
         $skipped = @($teeOut | Select-String -SimpleMatch 'SKIP').Count -gt 0
         if ($code -ne 0) { $entryStatus = 'FAIL'; $color = 'Red' }
         elseif ($skipped) { $entryStatus = 'SKIP'; $color = 'DarkYellow' }
         else { $entryStatus = 'PASS'; $color = 'Green' }
-        Write-Host "  -> $entryStatus" -ForegroundColor $color
+        $spill = if ($elapsed -ge $SpillWarnSeconds) { ' ⚠️ slow (VRAM spill?)' } else { '' }
+        Write-Host "  -> $entryStatus  [$(Format-Duration $elapsed)]$spill" -ForegroundColor $color
 
         $resultByName[$e.Name] = $entryStatus
     }
@@ -176,6 +212,8 @@ try {
     $today = Get-Date -Format 'yyyy-MM-dd'
     $rowLines = $entries | ForEach-Object {
         $s = $resultByName[$_.Name]
+        # Wall-clock is paired with "last verified": both describe the last PASS.
+        $priorWall = if ($prior[$_.Name] -and $prior[$_.Name].Wall) { $prior[$_.Name].Wall } else { '—' }
         if ($null -ne $s) {
             $outcome = switch ($s) {
                 'PASS' { '✅ PASS' }
@@ -183,15 +221,24 @@ try {
                 'FAIL' { '❌ FAIL' }
                 default { $s }
             }
-            if ($s -eq 'PASS') { $verified = $today }
-            else { $verified = if ($prior[$_.Name]) { $prior[$_.Name].Date } else { 'never' } }
+            if ($s -eq 'PASS') {
+                $verified = $today
+                $d = $durationByName[$_.Name]
+                $wall = Format-Duration $d
+                if ($d -ge $SpillWarnSeconds) { $wall += ' ⚠️' }
+            }
+            else {
+                $verified = if ($prior[$_.Name]) { $prior[$_.Name].Date } else { 'never' }
+                $wall = $priorWall
+            }
         }
         else {
             $p = $prior[$_.Name]
             if ($p) { $verified = $p.Date; $outcome = $p.Outcome }
             else { $verified = 'never'; $outcome = '— never' }
+            $wall = $priorWall
         }
-        "| $($_.Name) | $($_.Models) | $($_.Device) | $verified | $outcome |"
+        "| $($_.Name) | $($_.Models) | $($_.Device) | $verified | $wall | $outcome |"
     }
 
     $stampNow = Get-Date -Format 'yyyy-MM-dd HH:mm'
@@ -216,15 +263,33 @@ try {
         '`❌ FAIL` does not advance it). `never` = not yet verified on this machine.'
         'Staleness is per-entry, so a `-Quick` run only refreshes its two rows.'
         ''
+        '**Wall-clock** = end-to-end runtime of the entry on its last PASS (model'
+        'load/download + compile + run, not just the `cargo test` phase). A ⚠️ flags a'
+        "step slow enough (≥ $SpillWarnSeconds s) to suspect VRAM spill to shared memory"
+        '(e.g. `longrope`/Phi-3.5-mini at F32 overflows a 16 GiB card).'
+        ''
         "- **Last run:** $stampNow — tier **$tier**"
         "- **Toolchain:** $rustc"
         ''
-        '| Test | Models | Device(s) | Last verified | Outcome |'
-        '|---|---|---|---|---|'
+        '| Test | Models | Device(s) | Last verified | Wall-clock | Outcome |'
+        '|---|---|---|---|---|---|'
     )
     $md = ($header + $rowLines) -join "`n"
     Set-Content -Path $mdPath -Value $md -Encoding utf8
     Write-Host "`nStamped RESURRECTION.md ($tier, $stampNow)" -ForegroundColor Cyan
+
+    # Per-run timing summary (this run's actual wall-clock, slowest first) — real
+    # measurements to replace runtime guesses, and a quick spill spotter.
+    if ($durationByName.Count -gt 0) {
+        Write-Host "`n--- Timing summary ($tier, slowest first) ---" -ForegroundColor Cyan
+        $total = 0.0
+        $durationByName.GetEnumerator() | Sort-Object Value -Descending | ForEach-Object {
+            $total += $_.Value
+            $flag = if ($_.Value -ge $SpillWarnSeconds) { '  ⚠️ VRAM spill?' } else { '' }
+            Write-Host ("  {0,10}  {1}{2}" -f (Format-Duration $_.Value), $_.Key, $flag)
+        }
+        Write-Host ("  {0,10}  TOTAL (sum of steps; excludes inter-step overhead)" -f (Format-Duration $total)) -ForegroundColor DarkGray
+    }
 
     $failed = @($resultByName.Values | Where-Object { $_ -eq 'FAIL' }).Count
     if ($failed -gt 0) {

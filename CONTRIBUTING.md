@@ -131,6 +131,27 @@ If your PR adds, changes, or fixes user-visible behaviour, add an
 entry to the `## [Unreleased]` section of
 [`CHANGELOG.md`](CHANGELOG.md) following the existing format.
 
+## Releasing (maintainers)
+
+Cutting a release (a `vMAJOR.MINOR.PATCH` tag → crates.io publish):
+
+1. **Verify green first.** Run `./scripts/preflight.ps1 -Ci` (the full
+   both-toolchain CI mirror) and `cargo publish --dry-run`; re-run
+   `./scripts/resurrect.ps1` after any numeric-path change. Bump `version` in
+   **both** `Cargo.toml` and `Cargo.lock` in the same commit (`publish.yml`
+   fails on a dirty lockfile), promote the `CHANGELOG.md` `[Unreleased]`
+   section to `## [X.Y.Z] - <date>`, and bump the README version banner.
+2. **Push, wait for green CI, then tag.** The tag is what fires `publish.yml`
+   → crates.io, and that is irreversible — tag only after CI is green on the
+   release commit. Release tags are `vMAJOR.MINOR.PATCH` only; hyphenated tags
+   (`v0.1.9-plt`) are milestones that do **not** publish.
+3. **Cut the GitHub Release — after the crates.io publish is green**, never
+   before (the crate must actually be live). Use a hand-authored narrative body
+   (title + "In the crate" / "Experiments" / "Verified before tagging"), not a
+   raw changelog dump. `scripts/release-notes.ps1 -Version X.Y.Z -Theme "..."`
+   scaffolds it from the `CHANGELOG.md` section; edit into prose, then
+   `gh release create vX.Y.Z --title "..." --notes-file <f> --verify-tag --latest`.
+
 ## License
 
 candle-mi is dual-licensed under MIT and Apache 2.0. By submitting a

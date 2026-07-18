@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **`scripts/resurrect.ps1` now records per-step wall-clock.** A new `Wall-clock`
+  column in `RESURRECTION.md` (advanced only on a PASS, mirroring the "last
+  verified" date) plus an end-of-run "slowest first" timing summary — real
+  measurements to replace runtime guesses. A `-SpillWarnSeconds N` flag (default
+  300) marks a step slow enough to suspect VRAM spill to shared memory (e.g.
+  `longrope`/Phi-3.5-mini at F32 overflows a 16 GiB card, running ~15× its warm
+  time). Added `scripts/release-notes.ps1` to scaffold a GitHub Release body from
+  the CHANGELOG section, and documented the full release ritual — including cutting
+  the GitHub Release after the crates.io publish is green — in a new **Releasing
+  (maintainers)** section of `CONTRIBUTING.md`.
+
 ## [0.1.19] - 2026-07-18
 
 ### Added
