@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.19] - 2026-07-18
+
 ### Added
 
 - **Figure-13 newline experiments — Experiment 1 (newline feature census).**
