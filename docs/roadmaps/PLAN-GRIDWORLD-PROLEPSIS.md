@@ -1,8 +1,8 @@
 # Gridworld Prolepsis — Transfer to Action Planning — Experiment Plan
 
 **Scope:** a single experimental question, tracked separately from the master
-roadmap, targeting candle-mi **v0.1.14**. (`v0.2.0` is reserved for the NLnet
-grant work; this is a `v0.1.x` patch.)
+roadmap, targeting candle-mi **v0.1.14** (a `v0.1.x` patch — no new API
+surface needed).
 
 **The question:** does the prolepsis pattern observed in rhyme planning (the
 COLM 2026 submission, Gemma 2 2B + Llama 3.2 1B) transfer to action planning
@@ -457,7 +457,7 @@ prolepsis-does-not-transfer finding.
   there).
 - **Training new CLTs.** This plan uses existing validated features only.
   Planning-oriented CLT training is a separate roadmap (out of scope here;
-  see also the v0.2.0 NLnet scope).
+  see also the v0.2.0 dictionary-training scope).
 - **Other planning domains.** Blocksworld with single-token operator names,
   Sokoban with single-token directional moves, and MindGames-style multi-step
   reasoning are all interesting follow-ons but are out of scope for the pilot.

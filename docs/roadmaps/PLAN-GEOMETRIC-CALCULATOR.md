@@ -2,8 +2,7 @@
 
 **Scope:** a single experimental question, tracked separately from the master
 roadmap. Originally targeted candle-mi **v0.1.13**; **postponed** (see Status
-below) — still a `v0.1.x` patch when picked up, since `v0.2.0` is reserved for
-the NLnet grant work.
+below) — still a `v0.1.x` patch when picked up (needs no new API surface).
 
 **The question:** does the "geometric calculator" mechanism — circular (Fourier)
 number representations manipulated by a parallel modular-addition module —

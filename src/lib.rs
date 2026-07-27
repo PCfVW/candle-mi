@@ -153,6 +153,33 @@
 //! # }
 //! ```
 //!
+//! ## Training (differentiable backbones)
+//!
+//! Backbones carry gradients end-to-end when built over a `candle_nn::VarMap`
+//! (since v0.1.20): the [`nn_ops`] wrappers dispatch on `Tensor::track_op`, so
+//! an inference forward takes candle's fused kernels unchanged — byte-identical
+//! to previous releases — while a tracked forward takes composed,
+//! differentiable forms. Train a model and probe *the same weights on the same
+//! forward pass*; `OthelloGpt::init` (`diffusion` feature) additionally gives a
+//! seeded GPT-2-recipe initialization, reproducible from `(config, seed)`
+//! alone.
+//!
+//! ```ignore
+//! // requires: --features diffusion
+//! let varmap = candle_nn::VarMap::new();
+//! let model = OthelloGpt::init(config, &varmap, &device, 42)?;
+//! let mut adam = candle_nn::AdamW::new_lr(varmap.all_vars(), 1e-3)?;
+//! for _step in 0..steps {
+//!     let cache = MIBackend::forward(&model, &batch, &HookSpec::new())?;
+//!     let loss = candle_nn::loss::cross_entropy(&cache.output().flatten_to(1)?, &targets)?;
+//!     candle_nn::Optimizer::backward_step(&mut adam, &loss)?; // all 29 params update
+//! }
+//! ```
+//!
+//! candle-mi deliberately ships **no optimizer, schedule, or data loader** —
+//! training loops are experiment-shaped and stay with the caller. See
+//! `docs/dogfooding-feedbacks/trainable-backbones.md` for the design rationale.
+//!
 //! ## Fast downloads
 //!
 //! candle-mi uses [`hf-fetch-model`](https://github.com/PCfVW/hf-fetch-model)

@@ -10,7 +10,7 @@
 
 *Mechanistic Interpretability for the Rust of us.*
 
-> **Note:** v0.1.19 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
+> **Note:** v0.1.20 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
 
 ## Supported model families
 
@@ -65,6 +65,7 @@ This is the Rust equivalent of Python's [TransformerLens](https://github.com/Tra
 | **RWKV state analysis** | Inspect and intervene on recurrent state — not just transformers | [`rwkv_inference`](examples/README.md#example-output-rwkv_inference) |
 | **AlgZoo analysis** | Exhaustive MI on [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny models: weight standardization, piecewise-linear region enumeration, neuron ablation, functional probing, surprise accounting | [`stoicheia_analysis`](examples/README.md) |
 | **Masked-diffusion MI** | Logit lens and decoding-order analysis across denoising steps — the `(k, ℓ, π)` generalization of the logit lens for bidirectional masked-diffusion models (MDLM) | [`diffusion_logit_lens`](examples/README.md) |
+| **Train what you probe** *(new in v0.1.20)* | Backbones carry gradients end-to-end when built over a `VarMap` — train a model and probe *the same weights on the same forward pass*, no second implementation to keep in parity. Seeded from-scratch initialization (`OthelloGpt::init`) makes tiny reference models reproducible from `(config, seed)` alone. Inference stays byte-identical (dispatch on `Tensor::track_op`). Bring your own optimizer — candle-mi deliberately ships no training loop | [design rationale](docs/dogfooding-feedbacks/trainable-backbones.md) |
 
 candle-mi is (to our knowledge) the only MI toolkit with hook points for recurrent architectures — `RwkvState`, `RwkvDecay`, and `RwkvEffectiveAttn` enable mechanistic analysis of RWKV-6/7 models, a frontier that most MI tooling ignores entirely.
 
@@ -211,7 +212,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 
 ## Development
 
-- Exclusively developed with [Claude Code](https://claude.com/product/claude-code) (dev) and [Augment Code](https://www.augmentcode.com/) (review)
+- Exclusively developed with [Claude Code](https://claude.com/product/claude-code)
 - Git workflow managed with [Fork](https://fork.dev/)
 - All code follows [CONVENTIONS.md](CONVENTIONS.md), derived from [Amphigraphic-Strict](https://github.com/PCfVW/Amphigraphic-Strict)'s [Grit](https://github.com/PCfVW/Amphigraphic-Strict/tree/master/Grit) — a strict Rust subset designed to improve AI coding accuracy.
 

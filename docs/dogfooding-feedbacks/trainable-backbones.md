@@ -1,5 +1,14 @@
 # Backbones should be trainable — and today `backward()` says nothing when they are not
 
+> **Status: IMPLEMENTED in v0.1.20** (2026-07-27). §7 items 1–3 shipped: the
+> `nn_ops` `track_op` dispatch (§6), `OthelloGpt::init` seeded GPT-2
+> initialization (closing §5.1), and the all-parameters-receive-gradients
+> regression test (the §2 measurement). Verified by a full oracle
+> resurrection — 19/19 PASS, inference byte-identical, first `mdlm + othello`
+> stamp. Deferred per §7: `Dropout`, the lean `logits()` path (waiting for
+> `canvas` B1 to reveal the signature it wants), and a `GenericMdlm` gradient
+> regression test (no synthetic rig yet).
+
 **Date:** July 26, 2026
 **Source:** askesis `canvas` leg — B1 (the candle training loop; askesis's deferred V9)
 **Affected area:** `src/diffusion/othello.rs`, `src/diffusion/mdlm.rs`, `src/transformer/attention.rs`,

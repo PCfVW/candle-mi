@@ -145,6 +145,17 @@ Over 100 model implementations, all separate files, no unified hook wrapper, no 
 - plip-rs already validates this approach across 7 architectures (incl. Gemma 2)
 - The generic transformer (see §3) amortizes the re-implementation cost: one implementation covers ~80% of modern LLMs
 
+**Owning the definitions extends to the whole life of the weights** (since
+v0.1.20): backbones are differentiable end-to-end when built over a `VarMap`
+(`nn_ops` `track_op` dispatch — inference stays byte-identical), with seeded
+from-scratch initialization (`OthelloGpt::init`). A study that trains a model
+and probes it runs *one* forward implementation for both, so a `GELU` variant
+or `LayerNorm` bias can never become a train-vs-probe confound — the same
+argument as re-implementing with hooks built in, carried to its conclusion.
+Deliberately out of scope: optimizers, schedules, data loaders (see
+`docs/dogfooding-feedbacks/trainable-backbones.md` §7; the SAE-trainer sibling
+crate is the v0.2.0-era home for training *pipelines*).
+
 **TransformerLens hook points as the reference API:**
 
 | Hook Point | Location | Shape |
