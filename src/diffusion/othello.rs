@@ -773,6 +773,47 @@ mod tests {
         assert_eq!(cache.output().dims(), &[1, 3, 12]);
     }
 
+    // The §2 regression of docs/dogfooding-feedbacks/trainable-backbones.md:
+    // before the `nn_ops` dispatch, backward() through this exact forward
+    // silently stopped at the first fused op and only `head.weight` (1 of 29
+    // parameters) received a gradient — while the loss still decreased. This
+    // test is the measurement itself: build over a `VarMap`, run the real
+    // `MIBackend::forward`, backward, and assert EVERY parameter receives a
+    // gradient. Being a count over all vars, it fails loudly on any future
+    // fused-op barrier anywhere in the forward (attention softmax, ln1/ln2,
+    // ln_f), not just the sites known today.
+    #[test]
+    fn backward_reaches_every_parameter() {
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let model = OthelloGpt::init(tiny_config(), &varmap, &dev, 0).unwrap();
+        let ids = Tensor::new(&[[1u32, 2, 3, 4]], &dev).unwrap();
+        let cache = MIBackend::forward(&model, &ids, &HookSpec::new()).unwrap();
+        let output = cache.output();
+        assert!(
+            output.track_op(),
+            "forward over a VarMap must produce a tracked output"
+        );
+        let grads = output.sum_all().unwrap().backward().unwrap();
+
+        let data = varmap.data().lock().unwrap();
+        assert_eq!(
+            data.len(),
+            29,
+            "tiny 2-layer config must have 29 parameters"
+        );
+        let mut missing: Vec<&String> = data
+            .iter()
+            .filter(|(_, var)| grads.get(var.as_tensor()).is_none())
+            .map(|(name, _)| name)
+            .collect();
+        missing.sort();
+        assert!(
+            missing.is_empty(),
+            "parameters receiving no gradient (a fused-op barrier regressed): {missing:?}"
+        );
+    }
+
     #[test]
     fn config_derives_head_dim() {
         let cfg = OthelloGptConfig::new(62, 60, 8, 8, 512, false).unwrap();

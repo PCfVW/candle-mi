@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `pos_emb` (no token identity, no position information) and unseeded
   Kaiming linears; `load`'s docs now warn about this. The checkpoint shape
   table is now shared between `init` and the synthetic test loader.
+- **All-parameters-receive-gradients regression test (trainable backbones,
+  part 3).** `backward_reaches_every_parameter` is the dogfooding report's §2
+  measurement as a test: build `OthelloGpt` over a `VarMap`, run the real
+  `MIBackend::forward`, backward, assert every one of the 29 parameters gets a
+  gradient. This is the test whose absence let 1-of-29 training exist —
+  being a count, it fails loudly on any future fused-op barrier.
 
 ### Changed
 
