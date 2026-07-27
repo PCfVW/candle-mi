@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.20] - 2026-07-27
+
 ### Added
 
 - **Backbones now carry a gradient (trainable backbones, part 1).** New
