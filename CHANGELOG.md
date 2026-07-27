@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Dependency refresh:** `hypomnesis` 0.2.4 → 0.2.6, `anamnesis` 0.6.8 →
+  0.6.9. `anamnesis` 0.7.0 is deliberately **not** taken yet: `hf-fetch-model`
+  0.11.0 still depends on `anamnesis` `^0.6`, so a 0.7 requirement would
+  resolve a duplicate `anamnesis` into the tree (the v0.1.18 windows-sys
+  lesson); move to 0.7 together with the `hf-fetch-model` release that bumps
+  its own `anamnesis`.
 - **`scripts/resurrect.ps1` now records per-step wall-clock.** A new `Wall-clock`
   column in `RESURRECTION.md` (advanced only on a PASS, mirroring the "last
   verified" date) plus an end-of-run "slowest first" timing summary — real

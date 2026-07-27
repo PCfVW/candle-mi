@@ -68,7 +68,7 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 # `hypomnesis` crate (DXGI/NVML/nvidia-smi/Metal). Lean feature set — candle-mi
 # only measures its own process and device totals, so `pdh` (foreign-process
 # listing) is omitted; `metal` keeps macOS support.
-hypomnesis = { version = "0.2.4", optional = true, default-features = false, features = [
+hypomnesis = { version = "0.2.6", optional = true, default-features = false, features = [
     "nvml",
     "dxgi",
     "nvidia-smi-fallback",
@@ -79,7 +79,11 @@ hypomnesis = { version = "0.2.4", optional = true, default-features = false, fea
 # - sae feature activates "npz" (Gemma Scope SAE weights)
 # - stoicheia feature activates "pth" (AlgZoo .pth agnostic loading)
 # - quantized feature activates "bnb"/"awq"/"gptq" (dequant-to-BF16 weight loading)
-anamnesis = { version = "0.6.8", optional = true }
+# 0.6.9, NOT 0.7.0: hf-fetch-model 0.11.0 depends on anamnesis ^0.6, so a
+# 0.7 req here would resolve a second anamnesis copy into the tree (same
+# hazard as the v0.1.18 windows-sys dedup). Move to 0.7 together with the
+# hf-fetch-model release that bumps its own anamnesis dependency.
+anamnesis = { version = "0.6.9", optional = true }
 
 # Windows-only deps. The `probing` feature's linear-probe stack is developed and
 # exercised on Windows, so its crates are gated to `cfg(windows)`.
