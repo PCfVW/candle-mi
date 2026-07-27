@@ -22,6 +22,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   and both norm families (`Norm::Rms`/`Norm::Layer`, `OthelloGpt`'s
   `ln1`/`ln2`/`ln_f`) now route through the dispatch. See
   `docs/dogfooding-feedbacks/trainable-backbones.md`.
+- **`OthelloGpt::init` — seeded from-scratch initialization (trainable
+  backbones, part 2).** Applies the GPT-2 recipe (`N(0, 0.02)` embeddings and
+  linear weights, zero biases, `LayerNorm` weight 1 / bias 0) over a caller's
+  `VarMap`, drawn from an explicitly seeded Box-Muller generator so a
+  from-scratch model is reproducible from `(config, seed)` alone. Previously
+  the only entry point was `load`, whose `VarBuilder::get` default init is
+  `Const(0.)` — over an empty `VarMap` that meant exact-zero `tok_emb`/
+  `pos_emb` (no token identity, no position information) and unseeded
+  Kaiming linears; `load`'s docs now warn about this. The checkpoint shape
+  table is now shared between `init` and the synthetic test loader.
 
 ### Changed
 

@@ -27,8 +27,8 @@
 #[cfg(test)]
 use std::collections::HashMap;
 
-use candle_core::{D, DType, Device, Module, Tensor};
-use candle_nn::{Embedding, LayerNorm, Linear, VarBuilder};
+use candle_core::{D, DType, Device, Module, Tensor, Var};
+use candle_nn::{Embedding, LayerNorm, Linear, VarBuilder, VarMap};
 use serde_json::Value;
 
 use crate::backend::MIBackend;
@@ -465,6 +465,13 @@ impl OthelloGpt {
     /// 25.3 M-param world model) through the caller's `VarBuilder`: near-zero
     /// extra copy with the `mmap` feature, or ~100 MB CPU when buffered.
     ///
+    /// **Loading is not initializing.** Over an *empty* `VarMap`-backed
+    /// `VarBuilder`, `load` creates every missing tensor with `VarBuilder::get`'s
+    /// default init — `Const(0.)` — so `tok_emb.weight` and `pos_emb.weight`
+    /// come out as exact zeros (no token identity, no position information).
+    /// For a from-scratch trainable model use [`init`](Self::init), which
+    /// applies the GPT-2 recipe from an explicit seed.
+    ///
     /// # Errors
     ///
     /// Returns [`MIError::Model`] if any weight
@@ -496,6 +503,61 @@ impl OthelloGpt {
             head,
             config,
         })
+    }
+
+    /// Initialize a from-scratch `OthelloGpt` over `varmap` with the GPT-2
+    /// recipe, reproducible from `(config, seed)` alone.
+    ///
+    /// Where [`load`](Self::load) *reads* weights that already exist, `init`
+    /// *creates* them: `N(0, 0.02)` for embeddings and linear weights, zero
+    /// biases, `LayerNorm` weight `1` / bias `0` — drawn from an explicitly
+    /// seeded Box-Muller generator, independent of the device RNG, so two runs
+    /// with the same `(config, seed)` produce byte-identical weights.  Every
+    /// parameter is registered in `varmap`, so `varmap.all_vars()` hands the
+    /// full trainable set to an optimizer, and the forward pass is tracked
+    /// end-to-end (see the `nn_ops` module).
+    ///
+    /// # Shapes
+    /// - returns: a model whose [`forward`](MIBackend::forward) maps
+    ///   `[batch, seq]` token ids to `[batch, seq, vocab_size]` logits.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`] on tensor creation
+    /// failures, or if `varmap`'s lock is poisoned.
+    // `.bias` / `.weight` are checkpoint tensor-name suffixes, not file
+    // extensions — the case-sensitivity lint does not apply to them.
+    #[allow(clippy::case_sensitive_file_extension_comparisons)]
+    pub fn init(
+        config: OthelloGptConfig,
+        varmap: &VarMap,
+        device: &Device,
+        seed: u64,
+    ) -> Result<Self> {
+        use rand::SeedableRng;
+
+        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+        {
+            let mut data = varmap.data().lock().map_err(|_| {
+                MIError::Model(candle_core::Error::Msg(
+                    "varmap lock poisoned (a thread panicked while holding it)".to_string(),
+                ))
+            })?;
+            for (name, dims) in weight_shapes(&config) {
+                let tensor = if name.ends_with(".bias") {
+                    Tensor::zeros(dims, DType::F32, device)?
+                } else if is_norm_weight(&name) {
+                    Tensor::ones(dims, DType::F32, device)?
+                } else {
+                    let n = dims.iter().product();
+                    let samples = crate::util::randn::randn_f32(&mut rng, n, 0.02);
+                    Tensor::from_vec(samples, dims, device)?
+                };
+                data.insert(name, Var::from_tensor(&tensor)?);
+            }
+        } // release the lock — `load` re-enters it through the VarBuilder
+
+        Self::load(config, VarBuilder::from_varmap(varmap, DType::F32, device))
     }
 
     /// Access the model configuration.
@@ -584,6 +646,50 @@ impl MIBackend for OthelloGpt {
 }
 
 // ---------------------------------------------------------------------------
+// Weight-shape table (shared by `init` and the synthetic test loader)
+// ---------------------------------------------------------------------------
+
+/// The full `(name, shape)` table of an `OthelloGpt` checkpoint for `config`,
+/// in a fixed order (embeddings, blocks in index order, final norm, head).
+///
+/// Single source of truth shared by [`OthelloGpt::init`] and the synthetic
+/// test loader, so the initializer and the loader cannot drift apart.  The
+/// fixed order also makes `init`'s seeded draws reproducible.
+fn weight_shapes(config: &OthelloGptConfig) -> Vec<(String, Vec<usize>)> {
+    let h = config.n_embd;
+    let inter = config.mlp_ratio * h;
+    let mut shapes = Vec::with_capacity(3 + 12 * config.n_layer);
+
+    shapes.push(("tok_emb.weight".to_string(), vec![config.vocab_size, h]));
+    shapes.push(("pos_emb.weight".to_string(), vec![config.block_size, h]));
+    for i in 0..config.n_layer {
+        shapes.push((format!("blocks.{i}.ln1.weight"), vec![h]));
+        shapes.push((format!("blocks.{i}.ln1.bias"), vec![h]));
+        shapes.push((format!("blocks.{i}.ln2.weight"), vec![h]));
+        shapes.push((format!("blocks.{i}.ln2.bias"), vec![h]));
+        shapes.push((format!("blocks.{i}.attn.qkv.weight"), vec![3 * h, h]));
+        shapes.push((format!("blocks.{i}.attn.qkv.bias"), vec![3 * h]));
+        shapes.push((format!("blocks.{i}.attn.proj.weight"), vec![h, h]));
+        shapes.push((format!("blocks.{i}.attn.proj.bias"), vec![h]));
+        shapes.push((format!("blocks.{i}.mlp.0.weight"), vec![inter, h]));
+        shapes.push((format!("blocks.{i}.mlp.0.bias"), vec![inter]));
+        shapes.push((format!("blocks.{i}.mlp.2.weight"), vec![h, inter]));
+        shapes.push((format!("blocks.{i}.mlp.2.bias"), vec![h]));
+    }
+    shapes.push(("ln_f.weight".to_string(), vec![h]));
+    shapes.push(("ln_f.bias".to_string(), vec![h]));
+    shapes.push(("head.weight".to_string(), vec![config.vocab_size, h]));
+
+    shapes
+}
+
+/// Whether `name` is a `LayerNorm` weight — initialized to ones by
+/// [`OthelloGpt::init`] (GPT-2 recipe), unlike embedding/linear weights.
+fn is_norm_weight(name: &str) -> bool {
+    name == "ln_f.weight" || name.ends_with(".ln1.weight") || name.ends_with(".ln2.weight")
+}
+
+// ---------------------------------------------------------------------------
 // Synthetic VarBuilder for tests
 // ---------------------------------------------------------------------------
 
@@ -595,35 +701,10 @@ fn synthetic_var_builder(
     config: &OthelloGptConfig,
     device: &Device,
 ) -> Result<VarBuilder<'static>> {
-    let h = config.n_embd;
-    let inter = config.mlp_ratio * h;
     let mut tensors: HashMap<String, Tensor> = HashMap::new();
-
-    let mut put = |name: String, dims: Vec<usize>| -> Result<()> {
+    for (name, dims) in weight_shapes(config) {
         tensors.insert(name, Tensor::zeros(dims, DType::F32, device)?);
-        Ok(())
-    };
-
-    put("tok_emb.weight".to_string(), vec![config.vocab_size, h])?;
-    put("pos_emb.weight".to_string(), vec![config.block_size, h])?;
-    for i in 0..config.n_layer {
-        put(format!("blocks.{i}.ln1.weight"), vec![h])?;
-        put(format!("blocks.{i}.ln1.bias"), vec![h])?;
-        put(format!("blocks.{i}.ln2.weight"), vec![h])?;
-        put(format!("blocks.{i}.ln2.bias"), vec![h])?;
-        put(format!("blocks.{i}.attn.qkv.weight"), vec![3 * h, h])?;
-        put(format!("blocks.{i}.attn.qkv.bias"), vec![3 * h])?;
-        put(format!("blocks.{i}.attn.proj.weight"), vec![h, h])?;
-        put(format!("blocks.{i}.attn.proj.bias"), vec![h])?;
-        put(format!("blocks.{i}.mlp.0.weight"), vec![inter, h])?;
-        put(format!("blocks.{i}.mlp.0.bias"), vec![inter])?;
-        put(format!("blocks.{i}.mlp.2.weight"), vec![h, inter])?;
-        put(format!("blocks.{i}.mlp.2.bias"), vec![h])?;
     }
-    put("ln_f.weight".to_string(), vec![h])?;
-    put("ln_f.bias".to_string(), vec![h])?;
-    put("head.weight".to_string(), vec![config.vocab_size, h])?;
-
     Ok(VarBuilder::from_tensors(tensors, DType::F32, device))
 }
 
@@ -635,6 +716,61 @@ mod tests {
     fn tiny_config() -> OthelloGptConfig {
         // 2 layers, 2 heads, hidden 8 — small enough to run instantly.
         OthelloGptConfig::new(12, 6, 2, 2, 8, false).unwrap()
+    }
+
+    /// All `(name, values)` pairs of a fresh seeded `init`, sorted by name.
+    fn init_weights(seed: u64) -> Vec<(String, Vec<f32>)> {
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let _model = OthelloGpt::init(tiny_config(), &varmap, &dev, seed).unwrap();
+        let data = varmap.data().lock().unwrap();
+        let mut out: Vec<(String, Vec<f32>)> = data
+            .iter()
+            .map(|(name, var)| {
+                let values = var.as_tensor().flatten_all().unwrap().to_vec1().unwrap();
+                (name.clone(), values)
+            })
+            .collect();
+        out.sort_by(|a, b| a.0.cmp(&b.0));
+        out
+    }
+
+    #[test]
+    fn init_is_reproducible_from_config_and_seed() {
+        let a = init_weights(42);
+        let b = init_weights(42);
+        let c = init_weights(43);
+        assert_eq!(a.len(), 29, "2-layer config must create 29 parameters");
+        assert_eq!(a, b, "same (config, seed) must reproduce identical weights");
+        assert_ne!(a, c, "different seeds must produce different weights");
+    }
+
+    // Exact-value checks on deliberately constant inits (zeros / ones).
+    #[allow(clippy::float_cmp)]
+    #[test]
+    fn init_follows_gpt2_recipe() {
+        for (name, values) in &init_weights(7) {
+            if name.ends_with(".bias") {
+                assert!(values.iter().all(|v| *v == 0.0), "{name}: bias not zero");
+            } else if super::is_norm_weight(name) {
+                assert!(values.iter().all(|v| *v == 1.0), "{name}: norm not ones");
+            } else {
+                // Embedding / linear weights are N(0, 0.02) draws — in
+                // particular NOT the `Const(0.)` that `load` over an empty
+                // `VarMap` produces (the §5.1 gap this API closes).
+                assert!(values.iter().any(|v| *v != 0.0), "{name}: all zeros");
+            }
+        }
+    }
+
+    #[test]
+    fn init_model_forward_produces_logits() {
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let model = OthelloGpt::init(tiny_config(), &varmap, &dev, 7).unwrap();
+        let ids = Tensor::new(&[[1u32, 2, 3]], &dev).unwrap();
+        let cache = MIBackend::forward(&model, &ids, &HookSpec::new()).unwrap();
+        assert_eq!(cache.output().dims(), &[1, 3, 12]);
     }
 
     #[test]
