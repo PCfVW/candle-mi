@@ -204,14 +204,16 @@
     any(feature = "mmap", all(feature = "memory", feature = "cuda")),
     deny(unsafe_code)
 )]
-// Test-code relaxations: the strict `unwrap_used`/`indexing_slicing`/`panic` denies in
-// `Cargo.toml` target *library* code (Rule 3). Inside `#[cfg(test)]` blocks, `unwrap()`,
-// `assert_eq!(v[0], …)`, and `panic!` are the canonical Rust test idioms — failure-by-panic
-// IS the test signal. Allow them only under `cfg(test)`; production builds remain strict.
+// Test-code relaxations: the strict `unwrap_used`/`expect_used`/`indexing_slicing`/`panic`
+// denies in `Cargo.toml` target *library* code (Rule 3). Inside `#[cfg(test)]` blocks,
+// `unwrap()`, `expect("context")`, `assert_eq!(v[0], …)`, and `panic!` are the canonical
+// Rust test idioms — failure-by-panic IS the test signal. Allow them only under
+// `cfg(test)`; production builds remain strict.
 #![cfg_attr(
     test,
     allow(
         clippy::unwrap_used,
+        clippy::expect_used,
         clippy::indexing_slicing,
         clippy::unreadable_literal,
         clippy::panic,

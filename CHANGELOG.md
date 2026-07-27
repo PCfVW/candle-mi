@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the GitHub Release after the crates.io publish is green — in a new **Releasing
   (maintainers)** section of `CONTRIBUTING.md`.
 
+### Fixed
+
+- **Latent clippy errors in `#[cfg(test)]` lib code.** CI's clippy lanes lint
+  the library without `--all-targets`, so test-only code was never linted:
+  collapsible `if`s in `registration_guard.rs` (now let-chains), a missed
+  `mul_add` in `stoicheia/piecewise.rs`, unannotated `usize → f64` casts in
+  `transformer/rope.rs`, and `expect_used` in test modules (now allowed under
+  `cfg(test)` alongside `unwrap_used` — failure-by-panic is the test signal).
+
 ## [0.1.19] - 2026-07-18
 
 ### Added

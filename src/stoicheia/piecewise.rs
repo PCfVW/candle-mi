@@ -411,7 +411,7 @@ mod tests {
                 // INDEX: o * 2 + t bounded by 4 = a_mat.len()
                 #[allow(clippy::indexing_slicing)]
                 {
-                    linear_out[o] += a_mat[o * 2 + t] * input[t];
+                    linear_out[o] = a_mat[o * 2 + t].mul_add(input[t], linear_out[o]);
                 }
             }
         }

@@ -338,6 +338,8 @@ mod tests {
         let head_dim = 96usize;
         let theta = 10_000.0f64;
         let half = head_dim / 2;
+        // CAST: usize → f64, i < 48 and head_dim = 96 fit exactly in the f64 mantissa
+        #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
         let base: Vec<f64> = (0..half)
             .map(|i| 1.0 / theta.powf(2.0 * i as f64 / head_dim as f64))
             .collect();

@@ -34,13 +34,12 @@ fn declared_names(cargo_toml: &str, section: &str) -> BTreeSet<String> {
             in_section = trimmed == section;
             continue;
         }
-        if in_section {
-            if let Some((key, value)) = trimmed.split_once('=') {
-                if key.trim() == "name" {
-                    // BORROW: own the parsed name slice for set storage
-                    names.insert(value.trim().trim_matches('"').to_owned());
-                }
-            }
+        if in_section
+            && let Some((key, value)) = trimmed.split_once('=')
+            && key.trim() == "name"
+        {
+            // BORROW: own the parsed name slice for set storage
+            names.insert(value.trim().trim_matches('"').to_owned());
         }
     }
     names
@@ -54,11 +53,11 @@ fn rs_stems(dir: &Path) -> BTreeSet<String> {
         .flatten()
     {
         let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) == Some("rs") {
-            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                // BORROW: own the file stem for set storage
-                stems.insert(stem.to_owned());
-            }
+        if path.extension().and_then(|e| e.to_str()) == Some("rs")
+            && let Some(stem) = path.file_stem().and_then(|s| s.to_str())
+        {
+            // BORROW: own the file stem for set storage
+            stems.insert(stem.to_owned());
         }
     }
     stems
