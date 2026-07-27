@@ -515,7 +515,9 @@ impl OthelloGpt {
     /// with the same `(config, seed)` produce byte-identical weights.  Every
     /// parameter is registered in `varmap`, so `varmap.all_vars()` hands the
     /// full trainable set to an optimizer, and the forward pass is tracked
-    /// end-to-end (see the `nn_ops` module).
+    /// end-to-end (see the `nn_ops` module).  Same-named entries already
+    /// present in `varmap` are replaced; pass a fresh `VarMap` unless
+    /// re-initialization is intended.
     ///
     /// # Shapes
     /// - returns: a model whose [`forward`](MIBackend::forward) maps
@@ -523,8 +525,8 @@ impl OthelloGpt {
     ///
     /// # Errors
     ///
-    /// Returns [`MIError::Model`] on tensor creation
-    /// failures, or if `varmap`'s lock is poisoned.
+    /// Returns [`MIError::Model`] on tensor creation failure.
+    /// Returns [`MIError::Model`] if `varmap`'s lock is poisoned.
     // `.bias` / `.weight` are checkpoint tensor-name suffixes, not file
     // extensions — the case-sensitivity lint does not apply to them.
     #[allow(clippy::case_sensitive_file_extension_comparisons)]
@@ -658,7 +660,8 @@ impl MIBackend for OthelloGpt {
 fn weight_shapes(config: &OthelloGptConfig) -> Vec<(String, Vec<usize>)> {
     let h = config.n_embd;
     let inter = config.mlp_ratio * h;
-    let mut shapes = Vec::with_capacity(3 + 12 * config.n_layer);
+    // 2 embeddings + 12 per block + ln_f weight/bias + head.
+    let mut shapes = Vec::with_capacity(5 + 12 * config.n_layer);
 
     shapes.push(("tok_emb.weight".to_string(), vec![config.vocab_size, h]));
     shapes.push(("pos_emb.weight".to_string(), vec![config.block_size, h]));
@@ -723,8 +726,11 @@ mod tests {
         let dev = Device::Cpu;
         let varmap = VarMap::new();
         let _model = OthelloGpt::init(tiny_config(), &varmap, &dev, seed).unwrap();
-        let data = varmap.data().lock().unwrap();
-        let mut out: Vec<(String, Vec<f32>)> = data
+        // Single-statement lock so the guard is dropped before the sort.
+        let mut out: Vec<(String, Vec<f32>)> = varmap
+            .data()
+            .lock()
+            .unwrap()
             .iter()
             .map(|(name, var)| {
                 let values = var.as_tensor().flatten_all().unwrap().to_vec1().unwrap();
@@ -746,21 +752,37 @@ mod tests {
     }
 
     // Exact-value checks on deliberately constant inits (zeros / ones).
-    #[allow(clippy::float_cmp)]
+    // Branch membership is decided here by name PATTERN, independently of
+    // `is_norm_weight` (which `init` itself uses) — and the per-branch counts
+    // are pinned, so a classifier bug cannot silently satisfy both sides.
+    // `.bias` is a tensor-name suffix, not a file extension.
+    #[allow(clippy::float_cmp, clippy::case_sensitive_file_extension_comparisons)]
     #[test]
     fn init_follows_gpt2_recipe() {
+        let (mut biases, mut norm_weights, mut drawn) = (0usize, 0usize, 0usize);
         for (name, values) in &init_weights(7) {
             if name.ends_with(".bias") {
+                biases += 1;
                 assert!(values.iter().all(|v| *v == 0.0), "{name}: bias not zero");
-            } else if super::is_norm_weight(name) {
+            } else if name.contains(".ln") || name.starts_with("ln_f") {
+                norm_weights += 1;
                 assert!(values.iter().all(|v| *v == 1.0), "{name}: norm not ones");
             } else {
+                drawn += 1;
                 // Embedding / linear weights are N(0, 0.02) draws — in
                 // particular NOT the `Const(0.)` that `load` over an empty
                 // `VarMap` produces (the §5.1 gap this API closes).
                 assert!(values.iter().any(|v| *v != 0.0), "{name}: all zeros");
             }
         }
+        // tiny_config (2 layers): 6 biases/block + ln_f.bias = 13; ln1/ln2
+        // weights + ln_f.weight = 5; embeddings + qkv/proj/mlp linears + head
+        // = 11.
+        assert_eq!(
+            (biases, norm_weights, drawn),
+            (13, 5, 11),
+            "recipe branch counts drifted"
+        );
     }
 
     #[test]
@@ -796,18 +818,18 @@ mod tests {
         );
         let grads = output.sum_all().unwrap().backward().unwrap();
 
-        let data = varmap.data().lock().unwrap();
-        assert_eq!(
-            data.len(),
-            29,
-            "tiny 2-layer config must have 29 parameters"
-        );
-        let mut missing: Vec<&String> = data
-            .iter()
-            .filter(|(_, var)| grads.get(var.as_tensor()).is_none())
-            .map(|(name, _)| name)
-            .collect();
+        // Block-scoped lock so the guard is dropped before the asserts.
+        let (n_params, mut missing) = {
+            let data = varmap.data().lock().unwrap();
+            let missing: Vec<String> = data
+                .iter()
+                .filter(|(_, var)| grads.get(var.as_tensor()).is_none())
+                .map(|(name, _)| name.clone())
+                .collect();
+            (data.len(), missing)
+        };
         missing.sort();
+        assert_eq!(n_params, 29, "tiny 2-layer config must have 29 parameters");
         assert!(
             missing.is_empty(),
             "parameters receiving no gradient (a fused-op barrier regressed): {missing:?}"
