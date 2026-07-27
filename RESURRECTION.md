@@ -23,28 +23,28 @@ load/download + compile + run, not just the `cargo test` phase). A ⚠️ flags 
 step slow enough (≥ 300 s) to suspect VRAM spill to shared memory
 (e.g. `longrope`/Phi-3.5-mini at F32 overflows a 16 GiB card).
 
-- **Last run:** 2026-07-18 12:26 — tier **Quick**
+- **Last run:** 2026-07-27 16:20 — tier **Default**
 - **Toolchain:** rustc 1.97.1 (8bab26f4f 2026-07-14)
 
 | Test | Models | Device(s) | Last verified | Wall-clock | Outcome |
 |---|---|---|---|---|---|
-| clt_qwen3 (encoder parity) | bluelightai/clt-qwen3-1.7b-base-20k (~240 MiB) | CPU | 2026-07-18 | 83.3s | ✅ PASS |
-| plt_gemma (encoder parity) | google/gemma-scope-2b-pt-transcoders (~864 MiB, gated) | CPU | 2026-07-18 | 84.2s | ✅ PASS |
-| plt_llama (encoder parity) | mntss/transcoder-Llama-3.2-1B (~16 GiB) | CPU | 2026-07-18 | — | ✅ PASS |
-| llama32 forward | meta-llama/Llama-3.2-1B (gated) | CPU+GPU | 2026-07-18 | — | ✅ PASS |
-| gemma2 forward | google/gemma-2-2b (gated) | CPU+GPU | 2026-07-18 | — | ✅ PASS |
-| phi3-mini forward | microsoft/Phi-3-mini-4k-instruct | CPU+GPU | 2026-07-18 | — | ✅ PASS |
-| mistral-7b forward | mistralai/Mistral-7B-v0.1 (gated) | CPU+GPU | 2026-07-18 | — | ✅ PASS |
-| qwen3 forward | Qwen/Qwen3-1.7B-Base | CPU+GPU | 2026-07-18 | — | ✅ PASS |
-| qwen2.5-coder forward | Qwen/Qwen2.5-Coder-3B-Instruct | CPU+GPU | 2026-07-18 | — | ✅ PASS |
-| starcoder2 forward | bigcode/starcoder2-3b (gated) | CPU+GPU | 2026-07-18 | — | ✅ PASS |
-| deepseek forward | deepseek-ai/deepseek-coder-1.3b-base | CPU+GPU | 2026-07-18 | — | ✅ PASS |
-| longrope forward | microsoft/Phi-3.5-mini-instruct (~15 GiB) | GPU | 2026-07-18 | — | ✅ PASS |
-| bidirectional (a2d-qwen2) | dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm (~1.2 GiB) | CPU+GPU | 2026-07-18 | — | ✅ PASS |
-| mdlm + othello | TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | never | — | ⏭️ SKIP (uncached) |
-| quantized (bnb/AWQ/GPTQ) | medmekk/...-bnb-nf4; casperhansen/...-awq; shuyuej/...-GPTQ | GPU | 2026-07-18 | — | ✅ PASS |
-| clt (encode/inject/sweep) | gemma-2-2b + llama-3.2-1b + mntss CLTs (>=16 GiB VRAM) | GPU | 2026-07-18 | — | ✅ PASS |
-| sae (encode/inject/parity) | gemma-2-2b + gemma-scope-2b-pt-res | GPU | 2026-07-18 | — | ✅ PASS |
-| memory (VRAM probe) | (none - allocates a GPU tensor) | GPU | 2026-07-18 | — | ✅ PASS |
-| rwkv6 + rwkv7 | RWKV v6-Finch-1B6; RWKV7-Goose-1.5B | CPU+GPU | 2026-07-18 | — | ✅ PASS |
+| clt_qwen3 (encoder parity) | bluelightai/clt-qwen3-1.7b-base-20k (~240 MiB) | CPU | 2026-07-27 | 1m48s | ✅ PASS |
+| plt_gemma (encoder parity) | google/gemma-scope-2b-pt-transcoders (~864 MiB, gated) | CPU | 2026-07-27 | 85.1s | ✅ PASS |
+| plt_llama (encoder parity) | mntss/transcoder-Llama-3.2-1B (~16 GiB) | CPU | 2026-07-27 | 59.1s | ✅ PASS |
+| llama32 forward | meta-llama/Llama-3.2-1B (gated) | CPU+GPU | 2026-07-27 | 81.3s | ✅ PASS |
+| gemma2 forward | google/gemma-2-2b (gated) | CPU+GPU | 2026-07-27 | 73.2s | ✅ PASS |
+| phi3-mini forward | microsoft/Phi-3-mini-4k-instruct | CPU+GPU | 2026-07-27 | 63.1s | ✅ PASS |
+| mistral-7b forward | mistralai/Mistral-7B-v0.1 (gated) | CPU+GPU | 2026-07-27 | 85.3s | ✅ PASS |
+| qwen3 forward | Qwen/Qwen3-1.7B-Base | CPU+GPU | 2026-07-27 | 65.9s | ✅ PASS |
+| qwen2.5-coder forward | Qwen/Qwen2.5-Coder-3B-Instruct | CPU+GPU | 2026-07-27 | 71.5s | ✅ PASS |
+| starcoder2 forward | bigcode/starcoder2-3b (gated) | CPU+GPU | 2026-07-27 | 69.5s | ✅ PASS |
+| deepseek forward | deepseek-ai/deepseek-coder-1.3b-base | CPU+GPU | 2026-07-27 | 88.9s | ✅ PASS |
+| longrope forward | microsoft/Phi-3.5-mini-instruct (~15 GiB) | GPU | 2026-07-27 | 17m01s ⚠️ | ✅ PASS |
+| bidirectional (a2d-qwen2) | dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm (~1.2 GiB) | CPU+GPU | 2026-07-27 | 70.3s | ✅ PASS |
+| mdlm + othello | TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-07-27 | 59.3s | ✅ PASS |
+| quantized (bnb/AWQ/GPTQ) | medmekk/...-bnb-nf4; casperhansen/...-awq; shuyuej/...-GPTQ | GPU | 2026-07-27 | 2m06s | ✅ PASS |
+| clt (encode/inject/sweep) | gemma-2-2b + llama-3.2-1b + mntss CLTs (>=16 GiB VRAM) | GPU | 2026-07-27 | 3m04s | ✅ PASS |
+| sae (encode/inject/parity) | gemma-2-2b + gemma-scope-2b-pt-res | GPU | 2026-07-27 | 2m23s | ✅ PASS |
+| memory (VRAM probe) | (none - allocates a GPU tensor) | GPU | 2026-07-27 | 37.5s | ✅ PASS |
+| rwkv6 + rwkv7 | RWKV v6-Finch-1B6; RWKV7-Goose-1.5B | CPU+GPU | 2026-07-27 | 3m05s | ✅ PASS |
 | anacrousis (28x15 matrix) | meta-llama/Llama-3.2-1B (gated) | GPU | never | — | — never |
