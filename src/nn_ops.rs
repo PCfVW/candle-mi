@@ -1,0 +1,243 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+//! Backward-safe wrappers around `candle_nn`'s fused kernels.
+//!
+//! `candle_nn::ops::softmax_last_dim` and the fused `layer_norm` / `rms_norm`
+//! are built with `apply_op*_no_bwd`: their output records **no** backprop op,
+//! so it is a graph *leaf*.  `backward()` reaches it, finds nothing above it,
+//! and silently stops — every parameter upstream trains as if frozen, with no
+//! error, no warning, and a loss that still decreases (see
+//! `docs/dogfooding-feedbacks/trainable-backbones.md`).
+//!
+//! Each helper here dispatches on [`Tensor::track_op`]: an inference forward
+//! (no `Var` anywhere upstream) takes candle's fused kernel, byte-identical to
+//! calling it directly, so every existing parity baseline keeps its meaning; a
+//! forward under a `VarMap` takes the composed form, which carries a backward.
+//! The predicate is sound by construction — candle records a `BackpropOp` only
+//! when an input already tracks, so a pure-inference forward never starts
+//! tracking.  The only cost is one boolean test per call site.
+
+use candle_core::{D, DType, Module, Tensor};
+use candle_nn::{LayerNorm, RmsNorm};
+
+use crate::error::Result;
+
+/// Softmax over the last dimension, differentiable when the graph is tracked.
+///
+/// Dispatches on [`Tensor::track_op`]: an inference forward takes candle's
+/// fused kernel, unchanged; a forward under a `VarMap` takes the composed
+/// form, which carries a backward.  Both subtract the row maximum before
+/// exponentiating, so the two paths agree to `F32` rounding.
+///
+/// # Shapes
+/// - `xs`: `[.., n]` -- softmax is taken over the final axis
+/// - returns: `[.., n]`
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+pub fn softmax_last_dim(xs: &Tensor) -> Result<Tensor> {
+    if xs.track_op() {
+        Ok(candle_nn::ops::softmax(xs, D::Minus1)?)
+    } else {
+        Ok(candle_nn::ops::softmax_last_dim(xs)?)
+    }
+}
+
+/// `LayerNorm` forward, differentiable when the graph is tracked.
+///
+/// `candle_nn::LayerNorm::forward` takes the fused (no-backward) kernel
+/// exactly when the input is contiguous, the norm removes the mean, **and** a
+/// bias is present — so weight-only `LayerNorm` is accidentally differentiable
+/// while with-bias `LayerNorm` is not, invisibly at the call site.  This
+/// helper makes the choice explicit: an untracked input takes
+/// `LayerNorm::forward` unchanged; a tracked input takes the composed form
+/// (the same formula as `candle_nn`'s own non-fused fall-through), which
+/// carries a backward.
+///
+/// # Shapes
+/// - `xs`: `[.., hidden]` -- normalized over the final axis
+/// - returns: `[.., hidden]`
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+pub fn layer_norm(norm: &LayerNorm, xs: &Tensor) -> Result<Tensor> {
+    if xs.track_op() {
+        layer_norm_composed(norm, xs)
+    } else {
+        Ok(norm.forward(xs)?)
+    }
+}
+
+/// `RmsNorm` forward, differentiable when the graph is tracked.
+///
+/// `candle_nn::RmsNorm::forward` takes the fused (no-backward) kernel whenever
+/// the input is contiguous.  A tracked input is routed to
+/// `RmsNorm::forward_diff` — `candle_nn`'s own composed path, which carries a
+/// backward; an untracked input takes `RmsNorm::forward` unchanged.
+///
+/// # Shapes
+/// - `xs`: `[.., hidden]` -- normalized over the final axis
+/// - returns: `[.., hidden]`
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+pub fn rms_norm(norm: &RmsNorm, xs: &Tensor) -> Result<Tensor> {
+    if xs.track_op() {
+        Ok(norm.forward_diff(xs)?)
+    } else {
+        Ok(norm.forward(xs)?)
+    }
+}
+
+/// Composed (differentiable) `LayerNorm`: the formula from `candle_nn`'s own
+/// non-fused fall-through, built from primitive ops so every step records a
+/// backward.
+///
+/// # Shapes
+/// - `xs`: `[.., hidden]` -- normalized over the final axis
+/// - returns: `[.., hidden]`
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+fn layer_norm_composed(norm: &LayerNorm, xs: &Tensor) -> Result<Tensor> {
+    let x_dtype = xs.dtype();
+    let internal_dtype = if matches!(x_dtype, DType::F16 | DType::BF16) {
+        DType::F32
+    } else {
+        x_dtype
+    };
+    let hidden_size = xs.dim(D::Minus1)?;
+    // PROMOTE: mean/variance accumulation over F16/BF16 loses precision;
+    // compute in F32 exactly as candle-nn's composed path does
+    let x = xs.to_dtype(internal_dtype)?;
+    let x = if norm.remove_mean() {
+        // CAST: usize → f64, hidden dimension fits exactly in the f64 mantissa
+        #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+        let mean = (x.sum_keepdim(D::Minus1)? / hidden_size as f64)?;
+        x.broadcast_sub(&mean)?
+    } else {
+        x
+    };
+    // CAST: usize → f64, hidden dimension fits exactly in the f64 mantissa
+    #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+    let norm_x = (x.sqr()?.sum_keepdim(D::Minus1)? / hidden_size as f64)?;
+    let x_normed = x.broadcast_div(&(norm_x + norm.eps())?.sqrt()?)?;
+    let x = x_normed.to_dtype(x_dtype)?.broadcast_mul(norm.weight())?;
+    match norm.bias() {
+        None => Ok(x),
+        Some(bias) => Ok(x.broadcast_add(bias)?),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use candle_core::{Device, Var};
+
+    /// Fresh leaf `Var` of shape `[2, 8]` on CPU.
+    fn leaf() -> Var {
+        Var::randn(0f32, 1f32, (2, 8), &Device::Cpu).unwrap()
+    }
+
+    /// Max absolute element-wise difference between two same-shape tensors.
+    fn max_abs_diff(a: &Tensor, b: &Tensor) -> f32 {
+        (a - b)
+            .unwrap()
+            .abs()
+            .unwrap()
+            .max_all()
+            .unwrap()
+            .to_scalar::<f32>()
+            .unwrap()
+    }
+
+    /// A weight + bias `LayerNorm` (the fused, gradient-barrier configuration).
+    fn layer_norm_with_bias() -> LayerNorm {
+        let weight = Tensor::rand(0.5f32, 1.5f32, 8, &Device::Cpu).unwrap();
+        let bias = Tensor::rand(-0.5f32, 0.5f32, 8, &Device::Cpu).unwrap();
+        LayerNorm::new(weight, bias, 1e-5)
+    }
+
+    fn rms_norm_layer() -> RmsNorm {
+        let weight = Tensor::rand(0.5f32, 1.5f32, 8, &Device::Cpu).unwrap();
+        RmsNorm::new(weight, 1e-5)
+    }
+
+    #[test]
+    fn softmax_gradient_reaches_leaf() {
+        let v = leaf();
+        let out = softmax_last_dim(v.as_tensor()).unwrap();
+        assert!(out.track_op(), "tracked input must produce tracked output");
+        let grads = out.sum_all().unwrap().backward().unwrap();
+        assert!(grads.get(&v).is_some(), "softmax barrier: no gradient");
+    }
+
+    #[test]
+    fn layer_norm_gradient_reaches_leaf() {
+        let ln = layer_norm_with_bias();
+        let v = leaf();
+        let out = layer_norm(&ln, v.as_tensor()).unwrap();
+        let grads = out.sum_all().unwrap().backward().unwrap();
+        assert!(grads.get(&v).is_some(), "layer_norm barrier: no gradient");
+    }
+
+    #[test]
+    fn rms_norm_gradient_reaches_leaf() {
+        let rms = rms_norm_layer();
+        let v = leaf();
+        let out = rms_norm(&rms, v.as_tensor()).unwrap();
+        let grads = out.sum_all().unwrap().backward().unwrap();
+        assert!(grads.get(&v).is_some(), "rms_norm barrier: no gradient");
+    }
+
+    #[test]
+    fn untracked_input_stays_untracked() {
+        let xs = Tensor::randn(0f32, 1f32, (2, 8), &Device::Cpu).unwrap();
+        assert!(!xs.track_op());
+        assert!(!softmax_last_dim(&xs).unwrap().track_op());
+        assert!(!layer_norm(&layer_norm_with_bias(), &xs).unwrap().track_op());
+        assert!(!rms_norm(&rms_norm_layer(), &xs).unwrap().track_op());
+    }
+
+    #[test]
+    fn softmax_paths_agree() {
+        let v = leaf();
+        let tracked = softmax_last_dim(v.as_tensor()).unwrap();
+        let untracked = softmax_last_dim(&v.as_tensor().detach()).unwrap();
+        assert!(max_abs_diff(&tracked, &untracked) < 1e-6);
+    }
+
+    #[test]
+    fn layer_norm_paths_agree() {
+        let ln = layer_norm_with_bias();
+        let v = leaf();
+        let tracked = layer_norm(&ln, v.as_tensor()).unwrap();
+        let untracked = layer_norm(&ln, &v.as_tensor().detach()).unwrap();
+        assert!(max_abs_diff(&tracked, &untracked) < 1e-6);
+    }
+
+    #[test]
+    fn rms_norm_paths_agree() {
+        let rms = rms_norm_layer();
+        let v = leaf();
+        let tracked = rms_norm(&rms, v.as_tensor()).unwrap();
+        let untracked = rms_norm(&rms, &v.as_tensor().detach()).unwrap();
+        assert!(max_abs_diff(&tracked, &untracked) < 1e-6);
+    }
+
+    #[test]
+    fn weight_only_layer_norm_paths_agree() {
+        let weight = Tensor::rand(0.5f32, 1.5f32, 8, &Device::Cpu).unwrap();
+        let ln = LayerNorm::new_no_bias(weight, 1e-5);
+        let v = leaf();
+        let tracked = layer_norm(&ln, v.as_tensor()).unwrap();
+        let grads = tracked.sum_all().unwrap().backward().unwrap();
+        assert!(grads.get(&v).is_some());
+        let untracked = layer_norm(&ln, &v.as_tensor().detach()).unwrap();
+        assert!(max_abs_diff(&tracked, &untracked) < 1e-6);
+    }
+}

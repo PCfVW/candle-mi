@@ -329,7 +329,9 @@ impl OthelloBlock {
             // PROMOTE: softmax over a lower-precision dtype can produce NaN; compute in F32
             scores.to_dtype(DType::F32)?
         };
-        let mut pattern = candle_nn::ops::softmax_last_dim(&scores_f32)?;
+        // Backward-safe dispatch: fused kernel for inference, composed form
+        // when the graph is tracked (training over a `VarMap`).
+        let mut pattern = crate::nn_ops::softmax_last_dim(&scores_f32)?;
         if original_dtype != DType::F32 {
             pattern = pattern.to_dtype(original_dtype)?;
         }
@@ -395,7 +397,9 @@ impl OthelloBlock {
 
         // --- attention sublayer ---
         let residual = hidden.clone();
-        let normed1 = self.ln1.forward(&residual)?;
+        // Backward-safe dispatch: with-bias `LayerNorm` takes candle's fused
+        // (no-backward) kernel; route through `nn_ops` so training works.
+        let normed1 = crate::nn_ops::layer_norm(&self.ln1, &residual)?;
         let mut attn = self.attention(&normed1, layer_idx, hooks, cache)?;
         hook_point(&mut attn, HookPoint::AttnOut(layer_idx), hooks, cache)?;
         hidden = (residual + attn)?;
@@ -403,7 +407,7 @@ impl OthelloBlock {
 
         // --- MLP sublayer ---
         let residual2 = hidden.clone();
-        let mut normed2 = self.ln2.forward(&hidden)?;
+        let mut normed2 = crate::nn_ops::layer_norm(&self.ln2, &hidden)?;
         hook_point(&mut normed2, HookPoint::MlpPre(layer_idx), hooks, cache)?;
         let mut mlp_out = self.mlp(&normed2)?;
         hook_point(&mut mlp_out, HookPoint::MlpPost(layer_idx), hooks, cache)?;
@@ -516,7 +520,7 @@ impl OthelloGpt {
         hooks: &HookSpec,
         cache: &mut HookCache,
     ) -> Result<Tensor> {
-        let mut xs = self.ln_f.forward(hidden)?;
+        let mut xs = crate::nn_ops::layer_norm(&self.ln_f, hidden)?;
         hook_point(&mut xs, HookPoint::FinalNorm, hooks, cache)?;
         Ok(self.head.forward(&xs)?)
     }
@@ -567,7 +571,7 @@ impl MIBackend for OthelloGpt {
     }
 
     fn project_to_vocab(&self, hidden: &Tensor) -> Result<Tensor> {
-        let xs = self.ln_f.forward(hidden)?;
+        let xs = crate::nn_ops::layer_norm(&self.ln_f, hidden)?;
         Ok(self.head.forward(&xs)?)
     }
 

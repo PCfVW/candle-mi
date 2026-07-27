@@ -7,7 +7,7 @@
 //! [`GemmaRmsNorm`](NormType::GemmaRmsNorm) (which adds `1.0` to the
 //! learned weight).
 
-use candle_core::{DType, Module, Tensor};
+use candle_core::{DType, Tensor};
 use candle_nn::VarBuilder;
 
 use crate::config::NormType;
@@ -40,9 +40,13 @@ impl Norm {
     ///
     /// Returns [`MIError::Model`] on tensor operation failures.
     pub fn forward(&self, xs: &Tensor) -> Result<Tensor> {
+        // Backward-safe dispatch: candle's fused `rms_norm` / with-bias
+        // `layer_norm` kernels record no backward op; `nn_ops` takes the
+        // composed form when the graph is tracked (training over a `VarMap`).
+        // `GemmaRmsNorm` is written out by hand and already differentiable.
         match self {
-            Self::Rms(norm) => Ok(norm.forward(xs)?),
-            Self::Layer(norm) => Ok(norm.forward(xs)?),
+            Self::Rms(norm) => crate::nn_ops::rms_norm(norm, xs),
+            Self::Layer(norm) => crate::nn_ops::layer_norm(norm, xs),
             Self::GemmaRms(norm) => norm.forward(xs),
         }
     }

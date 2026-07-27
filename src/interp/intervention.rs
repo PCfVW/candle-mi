@@ -78,6 +78,8 @@ fn tensor_to_vec4(tensor: &Tensor) -> Result<Vec<Vec<Vec<Vec<f32>>>>> {
 fn softmax_to_vec(logits: &Tensor) -> Result<Vec<f32>> {
     // PROMOTE: softmax needs f32 for numerical stability
     let logits_f32 = logits.to_dtype(DType::F32)?;
+    // Terminal read-out (probability display): no gradient ever wanted, so
+    // the fused kernel is used directly rather than `crate::nn_ops`.
     let probs = candle_nn::ops::softmax_last_dim(&logits_f32)?;
     Ok(probs.flatten_all()?.to_vec1()?)
 }

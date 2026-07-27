@@ -240,6 +240,7 @@ pub mod hooks;
 pub mod interp;
 #[cfg(feature = "memory")]
 pub mod memory;
+pub mod nn_ops;
 #[cfg(feature = "rwkv")]
 pub mod rwkv;
 #[cfg(feature = "sae")]

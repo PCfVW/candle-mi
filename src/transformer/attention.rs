@@ -301,7 +301,9 @@ impl Attention {
         } else {
             scores.to_dtype(DType::F32)?
         };
-        let mut pattern = candle_nn::ops::softmax_last_dim(&scores_f32)?;
+        // Backward-safe dispatch: fused kernel for inference, composed form
+        // when the graph is tracked (training over a `VarMap`).
+        let mut pattern = crate::nn_ops::softmax_last_dim(&scores_f32)?;
         if original_dtype != DType::F32 {
             pattern = pattern.to_dtype(original_dtype)?;
         }

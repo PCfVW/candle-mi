@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Backbones now carry a gradient (trainable backbones, part 1).** New
+  `nn_ops` module with backward-safe wrappers around `candle_nn`'s fused
+  kernels (`softmax_last_dim`, with-bias `layer_norm`, `rms_norm`), dispatching
+  on `Tensor::track_op`: an inference forward takes the fused kernel unchanged
+  (byte-identical, no re-baselining of any parity oracle), while a forward
+  under a `VarMap` takes the composed form, which records a backward. Before
+  this, `backward()` through any backbone silently stopped at the first fused
+  op — an `OthelloGpt` training loop updated 1 of 29 parameters (`head.weight`
+  only) with no error and a decreasing loss. All four attention softmax sites
+  (`GenericTransformer`, `GenericMdlm`, `OthelloGpt`, `StoicheiaTransformer`)
+  and both norm families (`Norm::Rms`/`Norm::Layer`, `OthelloGpt`'s
+  `ln1`/`ln2`/`ln_f`) now route through the dispatch. See
+  `docs/dogfooding-feedbacks/trainable-backbones.md`.
+
 ### Changed
 
 - **`scripts/resurrect.ps1` now records per-step wall-clock.** A new `Wall-clock`

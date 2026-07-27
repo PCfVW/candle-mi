@@ -743,6 +743,8 @@ pub fn extract_token_prob(logits: &Tensor, token_id: u32) -> Result<f32> {
         }
     };
 
+    // Terminal read-out (probability extraction): no gradient ever wanted, so
+    // the fused kernel is used directly rather than `crate::nn_ops`.
     let probs = candle_nn::ops::softmax_last_dim(&last_logits)?;
     // CAST: u32 → usize, token ID used as tensor index
     #[allow(clippy::as_conversions)]

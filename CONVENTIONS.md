@@ -24,6 +24,7 @@ the [Grit — Strict Rust for AI-Assisted Development](https://github.com/PCfVW/
 | Write `Box<dyn T>` or `&dyn T` | [`// TRAIT_OBJECT:`](#trait_object-annotation) |
 | Write a `match` or `if let` | [Control-flow rules](#if-let-vs-match), [`// EXPLICIT:`](#explicit-annotation) if no-op arm |
 | Load upstream model weights | [`similar_names`](#upstream-weight-names) |
+| Call `softmax`/`layer_norm`/`rms_norm` in a forward path | [Backward-safe ops](#backward-safe-ops) |
 | Write error strings | [Error message wording](#error-message-wording) |
 | Batch operations by key | [HashMap grouping idiom](#hashmap-grouping-idiom) |
 
@@ -362,6 +363,34 @@ This bounds peak memory to roughly 1× the largest decoder file (~2 GB for
 Gemma 2 2B CLTs).
 
 > Example location: `CrossLayerTranscoder::score_features_by_decoder_projection`
+
+---
+
+## When Writing Forward Passes
+
+### Backward-Safe Ops
+
+`candle_nn`'s fused kernels — `ops::softmax_last_dim`, fused `layer_norm`
+(with bias), fused `rms_norm`, `sdpa` — are built with `apply_op*_no_bwd`:
+their output records **no** backward op, so `backward()` silently stops
+there and every parameter upstream receives no gradient. There is no error
+and no warning; a training loop still shows a decreasing loss (see
+`docs/dogfooding-feedbacks/trainable-backbones.md`).
+
+In any model forward path, call the `crate::nn_ops` wrappers instead:
+
+> ✅ `crate::nn_ops::softmax_last_dim(&scores)?`
+> ✅ `crate::nn_ops::layer_norm(&self.ln1, &xs)?`
+> ✅ `crate::nn_ops::rms_norm(&self.norm, &xs)?`
+> ❌ `candle_nn::ops::softmax_last_dim(&scores)?` ← gradient barrier
+> ❌ `self.ln1.forward(&xs)?` ← fused (no-backward) kernel when bias is present
+
+The wrappers dispatch on `Tensor::track_op`: inference forwards take the
+fused kernel unchanged (byte-identical — parity baselines keep their
+meaning); a forward under a `VarMap` takes the composed, differentiable
+form. Direct fused calls are acceptable **only** in terminal read-outs
+where no gradient can ever be wanted (sampling, probability display) —
+mark the intent with a comment when doing so.
 
 ---
 

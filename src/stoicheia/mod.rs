@@ -389,8 +389,10 @@ impl AttentionLayer {
         // Unsqueeze to [batch, 1, seq, seq] for head dimension
         let scores = scores_2d.unsqueeze(1)?;
 
-        // Softmax over last dimension (no causal mask — full bidirectional)
-        let pattern = candle_nn::ops::softmax_last_dim(&scores)?;
+        // Softmax over last dimension (no causal mask — full bidirectional).
+        // Backward-safe dispatch: fused kernel for inference, composed form
+        // when the graph is tracked (training over a `VarMap`).
+        let pattern = crate::nn_ops::softmax_last_dim(&scores)?;
 
         // Weighted sum: pattern @ V
         // [batch, 1, seq, seq] → squeeze → [batch, seq, seq]

@@ -357,6 +357,31 @@ fn forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache> {
 - Intervention iteration (`interventions_at`) returns an empty iterator
   when no interventions target that hook point.
 
+### Keep the Forward Differentiable (`nn_ops`)
+
+Never call `candle_nn`'s fused kernels directly in a forward path:
+`ops::softmax_last_dim`, the fused `layer_norm` (with bias), fused
+`rms_norm`, and `sdpa` are built with `apply_op*_no_bwd` — their output
+records **no** backward op, so it is a graph *leaf*. A training loop over
+your backend then "works" (loss decreases, checkpoint saves) while every
+parameter upstream of the last fused op silently receives no gradient
+(see `docs/dogfooding-feedbacks/trainable-backbones.md`).
+
+Use the [`nn_ops`] wrappers instead:
+
+```rust
+let pattern = crate::nn_ops::softmax_last_dim(&scores)?;   // not candle_nn::ops::
+let normed  = crate::nn_ops::layer_norm(&self.ln1, &xs)?;  // not self.ln1.forward()
+let normed  = crate::nn_ops::rms_norm(&self.norm, &xs)?;   // not self.norm.forward()
+```
+
+They dispatch on `Tensor::track_op`: an inference forward (no `Var`
+upstream) takes the fused kernel unchanged — byte-identical, so parity
+baselines keep their meaning — and a forward under a `VarMap` takes the
+composed form, which carries a backward. Direct fused calls are correct
+only for terminal read-outs where no gradient can ever be wanted
+(sampling, probability display), such as `backend.rs`'s `sample_token`.
+
 ### Hook Integration Checklist
 
 For a new backend, decide which hook points to support.  At minimum:
