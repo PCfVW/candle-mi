@@ -21,7 +21,7 @@
 //! | `OthelloGpt` | Plain GPT-2-style backbone (learned absolute positions, full `LayerNorm`, exact-`GELU`); the `OthelloMDLM` world model | `diffusion` |
 //! | `StoicheiaRnn` / `StoicheiaTransformer` | `AlgZoo` `ReLU` RNN, attention-only transformer (8–1,408 params) | `stoicheia` |
 //!
-//! See [`BACKENDS.md`](https://github.com/PCfVW/candle-mi/blob/main/BACKENDS.md)
+//! See [`BACKENDS.md`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/main/BACKENDS.md)
 //! for how to add a new model architecture.
 //!
 //! ## Feature flags
@@ -204,13 +204,13 @@
 //!
 //! ## Further reading
 //!
-//! - [`HOOKS.md`](https://github.com/PCfVW/candle-mi/blob/main/HOOKS.md) —
+//! - [`HOOKS.md`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/main/HOOKS.md) —
 //!   complete hook point reference with shapes, intervention walkthrough, and
 //!   worked examples.
-//! - [`BACKENDS.md`](https://github.com/PCfVW/candle-mi/blob/main/BACKENDS.md) —
+//! - [`BACKENDS.md`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/main/BACKENDS.md) —
 //!   how to add a new model architecture (auto-config, config parser, or
 //!   custom `MIBackend`).
-//! - [`examples/README.md`](https://github.com/PCfVW/candle-mi/blob/main/examples/README.md) —
+//! - [`examples/README.md`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/main/examples/README.md) —
 //!   23 runnable examples covering inference, logit lens, attention patterns,
 //!   knockout, steering, activation patching, `CounterFact` replication,
 //!   CLT circuits, SAE encoding, RWKV inference, `AlgZoo` analysis, and more.

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **candle-mi has moved to the `mi-for-the-rust-of-us` GitHub organization**
+  (`github.com/mi-for-the-rust-of-us/candle-mi`), joining `anamnesis` there;
+  `hf-fetch-model` and `hypomnesis` follow later. The crate name, crates.io
+  ownership and the published API are all unaffected — only the repository
+  location changes. `repository`/`homepage` in `Cargo.toml`, the README badges
+  and the in-crate documentation links now point at the new home; GitHub
+  redirects the old URLs, so existing clones, links and `git remote`s keep
+  working. Links to the separate `Amphigraphic-Strict`, `plip-rs`,
+  `hf-fetch-model` and `deloson` repositories are deliberately unchanged.
+  The move is what unlocks org-hosted CodSpeed wallclock benchmarking, the
+  reason `anamnesis` moved first.
+
+### Fixed
+
+- **Changelog comparison links skipped two releases.** The `[Unreleased]`
+  link compared against `v0.1.18`, and no `[0.1.19]`/`[0.1.20]` entries
+  existed, so the "unreleased" diff silently included two shipped releases.
+
 ## [0.1.20] - 2026-07-27
 
 ### Added
@@ -1351,7 +1371,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **`design/add-at-positions.md`** — design document for `Intervention::AddAtPositions`,
   a position-specific sparse injection variant inspired by
-  [PR #1](https://github.com/PCfVW/candle-mi/pull/1) and the
+  [PR #1](https://github.com/mi-for-the-rust-of-us/candle-mi/pull/1) and the
   [K-BERT](https://arxiv.org/abs/1909.07606) injection paradigm
 
 ### Changed
@@ -2039,28 +2059,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/PCfVW/candle-mi/compare/v0.1.18...HEAD
-[0.1.18]: https://github.com/PCfVW/candle-mi/compare/v0.1.17...v0.1.18
-[0.1.17]: https://github.com/PCfVW/candle-mi/compare/v0.1.16...v0.1.17
-[0.1.16]: https://github.com/PCfVW/candle-mi/compare/v0.1.15...v0.1.16
-[0.1.15]: https://github.com/PCfVW/candle-mi/compare/v0.1.14...v0.1.15
-[0.1.14]: https://github.com/PCfVW/candle-mi/compare/v0.1.13...v0.1.14
-[0.1.13]: https://github.com/PCfVW/candle-mi/compare/v0.1.12...v0.1.13
-[0.1.12]: https://github.com/PCfVW/candle-mi/compare/v0.1.11...v0.1.12
-[0.1.11]: https://github.com/PCfVW/candle-mi/compare/v0.1.10...v0.1.11
-[0.1.10]: https://github.com/PCfVW/candle-mi/compare/v0.1.9...v0.1.10
-[0.1.9]: https://github.com/PCfVW/candle-mi/compare/v0.1.8...v0.1.9
-[0.1.8]: https://github.com/PCfVW/candle-mi/compare/v0.1.7...v0.1.8
-[0.1.7]: https://github.com/PCfVW/candle-mi/compare/v0.1.6...v0.1.7
-[0.1.6]: https://github.com/PCfVW/candle-mi/compare/v0.1.5...v0.1.6
-[0.1.5]: https://github.com/PCfVW/candle-mi/compare/v0.1.4...v0.1.5
-[0.1.4]: https://github.com/PCfVW/candle-mi/compare/v0.1.3...v0.1.4
-[0.1.3]: https://github.com/PCfVW/candle-mi/compare/v0.1.2...v0.1.3
-[0.1.2]: https://github.com/PCfVW/candle-mi/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/PCfVW/candle-mi/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/PCfVW/candle-mi/compare/v0.0.5-phase4...v0.1.0
-[0.0.5-phase4]: https://github.com/PCfVW/candle-mi/compare/v0.0.4-phase3...v0.0.5-phase4
-[0.0.4]: https://github.com/PCfVW/candle-mi/compare/v0.0.3...v0.0.4-phase3
-[0.0.3]: https://github.com/PCfVW/candle-mi/releases/tag/v0.0.3
-[0.0.2-phase1]: https://github.com/PCfVW/candle-mi/releases/tag/v0.0.2-phase1
-[0.0.1]: https://github.com/PCfVW/candle-mi/releases/tag/v0.0.1
+[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.20...HEAD
+[0.1.20]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.19...v0.1.20
+[0.1.19]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.18...v0.1.19
+[0.1.18]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.17...v0.1.18
+[0.1.17]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.16...v0.1.17
+[0.1.16]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.15...v0.1.16
+[0.1.15]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.14...v0.1.15
+[0.1.14]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.13...v0.1.14
+[0.1.13]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.12...v0.1.13
+[0.1.12]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.11...v0.1.12
+[0.1.11]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.10...v0.1.11
+[0.1.10]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.9...v0.1.10
+[0.1.9]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.8...v0.1.9
+[0.1.8]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.7...v0.1.8
+[0.1.7]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.6...v0.1.7
+[0.1.6]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.5...v0.1.6
+[0.1.5]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.4...v0.1.5
+[0.1.4]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.3...v0.1.4
+[0.1.3]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.0.5-phase4...v0.1.0
+[0.0.5-phase4]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.0.4-phase3...v0.0.5-phase4
+[0.0.4]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.0.3...v0.0.4-phase3
+[0.0.3]: https://github.com/mi-for-the-rust-of-us/candle-mi/releases/tag/v0.0.3
+[0.0.2-phase1]: https://github.com/mi-for-the-rust-of-us/candle-mi/releases/tag/v0.0.2-phase1
+[0.0.1]: https://github.com/mi-for-the-rust-of-us/candle-mi/releases/tag/v0.0.1

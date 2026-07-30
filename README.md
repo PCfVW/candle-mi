@@ -1,12 +1,12 @@
 # candle-mi
 
-[![CI](https://github.com/PCfVW/candle-mi/actions/workflows/ci.yml/badge.svg)](https://github.com/PCfVW/candle-mi/actions/workflows/ci.yml)
+[![CI](https://github.com/mi-for-the-rust-of-us/candle-mi/actions/workflows/ci.yml/badge.svg)](https://github.com/mi-for-the-rust-of-us/candle-mi/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/candle-mi)](https://crates.io/crates/candle-mi)
 [![docs.rs](https://img.shields.io/docsrs/candle-mi)](https://docs.rs/candle-mi)
 [![Rust 1.88+](https://img.shields.io/badge/rust-1.88%2B-orange)](https://www.rust-lang.org)
 [![Edition 2024](https://img.shields.io/badge/edition-2024-orange)](https://doc.rust-lang.org/edition-guide/rust-2024/)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](LICENSE-MIT)
-[![GitHub last commit](https://img.shields.io/github/last-commit/PCfVW/candle-mi)](https://github.com/PCfVW/candle-mi/commits/main)
+[![GitHub last commit](https://img.shields.io/github/last-commit/mi-for-the-rust-of-us/candle-mi)](https://github.com/mi-for-the-rust-of-us/candle-mi/commits/main)
 
 *Mechanistic Interpretability for the Rust of us.*
 

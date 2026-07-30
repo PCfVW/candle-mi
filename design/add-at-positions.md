@@ -1,6 +1,6 @@
 # Design: `Intervention::AddAtPositions`
 
-**Status:** Proposed **|** **Date:** March 20, 2026 **|** **Relates to:** Roadmap §8 item 10 (`apply_intervention` consolidation), §8 item 2 (hook system) **|** **Origin:** [PR #1](https://github.com/PCfVW/candle-mi/pull/1) by hankxu19 (closed) — feature idea retained, implementation reworked
+**Status:** Proposed **|** **Date:** March 20, 2026 **|** **Relates to:** Roadmap §8 item 10 (`apply_intervention` consolidation), §8 item 2 (hook system) **|** **Origin:** [PR #1](https://github.com/mi-for-the-rust-of-us/candle-mi/pull/1) by hankxu19 (closed) — feature idea retained, implementation reworked
 
 ## Question
 
@@ -210,5 +210,5 @@ This injects external information at specific positions and lets the model proce
 
 - [HOOKS.md](../HOOKS.md) — user-facing intervention reference
 - [intervention-api.md](intervention-api.md) — original intervention API design
-- PR #1 review — [7-point review](https://github.com/PCfVW/candle-mi/pull/1) that informed this design
+- PR #1 review — [7-point review](https://github.com/mi-for-the-rust-of-us/candle-mi/pull/1) that informed this design
 - Liu, W. et al. ["K-BERT: Enabling Language Representation with Knowledge Graph."](https://arxiv.org/abs/1909.07606) AAAI 2020.

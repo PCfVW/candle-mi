@@ -7,7 +7,7 @@ standards document, it consistently misses rules on first pass — then fixes
 them iteratively after linter feedback. Each iteration burns context, looks
 sloppy, and sometimes introduces new issues while fixing old ones.
 
-We observed this repeatedly on [candle-mi](https://github.com/PCfVW/candle-mi),
+We observed this repeatedly on [candle-mi](https://github.com/mi-for-the-rust-of-us/candle-mi),
 a mechanistic interpretability crate with strict conventions (annotation
 patterns, doc-comment rules, function signature policies). The conventions
 were clear and complete. The LLM read them every conversation. It still
