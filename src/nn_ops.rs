@@ -17,10 +17,60 @@
 //! when an input already tracks, so a pure-inference forward never starts
 //! tracking.  The only cost is one boolean test per call site.
 
-use candle_core::{D, DType, Module, Tensor};
+use std::sync::OnceLock;
+
+use candle_core::{D, DType, Module, Tensor, Var};
 use candle_nn::{LayerNorm, RmsNorm};
 
 use crate::error::Result;
+
+/// Whether the installed `candle-nn`'s fused `softmax_last_dim` records a backward op.
+static FUSED_SOFTMAX_DIFFERENTIABLE: OnceLock<bool> = OnceLock::new();
+/// Whether the installed `candle-nn`'s fused `layer_norm` records a backward op.
+static FUSED_LAYER_NORM_DIFFERENTIABLE: OnceLock<bool> = OnceLock::new();
+
+/// Probes, ONCE per process, whether a fused `candle-nn` op carries gradients.
+///
+/// Stock `candle-nn` builds its fused `softmax_last_dim` / `layer_norm` with
+/// `apply_op*_no_bwd`: `backward()` returns `Ok` and the input simply never appears in the
+/// gradient store — the C1 failure, a silent wrong answer with a green light. A patched or
+/// future `candle-nn` whose fused ops implement `CustomOp::bwd` carries them. **Which world
+/// this process is in cannot be known at compile time** (the crate is version-ranged), so it
+/// is measured: a four-element CPU graph, one forward, one backward, one lookup. The result
+/// decides the dispatch below for the life of the process; the cost is microseconds, once.
+///
+/// This is the difference between "fast when the runtime supports it" and "wrong when it
+/// doesn't": with the probe, a training run on stock `candle-nn` silently takes the composed
+/// path and stays CORRECT, and the same binary against a bwd-carrying `candle-nn` takes the
+/// fused kernels and their analytic backward.
+fn fused_carries_gradients(cell: &OnceLock<bool>, run: fn(&Tensor) -> Result<Tensor>) -> bool {
+    *cell.get_or_init(|| {
+        let probe = || -> Result<bool> {
+            let x = Tensor::new(&[[0.1_f32, 0.2, 0.3, 0.4]], &candle_core::Device::Cpu)?;
+            let v = Var::from_tensor(&x)?;
+            let y = run(v.as_tensor())?;
+            let grads = y.sum_all()?.backward()?;
+            Ok(grads.get(&v).is_some())
+        };
+        probe().unwrap_or(false)
+    })
+}
+
+/// The softmax probe body: the fused op, applied to the tracked probe tensor.
+fn probe_softmax(xs: &Tensor) -> Result<Tensor> {
+    Ok(candle_nn::ops::softmax_last_dim(xs)?)
+}
+
+/// The layer-norm probe body: the fused op with weight and bias, the gradient-barrier
+/// configuration (weight-only `LayerNorm` never took the fused kernel in the first place).
+fn probe_layer_norm(xs: &Tensor) -> Result<Tensor> {
+    let hidden = xs.dim(D::Minus1)?;
+    let device = xs.device();
+    let weight = Tensor::ones(hidden, DType::F32, device)?;
+    let bias = Tensor::zeros(hidden, DType::F32, device)?;
+    // EXPLICIT: eps value is irrelevant to the probe; only op registration is under test.
+    Ok(candle_nn::ops::layer_norm(xs, &weight, &bias, 1e-5)?)
+}
 
 /// Softmax over the last dimension, differentiable when the graph is tracked.
 ///
@@ -37,7 +87,7 @@ use crate::error::Result;
 ///
 /// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
 pub fn softmax_last_dim(xs: &Tensor) -> Result<Tensor> {
-    if xs.track_op() {
+    if xs.track_op() && !fused_carries_gradients(&FUSED_SOFTMAX_DIFFERENTIABLE, probe_softmax) {
         Ok(candle_nn::ops::softmax(xs, D::Minus1)?)
     } else {
         Ok(candle_nn::ops::softmax_last_dim(xs)?)
@@ -63,7 +113,8 @@ pub fn softmax_last_dim(xs: &Tensor) -> Result<Tensor> {
 ///
 /// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
 pub fn layer_norm(norm: &LayerNorm, xs: &Tensor) -> Result<Tensor> {
-    if xs.track_op() {
+    if xs.track_op() && !fused_carries_gradients(&FUSED_LAYER_NORM_DIFFERENTIABLE, probe_layer_norm)
+    {
         layer_norm_composed(norm, xs)
     } else {
         Ok(norm.forward(xs)?)
