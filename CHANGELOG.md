@@ -53,6 +53,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `docs/dogfooding-feedbacks/training-throughput-ceiling.md` is VRAM-bound at
   batch 128 while sitting at ~10% of fp32 peak, so halving activation bytes is
   the measured lever, not tensor-core throughput.
+  **If you move to `BF16`, re-measure your parity bands.** Every tolerance in
+  this crate is fp32-derived: candle-mi's own readings sit at a 9.5e-8
+  framework agreement inside a 2.0e-7 cross-device null band, and the house
+  oracle bar is 5e-3. `BF16` carries roughly three decimal digits, so all of
+  those grow by orders of magnitude and a harness carrying fp32 expectations
+  will fail **correctly**. A per-dtype null band has to be measured rather than
+  assumed to carry over — including the 5e-3 bar itself. This is a real
+  precision change, not a regression, and the distinction is only visible if
+  you go looking for it.
 - **`init_with_dtype_creates_every_parameter_at_the_requested_dtype` test.** A
   count over `varmap`'s full parameter set, in the style of the v0.1.20
   all-parameters-receive-gradients test, so it fails loudly on any future path
