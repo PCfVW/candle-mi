@@ -80,11 +80,24 @@ from downstream. What follows is the part candle-mi *can* move.
 562:  Self::load(config, VarBuilder::from_varmap(varmap, DType::F32, device))
 ```
 
-`init` takes `(config, varmap, device, seed)` and no dtype. A caller who wants bf16 cannot get it —
-`load` accepts any `VarBuilder`, so the capability exists one layer down and `init` is the only
-thing withholding it. Note that `attention` already goes out of its way to be dtype-aware
-(`othello.rs:326–335` upcasts scores to F32 and casts back), so the model body was written with
-mixed precision in mind; only the constructor was not.
+`init` takes `(config, varmap, device, seed)` and no dtype. A caller who wants bf16 cannot get it.
+Note that `attention` already goes out of its way to be dtype-aware (`othello.rs:326–335` upcasts
+scores to F32 and casts back), so the model body was written with mixed precision in mind; only
+the constructor was not.
+
+> **CORRECTION (2026-08-01).** An earlier revision of this section said "`load` accepts any
+> `VarBuilder`, so the capability exists one layer down and `init` is the only thing withholding
+> it." The first clause is true and the inference from it is **wrong**, in a way that would have
+> cost a whole measurement. `candle_nn::VarMap::get` (`var_map.rs:95`) takes a `dtype` but only
+> uses it when *inserting*: on a path that already exists it validates **shape only** and returns
+> the pre-inserted tensor unchanged. So handing a `BF16` `VarBuilder` to a `varmap` that `init`
+> had already filled with `F32` vars yields a **silently `F32` model** — no error, no warning, and
+> a bf16 batch sweep that measures nothing while appearing to run. A dtype-aware constructor must
+> therefore **create** the parameters at the dtype, not merely request them. v0.1.21's
+> `init_with_dtype` does exactly that and gates it with
+> `init_with_dtype_creates_every_parameter_at_the_requested_dtype`. This is C1's shape again — a
+> silent wrong answer with a green light — and I reasoned it from a signature instead of reading
+> `get`'s body.
 
 **HYPOTHESIS — why this is the highest-leverage item.** Not for the reason one would guess. At 10%
 of fp32 peak we are *not* FLOP-bound, so bf16 tensor-core throughput is not the prize and I would
