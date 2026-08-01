@@ -23,7 +23,7 @@ Every gradient edge therefore pays a full-size zero fill (one write) plus a full
 reads and a write, into another fresh allocation) — **including the case where the node has a
 single consumer and the "sum" has exactly one term, which in a transformer is nearly every
 node.** `PyTorch` stores the first gradient and accumulates only from the second onward
-(`InputBuffer::accumulate`'s move-on-first semantics); this PR gives candle the same behaviour:
+(`InputBuffer::add` stores the first gradient into the empty slot); this PR gives candle the same behaviour:
 
 ```rust
 fn accumulate(&mut self, tensor: &Tensor, grad: &Tensor) -> Result<()> {
@@ -40,8 +40,8 @@ fn accumulate(&mut self, tensor: &Tensor, grad: &Tensor) -> Result<()> {
 }
 ```
 
-plus an `accumulate_neg` twin for the four gradient rules that subtract (`Neg`, `Cos`, `Tanh`,
-rhs-of-`Sub`), so their fan-in path keeps the single `sub` it has today. 66 of the 71
+plus an `accumulate_neg` twin for the six gradient rules that subtract (`Neg`, `Cos`, `Tanh`,
+`Recip`, and the right-hand sides of `Sub` and `Div`), so their fan-in path keeps the single `sub` it has today. 66 of the 71
 `or_insert` call sites convert mechanically. Four keep the accumulator by design — `Gather` and
 `IndexSelect` scatter/index-add **into** a dense base, and the two `UpsampleNearest` sites
 overwrite their slot (a pre-existing behaviour this PR deliberately does not touch). Net diff:
@@ -81,8 +81,8 @@ bias-gradient reductions and genuine fan-in, the full-tensor swarm is gone. Agai
 
 ## Correctness evidence
 
-- `cargo test -p candle-core`: **170 passed, 0 failed**, including all 17 `grad_tests` — on the
-  0.11.0 branch and on the main cherry-pick.
+- `cargo test -p candle-core`: **171 passed on main, 170 on the 0.11.0 branch, 0 failed**,
+  including the `grad_tests` suite (7 tests) on both.
 - A downstream 64-test training suite passes unchanged, including a staged-equals-continuous
   resume property held at 1e-5.
 - The strongest gate: a whole-loop parity oracle that replays 20 recorded optimizer steps of the
