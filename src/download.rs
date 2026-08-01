@@ -6,7 +6,8 @@
 //! convenience functions for downloading `HuggingFace` model repositories
 //! with maximum throughput. Downloaded files are stored in the standard
 //! `HuggingFace` cache directory (`~/.cache/huggingface/hub/`), ensuring
-//! compatibility with [`MIModel::from_pretrained()`](crate::MIModel::from_pretrained).
+//! compatibility with `MIModel::from_pretrained` (requires one of the
+//! `transformer`, `rwkv` or `diffusion` features).
 //!
 //! Progress is displayed via `indicatif` progress bars: per-file bars show
 //! bytes, throughput, and ETA; an overall bar tracks completed files.
@@ -49,8 +50,8 @@ pub fn fetch_config_builder() -> hf_fetch_model::FetchConfigBuilder {
 /// Uses high-throughput parallel downloads for maximum speed. Files are
 /// stored in the standard `HuggingFace` cache layout
 /// (`~/.cache/huggingface/hub/`), so a subsequent call to
-/// [`MIModel::from_pretrained()`](crate::MIModel::from_pretrained)
-/// finds them without re-downloading.
+/// `MIModel::from_pretrained` (requires one of the `transformer`, `rwkv` or
+/// `diffusion` features) finds them without re-downloading.
 ///
 /// Progress is displayed via `indicatif` progress bars showing per-file
 /// bytes, throughput, and ETA.

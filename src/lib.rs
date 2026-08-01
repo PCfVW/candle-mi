@@ -15,7 +15,7 @@
 //!
 //! | Backend | Models | Feature flag |
 //! |---------|--------|-------------|
-//! | [`GenericTransformer`] | `LLaMA`, `Qwen2`, `Qwen3`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral; bidirectional masked-diffusion decoders (Dream, `a2d-qwen2`, `a2d-qwen3`); + auto-config for unknown families | `transformer` |
+//! | `GenericTransformer` | `LLaMA`, `Qwen2`, `Qwen3`, Gemma, Gemma 2, `Phi-3`, `StarCoder2`, Mistral; bidirectional masked-diffusion decoders (Dream, `a2d-qwen2`, `a2d-qwen3`); + auto-config for unknown families | `transformer` |
 //! | `GenericRwkv` | RWKV-6 (Finch), RWKV-7 (Goose) | `rwkv` |
 //! | `GenericMdlm` | MDLM masked-diffusion `DiT` (bidirectional) | `diffusion` |
 //! | `OthelloGpt` | Plain GPT-2-style backbone (learned absolute positions, full `LayerNorm`, exact-`GELU`); the `OthelloMDLM` world model | `diffusion` |
@@ -162,7 +162,11 @@
 //! differentiable forms. Train a model and probe *the same weights on the same
 //! forward pass*; `OthelloGpt::init` (`diffusion` feature) additionally gives a
 //! seeded GPT-2-recipe initialization, reproducible from `(config, seed)`
-//! alone.
+//! alone — the generator is `ChaCha8` keyed in-crate, so a future `rand`
+//! release cannot move it. `OthelloGpt::init_with_dtype` applies the same
+//! recipe at any dtype, creating every parameter at it; pass `DType::BF16` to
+//! halve activation bytes when the training batch-size ceiling is the binding
+//! constraint rather than arithmetic throughput.
 //!
 //! ```ignore
 //! // requires: --features diffusion
@@ -176,9 +180,17 @@
 //! }
 //! ```
 //!
-//! candle-mi deliberately ships **no optimizer, schedule, or data loader** —
-//! training loops are experiment-shaped and stay with the caller. See
+//! candle-mi deliberately ships **no training loop, schedule, or data loader** —
+//! those are experiment-shaped and stay with the caller. See
 //! `docs/dogfooding-feedbacks/trainable-backbones.md` for the design rationale.
+//!
+//! The one exception is state that a training loop cannot reconstruct for
+//! itself. `candle_nn::AdamW` keeps its moments and step counter private, so a
+//! run split across processes silently resets Adam's bias correction at every
+//! boundary. `optim::AdamW` (default-off `training` feature) is candle's update
+//! rule with that state reachable, so a staged run resumes exactly; its
+//! trajectory is held to candle's own by `tests/validate_optim_parity.rs`.
+//! It buys no throughput, only resumability.
 //!
 //! ## Fast downloads
 //!
@@ -268,6 +280,8 @@ pub mod interp;
 #[cfg(feature = "memory")]
 pub mod memory;
 pub mod nn_ops;
+#[cfg(feature = "training")]
+pub mod optim;
 #[cfg(feature = "rwkv")]
 pub mod rwkv;
 #[cfg(feature = "sae")]

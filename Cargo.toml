@@ -54,6 +54,14 @@ anyhow = "1.0"
 # Random number generation
 rand = "0.8"
 
+# Frozen generator for seeded weight creation (`src/util/rng.rs`). `rand`'s
+# `StdRng` documents itself as NOT reproducible across releases and points at
+# this crate as the remedy, so weight generation names `ChaCha8Rng` directly.
+# Already in the tree: `rand_chacha` 0.3 *is* `StdRng`'s implementation under
+# `rand` 0.8, so this adds no compile unit. The pin is the point -- `ChaCha8`
+# is a frozen specification, which is exactly the property being bought.
+rand_chacha = "0.3"
+
 # Statistics
 statrs = "0.17"
 
@@ -216,6 +224,10 @@ required-features = ["stoicheia"]
 
 [[test]]
 name = "fast_download"
+
+[[test]]
+name = "validate_optim_parity"
+required-features = ["training"]
 
 # Examples — gated behind features to avoid compilation errors when
 # features are not enabled.
@@ -402,6 +414,12 @@ quantized = ["dep:anamnesis", "anamnesis/bnb", "anamnesis/awq", "anamnesis/gptq"
 memory = ["dep:hypomnesis"]
 memory-debug = ["memory", "hypomnesis/debug-output"]
 probing = ["linfa", "linfa-logistic", "ndarray"]
+# Checkpointable `AdamW` (`src/optim.rs`), for training runs staged across
+# process boundaries. Default-OFF on purpose: candle-mi is an interpretability
+# crate first, and an inference-only consumer should not compile an optimizer.
+# candle-mi still ships no training loop, schedule or data loader — those are
+# experiment-shaped and stay with the caller.
+training = []
 
 [lints.rust]
 # unsafe_code is controlled via cfg_attr in lib.rs (forbid by default, deny with mmap/memory)

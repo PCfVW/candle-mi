@@ -75,8 +75,8 @@ function Invoke-Cargo {
 }
 
 # Feature sets and the all-software set — keep in sync with ci.yml.
-$featureSets = @("transformer", "rwkv,rwkv-tokenizer", "stoicheia", "clt,transformer", "quantized,transformer", "sae,transformer", "mmap,transformer", "diffusion", "memory", "memory-debug")
-$allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized"
+$featureSets = @("transformer", "rwkv,rwkv-tokenizer", "stoicheia", "clt,transformer", "quantized,transformer", "sae,transformer", "mmap,transformer", "diffusion", "memory", "memory-debug", "training")
+$allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,training"
 
 # Skip the bench_hook_* benches unless -Full (see header note).
 $benchArgs = if ($Full) { @() } else { @("--", "--skip", "bench_hook") }
@@ -148,6 +148,17 @@ function Invoke-Lanes {
         @("build", "--no-default-features", "--features", "memory")
     Invoke-Cargo "[$Tc] Tests (memory)" $Tc `
         @("test", "--no-default-features", "--features", "memory", "--lib", "--test", "validate_memory")
+
+    # Checkpointable AdamW (`training`, default-off). Adding the feature to
+    # `$featureSets` only buys a clippy lane; the parity tests need running, and
+    # they are the claim the module rests on (our transcribed update rule vs
+    # candle's own trajectory). Without this step a parity failure would pass
+    # preflight and fail CI -- precisely the mirror gap preflight exists to close.
+    Invoke-Cargo "[$Tc] Build (training)" $Tc `
+        @("build", "--no-default-features", "--features", "training")
+    Invoke-Cargo "[$Tc] Tests (training)" $Tc `
+        @("test", "--no-default-features", "--features", "training", "--lib", "--test", "validate_optim_parity")
+
     # Doctest every feature-gated public example in one pass (clt/sae/rwkv were
     # uncovered by the old transformer+memory-only lane). Mirrors ci.yml §1.10.
     Invoke-Cargo "[$Tc] Doctests (all software features)" $Tc `

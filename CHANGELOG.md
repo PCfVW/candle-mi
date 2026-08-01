@@ -7,7 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Checkpointable `AdamW` behind a new default-off `training` feature**
+  (`candle_mi::optim::AdamW`). Stock `candle_nn::AdamW` keeps its per-parameter
+  moments in a private `VarAdamW` and its step counter in a private field,
+  exposing only `new_lr`/`params`/`set_params`, so optimizer state cannot be
+  saved or restored. `VarMap::save`/`load` serializes weights and nothing else.
+  A run split across processes therefore resets Adam's bias correction (`1 -
+  beta^t`) at every boundary, applying a full warm-up correction to a model
+  already thousands of steps in — one shock per stage, landing exactly where an
+  analysis reads a quantity off consecutive checkpoints. **The update rule is
+  candle's**, transcribed verbatim from `candle-nn` 0.11.0 `src/optim.rs`
+  (© the candle authors, same licence); only the state's ownership changes,
+  from private `Var`s to a named `BTreeMap` keyed `adamw.first.*` /
+  `adamw.second.*` so it drops straight into `safetensors::save` beside the
+  weights. `tests/validate_optim_parity.rs` holds the two to the same
+  trajectory (`< 1e-6` over 1, 2, 17 and 120 steps), asserts a resumed run
+  lands where an uninterrupted one does, and carries a power control proving
+  that silently dropping the moments *would* be visible — without which the
+  resume test could pass vacuously. Those tests are CPU-only and are **not**
+  `#[ignore]`d, so they run in CI. **This buys no throughput** (`AdamW` is 2.3%
+  of a step by measurement); its value is that a staged run resumes exactly.
+  Default-off because candle-mi is an interpretability crate first and an
+  inference-only consumer should not compile an optimizer. If candle-nn gains
+  its own accessors the module should be deleted in favour of stock `AdamW`;
+  the proposed upstream patch is in
+  `docs/upstream/candle-adamw-state-accessors.md`.
+
+- **`OthelloGpt::init_with_dtype` — from-scratch initialization at any dtype.**
+  `init` hardcoded `DType::F32`, so a caller who wanted `BF16` could not get it
+  even though `load` accepts any `VarBuilder`. The new entry point takes a
+  `dtype` and **creates** every parameter at it; `init` remains an `F32` shim,
+  so existing callers, seeds and parity baselines are untouched (guarded by a
+  new `init_matches_init_with_dtype_at_f32` test). Creating rather than merely
+  requesting is the whole point: `candle_nn::VarMap::get` validates *shape only*
+  and returns a pre-inserted tensor unchanged, so passing a `BF16` `VarBuilder`
+  to a `varmap` that `init` had filled with `F32` vars would have produced a
+  silently `F32` model, and a bf16 batch sweep would have measured nothing while
+  appearing to run. The Gaussian draws are generated at `f32` and then cast, so
+  the RNG stream and the model a given seed produces do not depend on `dtype`.
+  Motivation: the training workload in
+  `docs/dogfooding-feedbacks/training-throughput-ceiling.md` is VRAM-bound at
+  batch 128 while sitting at ~10% of fp32 peak, so halving activation bytes is
+  the measured lever, not tensor-core throughput.
+- **`init_with_dtype_creates_every_parameter_at_the_requested_dtype` test.** A
+  count over `varmap`'s full parameter set, in the style of the v0.1.20
+  all-parameters-receive-gradients test, so it fails loudly on any future path
+  that reintroduces a hardcoded dtype. It asserts the created dtype only:
+  candle 0.11's CPU backend has no `BF16` matmul, so a bf16 *forward* is a
+  GPU-only path and is exercised by the GPU sweep rather than by a unit test.
+
 ### Changed
+
+- **Seeded weight generation is now algorithm-frozen (`ChaCha8`), and weights
+  for a given seed change once.** `src/util/randn.rs` promised that "a model is
+  reproducible from `(config, seed)` alone", but drew from `rand::rngs::StdRng`,
+  which `rand` 0.8 explicitly declines to guarantee across releases and which
+  has already changed implementation once (`HC-128` → `ChaCha12`). Weight
+  generation now runs through a new `src/util/rng.rs`: `ChaCha8`, a frozen
+  specification, keyed by a `SplitMix64` expansion performed **in-crate** rather
+  than by `SeedableRng::seed_from_u64`, which carries no stability guarantee of
+  its own. Every step from `u64` seed to weight bytes is now pinned inside
+  candle-mi, and a test asserts the derivation against the published `SplitMix64`
+  reference vector so it cannot drift silently.
+  **Three published surfaces produce different weights for the same seed as a
+  result:** `OthelloGpt::init`, `MIModel::from_pretrained_random_init`, and
+  `MIModel::from_pretrained_shuffled`. Any Figure-13 random-baseline or
+  dead-salmon number derived from the latter two will no longer reproduce from
+  its original seed and must be re-generated. This is a one-time change; it will
+  not happen again on a `rand` bump, which is the point. `rand_chacha` was
+  already in the dependency tree as `StdRng`'s own implementation, so naming it
+  directly adds no compile unit. Sampling (`src/diffusion/sample.rs`) is
+  deliberately unchanged: it carries the same latent hazard but a different
+  promise, and moving it would alter sampling outputs.
 
 - **candle-mi has moved to the `mi-for-the-rust-of-us` GitHub organization**
   (`github.com/mi-for-the-rust-of-us/candle-mi`), joining `anamnesis` there;
@@ -23,6 +96,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **`cargo doc` failed under several single-feature builds.** Five intra-doc
+  links pointed at feature-gated items without the guard `CONVENTIONS.md`
+  requires: `GenericTransformer` in the crate-level backend table (broken
+  whenever `transformer` was off), and four links to `from_pretrained`, which is
+  gated behind `any(transformer, rwkv, diffusion)` — two in `backend.rs`, two in
+  `download.rs`. Because the crate is `#![deny(warnings)]`, and that promotes
+  `rustdoc::broken_intra_doc_links` to an error, a downstream `cargo doc` with
+  only `stoicheia` or only `memory` enabled failed outright. All five now use
+  plain backticks and name the feature required, per the convention. The gap
+  survived because no CI or preflight lane runs `cargo doc` per feature: the
+  doctest lane enables every software feature at once, where all five targets
+  happen to exist. Verified clean across twelve feature sets, including
+  `--no-default-features` with none.
 - **Changelog comparison links skipped two releases.** The `[Unreleased]`
   link compared against `v0.1.18`, and no `[0.1.19]`/`[0.1.20]` entries
   existed, so the "unreleased" diff silently included two shipped releases.

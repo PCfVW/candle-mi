@@ -15,6 +15,13 @@
 //! logits — so it serves both the `MDLM` `DiT` and (later) decoder-style
 //! diffusion models.  Determinism is by seed: the same `seed` reproduces the
 //! same unmasking schedule and tokens.
+//!
+//! Note this deliberately keeps `rand`'s `StdRng`, rather than the frozen
+//! `ChaCha8` generator that weight creation uses.  The frozen one exists so a
+//! *model* stays reproducible across `rand` releases; sampling carries the same
+//! latent hazard but a narrower promise, and switching it would change the
+//! tokens every published sampling run produced.  Revisit deliberately, as its
+//! own decision, not as a consistency sweep.
 
 use candle_core::{DType, Device, IndexOp, Tensor};
 use rand::rngs::StdRng;

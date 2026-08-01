@@ -112,8 +112,9 @@ pub trait MIBackend: Send + Sync {
 /// High-level model wrapper combining a backend with device metadata.
 ///
 /// `MIModel` delegates to the wrapped [`MIBackend`] and adds convenience
-/// methods including [`from_pretrained`](Self::from_pretrained) for
-/// one-line model loading from `HuggingFace`.
+/// methods including `from_pretrained` (requires one of the `transformer`,
+/// `rwkv` or `diffusion` features) for one-line model loading from
+/// `HuggingFace`.
 pub struct MIModel {
     /// The underlying model backend.
     // TRAIT_OBJECT: heterogeneous model backends require dynamic dispatch
@@ -446,8 +447,9 @@ impl MIModel {
 
     /// The tokenizer loaded alongside the model, if available.
     ///
-    /// Present when the model was loaded via [`from_pretrained`](Self::from_pretrained)
-    /// and a `tokenizer.json` was found in the downloaded files.
+    /// Present when the model was loaded via `from_pretrained` (requires one of
+    /// the `transformer`, `rwkv` or `diffusion` features) and a
+    /// `tokenizer.json` was found in the downloaded files.
     #[must_use]
     pub const fn tokenizer(&self) -> Option<&MITokenizer> {
         self.tokenizer.as_ref()
@@ -814,10 +816,10 @@ fn extract_tensor_names(
 /// `get` ignores the value and returns noise of the requested shape.
 #[cfg(feature = "transformer")]
 struct RandnBackend {
-    /// Seeded RNG behind a `Mutex` (the loader drives `get` sequentially; the
-    /// `Mutex` keeps the backend `Send + Sync` while giving deterministic draws
-    /// for a fixed request order).
-    rng: std::sync::Mutex<rand::rngs::StdRng>,
+    /// Frozen seeded RNG behind a `Mutex` (the loader drives `get` sequentially;
+    /// the `Mutex` keeps the backend `Send + Sync` while giving deterministic
+    /// draws for a fixed request order).
+    rng: std::sync::Mutex<rand_chacha::ChaCha8Rng>,
     /// Standard deviation of the `N(0, std)` weight noise.
     std: f64,
     /// The real checkpoint's tensor names, so `contains_tensor` preserves the
@@ -830,9 +832,8 @@ impl RandnBackend {
     /// Build a backend seeded by `seed`, drawing `N(0, std)` weights, reporting
     /// `names` as the present tensor set.
     fn new(seed: u64, std: f64, names: std::collections::HashSet<String>) -> Self {
-        use rand::SeedableRng;
         Self {
-            rng: std::sync::Mutex::new(rand::rngs::StdRng::seed_from_u64(seed)),
+            rng: std::sync::Mutex::new(crate::util::rng::seeded(seed)),
             std,
             names,
         }
@@ -890,9 +891,9 @@ fn shuffle_checkpoint_tensors(
     seed: u64,
     dtype: DType,
 ) -> Result<std::collections::HashMap<String, Tensor>> {
-    use rand::{Rng, SeedableRng};
+    use rand::Rng;
 
-    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+    let mut rng = crate::util::rng::seeded(seed);
     let mut out: std::collections::HashMap<String, Tensor> = std::collections::HashMap::new();
 
     let mut paths: Vec<&std::path::PathBuf> = weights_paths.iter().collect();

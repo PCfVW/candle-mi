@@ -505,19 +505,54 @@ impl OthelloGpt {
         })
     }
 
-    /// Initialize a from-scratch `OthelloGpt` over `varmap` with the GPT-2
-    /// recipe, reproducible from `(config, seed)` alone.
+    /// Initialize a from-scratch `OthelloGpt` over `varmap` at `F32`, with the
+    /// GPT-2 recipe, reproducible from `(config, seed)` alone.
     ///
-    /// Where [`load`](Self::load) *reads* weights that already exist, `init`
+    /// The `F32` shim over [`init_with_dtype`](Self::init_with_dtype), which
+    /// documents the recipe in full and is the entry point to use when training
+    /// at `BF16`.
+    ///
+    /// # Shapes
+    /// - returns: a model whose [`forward`](MIBackend::forward) maps
+    ///   `[batch, seq]` token ids to `[batch, seq, vocab_size]` logits.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`] on tensor creation failure.
+    /// Returns [`MIError::Model`] if `varmap`'s lock is poisoned.
+    pub fn init(
+        config: OthelloGptConfig,
+        varmap: &VarMap,
+        device: &Device,
+        seed: u64,
+    ) -> Result<Self> {
+        Self::init_with_dtype(config, varmap, device, seed, DType::F32)
+    }
+
+    /// Initialize a from-scratch `OthelloGpt` over `varmap` at `dtype`, with the
+    /// GPT-2 recipe, reproducible from `(config, seed)` alone.
+    ///
+    /// Where [`load`](Self::load) *reads* weights that already exist, this
     /// *creates* them: `N(0, 0.02)` for embeddings and linear weights, zero
     /// biases, `LayerNorm` weight `1` / bias `0` — drawn from an explicitly
-    /// seeded Box-Muller generator, independent of the device RNG, so two runs
-    /// with the same `(config, seed)` produce byte-identical weights.  Every
-    /// parameter is registered in `varmap`, so `varmap.all_vars()` hands the
-    /// full trainable set to an optimizer, and the forward pass is tracked
-    /// end-to-end (see the `nn_ops` module).  Same-named entries already
-    /// present in `varmap` are replaced; pass a fresh `VarMap` unless
-    /// re-initialization is intended.
+    /// seeded, algorithm-frozen generator (`crate::util::rng`), independent of
+    /// the device RNG, so two runs with the same `(config, seed)` produce
+    /// byte-identical weights.  Every parameter is registered in `varmap`, so
+    /// `varmap.all_vars()` hands the full trainable set to an optimizer, and the
+    /// forward pass is tracked end-to-end (see the `nn_ops` module).
+    /// Same-named entries already present in `varmap` are replaced; pass a fresh
+    /// `VarMap` unless re-initialization is intended.
+    ///
+    /// Every parameter is **created** at `dtype`, not merely requested at it.
+    /// That distinction matters: `VarMap::get` validates shape only, so a
+    /// pre-inserted `F32` tensor is handed back unchanged even under a `BF16`
+    /// `VarBuilder`, which would yield a silently `F32` model. Passing
+    /// `DType::BF16` halves activation bytes, the knob that moves the training
+    /// batch-size ceiling.
+    ///
+    /// The Gaussian draws are generated at `f32` and then cast, so the RNG
+    /// stream — and therefore the model a given seed produces — does not depend
+    /// on `dtype`; only the storage precision does.
     ///
     /// # Shapes
     /// - returns: a model whose [`forward`](MIBackend::forward) maps
@@ -530,15 +565,14 @@ impl OthelloGpt {
     // `.bias` / `.weight` are checkpoint tensor-name suffixes, not file
     // extensions — the case-sensitivity lint does not apply to them.
     #[allow(clippy::case_sensitive_file_extension_comparisons)]
-    pub fn init(
+    pub fn init_with_dtype(
         config: OthelloGptConfig,
         varmap: &VarMap,
         device: &Device,
         seed: u64,
+        dtype: DType,
     ) -> Result<Self> {
-        use rand::SeedableRng;
-
-        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+        let mut rng = crate::util::rng::seeded(seed);
         {
             let mut data = varmap.data().lock().map_err(|_| {
                 MIError::Model(candle_core::Error::Msg(
@@ -547,19 +581,22 @@ impl OthelloGpt {
             })?;
             for (name, dims) in weight_shapes(&config) {
                 let tensor = if name.ends_with(".bias") {
-                    Tensor::zeros(dims, DType::F32, device)?
+                    Tensor::zeros(dims, dtype, device)?
                 } else if is_norm_weight(&name) {
-                    Tensor::ones(dims, DType::F32, device)?
+                    Tensor::ones(dims, dtype, device)?
                 } else {
                     let n = dims.iter().product();
                     let samples = crate::util::randn::randn_f32(&mut rng, n, 0.02);
-                    Tensor::from_vec(samples, dims, device)?
+                    // Not a PROMOTE: the draws are `f32` so the stream stays
+                    // dtype-independent, and this stores them at the model's
+                    // precision — `F32` (a no-op) or narrower, never widening.
+                    Tensor::from_vec(samples, dims, device)?.to_dtype(dtype)?
                 };
                 data.insert(name, Var::from_tensor(&tensor)?);
             }
         } // release the lock — `load` re-enters it through the VarBuilder
 
-        Self::load(config, VarBuilder::from_varmap(varmap, DType::F32, device))
+        Self::load(config, VarBuilder::from_varmap(varmap, dtype, device))
     }
 
     /// Access the model configuration.
@@ -834,6 +871,83 @@ mod tests {
             missing.is_empty(),
             "parameters receiving no gradient (a fused-op barrier regressed): {missing:?}"
         );
+    }
+
+    // The dtype counterpart of the gradient count above, and the reason
+    // `init_with_dtype` *creates* tensors rather than only passing `dtype` down
+    // to `load`: `VarMap::get` validates shape ONLY (candle-nn 0.11,
+    // var_map.rs:103-111), returning any pre-inserted tensor unchanged. A dtype
+    // parameter alone would therefore hand back the F32 vars `init` had already
+    // inserted, producing a silently F32 model under a BF16 `VarBuilder` — and a
+    // bf16 batch sweep would then measure nothing while appearing to run. Being
+    // a count over all vars, this fails on any future path that reintroduces a
+    // hardcoded dtype.
+    #[test]
+    fn init_with_dtype_creates_every_parameter_at_the_requested_dtype() {
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let model =
+            OthelloGpt::init_with_dtype(tiny_config(), &varmap, &dev, 0, DType::BF16).unwrap();
+
+        // Block-scoped lock so the guard is dropped before the asserts.
+        let (n_params, mut wrong) = {
+            let data = varmap.data().lock().unwrap();
+            let wrong: Vec<String> = data
+                .iter()
+                .filter(|(_, var)| var.dtype() != DType::BF16)
+                .map(|(name, var)| format!("{name} ({:?})", var.dtype()))
+                .collect();
+            (data.len(), wrong)
+        };
+        wrong.sort();
+        assert_eq!(n_params, 29, "tiny 2-layer config must have 29 parameters");
+        assert!(
+            wrong.is_empty(),
+            "parameters not created at the requested dtype: {wrong:?}"
+        );
+
+        // The model itself is the other half of the assertion: `load` read every
+        // var back through the `BF16` `VarBuilder` without a shape or dtype
+        // error, so the weights the forward will use are the ones checked above.
+        assert_eq!(model.config().n_layer, 2);
+
+        // Not asserted here: that the forward *returns* BF16 logits. candle
+        // 0.11's CPU backend has no BF16 matmul ("unsupported dtype BF16 for op
+        // matmul"), so a bf16 forward is a GPU-only path and does not belong in
+        // a CPU unit test. It is exercised by the bf16 batch sweep on the GPU.
+    }
+
+    /// `init` must remain the exact `F32` shim, so existing seeds and every
+    /// parity baseline derived from them keep their meaning.
+    #[test]
+    fn init_matches_init_with_dtype_at_f32() {
+        let dev = Device::Cpu;
+        let shim = {
+            let varmap = VarMap::new();
+            OthelloGpt::init(tiny_config(), &varmap, &dev, 3).unwrap();
+            varmap
+        };
+        let explicit = {
+            let varmap = VarMap::new();
+            OthelloGpt::init_with_dtype(tiny_config(), &varmap, &dev, 3, DType::F32).unwrap();
+            varmap
+        };
+
+        let dump = |vm: &VarMap| -> Vec<(String, Vec<f32>)> {
+            let mut out: Vec<(String, Vec<f32>)> = vm
+                .data()
+                .lock()
+                .unwrap()
+                .iter()
+                .map(|(name, var)| {
+                    let values = var.as_tensor().flatten_all().unwrap().to_vec1().unwrap();
+                    (name.clone(), values)
+                })
+                .collect();
+            out.sort_by(|a, b| a.0.cmp(&b.0));
+            out
+        };
+        assert_eq!(dump(&shim), dump(&explicit));
     }
 
     #[test]

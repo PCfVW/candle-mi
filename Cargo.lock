@@ -354,6 +354,7 @@ dependencies = [
  "linfa-logistic",
  "ndarray",
  "rand 0.8.7",
+ "rand_chacha 0.3.1",
  "safetensors 0.4.5",
  "serde",
  "serde_json",

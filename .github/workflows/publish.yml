@@ -146,17 +146,31 @@ jobs:
       - name: Clippy (memory-debug, pedantic)
         run: cargo clippy --no-default-features --features memory-debug -- -W clippy::pedantic
 
+      # Checkpointable AdamW (`training`, default-off). Gates real source, so
+      # this is a full build + clippy + test lane, not a resolution guard. The
+      # parity tests are CPU-only and NOT #[ignore]d, so unlike the oracle suite
+      # they actually execute here: they hold our transcribed update rule to
+      # candle's own trajectory, which is the claim the module rests on.
+      - name: Build (training)
+        run: cargo build --no-default-features --features training
+
+      - name: Clippy (training, pedantic)
+        run: cargo clippy --no-default-features --features training -- -W clippy::pedantic
+
+      - name: Tests (training)
+        run: cargo test --no-default-features --features training --lib --test validate_optim_parity
+
       # Doctests for every feature-gated public example in one pass (audit §1.10);
       # the old transformer+memory-only lane left clt/sae/rwkv doc examples
       # uncovered. Mirrors ci.yml so publish can't ship a broken doctest.
       - name: Doctests (all software features)
-        run: cargo test --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory" --doc
+        run: cargo test --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory,training" --doc
 
       - name: Build (no default features)
         run: cargo build --no-default-features
 
       - name: Build (all software features)
-        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized"
+        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,training"
 
       # Publish
       - name: Publish to crates.io
