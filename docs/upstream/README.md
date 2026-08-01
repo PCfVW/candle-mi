@@ -19,7 +19,7 @@ upstream fix is a bonus that later lets us delete code.
 | [candle-fused-ops-drop-gradients-v1-standalone-report.md](candle-fused-ops-drop-gradients-v1-standalone-report.md) | `candle-nn` | bug report | **superseded, do not file** |
 | [candle-adamw-state-accessors.md](candle-adamw-state-accessors.md) | `candle-nn` | PR (additive, +80/-0) | **FILED 2026-08-01** as [candle#3819](https://github.com/huggingface/candle/pull/3819) |
 | candle-nn fused ops: `CustomOp::bwd` for `softmax_last_dim` + `layer_norm` | `candle-nn` | PR (the fix for the [gradient-drop cluster](candle-fused-ops-drop-gradients-v2-cluster-map.md): #3011, #3752…) | **READY 2026-08-01** — commit `7e2aecb2` on the experiment branch; gradient-parity tested vs autograd; V9 step 0 bit-identical to PyTorch; needs a main cherry-pick before filing |
-| [candle-gradstore-accumulate.md](candle-gradstore-accumulate.md) | `candle-core` | PR (behaviour-preserving, +115/-133) | **READY 2026-08-01** — branch `gradstore-accumulate` on `origin/main`, 171/171 tests, V9-gated at 1.78e-07; filing is Éric's action |
+| [candle-gradstore-accumulate.md](candle-gradstore-accumulate.md) | `candle-core` | PR (behaviour-preserving, +115/-133) | **FILED 2026-08-01** as [candle#3822](https://github.com/huggingface/candle/pull/3822) |
 
 On the two versions of the fused-ops document, following the `docs/conventions/`
 pattern where the version lives in the filename: v1 was drafted as a standalone

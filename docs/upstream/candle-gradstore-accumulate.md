@@ -3,10 +3,11 @@
 **Title for the PR:** `candle-core`: store the first gradient of each node directly instead of
 `zeros_like` + `add` — measured 25% off a training step
 
-**Status: READY TO FILE (2026-08-01).** Branch `gradstore-accumulate` of the local clone, one
-commit cherry-picked cleanly onto `origin/main` (`6e823a43`); `backprop.rs` is byte-identical
-between main and 0.11.0, so the same commit validates on both. Filing is Éric's action, as with
-candle#3819.
+**Status: FILED (2026-08-01)** as [candle#3822](https://github.com/huggingface/candle/pull/3822),
+from `PCfVW:gradstore-accumulate` (one commit on `origin/main` `6e823a43`; `backprop.rs` is
+byte-identical between main and 0.11.0, so the same commit validates on both). Pre-flight at
+filing time: fmt clean, clippy zero findings, candle-core 171/171, stock candle-nn 58/58
+against the patched core.
 
 ## What this changes
 
