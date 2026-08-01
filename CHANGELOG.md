@@ -60,6 +60,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **`scripts/resurrect.ps1` now measures WDDM spill, and can run single
+  entries.** Entries marked `Spill` (currently `longrope`) are wrapped in
+  `hmn spill --json` (hypomnesis), and `RESURRECTION.md` gains a **Peak spill**
+  column recording growth of resident shared-system memory above the benign
+  staging-heap baseline, its duration, and peak demand. That growth is the real
+  signal: during a spill NVML `used` pins near capacity and cannot show how far
+  over budget a run went. First measurement, `longrope` (Phi-3.5-mini at F32 on
+  a 16 GiB card): **peak ~24.2 GiB, spilling 8809 MiB for 15m06s of a 15m12s
+  run**, which is 99% of the runtime and the mechanism behind that entry running
+  ~15x its neighbours. It also revises the earlier reading: the deficit is
+  ~8.8 GiB, not the ~433 MiB that weights alone imply, so a narrower dtype must
+  reach the activations and not merely the weights. `-SpillIntervalMs` exposes
+  the sampling rate (100 ms, hypomnesis's own default).
+  Also new: `-Only` / `-Skip` accepting 1-based numbers **or** stable per-entry
+  slugs, `-List` printing the number/slug map with each entry's tier and
+  last-verified state, and a guard so a partial run stamps
+  `partial (N of 20: …)` rather than a tier name implying full coverage.
+  Matching is exact, never prefix, since `clt` and `clt_qwen3` both exist; an
+  unknown token is a hard error rather than a silent empty selection.
+  `RESURRECTION.md` migrated from 6 to 7 columns, preserving every prior date
+  and wall-clock.
 - **Seeded weight generation is now algorithm-frozen (`ChaCha8`), and weights
   for a given seed change once.** `src/util/randn.rs` promised that "a model is
   reproducible from `(config, seed)` alone", but drew from `rand::rngs::StdRng`,

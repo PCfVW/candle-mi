@@ -19,16 +19,41 @@
 #             the anacrousis 28x15 matrix) — ~40-50 min
 #   -Full     literally everything, incl. the two slow outliers — ~1.5-3 h
 #
+# Selecting entries (so refreshing one costs a minute, not a tier):
+#   -Only <tokens>  run ONLY these. 1-based numbers as printed by -List, or the
+#                   stable per-entry slugs: `-Only longrope`, `-Only 12`,
+#                   `-Only clt,sae`. Prefer slugs in anything you write down —
+#                   inserting an entry renumbers everything after it. Matching is
+#                   exact, never prefix (`clt` and `clt_qwen3` both exist), and an
+#                   unknown token is an error, never a silent empty run.
+#   -Skip <tokens>  drop these from whatever the tier or -Only chose.
+#                   `-Skip longrope` is the usual one: that entry alone is ~15 of
+#                   the ~44 min default tier, so skipping it gives ~28 min.
+#   Any selector makes the run PARTIAL, and it stamps "partial (N of 20: ...)"
+#   rather than a tier name — a three-entry run must never later read as full
+#   coverage.
+#
 # Read-only:
 #   -Status   print how stale the suite is (oldest entry, entries past the
 #             threshold, any failing) and exit — runs NOTHING, downloads NOTHING.
 #             `-StaleDays N` sets the threshold (default 50).
+#   -List     print the number/slug map with each entry's tier and last-verified
+#             state, then exit. Start here to find the token you want.
 #
 # Timing: each entry's end-to-end wall-clock is recorded in RESURRECTION.md (a
 #   per-entry column, advanced only on a PASS — same rule as "last verified") and
 #   printed as a "slowest first" summary. `-SpillWarnSeconds N` (default 300) flags
 #   a step slow enough to suspect VRAM spill to shared memory (e.g. longrope/
 #   Phi-3.5-mini at F32 overflows a 16 GiB card and crawls at ~15x its warm time).
+#
+# Spill measurement: entries marked `Spill = $true` (and everything under
+#   -SpillProbe) run wrapped in `hmn spill --json` (hypomnesis), recording the
+#   growth of resident shared-system memory above its benign baseline, how long
+#   the spill lasted, and peak demand. That growth is the signal that matters:
+#   during a spill NVML "used" pins near capacity and cannot show how far over
+#   budget a run went. `-SpillIntervalMs N` sets the sampling rate (default 100,
+#   matching hypomnesis; below ~50 ms buys no resolution). Absent `hmn`, the run
+#   proceeds with a note — instrumentation, never a gate.
 #
 # Device policy: GPU tests run on the GPU; CPU-parity tests (*_cpu, plt,
 # clt_qwen3) run on CPU by design. Runs with the default feature set so `cuda`

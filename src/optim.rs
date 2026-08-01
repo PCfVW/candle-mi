@@ -172,8 +172,10 @@ impl AdamW {
         self.step += 1;
         let (lr, beta1, beta2) = (self.params.lr, self.params.beta1, self.params.beta2);
         let lr_lambda = lr * self.params.weight_decay;
-        // CAST: usize → i32 for `powi`; a step count stays far below `i32::MAX`,
-        // and saturating there keeps the correction factor finite regardless.
+        // `usize` → `i32` for `powi`. Deliberately `try_from` and not an `as`
+        // cast, which the conventions reserve for when truncation is the
+        // intent: a step count stays far below `i32::MAX`, and saturating there
+        // keeps the bias-correction factor finite rather than wrapping negative.
         let exponent = i32::try_from(self.step).unwrap_or(i32::MAX);
         let scale_m = 1.0 / (1.0 - beta1.powi(exponent));
         let scale_v = 1.0 / (1.0 - beta2.powi(exponent));
