@@ -136,10 +136,36 @@ which is 66% of the step and proportional to tape length. `CustomOp` with an imp
 would give the fused kernel *and* a gradient *and* a single node — strictly better than either
 existing path, if tape length is really what dominates.
 
-**I have not measured tape length, and J3 is exactly the shape of error I would be repeating.**
-*The measurement that settles it:* an `nsys` profile of the backward, or simply counting nodes and
-timing `backward()` alone with composed vs. fused-plus-`no_bwd` forwards. Until that number exists
-this item should not be scheduled. **Effort if confirmed:** 2–4 days for the three ops.
+**UPDATE 2026-08-01 — MEASURED, and it survived. Item 2 is now the recommended work.**
+
+`Tensor::sorted_nodes()` makes the tape directly observable, so the cheap version of this test
+needed no `nsys`. On the real training objective (RTX 5060 Ti, batch 128, 20 steps):
+
+| | |
+|---|---|
+| nodes in the backward graph | **617** |
+| `softmax_last_dim`, removable per call | 6 × 6 sites = 36 |
+| `layer_norm`, removable per call | **14 × 13 sites = 182** |
+| a perfect fusion would remove | **218 nodes — 35.3% of the tape** |
+| optimistic saving at uniform node cost | 146 ms, **22.9% of the step** |
+
+The test was built to **kill** the hypothesis — the node counts are exact but the uniform
+per-node cost is deliberately generous, since a matmul backward costs far more than the
+broadcasts a composed norm expands into. A result under ~10% would have closed the item. 35.3%
+did not, so the real saving is somewhere between "worthwhile" and 22.9%, and the only way to
+learn which is to build one.
+
+**The finding that changes the plan: it is ONE op, not three.** `rms_norm` is never called by
+`OthelloGpt` (zero occurrences — it is the GPT-2 recipe, full `LayerNorm` throughout), and
+`layer_norm` alone is **83%** of the available reduction. Scope Item 2 as a single
+`CustomOp::bwd()` for `layer_norm`, measure `backward()` against the composed form, and only then
+decide about `softmax_last_dim`. **Effort: ~1 day, not 2–4.**
+
+*Two accounting corrections made before publishing these numbers, both in the optimistic
+direction and therefore dangerous here:* a fusion collapses an expansion to **one** node rather
+than zero; and `layer_norm`'s `weight`/`bias` `Var` leaves sit on the tape but a fused kernel
+still consumes them, so they are not removable. Together they moved the figure 39.5% → 35.3%.
+The instrument is `canvas/examples/profile_step.rs`, which now reports all of this on every run.
 
 ## Item 3 — checkpointable `AdamW` (queued for v0.1.21; an *ergonomics* item, not a speed one)
 
@@ -190,14 +216,24 @@ Two code changes the measurements have already priced at approximately zero, and
 
 ## Recommendation, in order
 
-1. **Item 1 now.** Small, non-breaking if added as `init_with_dtype`, and it unblocks the one knob
-   measured to matter. Ship with a CHANGELOG note about per-dtype parity bands.
-2. **Item 3 with it** (v0.1.21, as already planned), labelled as resumability, not speed.
-3. **Then measure** the backward with `nsys` before deciding Item 2. If the tape hypothesis holds,
-   `CustomOp::bwd()` is candle-mi's largest available win and is worth the 2–4 days. If it does
-   not, the remaining gap is core candle's and the honest move is an upstream issue with
-   `profile_step.rs` attached — a 5.1× reproducer against `PyTorch` on identical arithmetic is a
-   good bug report and costs a day.
+*Superseded 2026-08-01 by v0.1.21 and the tape measurement; kept for the record, with the
+outcome of each step.*
+
+1. ~~**Item 1 now.**~~ **DONE** in v0.1.21 as `init_with_dtype`, with the per-dtype parity-band
+   note in the CHANGELOG. (See the correction above: a `BF16` `VarBuilder` alone is not enough.)
+2. ~~**Item 3 with it.**~~ **DONE** in v0.1.21 behind the default-off `training` feature, labelled
+   as resumability rather than speed; the upstream accessors PR is filed as candle#3819.
+3. ~~**Then measure** the backward with `nsys` before deciding Item 2.~~ **DONE, and no `nsys` was
+   needed** — `sorted_nodes()` answered it in an afternoon. The tape hypothesis **held**.
+
+**The list as it now stands:**
+
+1. **`CustomOp::bwd()` for `layer_norm`** — ~1 day, 83% of the measured reduction, and the only
+   remaining item that can move the 66%. Build it, time `backward()` against the composed form.
+2. **Then `softmax_last_dim`**, worth the other 17%, only if the first one pays.
+3. **The upstream issue regardless.** Even a complete win here leaves candle's autograd slower
+   than `PyTorch`'s on identical arithmetic, and the reproducer is already written. A 5.1× gap
+   with a runnable example is a good bug report and costs about a day.
 
 ## The method note
 
