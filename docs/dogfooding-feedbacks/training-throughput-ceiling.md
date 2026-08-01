@@ -99,16 +99,41 @@ the constructor was not.
 > silent wrong answer with a green light — and I reasoned it from a signature instead of reading
 > `get`'s body.
 
-**HYPOTHESIS — why this is the highest-leverage item.** Not for the reason one would guess. At 10%
-of fp32 peak we are *not* FLOP-bound, so bf16 tensor-core throughput is not the prize and I would
-not claim it. The prize is **J2**: we are VRAM-bound at batch 128, and 192 already fails. Halving
-activation bytes should move that ceiling, and batch size is the one knob measured to matter.
-Estimated 1.5–2.5× compounded — *estimated*; **the measurement that settles it** is
-`sweep_batch.sh` re-run under bf16, ten minutes once `init` accepts a dtype.
+**MEASURED 2026-08-01 — bf16 is worth 1.27×, and my stated reason for it was wrong.**
 
-Note this argument survives the platform caveat: on Windows the 192 failure is a soft WDDM
-collapse and on Linux it is a hard OOM, but "we cannot afford the activations" is the same
-constraint either way, and halving them relieves it either way.
+Same card, same hour, both arms (`sweep_batch.sh`, now with a `BF16=1` knob):
+
+```
+F32    128 -> 31.4k tok/s   192 -> 31.1k   256 -> OOM      epoch 26.6 min
+BF16   128 -> 40.0k tok/s   192 -> 39.8k   256 -> 40.0k    epoch 20.9 min   384 -> OOM
+```
+
+The argument in the draft below was: *we are VRAM-bound at 128, so halving activation bytes lifts
+the ceiling, and batch size is the one knob measured to matter.* **The ceiling did move — 192 to
+256 — and it bought nothing, because throughput is FLAT in batch size** (31.4k vs 31.1k; 40.0k vs
+39.8k vs 40.0k). Batch size does not move throughput on this workload at all.
+
+In hindsight J1 predicted that and I did not join it up: at ~10% of fp32 peak we are launch- and
+bandwidth-bound, not occupancy-bound, so there is no under-filled GPU for a larger batch to fill.
+
+bf16 still pays — **1.27×**, epoch 26.6 → 20.9 min — but through halved memory traffic per token,
+the mechanism this section explicitly ruled out as "not the prize". Below the 1.5–2.5× estimate,
+and right for a reason I had rejected. **Retained as an accepted item**: 1.27× for a dtype
+argument is a good trade, and it compounds with anything the backward work buys.
+
+*Draft reasoning kept below, struck, because the estimate was labelled HYPOTHESIS and the point
+of that label is to be checkable afterwards.*
+
+> ~~The prize is **J2**: we are VRAM-bound at batch 128, and 192 already fails. Halving activation
+> bytes should move that ceiling, and batch size is the one knob measured to matter. Estimated
+> 1.5–2.5× compounded.~~
+
+**A second correction, to J2 itself.** The table above records "192 → 13.9k, collapses". It did
+not reproduce: 192 measured **31.1k**, flat. The 128 figure replicated exactly (31.3k → 31.4k), so
+this is not drift — it is specific to 192, and the original run had other processes holding VRAM.
+WDDM spill is real, but the **threshold depends on free VRAM, not on batch size**, and recording
+it as a property of batch 192 was wrong. A Linux reader was already told to expect an OOM instead;
+the sharper advice is to wrap the sweep in `hmn spill --json` (Windows only) and observe it.
 
 **Effort:** add `dtype: DType` to `init` (or an `init_with_dtype`, keeping `init` as an F32
 shim — candle-mi is published, so the non-breaking form is probably right).
