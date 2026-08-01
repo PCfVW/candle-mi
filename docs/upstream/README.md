@@ -17,7 +17,7 @@ upstream fix is a bonus that later lets us delete code.
 |---|---|---|---|
 | [candle-fused-ops-drop-gradients-v2-cluster-map.md](candle-fused-ops-drop-gradients-v2-cluster-map.md) | `candle-nn` | map plus the posted comment | **comment posted 2026-08-01** as [candle#2168 comment-5150289607](https://github.com/huggingface/candle/issues/2168#issuecomment-5150289607) |
 | [candle-fused-ops-drop-gradients-v1-standalone-report.md](candle-fused-ops-drop-gradients-v1-standalone-report.md) | `candle-nn` | bug report | **superseded, do not file** |
-| [candle-adamw-state-accessors.md](candle-adamw-state-accessors.md) | `candle-nn` | PR (additive, ~15 lines) | drafted 2026-07-30, ready to file |
+| [candle-adamw-state-accessors.md](candle-adamw-state-accessors.md) | `candle-nn` | PR (additive, +80/-0) | **FILED 2026-08-01** as [candle#3819](https://github.com/huggingface/candle/pull/3819) |
 
 On the two versions of the fused-ops document, following the `docs/conventions/`
 pattern where the version lives in the filename: v1 was drafted as a standalone

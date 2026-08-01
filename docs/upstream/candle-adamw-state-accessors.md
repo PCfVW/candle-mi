@@ -114,43 +114,47 @@ Only the step counter needs a real setter, since `usize` has no such trick.
 
 ## Evidence that it works
 
-Two tests added to `candle-nn/tests/optim.rs`. The first checkpoints an optimizer
-mid-run, restores into a *fresh* `AdamW` as a new process would, and compares
-against an uninterrupted run:
+Two tests added to `candle-nn/tests/optim.rs`, both driving `loss = sum(w^2)`
+from `w = [1, 2, 3]` with `ParamsAdamW::default()`.
+
+`adamw_resume_matches_uninterrupted_run` runs six steps straight, then runs
+three, checkpoints `step_t` and `moments()`, restores both into a **fresh**
+`AdamW` as a new process would, and runs the remaining three:
 
 ```
-uninterrupted 6 steps  : [0.99394083, 1.9938803, 2.9938202]
-checkpointed 3 + 3     : [0.99394083, 1.9938803, 2.9938202]
+uninterrupted 6 steps   : [0.99394083, 1.9938803, 2.9938202]
+checkpointed 3 + 3      : [0.99394083, 1.9938803, 2.9938202]
 ```
 
-Bit-identical.
+Bit-identical, hence `assert_eq!` rather than a tolerance.
 
-The second is a control, so the first cannot pass vacuously. It performs the same
-resume *without* restoring the moments:
+`adamw_losing_the_moments_is_visible` is the control, so the first test cannot
+pass vacuously. It performs the same resume and restores the step counter, but
+**not** the moments, which isolates the moments as the variable:
 
 ```
-resumed WITHOUT moments: [0.9939403, 1.99388, 2.9938202]
+resumed WITHOUT moments : [0.99480873, 1.9947485, 2.9946885]
 ```
 
-Different, as it must be. In fairness the difference here is small, because the
-toy objective (`loss = sum(w^2)`) converges almost immediately and leaves the
-moments little history to carry. On a real run the gap is far larger. We mention
-it so that the small numbers above are not read as evidence that the underlying
-problem is small.
+Roughly 8.7e-4 away from the uninterrupted run, on a convex toy objective that
+converges in a handful of steps and therefore gives the moments very little
+history to carry. A real staged run diverges considerably further; the point
+here is only that the loss of state is detectable at all, so the resume test is
+testing something.
 
 Full run of the existing test target, with candle's own optimizer tests included
 to show that nothing regressed:
 
 ```
 running 6 tests
-test resume_accessors::resumed_run_matches_uninterrupted_run ... ok
-test resume_accessors::losing_the_moments_is_visible ... ok
+test adamw_losing_the_moments_is_visible ... ok
+test adamw_resume_matches_uninterrupted_run ... ok
 test sgd_optim ... ok
 test adamw_linear_regression_varmap ... ok
 test adamw_linear_regression ... ok
 test sgd_linear_regression ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
 ```
 
 ## One caveat worth documenting
@@ -181,11 +185,32 @@ change. The iterator returns plain `&Var` triples and keeps the struct private.
 ## Notes
 
 - Purely additive. No existing signature changes, so it is a minor-version item.
-- Verified with `cargo check --lib` and `cargo test --test optim` against
-  `candle-nn` 0.11.0.
-- Context: this would replace a transcribed copy of `AdamW` that we maintain
-  downstream, with the update rule taken verbatim from `candle-nn` 0.11.0 and held
-  to candle's own trajectory by a parity test at `< 1e-6` over 1, 2, 17 and 120
-  steps. It has driven three real resume cycles. If these accessors land we delete
-  the copy and call stock `AdamW`. There is no urgency on our side, since the copy
-  works; the point of the PR is that the next person should not have to write one.
+- Verified against current `main`: `cargo test -p candle-nn --test optim` passes
+  6/6 including the four pre-existing optimizer tests, `cargo fmt` is clean, and
+  `cargo clippy -p candle-nn --tests -- -D warnings` is clean.
+- `candle-nn/src/optim.rs` is byte-identical across 0.9.2, 0.11.0 and current
+  `main` (201 lines, `diff` returns nothing between any pair), so this is settled
+  API rather than something in flux.
+- **Checked for overlap before filing**, since two limits on one path is worse
+  than none: no open issue or PR touches optimizer state. The nearest items are
+  #695 (optimizer trait), #685 (scheduler) and #402 (parameter grouping), all
+  closed in 2023 and none about saving or restoring state.
+- Context: this would replace a transcribed copy of `AdamW` that we now **ship in
+  a published crate**: [candle-mi
+  0.1.21](https://crates.io/crates/candle-mi), behind a default-off `training`
+  feature, as
+  [`optim::AdamW`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/v0.1.21/src/optim.rs).
+  The update rule is taken verbatim from `candle-nn` 0.11.0 with attribution and
+  the same licence; only the state's ownership changes. It is held to candle's own
+  trajectory by
+  [`tests/validate_optim_parity.rs`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/v0.1.21/tests/validate_optim_parity.rs)
+  at `< 1e-6` over 1, 2, 17 and 120 steps, with a resume test and a power control
+  showing that silently dropping the moments *would* be visible. Those run in CI,
+  not behind an `#[ignore]`. It has driven three real resume cycles on a 40-epoch
+  run.
+
+  That the copy is now published rather than private is the honest argument for
+  this patch: a second implementation of candle's own update rule is on crates.io
+  because fifteen lines of accessor do not exist upstream, and anyone else staging
+  a training run will write a third. If these accessors land we delete ours and
+  call stock `AdamW`. There is no urgency on our side, since the copy works.
