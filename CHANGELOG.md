@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.21] - 2026-08-01
+
 ### Added
 
 - **Checkpointable `AdamW` behind a new default-off `training` feature**
@@ -2166,7 +2168,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.20...HEAD
+[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.21...HEAD
+[0.1.21]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.20...v0.1.21
 [0.1.20]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.19...v0.1.20
 [0.1.19]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.18...v0.1.19
 [0.1.18]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.17...v0.1.18
