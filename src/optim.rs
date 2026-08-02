@@ -80,6 +80,33 @@ pub struct AdamW {
     step: usize,
     /// Learning rate, betas, epsilon, decoupled weight decay.
     params: ParamsAdamW,
+    /// The hot-path cache: both moment sets flattened into one buffer each, in
+    /// [`Self::vars`] order. `None` until the first full-gradient step builds it,
+    /// and dropped whenever the named maps are written from outside
+    /// ([`Self::restore`]) or a step must fall back to the per-parameter path.
+    ///
+    /// **Why it exists.** The per-parameter update launches ~13 small kernels per
+    /// parameter per step; on a 29-parameter model that is ~380 launches doing
+    /// what 13 launches over one flat buffer do. This is the flat-buffer
+    /// equivalent of `PyTorch`'s `foreach` multi-tensor path (see
+    /// `ForeachFunctors.cuh`'s `TensorListMetadata`, which batches many tensors
+    /// per launch; a concatenation achieves the same launch count without a
+    /// custom kernel). Elementwise arithmetic is position-blind, so the flat
+    /// trajectory is bit-identical to the per-parameter one — held by
+    /// `tests/validate_optim_parity.rs` against stock candle either way.
+    flat: Option<FlatMoments>,
+}
+
+/// The flattened moments plus the layout needed to split them back by name.
+#[derive(Debug)]
+struct FlatMoments {
+    /// First moments, one flat `f32` buffer in [`AdamW::vars`] order.
+    m: Tensor,
+    /// Second moments, same layout.
+    v: Tensor,
+    /// `(offset, len)` per parameter, in [`AdamW::vars`] order — the shapes come
+    /// from the live `Var`s, so they are not duplicated here.
+    spans: Vec<(usize, usize)>,
 }
 
 impl AdamW {
@@ -132,6 +159,7 @@ impl AdamW {
             second,
             step: 0,
             params,
+            flat: None,
         })
     }
 
@@ -170,12 +198,98 @@ impl AdamW {
     /// Returns [`MIError::Model`](crate::MIError::Model) on any tensor failure.
     pub fn step(&mut self, grads: &GradStore) -> Result<()> {
         self.step += 1;
+        let every_grad_present = self
+            .vars
+            .iter()
+            .all(|(_, var)| grads.get(var.as_tensor()).is_some());
+        if every_grad_present && !self.vars.is_empty() {
+            self.step_flat(grads)
+        } else {
+            // A partially-connected graph keeps the historical semantics exactly:
+            // parameters without a gradient keep their moments untouched. The flat
+            // cache cannot express "skip", so it is synced back into the named maps
+            // and dropped before the per-parameter path runs.
+            self.sync_named_from_flat()?;
+            self.step_per_param(grads)
+        }
+    }
+
+    /// The hot path: both moment sets and the whole update as flat buffers.
+    ///
+    /// One `cat` per input stream and ~13 elementwise launches over a single
+    /// buffer replace ~13 launches PER parameter. Elementwise arithmetic is
+    /// position-blind, so every parameter element sees bit-for-bit the update the
+    /// per-parameter path computes with the same scalars.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`](crate::MIError::Model) on any tensor failure.
+    fn step_flat(&mut self, grads: &GradStore) -> Result<()> {
         let (lr, beta1, beta2) = (self.params.lr, self.params.beta1, self.params.beta2);
         let lr_lambda = lr * self.params.weight_decay;
         // `usize` → `i32` for `powi`. Deliberately `try_from` and not an `as`
         // cast, which the conventions reserve for when truncation is the
         // intent: a step count stays far below `i32::MAX`, and saturating there
         // keeps the bias-correction factor finite rather than wrapping negative.
+        let exponent = i32::try_from(self.step).unwrap_or(i32::MAX);
+        let scale_m = 1.0 / (1.0 - beta1.powi(exponent));
+        let scale_v = 1.0 / (1.0 - beta2.powi(exponent));
+
+        if self.flat.is_none() {
+            self.flat = Some(self.build_flat()?);
+        }
+        let Some(flat) = self.flat.as_ref() else {
+            // EXPLICIT: unreachable -- the branch above just filled the cache;
+            // structured as `let else` so no panic path exists even in theory.
+            return Ok(());
+        };
+
+        let mut grad_parts = Vec::with_capacity(self.vars.len());
+        let mut param_parts = Vec::with_capacity(self.vars.len());
+        for (_, var) in &self.vars {
+            let Some(grad) = grads.get(var.as_tensor()) else {
+                // The caller checked every gradient is present; a disappearance
+                // between the check and here would be a logic error upstream.
+                return Err(crate::MIError::Model(candle_core::Error::Msg(
+                    "gradient vanished between presence check and flat gather".to_string(),
+                )));
+            };
+            grad_parts.push(grad.flatten_all()?);
+            param_parts.push(var.as_tensor().flatten_all()?);
+        }
+        let g = Tensor::cat(&grad_parts, 0)?;
+        let p = Tensor::cat(&param_parts, 0)?;
+
+        let next_m = ((&flat.m * beta1)? + (&g * (1.0 - beta1))?)?;
+        let next_v = ((&flat.v * beta2)? + (g.sqr()? * (1.0 - beta2))?)?;
+        let m_hat = (&next_m * scale_m)?;
+        let v_hat = (&next_v * scale_v)?;
+        let decayed = (p * (1.0 - lr_lambda))?;
+        let adjusted = (m_hat / (v_hat.sqrt()? + self.params.eps)?)?;
+        let updated = (decayed - (adjusted * lr)?)?;
+
+        let spans = flat.spans.clone();
+        for ((_, var), (offset, len)) in self.vars.iter().zip(spans) {
+            var.set(&updated.narrow(0, offset, len)?.reshape(var.shape())?)?;
+        }
+        self.flat = Some(FlatMoments {
+            m: next_m.detach(),
+            v: next_v.detach(),
+            spans: self.flat.take().map_or_else(Vec::new, |cache| cache.spans),
+        });
+        Ok(())
+    }
+
+    /// The historical per-parameter path, kept verbatim for partially-connected
+    /// graphs; see [`AdamW::step`] for when it runs.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`](crate::MIError::Model) on any tensor failure.
+    fn step_per_param(&mut self, grads: &GradStore) -> Result<()> {
+        let (lr, beta1, beta2) = (self.params.lr, self.params.beta1, self.params.beta2);
+        let lr_lambda = lr * self.params.weight_decay;
+        // CAST rationale as in `step_flat`.
         let exponent = i32::try_from(self.step).unwrap_or(i32::MAX);
         let scale_m = 1.0 / (1.0 - beta1.powi(exponent));
         let scale_v = 1.0 / (1.0 - beta2.powi(exponent));
@@ -204,6 +318,63 @@ impl AdamW {
         Ok(())
     }
 
+    /// Concatenates the named moments into flat buffers, in [`Self::vars`] order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`](crate::MIError::Model) if a moment is missing
+    /// or a tensor operation fails.
+    fn build_flat(&self) -> Result<FlatMoments> {
+        let mut m_parts = Vec::with_capacity(self.vars.len());
+        let mut v_parts = Vec::with_capacity(self.vars.len());
+        let mut spans = Vec::with_capacity(self.vars.len());
+        let mut offset = 0_usize;
+        for (name, var) in &self.vars {
+            let len = var.as_tensor().elem_count();
+            let (Some(m), Some(v)) = (self.first.get(name), self.second.get(name)) else {
+                return Err(crate::MIError::Model(candle_core::Error::Msg(format!(
+                    "moment missing for parameter {name} while building the flat cache"
+                ))));
+            };
+            m_parts.push(m.flatten_all()?);
+            v_parts.push(v.flatten_all()?);
+            spans.push((offset, len));
+            offset += len;
+        }
+        Ok(FlatMoments {
+            m: Tensor::cat(&m_parts, 0)?,
+            v: Tensor::cat(&v_parts, 0)?,
+            spans,
+        })
+    }
+
+    /// Writes the flat moments back into the named maps and drops the cache.
+    ///
+    /// A no-op when the cache is empty. Called before anything that reads or
+    /// writes the maps directly: the per-parameter fallback here, and
+    /// [`AdamW::state`] / [`AdamW::restore`] on their own paths.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`](crate::MIError::Model) on any tensor failure.
+    fn sync_named_from_flat(&mut self) -> Result<()> {
+        let Some(flat) = self.flat.take() else {
+            return Ok(());
+        };
+        for ((name, var), (offset, len)) in self.vars.iter().zip(&flat.spans) {
+            let shape = var.as_tensor().shape();
+            self.first.insert(
+                name.clone(),
+                flat.m.narrow(0, *offset, *len)?.reshape(shape)?,
+            );
+            self.second.insert(
+                name.clone(),
+                flat.v.narrow(0, *offset, *len)?.reshape(shape)?,
+            );
+        }
+        Ok(())
+    }
+
     /// The moments, keyed for serialization alongside the model weights.
     ///
     /// Keys are `adamw.first.<name>` and `adamw.second.<name>`, so the map drops
@@ -220,6 +391,31 @@ impl AdamW {
     ///   the map is exactly twice the model's parameter footprint.
     #[must_use]
     pub fn state(&self) -> BTreeMap<String, Tensor> {
+        // With the flat cache active the named maps are stale by design (the hot
+        // path never touches them); the checkpoint view is carved out of the flat
+        // buffers instead, so the KEYS and shapes on disk are identical either
+        // way. `&self` is kept -- this is a read, and the published signature
+        // must not change. A narrow that fails here would mean the cache and the
+        // parameter list disagree on layout, which `build_flat` makes impossible;
+        // the fallback to the (stale) map entry keeps this method total anyway.
+        if let Some(flat) = self.flat.as_ref() {
+            let mut out = BTreeMap::new();
+            for ((name, var), (offset, len)) in self.vars.iter().zip(&flat.spans) {
+                let shape = var.as_tensor().shape();
+                if let (Ok(m), Ok(v)) = (
+                    flat.m
+                        .narrow(0, *offset, *len)
+                        .and_then(|t| t.reshape(shape)),
+                    flat.v
+                        .narrow(0, *offset, *len)
+                        .and_then(|t| t.reshape(shape)),
+                ) {
+                    out.insert(format!("{FIRST}{name}"), m);
+                    out.insert(format!("{SECOND}{name}"), v);
+                }
+            }
+            return out;
+        }
         let mut out = BTreeMap::new();
         for (name, tensor) in &self.first {
             out.insert(format!("{FIRST}{name}"), tensor.clone());
@@ -249,6 +445,11 @@ impl AdamW {
     /// cannot be moved onto the device.
     pub fn restore(&mut self, state: &BTreeMap<String, Tensor>, step: usize) -> Result<usize> {
         self.step = step;
+        // The named maps become the source of truth again. SYNC, not drop: a
+        // checkpoint may restore only a subset of parameters, and the ones it
+        // does not name must keep their LATEST moments -- which live in the flat
+        // cache whenever it is active, not in the maps it left stale.
+        self.sync_named_from_flat()?;
         let mut restored = 0_usize;
         for (name, _) in &self.vars {
             if let Some(tensor) = state.get(&format!("{FIRST}{name}")) {
