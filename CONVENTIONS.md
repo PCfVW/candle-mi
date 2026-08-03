@@ -272,6 +272,7 @@ relax this to `#![deny(unsafe_code)]` for narrowly scoped platform FFI:
 |---------|------------------------|
 | `mmap` | Memory-mapped file I/O for sharded safetensors |
 | `memory` + `cuda` | CUDA memory-pool trim (`cuMemPoolTrimTo`) in `sync_and_trim_gpu` |
+| `training` + `cuda` | The multi-tensor `AdamW` kernel launch in `optim::mt::launch` (raw-pointer chunk table into `adamw_mt_f32`) |
 
 Process-RAM and GPU-VRAM **measurement** FFI (`GetProcessMemoryInfo`, NVML, DXGI,
 `nvidia-smi`, Metal) lives in the external [`hypomnesis`](https://crates.io/crates/hypomnesis)

@@ -95,6 +95,12 @@ pub struct AdamW {
     /// trajectory is bit-identical to the per-parameter one — held by
     /// `tests/validate_optim_parity.rs` against stock candle either way.
     flat: Option<FlatMoments>,
+    /// How many steps ran on the single-launch multi-tensor path — a diagnostic
+    /// counter, so a test asserting that path ran can distinguish it from a
+    /// silent fall-through to [`Self::step_flat`] (which computes the same
+    /// numbers and would otherwise pass every value comparison vacuously).
+    /// Always zero off-cuda.
+    mt_steps: usize,
 }
 
 /// The flattened moments plus the layout needed to split them back by name.
@@ -160,6 +166,7 @@ impl AdamW {
             step: 0,
             params,
             flat: None,
+            mt_steps: 0,
         })
     }
 
@@ -203,6 +210,11 @@ impl AdamW {
             .iter()
             .all(|(_, var)| grads.get(var.as_tensor()).is_some());
         if every_grad_present && !self.vars.is_empty() {
+            #[cfg(feature = "cuda")]
+            if self.try_step_multi_tensor(grads)? {
+                self.mt_steps += 1;
+                return Ok(());
+            }
             self.step_flat(grads)
         } else {
             // A partially-connected graph keeps the historical semantics exactly:
@@ -473,5 +485,338 @@ impl AdamW {
     #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.vars.is_empty()
+    }
+
+    /// How many steps ran on the single-launch multi-tensor path.
+    ///
+    /// Diagnostic only: the multi-tensor path computes the same numbers as the
+    /// flat path, so a value-comparison test cannot tell them apart — this
+    /// counter can, and the parity test asserts it to avoid gating vacuously on
+    /// a silent fall-through. Always zero off-cuda.
+    #[must_use]
+    pub const fn multi_tensor_steps(&self) -> usize {
+        self.mt_steps
+    }
+}
+
+/// The single-launch `AdamW` step: every parameter, gradient and moment updated
+/// by ONE kernel walking a chunk table of raw device pointers — `PyTorch`'s
+/// fused/`foreach` shape (`ForeachFunctors.cuh`), which the flat-buffer path
+/// above approximates but cannot reach: its `cat` gathers and `Var::set`
+/// scatters cost one launch per parameter each, and on the model that motivated
+/// this they ate exactly the launches the flattening saved.
+///
+/// The kernel (`adamw_mt_f32`, candle-kernels `reduce.cu` on the experiment
+/// branch) writes parameters and moments IN PLACE through raw pointers. For the
+/// parameters this is `Var::set`'s own semantics — `set` also writes into the
+/// var's existing storage — reached without the intermediate tensor. Every
+/// arithmetic step uses explicitly-rounded intrinsics so the trajectory is
+/// bit-identical to the composed path's op-by-op f32 rounding; held by
+/// `tests/optim_multi_tensor.rs` across CPU and CUDA bitwise.
+///
+/// Stock candle-kernels does not carry the kernel: the first step probes
+/// `get_or_load_func` once and permanently falls back to [`AdamW::step_flat`]
+/// when the symbol is absent, so against crates.io candle this module degrades
+/// to slower, never to wrong.
+#[cfg(feature = "cuda")]
+impl AdamW {
+    /// Attempts the multi-tensor step; `Ok(false)` means "not applicable, use
+    /// the flat path" (non-cuda device, non-f32 dtype, a non-contiguous tensor,
+    /// or a candle-kernels build without the kernel).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`](crate::MIError::Model) only for failures past
+    /// the preconditions — a table upload or launch error. Nothing has been
+    /// mutated at that point: all writes happen inside the one kernel.
+    fn try_step_multi_tensor(&mut self, grads: &GradStore) -> Result<bool> {
+        static KERNEL_PRESENT: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+
+        let Some((_, head)) = self.vars.first() else {
+            return Ok(false);
+        };
+        let candle_core::Device::Cuda(dev) = head.device() else {
+            return Ok(false);
+        };
+        if self.flat.is_none() {
+            self.flat = Some(self.build_flat()?);
+        }
+        let Some(flat) = self.flat.as_ref() else {
+            // EXPLICIT: unreachable — the branch above just filled the cache;
+            // `let else` keeps the no-panic guarantee anyway.
+            return Ok(false);
+        };
+
+        // Precondition phase: collect raw pointers WITHOUT mutating anything, so
+        // a fall-through leaves the optimizer exactly as it was. All tensors
+        // share the device's single stream, so an address collected here stays
+        // ordered with respect to the launch below.
+        let Some(m_base) = mt::f32_base_ptr(&flat.m, dev) else {
+            return Ok(false);
+        };
+        let Some(v_base) = mt::f32_base_ptr(&flat.v, dev) else {
+            return Ok(false);
+        };
+        let mut lens = Vec::with_capacity(self.vars.len());
+        let mut param_ptrs = Vec::with_capacity(self.vars.len());
+        let mut grad_ptrs = Vec::with_capacity(self.vars.len());
+        for (_, var) in &self.vars {
+            let Some(grad) = grads.get(var.as_tensor()) else {
+                // The caller checked presence; vanishing here is a logic error.
+                return Err(crate::MIError::Model(candle_core::Error::Msg(
+                    "gradient vanished between presence check and pointer gather".to_string(),
+                )));
+            };
+            let (Some(p), Some(g)) = (
+                mt::f32_base_ptr(var.as_tensor(), dev),
+                mt::f32_base_ptr(grad, dev),
+            ) else {
+                return Ok(false);
+            };
+            lens.push(var.as_tensor().elem_count());
+            param_ptrs.push(p);
+            grad_ptrs.push(g);
+        }
+        if !KERNEL_PRESENT.get_or_init(|| mt::kernel_present(dev)) {
+            return Ok(false);
+        }
+
+        // The chunk table: (param, grad, m, v, len) per chunk, pointers
+        // pre-offset to the chunk start so the kernel does no indexing at all.
+        let chunks = mt::chunk_spans(&lens, mt::CHUNK);
+        let mut table = Vec::with_capacity(chunks.len() * 5);
+        let mut span_offset = 0_usize;
+        let mut spans = Vec::with_capacity(lens.len());
+        for len in &lens {
+            spans.push(span_offset);
+            span_offset += len;
+        }
+        for (tensor, offset, len) in &chunks {
+            let (Some(&p_base), Some(&g_base), Some(&span)) = (
+                param_ptrs.get(*tensor),
+                grad_ptrs.get(*tensor),
+                spans.get(*tensor),
+            ) else {
+                // `chunk_spans` only emits indices below `lens.len()`, which is
+                // also every other vector's length; reaching here is a logic
+                // error, surfaced rather than indexed into a panic.
+                return Err(crate::MIError::Model(candle_core::Error::Msg(
+                    "chunk table references a tensor out of range".to_string(),
+                )));
+            };
+            let bytes = u64::try_from(*offset).unwrap_or(u64::MAX) * mt::F32_BYTES;
+            let flat_bytes = u64::try_from(span + *offset).unwrap_or(u64::MAX) * mt::F32_BYTES;
+            table.push(p_base + bytes);
+            table.push(g_base + bytes);
+            table.push(m_base + flat_bytes);
+            table.push(v_base + flat_bytes);
+            table.push(u64::try_from(*len).unwrap_or(u64::MAX));
+        }
+
+        // Scalars mirror `step_flat` exactly: every factor computed in f64 —
+        // in the SAME operation order, so no `mul_add` fusions — and rounded
+        // ONCE to f32, the single rounding candle's scalar ops apply when they
+        // cast their f64 argument at the kernel boundary.
+        let (lr, beta1, beta2) = (self.params.lr, self.params.beta1, self.params.beta2);
+        let lr_lambda = lr * self.params.weight_decay;
+        // CAST rationale as in `step_flat`.
+        let exponent = i32::try_from(self.step).unwrap_or(i32::MAX);
+        let scale_m = 1.0 / (1.0 - beta1.powi(exponent));
+        let scale_v = 1.0 / (1.0 - beta2.powi(exponent));
+        let one_minus_lr_lambda = 1.0 - lr_lambda;
+
+        let table_dev = dev
+            .cuda_stream()
+            .clone_htod(&table)
+            .map_err(candle_core::Error::wrap)?;
+        let scalars = mt::Scalars {
+            beta1: mt::kernel_scalar(beta1),
+            one_minus_beta1: mt::kernel_scalar(1.0 - beta1),
+            beta2: mt::kernel_scalar(beta2),
+            one_minus_beta2: mt::kernel_scalar(1.0 - beta2),
+            scale_m: mt::kernel_scalar(scale_m),
+            scale_v: mt::kernel_scalar(scale_v),
+            one_minus_lr_lambda: mt::kernel_scalar(one_minus_lr_lambda),
+            eps: mt::kernel_scalar(self.params.eps),
+            lr: mt::kernel_scalar(lr),
+        };
+        mt::launch(dev, chunks.len(), &table_dev, &scalars)?;
+        Ok(true)
+    }
+}
+
+/// Pointer plumbing and the kernel launch for the multi-tensor step, kept in
+/// ONE module so the update logic above reads as the algorithm — and so the
+/// crate's single `training`-side `unsafe` (the launch ffi) has exactly one
+/// home, per the conventions' dedicated-module rule.
+#[cfg(feature = "cuda")]
+mod mt {
+    use candle_core::Tensor;
+    use candle_core::cuda_backend::cudarc::driver::{CudaSlice, LaunchConfig, PushKernelArg};
+    use candle_core::cuda_backend::{CudaDevice, kernels};
+
+    /// The kernel this module launches — candle-kernels' multi-tensor `AdamW`
+    /// step, present only on the experiment branch this crate is measured with.
+    const KERNEL: &str = "adamw_mt_f32";
+
+    /// Whether the linked candle-kernels carries [`KERNEL`] — the probe behind
+    /// the once-per-process dispatch decision, and the reason stock candle
+    /// degrades to the flat path instead of erroring.
+    pub(super) fn kernel_present(dev: &CudaDevice) -> bool {
+        dev.get_or_load_func(KERNEL, &kernels::REDUCE).is_ok()
+    }
+
+    /// Elements per launch chunk. Small enough that the largest parameter of
+    /// the motivating model splits into dozens of blocks (load balance), large
+    /// enough that the table upload stays a few tens of KB.
+    pub(super) const CHUNK: usize = 16384;
+
+    /// Bytes per `f32` element — the factor turning chunk-table element
+    /// offsets into device-pointer byte offsets.
+    pub(super) const F32_BYTES: u64 = 4;
+
+    /// The nine `f32` scalars of one `AdamW` update, in KERNEL ARGUMENT ORDER —
+    /// the struct exists so the call site cannot scramble nine same-typed
+    /// positional floats.
+    pub(super) struct Scalars {
+        /// First-moment decay `β₁`.
+        pub beta1: f32,
+        /// `1 − β₁`, rounded from the f64 the composed path computes.
+        pub one_minus_beta1: f32,
+        /// Second-moment decay `β₂`.
+        pub beta2: f32,
+        /// `1 − β₂`, rounded from the f64 the composed path computes.
+        pub one_minus_beta2: f32,
+        /// First-moment bias correction `1 / (1 − β₁^t)`.
+        pub scale_m: f32,
+        /// Second-moment bias correction `1 / (1 − β₂^t)`.
+        pub scale_v: f32,
+        /// `1 − lr·λ`, the decoupled weight-decay factor.
+        pub one_minus_lr_lambda: f32,
+        /// Adam's `ε`, added to the root of the corrected second moment.
+        pub eps: f32,
+        /// Learning rate.
+        pub lr: f32,
+    }
+
+    /// The one f64 → f32 rounding a scalar takes on its way into the kernel.
+    ///
+    /// This is the SAME single rounding candle's own scalar ops apply when they
+    /// cast their f64 argument at the kernel boundary, which is why the cast is
+    /// the intent here and not an accident of convenience — the multi-tensor
+    /// trajectory must be bit-identical to the composed one.
+    #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
+    pub(super) const fn kernel_scalar(x: f64) -> f32 {
+        // CAST: f64 → f32, the deliberate single rounding at the kernel
+        // boundary; see the doc comment.
+        x as f32
+    }
+
+    /// Launches [`KERNEL`] over the uploaded chunk table.
+    ///
+    /// # Errors
+    ///
+    /// Returns a candle error if the kernel cannot be loaded or the driver
+    /// rejects the launch.
+    pub(super) fn launch(
+        dev: &CudaDevice,
+        n_chunks: usize,
+        table: &CudaSlice<u64>,
+        scalars: &Scalars,
+    ) -> candle_core::Result<()> {
+        let func = dev.get_or_load_func(KERNEL, &kernels::REDUCE)?;
+        let cfg = LaunchConfig {
+            grid_dim: (
+                u32::try_from(n_chunks).unwrap_or(u32::MAX).min(1 << 20),
+                1,
+                1,
+            ),
+            block_dim: (256, 1, 1),
+            shared_mem_bytes: 0,
+        };
+        let mut builder = func.builder();
+        // Argument order mirrors the kernel signature exactly: n_chunks, table,
+        // then the nine scalars in `Scalars`' declaration order.
+        candle_core::builder_arg!(builder, n_chunks);
+        builder.arg(table);
+        candle_core::builder_arg!(
+            builder,
+            scalars.beta1,
+            scalars.one_minus_beta1,
+            scalars.beta2,
+            scalars.one_minus_beta2,
+            scalars.scale_m,
+            scalars.scale_v,
+            scalars.one_minus_lr_lambda,
+            scalars.eps,
+            scalars.lr
+        );
+        // SAFETY: ffi. Every pointer in the table derives from a live tensor
+        // held by the calling optimizer or its grad store for the duration of
+        // the call, offset within its own length by `chunk_spans`; table and
+        // tensors all live on the device's one stream, the same stream the
+        // launch goes to, so the upload is ordered before the kernel.
+        #[allow(unsafe_code)]
+        {
+            unsafe { builder.launch(cfg) }.map_err(candle_core::Error::wrap)?;
+        }
+        Ok(())
+    }
+
+    /// The raw f32 device address of a tensor's first element, or `None` when
+    /// the tensor is not a contiguous f32 cuda tensor on `dev`'s stream —
+    /// `None` routes the caller to the tensor-level fallback.
+    pub(super) fn f32_base_ptr(t: &Tensor, dev: &CudaDevice) -> Option<u64> {
+        let (storage, layout) = t.storage_and_layout();
+        let (start, _end) = layout.contiguous_offsets()?;
+        let candle_core::Storage::Cuda(cs) = &*storage else {
+            return None;
+        };
+        let slice = cs.as_cuda_slice::<f32>().ok()?;
+        let view = slice.slice(start..);
+        // The sync guard is dropped on return: everything here lives on the
+        // device's ONE stream, so ordering needs no cross-stream event.
+        let stream = dev.cuda_stream();
+        let (ptr, _same_stream) =
+            candle_core::cuda_backend::cudarc::driver::DevicePtr::device_ptr(&view, &stream);
+        Some(ptr)
+    }
+
+    /// Splits per-tensor lengths into `(tensor, offset, len)` launch chunks of
+    /// at most `chunk` elements, in tensor order. Every element lands in
+    /// exactly one chunk; a zero-length tensor contributes none.
+    pub(super) fn chunk_spans(lens: &[usize], chunk: usize) -> Vec<(usize, usize, usize)> {
+        let mut out = Vec::new();
+        for (tensor, &len) in lens.iter().enumerate() {
+            let mut offset = 0_usize;
+            while offset < len {
+                let take = chunk.min(len - offset);
+                out.push((tensor, offset, take));
+                offset += take;
+            }
+        }
+        out
+    }
+}
+
+#[cfg(all(test, feature = "cuda"))]
+mod tests {
+    use super::mt::chunk_spans;
+
+    #[test]
+    fn chunk_spans_covers_every_element_exactly_once() {
+        // One tensor under the chunk, one exactly at it, one spanning three.
+        let chunks = chunk_spans(&[5, 8, 20], 8);
+        assert_eq!(
+            chunks,
+            vec![(0, 0, 5), (1, 0, 8), (2, 0, 8), (2, 8, 8), (2, 16, 4)]
+        );
+        let total: usize = chunks.iter().map(|(_, _, len)| len).sum();
+        assert_eq!(total, 5 + 8 + 20);
+    }
+
+    #[test]
+    fn chunk_spans_skips_empty_tensors() {
+        assert_eq!(chunk_spans(&[0, 3, 0], 8), vec![(1, 0, 3)]);
     }
 }

@@ -230,17 +230,27 @@
 #![deny(warnings)]
 // All warns → errors in CI
 // Rule 5: safe by default. The only `unsafe` in the crate is the `mmap`
-// safetensors loader and the CUDA pool-trim in `memory::sync_and_trim_gpu`
-// (gated behind `cuda`). Since the hypomnesis migration, the `memory` feature
-// carries NO unsafe on its own — all measurement FFI lives in hypomnesis — so
-// `memory` without `cuda` stays `forbid(unsafe_code)`.
+// safetensors loader, the CUDA pool-trim in `memory::sync_and_trim_gpu`
+// (gated behind `cuda`), and the multi-tensor `AdamW` kernel launch in
+// `optim` (gated behind `training` + `cuda`). Since the hypomnesis migration,
+// the `memory` feature carries NO unsafe on its own — all measurement FFI
+// lives in hypomnesis — so `memory` without `cuda` stays `forbid(unsafe_code)`.
 #![cfg_attr(
-    not(any(feature = "mmap", all(feature = "memory", feature = "cuda"))),
+    not(any(
+        feature = "mmap",
+        all(feature = "memory", feature = "cuda"),
+        all(feature = "training", feature = "cuda")
+    )),
     forbid(unsafe_code)
 )]
-// mmap, or memory+cuda (the pool-trim FFI): deny for scoped unsafe.
+// mmap, memory+cuda (the pool-trim FFI) or training+cuda (the optimizer
+// launch): deny for scoped unsafe.
 #![cfg_attr(
-    any(feature = "mmap", all(feature = "memory", feature = "cuda")),
+    any(
+        feature = "mmap",
+        all(feature = "memory", feature = "cuda"),
+        all(feature = "training", feature = "cuda")
+    ),
     deny(unsafe_code)
 )]
 // Test-code relaxations: the strict `unwrap_used`/`expect_used`/`indexing_slicing`/`panic`
