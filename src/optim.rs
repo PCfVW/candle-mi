@@ -577,7 +577,7 @@ impl AdamW {
             param_ptrs.push(p);
             grad_ptrs.push(g);
         }
-        if !KERNEL_PRESENT.get_or_init(|| mt::kernel_present(dev)) {
+        if !KERNEL_PRESENT.get_or_init(|| mt::kernel_present(dev, mt::ADAMW)) {
             return Ok(false);
         }
 
@@ -640,12 +640,160 @@ impl AdamW {
             eps: mt::kernel_scalar(self.params.eps),
             lr: mt::kernel_scalar(lr),
         };
-        mt::launch(dev, chunks.len(), &table_dev, &scalars)?;
+        mt::launch_adamw(dev, chunks.len(), &table_dev, &scalars)?;
         Ok(true)
     }
 }
 
-/// Pointer plumbing and the kernel launch for the multi-tensor step, kept in
+/// Which implementation a [`fold_ema`] call took.
+///
+/// Returned rather than hidden because both paths compute the same numbers: a
+/// test that only compared values could not tell a working fused kernel from a
+/// silent fall-through, and would gate nothing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(clippy::exhaustive_enums)] // EXHAUSTIVE: a closed dispatch report, not a growing taxonomy.
+pub enum FoldPath {
+    /// The single multi-tensor kernel launch.
+    Fused,
+    /// The per-parameter tensor-op form, three launches per parameter.
+    Composed,
+}
+
+/// Folds parameters into their exponential moving average:
+/// `s ← decay·s + (1−decay)·p`, over every `(shadow, parameter)` pair at once.
+///
+/// On cuda with contiguous `F32` tensors this is ONE kernel launch for the
+/// whole model — the same multi-tensor machinery [`AdamW::step`] uses, and for
+/// the same reason: the composed form costs three launches per parameter (two
+/// scalar multiplies and an add), which on a small model is the dominant
+/// elementwise population of the whole training step. Everywhere else, and
+/// whenever a precondition below fails, the composed form runs instead. The
+/// two agree bit for bit — the kernel rounds where the tensor ops round.
+///
+/// The fused path writes each shadow IN PLACE and so declines, falling back to
+/// the composed form, when it cannot prove that is safe: a shadow sharing
+/// storage with its parameter (an aliased shadow is not an average at all),
+/// tensors on different devices, mismatched element counts, or a
+/// candle-kernels build without the kernel.
+///
+/// # Shapes
+/// - `pairs`: `(shadow, parameter)` tensors of identical shape, any rank;
+///   iterated in the caller's order, which the fused path preserves.
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`](crate::MIError::Model) on any tensor failure, or
+/// if the launch is rejected.
+///
+/// ```
+/// use candle_core::{Device, Tensor};
+/// use candle_mi::optim::fold_ema;
+///
+/// let mut shadow = Tensor::new(&[0f32, 10.0], &Device::Cpu)?;
+/// let param = Tensor::new(&[1f32, 20.0], &Device::Cpu)?;
+/// fold_ema([(&mut shadow, &param)], 0.9)?;
+/// assert_eq!(shadow.to_vec1::<f32>()?, &[0.1, 11.0]);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+pub fn fold_ema<'a, I>(pairs: I, decay: f64) -> Result<FoldPath>
+where
+    I: IntoIterator<Item = (&'a mut Tensor, &'a Tensor)>,
+{
+    let mut pairs: Vec<(&mut Tensor, &Tensor)> = pairs.into_iter().collect();
+    #[cfg(feature = "cuda")]
+    if fold_ema_fused(&pairs, decay)? {
+        return Ok(FoldPath::Fused);
+    }
+    for (shadow, param) in &mut pairs {
+        // Detached on both sides: a `Var` is a tracked graph leaf, and an
+        // undetached shadow would chain the backward graph across every step.
+        let kept = (shadow.clone() * decay)?;
+        let fresh = (param.detach() * (1.0 - decay))?;
+        **shadow = (kept + fresh)?.detach();
+    }
+    Ok(FoldPath::Composed)
+}
+
+/// The single-launch fold; `Ok(false)` means "not applicable, use the composed
+/// form". Nothing is mutated before every precondition has passed.
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`](crate::MIError::Model) if the table upload or the
+/// launch fails.
+#[cfg(feature = "cuda")]
+fn fold_ema_fused(pairs: &[(&mut Tensor, &Tensor)], decay: f64) -> Result<bool> {
+    static KERNEL_PRESENT: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+
+    let Some((head, _)) = pairs.first() else {
+        return Ok(false);
+    };
+    let device = head.device().clone();
+    let candle_core::Device::Cuda(dev) = &device else {
+        return Ok(false);
+    };
+    if !KERNEL_PRESENT.get_or_init(|| mt::kernel_present(dev, mt::EMA)) {
+        return Ok(false);
+    }
+
+    let mut lens = Vec::with_capacity(pairs.len());
+    let mut shadow_ptrs = Vec::with_capacity(pairs.len());
+    let mut param_ptrs = Vec::with_capacity(pairs.len());
+    for (shadow, param) in pairs {
+        if shadow.elem_count() != param.elem_count()
+            || !shadow.device().same_device(&device)
+            || !param.device().same_device(&device)
+        {
+            return Ok(false);
+        }
+        let (Some(s), Some(p)) = (mt::f32_base_ptr(shadow, dev), mt::f32_base_ptr(param, dev))
+        else {
+            return Ok(false);
+        };
+        if s == p {
+            // An aliased shadow is the C6 defect: folding in place would write
+            // the average over the live weight. The composed form survives it
+            // (it allocates), so decline rather than corrupt.
+            return Ok(false);
+        }
+        lens.push(shadow.elem_count());
+        shadow_ptrs.push(s);
+        param_ptrs.push(p);
+    }
+
+    let chunks = mt::chunk_spans(&lens, mt::CHUNK);
+    let mut table = Vec::with_capacity(chunks.len() * 3);
+    for (tensor, offset, len) in &chunks {
+        let (Some(&shadow_base), Some(&param_base)) =
+            (shadow_ptrs.get(*tensor), param_ptrs.get(*tensor))
+        else {
+            // `chunk_spans` only emits indices below `lens.len()`; reaching
+            // here is a logic error, surfaced rather than indexed into a panic.
+            return Err(crate::MIError::Model(candle_core::Error::Msg(
+                "ema chunk table references a tensor out of range".to_string(),
+            )));
+        };
+        let bytes = u64::try_from(*offset).unwrap_or(u64::MAX) * mt::F32_BYTES;
+        table.push(shadow_base + bytes);
+        table.push(param_base + bytes);
+        table.push(u64::try_from(*len).unwrap_or(u64::MAX));
+    }
+
+    let table_dev = dev
+        .cuda_stream()
+        .clone_htod(&table)
+        .map_err(candle_core::Error::wrap)?;
+    mt::launch_ema(
+        dev,
+        chunks.len(),
+        &table_dev,
+        mt::kernel_scalar(decay),
+        mt::kernel_scalar(1.0 - decay),
+    )?;
+    Ok(true)
+}
+
+/// Pointer plumbing and the kernel launches for the multi-tensor paths, kept in
 /// ONE module so the update logic above reads as the algorithm — and so the
 /// crate's single `training`-side `unsafe` (the launch ffi) has exactly one
 /// home, per the conventions' dedicated-module rule.
@@ -655,15 +803,32 @@ mod mt {
     use candle_core::cuda_backend::cudarc::driver::{CudaSlice, LaunchConfig, PushKernelArg};
     use candle_core::cuda_backend::{CudaDevice, kernels};
 
-    /// The kernel this module launches — candle-kernels' multi-tensor `AdamW`
-    /// step, present only on the experiment branch this crate is measured with.
-    const KERNEL: &str = "adamw_mt_f32";
+    /// candle-kernels' multi-tensor `AdamW` step, present only on the
+    /// experiment branch this crate is measured with.
+    pub(super) const ADAMW: &str = "adamw_mt_f32";
 
-    /// Whether the linked candle-kernels carries [`KERNEL`] — the probe behind
-    /// the once-per-process dispatch decision, and the reason stock candle
-    /// degrades to the flat path instead of erroring.
-    pub(super) fn kernel_present(dev: &CudaDevice) -> bool {
-        dev.get_or_load_func(KERNEL, &kernels::REDUCE).is_ok()
+    /// candle-kernels' multi-tensor `EMA` fold, same provenance.
+    pub(super) const EMA: &str = "ema_mt_f32";
+
+    /// Whether the linked candle-kernels carries `name` — the probe behind each
+    /// once-per-process dispatch decision, and the reason stock candle degrades
+    /// to the composed path instead of erroring.
+    pub(super) fn kernel_present(dev: &CudaDevice, name: &str) -> bool {
+        dev.get_or_load_func(name, &kernels::REDUCE).is_ok()
+    }
+
+    /// The launch geometry both multi-tensor kernels use: one block per chunk,
+    /// grid-strided when the table outruns the grid.
+    fn config(n_chunks: usize) -> LaunchConfig {
+        LaunchConfig {
+            grid_dim: (
+                u32::try_from(n_chunks).unwrap_or(u32::MAX).min(1 << 20),
+                1,
+                1,
+            ),
+            block_dim: (256, 1, 1),
+            shared_mem_bytes: 0,
+        }
     }
 
     /// Elements per launch chunk. Small enough that the largest parameter of
@@ -712,28 +877,20 @@ mod mt {
         x as f32
     }
 
-    /// Launches [`KERNEL`] over the uploaded chunk table.
+    /// Launches [`ADAMW`] over the uploaded chunk table.
     ///
     /// # Errors
     ///
     /// Returns a candle error if the kernel cannot be loaded or the driver
     /// rejects the launch.
-    pub(super) fn launch(
+    pub(super) fn launch_adamw(
         dev: &CudaDevice,
         n_chunks: usize,
         table: &CudaSlice<u64>,
         scalars: &Scalars,
     ) -> candle_core::Result<()> {
-        let func = dev.get_or_load_func(KERNEL, &kernels::REDUCE)?;
-        let cfg = LaunchConfig {
-            grid_dim: (
-                u32::try_from(n_chunks).unwrap_or(u32::MAX).min(1 << 20),
-                1,
-                1,
-            ),
-            block_dim: (256, 1, 1),
-            shared_mem_bytes: 0,
-        };
+        let func = dev.get_or_load_func(ADAMW, &kernels::REDUCE)?;
+        let cfg = config(n_chunks);
         let mut builder = func.builder();
         // Argument order mirrors the kernel signature exactly: n_chunks, table,
         // then the nine scalars in `Scalars`' declaration order.
@@ -756,6 +913,40 @@ mod mt {
         // the call, offset within its own length by `chunk_spans`; table and
         // tensors all live on the device's one stream, the same stream the
         // launch goes to, so the upload is ordered before the kernel.
+        #[allow(unsafe_code)]
+        {
+            unsafe { builder.launch(cfg) }.map_err(candle_core::Error::wrap)?;
+        }
+        Ok(())
+    }
+
+    /// Launches [`EMA`] over the uploaded chunk table — `s ← decay·s +
+    /// (1−decay)·p`, one launch for every shadow parameter.
+    ///
+    /// # Errors
+    ///
+    /// Returns a candle error if the kernel cannot be loaded or the driver
+    /// rejects the launch.
+    pub(super) fn launch_ema(
+        dev: &CudaDevice,
+        n_chunks: usize,
+        table: &CudaSlice<u64>,
+        decay: f32,
+        one_minus_decay: f32,
+    ) -> candle_core::Result<()> {
+        let func = dev.get_or_load_func(EMA, &kernels::REDUCE)?;
+        let cfg = config(n_chunks);
+        let mut builder = func.builder();
+        // Argument order mirrors the kernel signature: n_chunks, table, decay,
+        // one_minus_decay.
+        candle_core::builder_arg!(builder, n_chunks);
+        builder.arg(table);
+        candle_core::builder_arg!(builder, decay, one_minus_decay);
+        // SAFETY: ffi. As in `launch_adamw`: every pointer derives from a
+        // tensor the caller holds live across this call, pre-offset within its
+        // own length, on the stream the launch goes to. The caller has also
+        // checked that no shadow aliases its parameter, so the writes here
+        // touch no tensor the kernel reads from another chunk.
         #[allow(unsafe_code)]
         {
             unsafe { builder.launch(cfg) }.map_err(candle_core::Error::wrap)?;
