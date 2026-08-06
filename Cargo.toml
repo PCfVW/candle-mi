@@ -69,7 +69,7 @@ statrs = "0.17"
 tracing = "0.1"
 
 # Model downloads (hf-fetch-model wraps hf-hub v0.5)
-hf-fetch-model = { version = "0.11.1", features = ["indicatif"] }
+hf-fetch-model = { version = "0.11.2", features = ["indicatif"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
 # Optional: process RAM + GPU VRAM measurement, delegated to the standalone
@@ -87,11 +87,12 @@ hypomnesis = { version = "0.2.6", optional = true, default-features = false, fea
 # - sae feature activates "npz" (Gemma Scope SAE weights)
 # - stoicheia feature activates "pth" (AlgZoo .pth agnostic loading)
 # - quantized feature activates "bnb"/"awq"/"gptq" (dequant-to-BF16 weight loading)
-# 0.6.9, NOT 0.7.0: hf-fetch-model 0.11.1 depends on anamnesis ^0.6, so a
-# 0.7 req here would resolve a second anamnesis copy into the tree (same
-# hazard as the v0.1.18 windows-sys dedup). Move to 0.7 together with the
-# hf-fetch-model release that bumps its own anamnesis dependency.
-anamnesis = { version = "0.6.9", optional = true }
+# Kept in lockstep with hf-fetch-model's own anamnesis requirement (^0.7.1
+# as of hf-fetch-model 0.11.2) so cargo resolves a single anamnesis copy
+# across the tree rather than two semver-incompatible ones (same hazard as
+# the v0.1.18 windows-sys dedup). Bump this alongside any future
+# hf-fetch-model release that moves its own anamnesis floor.
+anamnesis = { version = "0.7.1", optional = true }
 
 # Windows-only deps. The `probing` feature's linear-probe stack is developed and
 # exercised on Windows, so its crates are gated to `cfg(windows)`.
