@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Fast model download via [`hf-fetch-model`](https://github.com/PCfVW/hf-fetch-model).
+//! Fast model download via [`hf-fetch-model`](https://github.com/mi-for-the-rust-of-us/hf-fetch-model).
 //!
 //! This module provides [`download_model()`] and [`download_model_blocking()`],
 //! convenience functions for downloading `HuggingFace` model repositories

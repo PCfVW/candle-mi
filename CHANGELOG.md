@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Two rendered doc links pointed at the pre-transfer `hf-fetch-model` URL** (`src/lib.rs`, `src/download.rs`). Both now point at `mi-for-the-rust-of-us/hf-fetch-model`. These are the only two occurrences in shipped source, so docs.rs no longer sends readers to the old personal namespace.
+
 ## [0.1.21] - 2026-08-01
 
 ### Added

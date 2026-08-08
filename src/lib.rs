@@ -194,7 +194,7 @@
 //!
 //! ## Fast downloads
 //!
-//! candle-mi uses [`hf-fetch-model`](https://github.com/PCfVW/hf-fetch-model)
+//! candle-mi uses [`hf-fetch-model`](https://github.com/mi-for-the-rust-of-us/hf-fetch-model)
 //! for high-throughput parallel downloads from the `HuggingFace` Hub:
 //!
 //! ```rust,no_run
