@@ -11,6 +11,19 @@
 //! lens, and sparse-feature analysis (CLTs and SAEs) — all in pure Rust with
 //! GPU acceleration.
 //!
+//! ## Requirements
+//!
+//! **Rust 1.88 or newer**, edition 2024. On an older toolchain cargo does not
+//! report an error: because its resolver is MSRV-aware, it silently resolves
+//! `candle-mi` to **0.1.4**, the last release with an MSRV of 1.87 (the bump
+//! landed in 0.1.5, forced by `libloading 0.9.0`), and `cargo update` will
+//! never move you off it. 0.1.4 predates RWKV, the masked-diffusion backends,
+//! trainable backbones and quantized loading. If `cargo add candle-mi` gave
+//! you 0.1.4, run `rustup update && cargo update`.
+//!
+//! candle-mi targets a single consumer GPU: models up to ~7B fit in 16 GB at
+//! F32. CPU-only works for small models and tokenizer-only workflows.
+//!
 //! ## Supported backends
 //!
 //! | Backend | Models | Feature flag |

@@ -25,7 +25,28 @@
 
 Most HuggingFace transformer models work out of the box via **auto-config** — no code changes needed. See [BACKENDS.md](BACKENDS.md) for details and how to add new architectures.
 
+## Requirements
+
 **Hardware:** candle-mi runs on a single consumer GPU (developed on an RTX 5060 Ti, 16 GB VRAM). Models up to ~7B fit in 16 GB at F32 precision — no H100 cluster required. CPU-only works for small models and tokenizer-only workflows.
+
+**Toolchain: Rust 1.88 or newer**, edition 2024.
+
+> ⚠️ **On an older toolchain, cargo does not report an error — it silently gives you `candle-mi 0.1.4`.**
+>
+> `0.1.4` is the last release with an MSRV of 1.87. The bump to 1.88 landed in `0.1.5`, forced by
+> the `libloading 0.9.0` dependency. Because cargo's resolver is MSRV-aware, a Rust 1.87 toolchain
+> resolves `candle-mi` to `0.1.4` rather than failing, and `cargo update` will never move you off it.
+>
+> `0.1.4` predates RWKV, the masked-diffusion backends, trainable backbones, quantized weight
+> loading, and most of the CLT work described below. **If `cargo add candle-mi` gave you `0.1.4`,
+> that is why:**
+>
+> ```sh
+> rustup update && cargo update
+> ```
+>
+> The 1.88 floor is not ours to lower: six crates in candle-mi's dependency graph (`libloading`,
+> `time`, `zip`, `cookie_store`, and others) require it independently.
 
 ## Table of Contents
 

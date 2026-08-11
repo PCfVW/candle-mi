@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **A `Requirements` section in `README.md`, mirrored in the crate-level docs** (`src/lib.rs`), documenting the silent-downgrade trap behind the MSRV. crates.io download data shows `0.1.4` accounting for 64% of all candle-mi downloads ever, still growing, and arriving from a consumer that never touches the repository. `0.1.4` is the last release with `rust-version = "1.87"`; the bump to `1.88` landed in `0.1.5`, forced by `libloading 0.9.0`. Cargo's MSRV-aware resolver therefore hands a Rust 1.87 toolchain `0.1.4` instead of erroring, and `cargo update` never moves it. Nothing can be published that reaches an already-resolved consumer, so the diagnosis is placed where someone who eventually wonders *why* they are on `0.1.4` will look: the crates.io landing page (which renders the latest version's README regardless of the version in use) and docs.rs. The section also absorbs the previously orphaned `**Hardware:**` paragraph, so toolchain and hardware requirements sit together.
+
 ### Fixed
 
 - **Two rendered doc links pointed at the pre-transfer `hf-fetch-model` URL** (`src/lib.rs`, `src/download.rs`). Both now point at `mi-for-the-rust-of-us/hf-fetch-model`. These are the only two occurrences in shipped source, so docs.rs no longer sends readers to the old personal namespace.
