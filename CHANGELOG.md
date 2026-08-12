@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.22] - 2026-08-12
+
 ### Added
 
 - **`optim::fold_ema` — the parameter EMA as one launch** (`src/optim.rs`, `training` feature). The EMA fold had the same disease as the `AdamW` step: three kernels per parameter (two scalar multiplies and an add), **231 launches per step on a 77-parameter model**, the largest elementwise population of the whole training step. `fold_ema` takes every `(shadow, parameter)` pair at once and, on CUDA with contiguous `F32`, folds them in a single `ema_mt_f32` launch. It **returns which path it took** (the new `FoldPath` enum) rather than nothing, because both paths compute the same numbers and a value comparison alone cannot distinguish a working kernel from a silent fall-through. The fused path writes shadows in place, so it declines whenever it cannot prove that is safe: a shadow sharing storage with its parameter (an aliased shadow is not an average at all, a defect already recorded downstream once), mismatched devices or element counts, or a `candle-kernels` build without the kernel.
@@ -2199,7 +2201,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.21...HEAD
+[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.22...HEAD
+[0.1.22]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.21...v0.1.22
 [0.1.21]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.20...v0.1.21
 [0.1.20]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.19...v0.1.20
 [0.1.19]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.18...v0.1.19
