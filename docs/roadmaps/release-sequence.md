@@ -18,57 +18,68 @@ On a commit that is ready to become a release tag. Before starting:
 
 ## The sequence
 
-### 1. Bump version
+> **Order is load-bearing: verify, then bump, then dry-run.** This mirrors
+> [`CLAUDE.md`](../../CLAUDE.md) §Releasing exactly; if the two ever diverge,
+> CLAUDE.md wins and this file is the bug. The reason the dry-run comes *after*
+> the bump is that `cargo publish --dry-run` contacts the registry: run against
+> an already-published version it either objects or proves nothing useful. It
+> has to see the version that will actually ship.
+
+### 1. Verify green, before touching any version string
+
+Both steps here are version-agnostic, which is exactly why they come first.
+
+- **Oracles, if a numeric path moved.** `./scripts/resurrect.ps1` (default tier,
+  GPU, ~40–50 min). Required after any change to a forward / CLT / SAE /
+  quantized path — CI never runs the oracle suite, so green CI says nothing
+  about numeric parity. Commit the refreshed `RESURRECTION.md`. See
+  [`CLAUDE.md`](../../CLAUDE.md) §Oracle-suite resurrection for tiers and
+  `-Only`/`-Skip` selection. **Never run it concurrently with preflight.**
+- **The full CI mirror.** `./scripts/preflight.ps1 -Ci` — every CI step on
+  **both** `1.88` and `stable`. This is the run that means "green preflight =
+  green CI".
+
+### 2. Bump version
 
 - `Cargo.toml` → `version = "X.Y.Z"`.
 - Refresh `Cargo.lock` so it matches: `cargo update -p candle-mi`.
   Also good release hygiene: `cargo update -p hf-fetch-model` to pick up any
   patch release of the download crate.
+- Bump the **README version banner** (the `> **Note:** vX.Y.Z` line near the top).
 
-### 2. Consolidate CHANGELOG
+### 3. Consolidate CHANGELOG
 
 - Rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` (use today's UTC date).
 - Insert a fresh empty `## [Unreleased]` section above it.
 - Preserve the existing `### Added` / `### Changed` / `### Fixed` / `### Tests`
   subsections under the new `[X.Y.Z]` header.
 
-### 3. Commit the release bump
+### 4. Commit the release bump
 
 ```bash
-git add Cargo.toml Cargo.lock CHANGELOG.md
+git add Cargo.toml Cargo.lock CHANGELOG.md README.md
 git commit -m "chore: bump version to X.Y.Z and update CHANGELOG"
 ```
 
 **CLAUDE.md rule:** `Cargo.toml` and `Cargo.lock` go in the **same commit**.
 `publish.yml` fails on a dirty `Cargo.lock`.
 
-### 4. Dry-run the CI workflow locally
-
-Mirrors every step in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
-(stable-Rust lane; MSRV 1.88 lane differs only in toolchain, not commands).
-`&&` chaining stops on first failure:
+### 5. Dry-run the publish: the non-skippable gate
 
 ```bash
-cargo fmt --check \
-  && cargo build --no-default-features --features transformer \
-  && cargo clippy --no-default-features --features transformer -- -W clippy::pedantic \
-  && cargo test --no-default-features --features transformer \
-  && cargo build --no-default-features --features "rwkv,rwkv-tokenizer" \
-  && cargo clippy --no-default-features --features "rwkv,rwkv-tokenizer" -- -W clippy::pedantic \
-  && cargo test --no-default-features --features "rwkv,rwkv-tokenizer" \
-  && cargo build --no-default-features --features stoicheia \
-  && cargo clippy --no-default-features --features stoicheia -- -W clippy::pedantic \
-  && cargo test --no-default-features --features stoicheia --lib --test stoicheia_analysis --test validate_stoicheia \
-  && cargo build --no-default-features --features "clt,transformer" \
-  && cargo clippy --no-default-features --features "clt,transformer" -- -W clippy::pedantic \
-  && cargo test --no-default-features --features "clt,transformer" --lib \
-  && cargo build --no-default-features \
-  && cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,clt,sae,stoicheia,probing"
+cargo publish --no-default-features --features transformer --dry-run
 ```
 
-First run: ~15–25 min cold compile. Incremental reruns much faster.
+This is what catches packaging issues no lane can see: missing files under
+`[package] exclude`, metadata validation, licence headers, the simulated
+crates.io upload. The standing rule that this step is never skipped is recorded
+as [`feedback_dry_run_before_tag.md`](../../../../.claude/projects/c--Users-Eric-JACOPIN-Documents-Code-Source-candle-mi/memory/feedback_dry_run_before_tag.md).
 
-### 5. Push; wait for remote CI green
+Step 1's `preflight.ps1 -Ci` already covered the lane gauntlet on both
+toolchains, so there is no second transcription of the workflow commands to
+keep in sync here. That is deliberate: see [Drift check](#drift-check).
+
+### 6. Push; wait for remote CI green
 
 ```bash
 git push
@@ -76,33 +87,6 @@ git push
 
 Wait for both matrix entries (MSRV 1.88 and Stable) to report green in the
 GitHub Actions UI. Do not proceed until both are ✓.
-
-### 6. Dry-run the publish workflow locally
-
-Mirrors [`.github/workflows/publish.yml`](../../.github/workflows/publish.yml),
-ending with `cargo publish --dry-run` instead of the real publish. Differs
-from step 4 by dropping the CLT lane (publish.yml doesn't have one) and adding
-the dry-run publish command at the end:
-
-```bash
-cargo fmt --check \
-  && cargo build --no-default-features --features transformer \
-  && cargo clippy --no-default-features --features transformer -- -W clippy::pedantic \
-  && cargo test --no-default-features --features transformer \
-  && cargo build --no-default-features --features "rwkv,rwkv-tokenizer" \
-  && cargo clippy --no-default-features --features "rwkv,rwkv-tokenizer" -- -W clippy::pedantic \
-  && cargo test --no-default-features --features "rwkv,rwkv-tokenizer" \
-  && cargo build --no-default-features --features stoicheia \
-  && cargo clippy --no-default-features --features stoicheia -- -W clippy::pedantic \
-  && cargo test --no-default-features --features stoicheia --lib --test stoicheia_analysis --test validate_stoicheia \
-  && cargo build --no-default-features \
-  && cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,clt,sae,stoicheia,probing" \
-  && cargo publish --no-default-features --features transformer --dry-run
-```
-
-The final `cargo publish --dry-run` is what catches packaging issues the
-lane checks cannot see: missing files in `[package] exclude` rules, metadata
-validation, licence headers, simulated crates.io upload.
 
 ### 7. Tag and push
 
@@ -119,43 +103,66 @@ The workflow runs the full lane gauntlet again on Ubuntu, then the real
 Monitor the workflow run. On success, the crate is live at
 `https://crates.io/crates/candle-mi/X.Y.Z`.
 
-## Why both dry-runs matter
+### 8. Cut the GitHub Release, after the crates.io publish is green
 
-- **Step 4 (pre-push CI dry-run)** is about not pushing a broken
-  release-prep commit to `origin` at all. Remote CI is ~10 min of feedback
-  latency; local is ~15–25 min of cold compile but gives immediate termination
-  on first failure. On the release commit specifically (what the tag will
-  point at) this matters — you do not want a "fix CI for vX.Y.Z" commit
-  polluting `git log` right before the tag.
-- **Step 6 (pre-tag publish dry-run)** catches things neither step 4 nor
-  remote CI sees: `cargo publish --dry-run` builds a crate package under
-  `[package] exclude` rules, validates metadata completeness, verifies
-  licences, and simulates the crates.io upload. The standing rule that this
-  step is non-skippable is recorded as
+Never before: the crate must actually be live first. Use a hand-authored
+narrative body (title, then "In the crate" / "Experiments" / "Verified before
+tagging" — the v0.1.18/v0.1.19 house style), **not** a raw changelog dump.
+
+```bash
+./scripts/release-notes.ps1 -Version X.Y.Z -Theme "..."   # scaffolds from the CHANGELOG
+# edit the scaffold into prose, then:
+gh release create vX.Y.Z --title "..." --notes-file <f> --verify-tag --latest
+```
+
+GitHub Releases are for real `vMAJOR.MINOR.PATCH` tags only, mirroring the
+publish trigger.
+
+## Why each gate exists
+
+- **Step 1, `resurrect.ps1`**, is the only thing that says anything about
+  numeric parity. Every oracle test is `#[ignore]`d because it needs cached,
+  often gated models and a ≥16 GiB GPU, so CI never runs one. A perfectly green
+  CI is compatible with a silently wrong forward pass.
+- **Step 1, `preflight.ps1 -Ci`**, is about not pushing a broken release-prep
+  commit to `origin` at all. Remote CI is ~10 min of feedback latency, and on
+  the release commit specifically — the thing the tag will point at — you do not
+  want a "fix CI for vX.Y.Z" commit polluting `git log` right before the tag.
+- **Step 5, `cargo publish --dry-run`**, catches what neither of the above can
+  see: it builds the package under `[package] exclude` rules, validates metadata
+  completeness, verifies licences, and simulates the crates.io upload. Recorded
+  as non-skippable in
   [`feedback_dry_run_before_tag.md`](../../../../.claude/projects/c--Users-Eric-JACOPIN-Documents-Code-Source-candle-mi/memory/feedback_dry_run_before_tag.md).
 
 ## Drift check
 
-The bash blocks in steps 4 and 6 are transcribed from the workflow YAML.
-**Before running them, diff against the current workflow files** in case
-steps have been added/removed since this doc was last updated:
+This doc deliberately holds **no transcription of the workflow YAML**. It used
+to: steps 4 and 6 were hand-copied `cargo` chains mirroring `ci.yml` and
+`publish.yml`, and they had to be re-diffed against the workflows before every
+use because they rotted silently. `preflight.ps1` is now the maintained
+instrument for that job, and `-Ci` runs every CI step on both toolchains, so
+the only correct move is to call it rather than re-copy it.
+
+The one drift risk that remains is **`preflight.ps1` itself falling behind the
+workflows**. Check that, not this file:
 
 ```bash
 grep -E "^\s+run: cargo" .github/workflows/ci.yml
 grep -E "^\s+run: cargo" .github/workflows/publish.yml
 ```
 
-If the output does not match the commands above verbatim, update this doc
-**or** regenerate the bash blocks from the current YAML before running.
+If a lane appears there that `scripts/preflight.ps1` does not run, fix the
+script.
 
 ## Alternative: `act`
 
 [`nektos/act`](https://github.com/nektos/act) runs `.github/workflows/*.yml`
 literally in Docker, using the same `ubuntu-latest` image as GitHub Actions.
-Highest-fidelity dry-run possible — catches Linux-specific issues that
-Windows-local transcription misses. Downsides: requires Docker Desktop, has
-quirks with `Swatinem/rust-cache@v2` and some GitHub-context-dependent
-actions. Optional; the shell-transcription approach catches ~95% of issues.
+Highest-fidelity dry-run possible: it catches Linux-specific issues that any
+Windows-local run misses. Downsides: requires Docker Desktop, has quirks with
+`Swatinem/rust-cache@v2` and some GitHub-context-dependent actions. Optional.
+`preflight.ps1 -Ci` catches the large majority of issues without it, and the
+Linux-only residue is what step 6's remote CI is for.
 
 ## Cross-reference
 
