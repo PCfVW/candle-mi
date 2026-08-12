@@ -32,12 +32,13 @@ sampled. `n/a` = not measurable on this platform (Linux/macOS have no
 shared-residency counter). Mark an entry `Spill = $true` in the script, or
 pass `-SpillProbe` to sample every entry.
 
-- **Last run:** 2026-08-12 11:40 — tier **partial (1 of 20: mdlm)**
+- **Last run:** 2026-08-12 17:48 — tier **partial (1 of 20: clt_qwen3)**
 - **Toolchain:** rustc 1.97.1 (8bab26f4f 2026-07-14)
+- **GPU:** NVIDIA GeForce RTX 5060 Ti, driver 610.88
 
 | Test | Models | Device(s) | Last verified | Wall-clock | Peak spill | Outcome |
 |---|---|---|---|---|---|---|
-| clt_qwen3 (encoder parity) | bluelightai/clt-qwen3-1.7b-base-20k (~240 MiB) | CPU | 2026-08-12 | 3.1s | none | ✅ PASS |
+| clt_qwen3 (encoder parity) | bluelightai/clt-qwen3-1.7b-base-20k (~240 MiB) | CPU | 2026-08-12 | 78.9s | none | ✅ PASS |
 | plt_gemma (encoder parity) | google/gemma-scope-2b-pt-transcoders (~864 MiB, gated) | CPU | 2026-08-12 | 2.8s | none | ✅ PASS |
 | plt_llama (encoder parity) | mntss/transcoder-Llama-3.2-1B (~16 GiB) | CPU | 2026-08-12 | 6.4s | — | ✅ PASS |
 | llama32 forward | meta-llama/Llama-3.2-1B (gated) | CPU+GPU | 2026-08-12 | 31.3s | — | ✅ PASS |

@@ -347,6 +347,36 @@ try {
     if ($null -ne $hmn -and ($SpillProbe -or ($selected | Where-Object { $_.Spill }))) {
         Write-Host "Spill sampling via $($hmn.Source)" -ForegroundColor DarkGray
     }
+
+    # GPU identity + driver version, stamped for provenance alongside the
+    # toolchain. A driver change can move GPU floating-point results, so a
+    # record that pins `rustc` but not the driver can certify a configuration
+    # the machine no longer runs. That is not hypothetical: the v0.1.22
+    # verification moved 591.86 -> 610.88 mid-run after a `0x133_ISR_nvlddmkm`
+    # bugcheck, and had the interrupted run completed instead, this file would
+    # have asserted parity on a driver that was already gone.
+    #
+    # Read from hypomnesis >= 0.2.9's `hmn --json`, which exists because this
+    # script asked for it (docs/dogfooding-feedbacks in the hypomnesis repo).
+    # Absence is a note, never a gate — the same discipline the spill probe
+    # already follows, so an older `hmn`, a missing `hmn`, or a non-NVIDIA
+    # machine degrades to an honest "not recorded" rather than failing the run.
+    $gpuStamp = $null
+    if ($null -ne $hmn) {
+        try {
+            $raw = (& $hmn.Source --json 2>$null | Out-String)
+            if (-not [string]::IsNullOrWhiteSpace($raw)) {
+                $parts = @(
+                    foreach ($d in @($raw | ConvertFrom-Json)) {
+                        $nm = if ($d.name) { $d.name } else { "GPU $($d.index)" }
+                        if ($d.driver_version) { "$nm, driver $($d.driver_version)" } else { $nm }
+                    }
+                )
+                if ($parts.Count -gt 0) { $gpuStamp = ($parts -join '; ') }
+            }
+        } catch { $gpuStamp = $null }
+    }
+    if (-not $gpuStamp) { $gpuStamp = 'not recorded (needs `hmn` 0.2.9+ on PATH)' }
     foreach ($e in $selected) {
         $cargoArgs = @('test', '--features', $e.Features, '--release')
         foreach ($t in $e.Tests) { $cargoArgs += @('--test', $t) }
@@ -507,6 +537,7 @@ try {
         ''
         "- **Last run:** $stampNow — tier **$tier**"
         "- **Toolchain:** $rustc"
+        "- **GPU:** $gpuStamp"
         ''
         '| Test | Models | Device(s) | Last verified | Wall-clock | Peak spill | Outcome |'
         '|---|---|---|---|---|---|---|'
