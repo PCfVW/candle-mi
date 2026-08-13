@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.23] - 2026-08-13
+
 ### Changed
 
 - **MSRV raised 1.88 → 1.91, and `hf-fetch-model` pinned to `0.11.3`.** The floor is not candle-mi's to choose: `hf-fetch-model` is a required dependency, and 0.11.3 adopted `hf-hub` 1.0 with its mandatory `hf-xet`.
@@ -2237,7 +2239,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.22...HEAD
+[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.23...HEAD
+[0.1.23]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.22...v0.1.23
 [0.1.22]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.21...v0.1.22
 [0.1.21]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.20...v0.1.21
 [0.1.20]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.19...v0.1.20
