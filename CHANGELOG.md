@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **`hypomnesis` floor `0.2.6` → `0.2.9`**, so `GpuDeviceInfo::driver_version` is reachable from the library and the declared floor matches the release `scripts/resurrect.ps1` already requires of the `hmn` CLI. `default-features = false` is unchanged, so 0.2.8's "`cli` becomes a default feature" is inert as far as candle-mi's own declaration goes.
+
+  **Consequence worth knowing, and it is not candle-mi's to fix:** `hf-fetch-model 0.11.2` depends on `hypomnesis` **with default features on**, and cargo unions features across the graph, so `cli` is enabled anyway and `clap` (×4 crates), `anstyle` and `ctrlc` now compile into every candle-mi build. This was latent rather than introduced here: `hf-fetch-model`'s `^0.2.5` requirement already permitted 0.2.9, and only candle-mi's lockfile was holding the resolution at 0.2.6. The fix belongs in `hf-fetch-model`, which needs `default-features = false` plus an explicit feature list (it uses `device_info` for `inspect --check-gpu`); once that lands, the six crates leave both trees.
+
+### Fixed
+
+- **`clippy::doc_markdown` violation in `tests/fast_download.rs`**, un-backticked `HuggingFace` in the module doc comment, live since 2026-06-06. No lane catches it: the clippy lanes in `ci.yml` and `preflight.ps1` pass neither `--all-targets` (so no test or example target is ever linted) nor `-D` (pedantic findings are warnings). Surfaced only because verifying the hypomnesis bump used `--all-targets -D warnings`.
+
 ### Tests
 
 - **`resurrect.ps1` now stamps the GPU and its driver version into `RESURRECTION.md`**, next to the toolchain line: `- **GPU:** NVIDIA GeForce RTX 5060 Ti, driver 610.88`. The oracle suite certifies numeric parity **on GPU**, but the record pinned only `rustc`, so a stamp could certify a configuration the machine no longer ran with nothing in the file to reveal it. That is not hypothetical: the v0.1.22 verification moved 591.86 → 610.88 mid-run after a `0x133_ISR_nvlddmkm` bugcheck, and had the interrupted run completed instead, the file would have asserted parity on a driver that was already gone. Read from hypomnesis 0.2.9's `hmn --json`, a surface added in response to a candle-mi dogfooding report filed for exactly this purpose. Absence is a note, never a gate: a missing `hmn`, an `hmn` older than 0.2.9, or a machine with no NVIDIA driver all degrade to `not recorded (needs \`hmn\` 0.2.9+ on PATH)` rather than failing the run, matching the discipline the spill probe already follows.

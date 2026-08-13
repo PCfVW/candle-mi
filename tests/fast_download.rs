@@ -3,7 +3,7 @@
 //! Networked smoke tests for the download module.
 //!
 //! These tests are **not hermetic**: they require network access and
-//! depend on HuggingFace Hub availability. A failure here may indicate
+//! depend on `HuggingFace` Hub availability. A failure here may indicate
 //! a transient network or service issue rather than a code bug.
 //!
 //! Downloads a small public test repository (`julien-c/dummy-unknown`)

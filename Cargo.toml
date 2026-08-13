@@ -76,7 +76,14 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 # `hypomnesis` crate (DXGI/NVML/nvidia-smi/Metal). Lean feature set — candle-mi
 # only measures its own process and device totals, so `pdh` (foreign-process
 # listing) is omitted; `metal` keeps macOS support.
-hypomnesis = { version = "0.2.6", optional = true, default-features = false, features = [
+# Floor moved 0.2.6 -> 0.2.9 so `GpuDeviceInfo::driver_version` is reachable:
+# `scripts/resurrect.ps1` already requires the 0.2.9 `hmn` CLI to stamp the GPU
+# and driver into `RESURRECTION.md`, and this keeps the library floor honest
+# about the same release rather than leaving the two three versions apart.
+# `default-features = false` means 0.2.8's `cli`-becomes-default change is inert
+# here. No lockstep constraint applies: unlike anamnesis below, no hypomnesis
+# type crosses between candle-mi's and hf-fetch-model's public APIs.
+hypomnesis = { version = "0.2.9", optional = true, default-features = false, features = [
     "nvml",
     "dxgi",
     "nvidia-smi-fallback",
