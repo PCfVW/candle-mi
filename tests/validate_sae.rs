@@ -120,7 +120,7 @@ const HOOK_LAYER: usize = 0;
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires the GemmaScope SAE NPZ cached; CPU-only, run with --ignored"]
 #[serial]
 fn sae_load_detects_config() {
     let device = Device::Cpu;
@@ -144,7 +144,7 @@ fn sae_load_detects_config() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires a CUDA device plus Gemma 2 2B and the GemmaScope SAE NPZ cached; run via resurrect.ps1 / --ignored"]
 #[serial]
 fn sae_encode_gemma2_residuals() {
     let device = cuda_device().expect("CUDA required for SAE encoding test");
@@ -318,7 +318,7 @@ fn sae_encode_gemma2_residuals() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires a CUDA device plus Gemma 2 2B and the GemmaScope SAE NPZ cached; run via resurrect.ps1 / --ignored"]
 #[serial]
 fn sae_injection_shifts_logits() {
     let device = cuda_device().expect("CUDA required for SAE injection test");
@@ -388,7 +388,7 @@ fn sae_injection_shifts_logits() {
 // ===========================================================================
 
 #[test]
-#[ignore]
+#[ignore = "requires scripts/sae_reference.json (generate it first) and a CUDA device; run via resurrect.ps1 / --ignored"]
 #[serial]
 fn sae_vs_python_reference() {
     let ref_path = std::path::Path::new("scripts/sae_reference.json");
@@ -464,6 +464,9 @@ fn sae_vs_python_reference() {
 
     println!("Rust: {n_active} active features, Python: {py_n_active}");
     // Allow some tolerance — float differences can toggle features near threshold.
+    // CAST: usize → i64, active-feature counts are far below i64::MAX; the signed
+    // widening is deliberate so the subtraction cannot underflow before `unsigned_abs`.
+    #[allow(clippy::cast_possible_wrap)]
     let active_diff = (n_active as i64 - py_n_active as i64).unsigned_abs();
     assert!(
         active_diff <= 10,

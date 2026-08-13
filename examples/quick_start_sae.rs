@@ -33,6 +33,7 @@ fn main() {
     }
 }
 
+/// Load an SAE, encode a forward pass, and report top features plus reconstruction error.
 fn run() -> candle_mi::Result<()> {
     let device = Device::cuda_if_available(0)?;
     println!("Device: {device:?}");
@@ -118,6 +119,7 @@ fn run() -> candle_mi::Result<()> {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/// Return the `HuggingFace` Hub cache directory.
 fn hf_cache_dir() -> Option<PathBuf> {
     if let Ok(cache) = std::env::var("HF_HOME") {
         return Some(PathBuf::from(cache).join("hub"));
@@ -143,6 +145,7 @@ fn hf_cache_dir() -> Option<PathBuf> {
     None
 }
 
+/// Find the first snapshot directory for a cached model.
 fn find_snapshot(model_id: &str) -> Option<PathBuf> {
     let cache_dir = hf_cache_dir()?;
     let dir_name = format!("models--{}", model_id.replace('/', "--"));
@@ -151,6 +154,7 @@ fn find_snapshot(model_id: &str) -> Option<PathBuf> {
     Some(entry.path())
 }
 
+/// Collect safetensors paths for a snapshot (single file or sharded index).
 fn safetensors_paths(snapshot: &std::path::Path) -> Vec<PathBuf> {
     let single = snapshot.join("model.safetensors");
     if single.exists() {

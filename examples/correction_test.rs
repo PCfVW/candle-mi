@@ -380,10 +380,12 @@ fn run() -> candle_mi::Result<()> {
 
     let mut sweep: Vec<CorrectionPoint> = Vec::with_capacity(args.correct_steps + 1);
     // CAST: usize -> f32, correct_steps fits in f32 (small integer)
+    #[allow(clippy::as_conversions)]
     let step_size = args.max_correct_strength / args.correct_steps as f32;
 
     for step in 0..=args.correct_steps {
         // CAST: usize -> f32, step fits in f32 (small integer)
+        #[allow(clippy::as_conversions)]
         let correct_strength = step as f32 * step_size;
 
         let point = run_correction_pass(
@@ -655,6 +657,7 @@ fn extract_top1(
         })
         .ok_or_else(|| candle_mi::MIError::Config("empty probability vector".into()))?;
     // CAST: usize -> u32, vocab index fits in u32
+    #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
     let token_str = tokenizer.decode(&[top_idx as u32])?;
     Ok((token_str, top_prob))
 }

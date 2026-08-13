@@ -282,9 +282,7 @@ fn qwen3_1_7b_forward_parity_gpu() {
         eprintln!("SKIP: {MODEL_ID} not in HF cache");
         return;
     }
-    let device = if let Some(d) = cuda_device() {
-        d
-    } else {
+    let Some(device) = cuda_device() else {
         eprintln!("SKIP: no CUDA device available");
         return;
     };

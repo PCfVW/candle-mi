@@ -43,6 +43,7 @@ struct Args {
     samples: usize,
 }
 
+/// Parse the `--task` argument into a [`StoicheiaTask`].
 fn parse_task(s: &str) -> StoicheiaTask {
     match s {
         "2nd-argmax" | "2nd_argmax" => StoicheiaTask::SecondArgmax,
@@ -84,8 +85,10 @@ fn main() -> candle_mi::Result<()> {
             // CAST: usize → u32, seq_len is small (max 10 in `AlgZoo`)
             #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
             let range = seq_len as u32;
+            // CAST: usize → u32, small indices bounded by `range` above
+            #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
             let data: Vec<u32> = (0..args.samples * seq_len)
-                .map(|i| (i as u32) % range) // CAST: usize → u32, small indices
+                .map(|i| (i as u32) % range)
                 .collect();
             Tensor::from_slice(&data, (args.samples, seq_len), &device)?
         }

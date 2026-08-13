@@ -486,6 +486,10 @@ fn clt_position_sweep_activations() {
     let mut per_position_top_features: Vec<Vec<(CltFeatureId, f32)>> = Vec::with_capacity(seq_len);
     let mut per_position_counts: Vec<usize> = Vec::with_capacity(seq_len);
 
+    // EXPLICIT: `pos` is a sequence position, not an incidental index -- it drives
+    // `resid_mid.i((0, pos))` as well as the `token_ids` lookup, so iterating the
+    // token slice directly would not remove the need for it (CONVENTIONS Rule 9).
+    #[allow(clippy::needless_range_loop)]
     for pos in 0..seq_len {
         let residual = resid_mid.i((0, pos)).unwrap().to_device(&device).unwrap();
         let sparse = clt.encode(&residual, encode_layer).unwrap();
@@ -563,6 +567,8 @@ fn clt_position_sweep_activations() {
         .collect();
     let intersection = first_top_ids.intersection(&last_top_ids).count();
     let union = first_top_ids.union(&last_top_ids).count();
+    // CAST: usize → f32, set cardinalities are bounded by the top-k size
+    #[allow(clippy::cast_precision_loss)]
     let jaccard = if union > 0 {
         intersection as f32 / union as f32
     } else {
@@ -780,6 +786,10 @@ fn clt_position_sweep_causal() {
     println!("\n{:>3}  {:<15}  {:>12}", "Pos", "Token", "L2 Distance");
     println!("{:->3}  {:->15}  {:->12}", "", "", "");
 
+    // EXPLICIT: `pos` is a sequence position, not an incidental index -- it is passed
+    // to `prepare_hook_injection` as the injection site, so iterating the token slice
+    // directly would not remove the need for it (CONVENTIONS Rule 9).
+    #[allow(clippy::needless_range_loop)]
     for pos in 0..seq_len {
         let injection_hooks = clt
             .prepare_hook_injection(&features_for_injection, pos, seq_len, strength, &device)
@@ -1271,6 +1281,10 @@ fn clt_position_sweep_activations_llama() {
     let mut per_position_top_features: Vec<Vec<(CltFeatureId, f32)>> = Vec::with_capacity(seq_len);
     let mut per_position_counts: Vec<usize> = Vec::with_capacity(seq_len);
 
+    // EXPLICIT: `pos` is a sequence position, not an incidental index -- it drives
+    // `resid_mid.i((0, pos))` as well as the `token_ids` lookup, so iterating the
+    // token slice directly would not remove the need for it (CONVENTIONS Rule 9).
+    #[allow(clippy::needless_range_loop)]
     for pos in 0..seq_len {
         let residual = resid_mid.i((0, pos)).unwrap().to_device(&device).unwrap();
         let sparse = clt.encode(&residual, encode_layer).unwrap();
@@ -1348,6 +1362,8 @@ fn clt_position_sweep_activations_llama() {
         .collect();
     let intersection = first_top_ids.intersection(&last_top_ids).count();
     let union = first_top_ids.union(&last_top_ids).count();
+    // CAST: usize → f32, set cardinalities are bounded by the top-k size
+    #[allow(clippy::cast_precision_loss)]
     let jaccard = if union > 0 {
         intersection as f32 / union as f32
     } else {
@@ -1463,6 +1479,10 @@ fn clt_position_sweep_causal_llama() {
     println!("\n{:>3}  {:<15}  {:>12}", "Pos", "Token", "L2 Distance");
     println!("{:->3}  {:->15}  {:->12}", "", "", "");
 
+    // EXPLICIT: `pos` is a sequence position, not an incidental index -- it is passed
+    // to `prepare_hook_injection` as the injection site, so iterating the token slice
+    // directly would not remove the need for it (CONVENTIONS Rule 9).
+    #[allow(clippy::needless_range_loop)]
     for pos in 0..seq_len {
         let injection_hooks = clt
             .prepare_hook_injection(&features_for_injection, pos, seq_len, strength, &device)
