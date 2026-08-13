@@ -12,6 +12,7 @@
     clippy::panic,
     clippy::indexing_slicing,
     clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
     clippy::as_conversions,
     clippy::missing_docs_in_private_items,
     clippy::missing_panics_doc,
@@ -283,12 +284,10 @@ fn bench_hook_overhead_cpu() {
 
 #[test]
 fn bench_hook_overhead_gpu() {
-    let device = if let Some(d) = Device::cuda_if_available(0)
+    let Some(device) = Device::cuda_if_available(0)
         .ok()
         .filter(candle_core::Device::is_cuda)
-    {
-        d
-    } else {
+    else {
         eprintln!("SKIP: no CUDA device available");
         return;
     };

@@ -76,6 +76,7 @@ fn assert_close(actual: f32, expected: f64, name: &str, tolerance: f64) {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
 fn rnn_2nd_argmax_h2_n2_matches_python() {
     let config = StoicheiaConfig::from_task(StoicheiaTask::SecondArgmax, 2, 2);
     let model = StoicheiaRnn::load(
@@ -91,7 +92,8 @@ fn rnn_2nd_argmax_h2_n2_matches_python() {
     let input_data: Vec<f32> = reference
         .input
         .iter()
-        .flat_map(|row| row.iter().map(|&v| v as f32)) // CAST: f64 → f32, reference precision
+        // CAST: f64 → f32, reference fixtures are stored at f32 precision anyway
+        .flat_map(|row| row.iter().map(|&v| v as f32))
         .collect();
     let input = Tensor::from_slice(
         &input_data,
@@ -166,6 +168,7 @@ fn rnn_hook_capture() {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn transformer_longest_cycle_h4_n4_matches_python() {
     let config = StoicheiaConfig::from_task(StoicheiaTask::LongestCycle, 4, 4);
     let model = StoicheiaTransformer::load(
@@ -183,6 +186,7 @@ fn transformer_longest_cycle_h4_n4_matches_python() {
     let input_data: Vec<u32> = reference
         .input
         .iter()
+        // CAST: f64 → u32, fixture values are small non-negative token indices
         .flat_map(|row| row.iter().map(|&v| v as u32))
         .collect();
     let input = Tensor::from_slice(

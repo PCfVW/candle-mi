@@ -436,8 +436,8 @@ fn anacrousis_28x15_full_matrix() {
 
     let max_tokens: usize = 30;
     let stop_tokens: Vec<u32> = vec![
-        128001, // <|end_of_text|>
-        128009, // <|eot_id|>
+        128_001, // <|end_of_text|>
+        128_009, // <|eot_id|>
     ];
 
     // Track rhyme success per condition

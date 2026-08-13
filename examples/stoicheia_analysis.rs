@@ -164,10 +164,12 @@ fn run() -> candle_mi::Result<()> {
     println!("\n=== Piecewise-Linear Regions ===");
     println!("  Distinct regions: {}", region_map.regions.len());
     for (i, r) in region_map.regions.iter().enumerate().take(10) {
+        // CAST: usize -> f32, region counts are bounded by the sample size
+        #[allow(clippy::as_conversions)]
+        let pct = r.count as f32 / n as f32 * 100.0;
         println!(
-            "  Region {i}: {}/{n} inputs ({:.1}%), {} active neurons",
+            "  Region {i}: {}/{n} inputs ({pct:.1}%), {} active neurons",
             r.count,
-            r.count as f32 / n as f32 * 100.0,
             r.pattern.count_active()
         );
     }

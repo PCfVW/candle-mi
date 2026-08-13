@@ -305,7 +305,10 @@ fn run_batch(args: &Args, batch_path: &Path) -> candle_mi::Result<()> {
             prompt: Some(exp.prompt.clone()),
             contrastive: Some(exp.contrastive.clone()),
             target_token: Some(exp.target_token.clone()),
-            inject_position: exp.inject_position.clone().or(args.inject_position.clone()),
+            inject_position: exp
+                .inject_position
+                .clone()
+                .or_else(|| args.inject_position.clone()),
             output: output_dir.map(|dir| dir.join(format!("{}.json", exp.group))),
             batch_file: None,
             clt: args.clt.clone(),
@@ -495,6 +498,10 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
         if clt_multilayer {
             // CLT mode: inject at all layers from inj_layer to n_layers-1
             // simultaneously, matching how CLT features write to all downstream layers
+            // EXPLICIT: the loop variable is a LAYER index, not an incidental container index --
+            // it selects `HookPoint::ResidPost(..)` as well as the parallel per-layer vectors, so
+            // iterating one of those slices directly would not remove it (CONVENTIONS Rule 9).
+            #[allow(clippy::needless_range_loop)]
             for target in inj_layer..n_layers {
                 let delta = build_position_delta(
                     &steering_vectors[target],
@@ -574,6 +581,10 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
     println!("  Step 4: Computing convergence matrix...");
 
     let mut convergence_matrix: Vec<Vec<f32>> = Vec::with_capacity(n_layers);
+    // EXPLICIT: the loop variable is a LAYER index, not an incidental container index --
+    // it selects `HookPoint::ResidPost(..)` as well as the parallel per-layer vectors, so
+    // iterating one of those slices directly would not remove it (CONVENTIONS Rule 9).
+    #[allow(clippy::needless_range_loop)]
     for inj_layer in 0..n_layers {
         let mut row = Vec::with_capacity(n_layers);
         for obs_layer in 0..n_layers {
@@ -641,6 +652,8 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
     );
 
     let mut strength_sweep: Vec<JsonStrengthPoint> = Vec::with_capacity(args.strength_steps);
+    // CAST: usize -> f32, strength_steps is a small CLI-supplied count
+    #[allow(clippy::as_conversions)]
     let step_size = args.max_strength / args.strength_steps as f32;
 
     for step in 1..=args.strength_steps {
@@ -652,6 +665,10 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
 
         if clt_multilayer {
             // CLT mode: inject at all layers from best_layer to n_layers-1
+            // EXPLICIT: the loop variable is a LAYER index, not an incidental container index --
+            // it selects `HookPoint::ResidPost(..)` as well as the parallel per-layer vectors, so
+            // iterating one of those slices directly would not remove it (CONVENTIONS Rule 9).
+            #[allow(clippy::needless_range_loop)]
             for target in best_layer..n_layers {
                 let scaled = (&steering_vectors[target] * f64::from(strength))?;
                 let delta = build_position_delta(&scaled, seq_len, hidden, inject_pos, &device)?;
@@ -675,6 +692,10 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
 
         // Compute convergence row for this strength
         let mut conv_row = Vec::with_capacity(n_layers);
+        // EXPLICIT: the loop variable is a LAYER index, not an incidental container index --
+        // it selects `HookPoint::ResidPost(..)` as well as the parallel per-layer vectors, so
+        // iterating one of those slices directly would not remove it (CONVENTIONS Rule 9).
+        #[allow(clippy::needless_range_loop)]
         for obs_layer in 0..n_layers {
             let resid = cache.require(&HookPoint::ResidPost(obs_layer))?;
             let steered_last = resid.get(0)?.get(seq_len - 1)?;
@@ -764,6 +785,10 @@ fn compute_steering_vectors(
     let contrastive_cache = model.forward(contrastive_input, capture_hooks)?;
 
     let mut steering_vectors: Vec<Tensor> = Vec::with_capacity(n_layers);
+    // EXPLICIT: the loop variable is a LAYER index, not an incidental container index --
+    // it selects `HookPoint::ResidPost(..)` as well as the parallel per-layer vectors, so
+    // iterating one of those slices directly would not remove it (CONVENTIONS Rule 9).
+    #[allow(clippy::needless_range_loop)]
     for layer in 0..n_layers {
         let contrastive_resid = contrastive_cache.require(&HookPoint::ResidPost(layer))?;
         // contrastive_resid: [1, seq_len, hidden] → [hidden] at inject position
@@ -994,7 +1019,7 @@ fn top_k_predictions(
     let mut results = Vec::with_capacity(k);
     for &(idx, prob) in indexed.iter().take(k) {
         // CAST: usize → u32, vocab indices fit in u32
-        #[allow(clippy::as_conversions)]
+        #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
         let token_id = idx as u32;
         let token = tokenizer.decode(&[token_id])?;
         results.push(JsonPrediction {
@@ -1017,13 +1042,12 @@ fn find_absorption_boundary(
     injection_layer: usize,
     threshold: f32,
 ) -> Option<usize> {
-    for obs in (injection_layer + 1)..convergence_row.len() {
-        // INDEX: obs is bounded by convergence_row.len()
-        if convergence_row[obs] >= threshold {
-            return Some(obs);
-        }
-    }
-    None
+    convergence_row
+        .iter()
+        .enumerate()
+        .skip(injection_layer + 1)
+        .find(|&(_, &sim)| sim >= threshold)
+        .map(|(obs, _)| obs)
 }
 
 /// Find a contrastive prompt whose token count matches the clean prompt.
@@ -1092,11 +1116,10 @@ fn print_layer_summary(summaries: &[JsonLayerSummary], target_text: &str) {
     );
 
     for s in summaries {
-        let absorption = match s.absorption_layer {
-            Some(l) => format!("Layer {l}"),
-            // BORROW: owned String needed for format alignment
-            None => "--".to_owned(),
-        };
+        // BORROW: owned String needed for format alignment
+        let absorption = s
+            .absorption_layer
+            .map_or_else(|| "--".to_owned(), |l| format!("Layer {l}"));
         println!(
             "  {:>5}  {:>10}  {:>8.4}  {:>12}",
             s.injection_layer,
@@ -1122,11 +1145,10 @@ fn print_strength_sweep(sweep: &[JsonStrengthPoint], best_layer: usize, target_t
     );
 
     for pt in sweep {
-        let absorption = match pt.absorption_layer {
-            Some(l) => format!("Layer {l}"),
-            // BORROW: owned String needed for format alignment
-            None => "--".to_owned(),
-        };
+        // BORROW: owned String needed for format alignment
+        let absorption = pt
+            .absorption_layer
+            .map_or_else(|| "--".to_owned(), |l| format!("Layer {l}"));
         println!(
             "  {:>8.2}  {:>10}  {:>8.4}  {:>12}",
             pt.strength,
@@ -1159,14 +1181,12 @@ fn print_interpretation(matrix: &[Vec<f32>], summaries: &[JsonLayerSummary], thr
 
     if !absorbed.is_empty() {
         // Average absorption depth (layers after injection)
+        // CAST: usize → f32 throughout; layer indices and the `absorbed` count are
+        // both bounded by n_layers, far inside f32's exact-integer range.
+        #[allow(clippy::as_conversions)]
         let avg_depth: f32 = absorbed
             .iter()
-            .map(|s| {
-                // CAST: usize → f32, layer indices are small
-                #[allow(clippy::as_conversions)]
-                let depth = s.absorption_layer.unwrap_or(0) as f32 - s.injection_layer as f32;
-                depth
-            })
+            .map(|s| s.absorption_layer.unwrap_or(0) as f32 - s.injection_layer as f32)
             .sum::<f32>()
             / absorbed.len() as f32;
 

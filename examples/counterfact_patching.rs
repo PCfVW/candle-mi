@@ -247,6 +247,9 @@ fn replace_position(
 ///
 /// - `orig_acts`, `cf_acts`: `FullActivationCache` with `[seq_len, hidden]` per layer
 /// - Result: `HookSpec` with `len(block_layers)` interventions
+// EXPLICIT: an example patch-builder threading the full experiment context; splitting it
+// into a struct would obscure the walkthrough this example exists to be.
+#[allow(clippy::too_many_arguments)]
 fn build_block_patch(
     orig_acts: &FullActivationCache,
     cf_acts: &FullActivationCache,
@@ -422,7 +425,8 @@ fn run() -> candle_mi::Result<()> {
         let sweep_start = Instant::now();
         // Compute offset for position mapping between different-length prompts
         // CAST: isize arithmetic for offset, values are small token counts
-        #[allow(clippy::as_conversions)]
+        // CAST: usize -> isize, sequence lengths are far below isize::MAX
+        #[allow(clippy::as_conversions, clippy::cast_possible_wrap)]
         let offset = cf_seq_len as isize - orig_seq_len as isize;
 
         // We need the original input tensor for patching forward passes
@@ -448,17 +452,23 @@ fn run() -> candle_mi::Result<()> {
 
         let mut patches: Vec<PatchResult> = Vec::new();
 
+        // EXPLICIT: `orig_pos` is a sequence position mapped onto the counterfactual
+        // sequence via `offset`, not an incidental container index (CONVENTIONS Rule 9).
+        #[allow(clippy::needless_range_loop)]
         for orig_pos in 0..orig_seq_len {
             // INDEX: orig_pos bounded by orig_seq_len from the loop
             #[allow(clippy::indexing_slicing)]
             let ttype = &token_labels[orig_pos];
 
             // Position mapping: fact tokens clamp, template tokens apply offset
-            // CAST: isize arithmetic for position mapping
-            #[allow(clippy::as_conversions)]
+            // CAST: isize arithmetic for position mapping; the tail cast back to usize
+            // is safe because `mapped` is clamped non-negative by `max(0)` below.
+            #[allow(clippy::as_conversions, clippy::cast_sign_loss)]
             let cf_pos = if ttype.starts_with("fact") {
                 orig_pos.min(cf_seq_len.saturating_sub(1))
             } else {
+                // CAST: usize -> isize then back; clamped non-negative by max(0)
+                #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
                 let mapped = (orig_pos as isize + offset).max(0);
                 // CAST: isize → usize, value is non-negative after max(0)
                 (mapped as usize).min(cf_seq_len.saturating_sub(1))

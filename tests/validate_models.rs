@@ -212,9 +212,7 @@ fn print_top_k(model_name: &str, device_name: &str, prompt: &str, top_k: &[(Stri
 
 #[test]
 fn llama_3_2_1b_config_parse() {
-    let snapshot = if let Some(s) = find_snapshot("meta-llama/Llama-3.2-1B") {
-        s
-    } else {
+    let Some(snapshot) = find_snapshot("meta-llama/Llama-3.2-1B") else {
         eprintln!("SKIP: meta-llama/Llama-3.2-1B not in cache");
         return;
     };
@@ -229,7 +227,7 @@ fn llama_3_2_1b_config_parse() {
     assert_eq!(config.num_kv_heads, 8);
     assert_eq!(config.head_dim, 64);
     assert_eq!(config.intermediate_size, 8192);
-    assert_eq!(config.vocab_size, 128256);
+    assert_eq!(config.vocab_size, 128_256);
     assert!(config.tie_word_embeddings);
     assert!(!config.qkv_bias);
     assert!(!config.mlp_bias);
@@ -247,7 +245,7 @@ fn llama_3_2_1b_forward_cpu() {
 
     assert_eq!(model.num_layers(), 16);
     assert_eq!(model.hidden_size(), 2048);
-    assert_eq!(model.vocab_size(), 128256);
+    assert_eq!(model.vocab_size(), 128_256);
     assert_eq!(model.num_heads(), 32);
 
     let prompt = "The capital of France is";
@@ -271,9 +269,7 @@ fn llama_3_2_1b_forward_cpu() {
 #[test]
 #[serial]
 fn llama_3_2_1b_forward_gpu() {
-    let device = if let Some(d) = cuda_device() {
-        d
-    } else {
+    let Some(device) = cuda_device() else {
         eprintln!("SKIP: no CUDA device available");
         return;
     };
@@ -296,9 +292,7 @@ fn llama_3_2_1b_forward_gpu() {
 
 #[test]
 fn gemma_2_2b_config_parse() {
-    let snapshot = if let Some(s) = find_snapshot("google/gemma-2-2b") {
-        s
-    } else {
+    let Some(snapshot) = find_snapshot("google/gemma-2-2b") else {
         eprintln!("SKIP: google/gemma-2-2b not in cache");
         return;
     };
@@ -312,7 +306,7 @@ fn gemma_2_2b_config_parse() {
     assert_eq!(config.num_attention_heads, 8);
     assert_eq!(config.num_kv_heads, 4);
     assert_eq!(config.head_dim, 256);
-    assert_eq!(config.vocab_size, 256000);
+    assert_eq!(config.vocab_size, 256_000);
     assert!(config.tie_word_embeddings);
     assert!(config.use_post_norms);
     assert!(config.attn_logit_softcapping.is_some());
@@ -341,9 +335,7 @@ fn gemma_2_2b_forward_cpu() {
 #[test]
 #[serial]
 fn gemma_2_2b_forward_gpu() {
-    let device = if let Some(d) = cuda_device() {
-        d
-    } else {
+    let Some(device) = cuda_device() else {
         eprintln!("SKIP: no CUDA device available");
         return;
     };
@@ -367,9 +359,7 @@ fn gemma_2_2b_forward_gpu() {
 
 #[test]
 fn starcoder2_3b_config_parse() {
-    let snapshot = if let Some(s) = find_snapshot("bigcode/starcoder2-3b") {
-        s
-    } else {
+    let Some(snapshot) = find_snapshot("bigcode/starcoder2-3b") else {
         eprintln!("SKIP: bigcode/starcoder2-3b not in cache");
         return;
     };
@@ -402,9 +392,7 @@ fn starcoder2_3b_forward_cpu() {
 #[test]
 #[serial]
 fn starcoder2_3b_forward_gpu() {
-    let device = if let Some(d) = cuda_device() {
-        d
-    } else {
+    let Some(device) = cuda_device() else {
         eprintln!("SKIP: no CUDA device available");
         return;
     };
@@ -427,9 +415,7 @@ fn starcoder2_3b_forward_gpu() {
 
 #[test]
 fn qwen2_5_coder_3b_config_parse() {
-    let snapshot = if let Some(s) = find_snapshot("Qwen/Qwen2.5-Coder-3B-Instruct") {
-        s
-    } else {
+    let Some(snapshot) = find_snapshot("Qwen/Qwen2.5-Coder-3B-Instruct") else {
         eprintln!("SKIP: Qwen/Qwen2.5-Coder-3B-Instruct not in cache");
         return;
     };
@@ -461,9 +447,7 @@ fn qwen2_5_coder_3b_forward_cpu() {
 #[test]
 #[serial]
 fn qwen2_5_coder_3b_forward_gpu() {
-    let device = if let Some(d) = cuda_device() {
-        d
-    } else {
+    let Some(device) = cuda_device() else {
         eprintln!("SKIP: no CUDA device available");
         return;
     };
@@ -486,9 +470,7 @@ fn qwen2_5_coder_3b_forward_gpu() {
 
 #[test]
 fn phi3_mini_config_parse() {
-    let snapshot = if let Some(s) = find_snapshot("microsoft/Phi-3-mini-4k-instruct") {
-        s
-    } else {
+    let Some(snapshot) = find_snapshot("microsoft/Phi-3-mini-4k-instruct") else {
         eprintln!("SKIP: microsoft/Phi-3-mini-4k-instruct not in cache");
         return;
     };
@@ -521,9 +503,7 @@ fn phi3_mini_forward_cpu() {
 #[test]
 #[serial]
 fn phi3_mini_forward_gpu() {
-    let device = if let Some(d) = cuda_device() {
-        d
-    } else {
+    let Some(device) = cuda_device() else {
         eprintln!("SKIP: no CUDA device available");
         return;
     };
@@ -583,9 +563,7 @@ fn ensure_mistral_7b_cached() -> Option<std::path::PathBuf> {
 
 #[test]
 fn mistral_7b_config_parse() {
-    let snapshot = if let Some(s) = find_snapshot("mistralai/Mistral-7B-v0.1") {
-        s
-    } else {
+    let Some(snapshot) = find_snapshot("mistralai/Mistral-7B-v0.1") else {
         eprintln!("SKIP: mistralai/Mistral-7B-v0.1 not in cache");
         return;
     };
@@ -631,9 +609,7 @@ fn mistral_7b_forward_cpu() {
 #[test]
 #[serial]
 fn mistral_7b_forward_gpu() {
-    let device = if let Some(d) = cuda_device() {
-        d
-    } else {
+    let Some(device) = cuda_device() else {
         eprintln!("SKIP: no CUDA device available");
         return;
     };

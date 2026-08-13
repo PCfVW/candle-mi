@@ -277,6 +277,9 @@ fn replace_position(
 
 /// Build a `HookSpec` that replaces `ResidPost` at every layer in `block_layers`,
 /// AND captures `AttnPattern` at all layers.
+// EXPLICIT: an example patch-builder threading the full experiment context; splitting it
+// into a struct would obscure the walkthrough this example exists to be.
+#[allow(clippy::too_many_arguments)]
 fn build_routing_patch(
     orig_acts: &FullActivationCache,
     cf_acts: &FullActivationCache,
@@ -474,10 +477,7 @@ fn run() -> candle_mi::Result<()> {
             orig_continuation.trim(),
             cf_continuation.trim()
         );
-        println!(
-            "  Fact positions: {:?} (subject_final: {subject_pos})",
-            fact_positions
-        );
+        println!("  Fact positions: {fact_positions:?} (subject_final: {subject_pos})");
 
         // Map subject position to CF sequence
         let cf_subject_pos = subject_pos.min(cf_seq_len.saturating_sub(1));
@@ -615,7 +615,7 @@ fn run() -> candle_mi::Result<()> {
 
     // Top routing heads by frequency
     let mut freq_list: Vec<((usize, usize), usize)> = head_appearances.into_iter().collect();
-    freq_list.sort_by(|a, b| b.1.cmp(&a.1));
+    freq_list.sort_by_key(|&(_, count)| std::cmp::Reverse(count));
 
     println!("  Top Factual Routing Heads:");
     let mut head_freq_output: Vec<HeadFrequency> = Vec::new();

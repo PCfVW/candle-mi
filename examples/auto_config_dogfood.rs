@@ -27,6 +27,7 @@ fn main() {
     }
 }
 
+/// Load `model_id` through auto-config and report the detected architecture.
 fn run(model_id: &str) -> candle_mi::Result<()> {
     download_phase(model_id)?;
     inspect_config(model_id)?;
