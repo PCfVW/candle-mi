@@ -3,7 +3,7 @@
 [![CI](https://github.com/mi-for-the-rust-of-us/candle-mi/actions/workflows/ci.yml/badge.svg)](https://github.com/mi-for-the-rust-of-us/candle-mi/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/candle-mi)](https://crates.io/crates/candle-mi)
 [![docs.rs](https://img.shields.io/docsrs/candle-mi)](https://docs.rs/candle-mi)
-[![Rust 1.88+](https://img.shields.io/badge/rust-1.88%2B-orange)](https://www.rust-lang.org)
+[![Rust 1.91+](https://img.shields.io/badge/rust-1.91%2B-orange)](https://www.rust-lang.org)
 [![Edition 2024](https://img.shields.io/badge/edition-2024-orange)](https://doc.rust-lang.org/edition-guide/rust-2024/)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](LICENSE-MIT)
 [![GitHub last commit](https://img.shields.io/github/last-commit/mi-for-the-rust-of-us/candle-mi)](https://github.com/mi-for-the-rust-of-us/candle-mi/commits/main)
@@ -29,24 +29,33 @@ Most HuggingFace transformer models work out of the box via **auto-config** — 
 
 **Hardware:** candle-mi runs on a single consumer GPU (developed on an RTX 5060 Ti, 16 GB VRAM). Models up to ~7B fit in 16 GB at F32 precision — no H100 cluster required. CPU-only works for small models and tokenizer-only workflows.
 
-**Toolchain: Rust 1.88 or newer**, edition 2024.
+**Toolchain: Rust 1.91 or newer**, edition 2024.
 
-> ⚠️ **On an older toolchain, cargo does not report an error — it silently gives you `candle-mi 0.1.4`.**
+> ⚠️ **On an older toolchain, `cargo add candle-mi` does not fail — it silently gives you an old
+> release and never moves you off it.**
 >
-> `0.1.4` is the last release with an MSRV of 1.87. The bump to 1.88 landed in `0.1.5`, forced by
-> the `libloading 0.9.0` dependency. Because cargo's resolver is MSRV-aware, a Rust 1.87 toolchain
-> resolves `candle-mi` to `0.1.4` rather than failing, and `cargo update` will never move you off it.
+> Cargo's resolver is MSRV-aware: rather than erroring, it picks the newest candle-mi your
+> compiler can build, and `cargo update` will not advance past it. There are two such ceilings:
+>
+> | Your Rust | You silently get | Because |
+> |---|---|---|
+> | 1.87 or older | **`0.1.4`** | `0.1.5` moved the floor to 1.88, forced by `libloading 0.9.0` |
+> | 1.88 – 1.90 | **`0.1.22`** | `0.1.23` moved the floor to 1.91, forced by `hf-fetch-model 0.11.3` |
 >
 > `0.1.4` predates RWKV, the masked-diffusion backends, trainable backbones, quantized weight
-> loading, and most of the CLT work described below. **If `cargo add candle-mi` gave you `0.1.4`,
-> that is why:**
+> loading, and most of the CLT work described below. `0.1.22` is merely a few releases behind.
+> **If `cargo add candle-mi` gave you either, that is why:**
 >
 > ```sh
 > rustup update && cargo update
 > ```
 >
-> The 1.88 floor is not ours to lower: six crates in candle-mi's dependency graph (`libloading`,
-> `time`, `zip`, `cookie_store`, and others) require it independently.
+> **Neither floor is ours to lower.** 1.88 came from six crates in the graph (`libloading`, `time`,
+> `zip`, `cookie_store` and others). 1.91 arrives through `hf-fetch-model 0.11.3`, which adopted
+> `hf-hub` 1.0 and with it a mandatory `hf-xet`. Worth knowing if you audit this yourself: cargo's
+> MSRV resolution **under-reports** that floor as 1.89, because it reads declared `rust-version`
+> fields and `xet-core-structures` declares none while calling `str::floor_char_boundary`, stable
+> only since 1.91. The declared-metadata floor is a lower bound; only a real build proves it.
 
 ## Table of Contents
 

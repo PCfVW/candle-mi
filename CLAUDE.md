@@ -26,11 +26,11 @@ CI runs clippy separately for each backend feature. Before pushing, also run cli
 
 Checking only `--all-features` will miss lint errors that appear under a single feature flag.
 
-Before every push, run `./scripts/preflight.ps1`. It freshens the toolchains (`rustup update stable`, and ensures the MSRV `1.88` toolchain) so local lints match CI's rolling stable — a dry-run on a stale compiler can pass while CI fails on a newer lint (this is how `clippy::suboptimal_flops` from Rust 1.96 broke a clean `main`; the same lint, on 1.88, also broke a push when preflight didn't yet run the MSRV lane).
+Before every push, run `./scripts/preflight.ps1`. It freshens the toolchains (`rustup update stable`, and ensures the MSRV `1.91` toolchain) so local lints match CI's rolling stable — a dry-run on a stale compiler can pass while CI fails on a newer lint (this is how `clippy::suboptimal_flops` from Rust 1.96 broke a clean `main`; the same lint, on the then-MSRV 1.88, also broke a push when preflight didn't yet run the MSRV lane).
 
-Preflight is **tiered** — CI runs a `1.88` (MSRV) + `stable` matrix, and the default fast path does not fully mirror both:
-- **Default** (`./scripts/preflight.ps1`): full **stable** mirror (every CI lane on stable) **plus** MSRV `1.88` fmt + clippy. The MSRV clippy lanes catch version-specific lints/compile errors (the gap that bit us) cheaply.
-- **`-Ci`** (`./scripts/preflight.ps1 -Ci`): the **full** both-toolchain mirror — every CI step on **both** `1.88` and `stable`. This is the run that literally means "green preflight = green CI"; use it before important pushes and after any MSRV-sensitive change.
+Preflight is **tiered** — CI runs a `1.91` (MSRV) + `stable` matrix, and the default fast path does not fully mirror both:
+- **Default** (`./scripts/preflight.ps1`): full **stable** mirror (every CI lane on stable) **plus** MSRV `1.91` fmt + clippy. The MSRV clippy lanes catch version-specific lints/compile errors (the gap that bit us) cheaply.
+- **`-Ci`** (`./scripts/preflight.ps1 -Ci`): the **full** both-toolchain mirror — every CI step on **both** `1.91` and `stable`. This is the run that literally means "green preflight = green CI"; use it before important pushes and after any MSRV-sensitive change.
 - **`-Full`**: also runs the `bench_hook_*` CPU benches (composes with `-Ci`). These **skip on CI** (the gated `Llama-3.2-1B` isn't cached on runners), so they are not part of "green CI"; run `-Full` only when adding a new model family — the change that can shift the benchmarked forward/hook paths.
 
 ## Releasing

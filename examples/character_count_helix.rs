@@ -1090,6 +1090,12 @@ fn strip_newlines(text: &str) -> String {
 ///
 /// The result is capped at `user_max` (the `--max-tokens` argument).
 /// On CPU this is a no-op — returns `user_max` unchanged.
+//
+// EXPLICIT: cannot be `const fn`. Without the `memory` feature the body reduces to
+// `user_max` and clippy suggests `const`, but the `memory` build calls
+// `MemorySnapshot::now`, which is not const. Taking the suggestion would make the
+// crate compile under one feature set and fail under the other.
+#[allow(clippy::missing_const_for_fn)]
 fn compute_safe_max_tokens(device: &candle_core::Device, user_max: usize) -> usize {
     #[cfg(feature = "memory")]
     if let candle_core::Device::Cuda(_) = device

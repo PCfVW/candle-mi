@@ -9,11 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **MSRV raised 1.88 → 1.91, and `hf-fetch-model` pinned to `0.11.3`.** The floor is not candle-mi's to choose: `hf-fetch-model` is a required dependency, and 0.11.3 adopted `hf-hub` 1.0 with its mandatory `hf-xet`.
+
+  **Cargo's MSRV resolution under-reports this floor as 1.89.** It reads declared `rust-version` fields, which bottom out at `konst` and `redb` (1.89) via `xet-runtime`; but `xet-core-structures` declares *no* `rust-version` at all and calls `str::floor_char_boundary`, stable only since 1.91. Verified in both directions rather than asserted: `cargo +1.88 check` fails with a resolution error, `cargo +1.91` builds clean. Worth remembering next to the `libloading 0.9.0` note in 0.1.5 — **the declared-metadata floor is a lower bound, and only a real build proves the number.**
+
+  The dependency is pinned at `0.11.3`, not `^0.11.2`. Allowing 0.11.2 would let a pre-1.91 toolchain back-solve to it and build candle-mi against a **different dependency tree** from the one stable resolves, i.e. an MSRV lane that quietly stops testing what the stable lane tests. One tree for every toolchain.
+
+  **A second silent-downgrade ceiling now exists**, and the README Requirements table records both: Rust ≤1.87 stops at `0.1.4`, Rust 1.88–1.90 stops at `0.1.22`. Cargo does not error in either case.
+
+  Side effects worth knowing: the dependency count rises **351 → 414** with the xet stack, while `clap` (×4), `anstyle` and `ctrlc` **leave** the tree, because hf-fetch-model 0.11.3 now takes `hypomnesis` with `default-features = false`. `anamnesis` moves to `0.7.3` to match hf-fetch-model's own floor.
+
 - **`hypomnesis` floor `0.2.6` → `0.2.9`**, so `GpuDeviceInfo::driver_version` is reachable from the library and the declared floor matches the release `scripts/resurrect.ps1` already requires of the `hmn` CLI. `default-features = false` is unchanged, so 0.2.8's "`cli` becomes a default feature" is inert as far as candle-mi's own declaration goes.
 
   **Consequence worth knowing, and it is not candle-mi's to fix:** `hf-fetch-model 0.11.2` depends on `hypomnesis` **with default features on**, and cargo unions features across the graph, so `cli` is enabled anyway and `clap` (×4 crates), `anstyle` and `ctrlc` now compile into every candle-mi build. This was latent rather than introduced here: `hf-fetch-model`'s `^0.2.5` requirement already permitted 0.2.9, and only candle-mi's lockfile was holding the resolution at 0.2.6. The fix belongs in `hf-fetch-model`, which needs `default-features = false` plus an explicit feature list (it uses `device_info` for `inspect --check-gpu`); once that lands, the six crates leave both trees.
 
 ### Fixed
+
+- **docs.rs was not documenting the `training` API at all.** `[package.metadata.docs.rs]` listed eleven features but omitted `training`, so `optim::AdamW`, `optim::fold_ema` and `FoldPath` — the headline additions of 0.1.22 — generated no pages. Added to the list; `FoldPath`, `fold_ema` and `AdamW` now build with `RUSTDOCFLAGS=-D warnings` clean. Surfaced while auditing MSRV references, not by any lane: nothing checks that the docs.rs feature list covers the feature set.
 
 - **`clippy::doc_markdown` violation in `tests/fast_download.rs`**, un-backticked `HuggingFace` in the module doc comment, live since 2026-06-06. No lane catches it: the clippy lanes in `ci.yml` and `preflight.ps1` pass neither `--all-targets` (so no test or example target is ever linted) nor `-D` (pedantic findings are warnings). Surfaced only because verifying the hypomnesis bump used `--all-targets -D warnings`.
 

@@ -13,13 +13,16 @@
 //!
 //! ## Requirements
 //!
-//! **Rust 1.88 or newer**, edition 2024. On an older toolchain cargo does not
-//! report an error: because its resolver is MSRV-aware, it silently resolves
-//! `candle-mi` to **0.1.4**, the last release with an MSRV of 1.87 (the bump
-//! landed in 0.1.5, forced by `libloading 0.9.0`), and `cargo update` will
-//! never move you off it. 0.1.4 predates RWKV, the masked-diffusion backends,
-//! trainable backbones and quantized loading. If `cargo add candle-mi` gave
-//! you 0.1.4, run `rustup update && cargo update`.
+//! **Rust 1.91 or newer**, edition 2024. On an older toolchain cargo does not
+//! report an error: because its resolver is MSRV-aware, it silently picks the
+//! newest release your compiler can build and `cargo update` never moves you
+//! past it. Two such ceilings exist — Rust 1.87 or older stops at **0.1.4**
+//! (0.1.5 raised the floor to 1.88, forced by `libloading 0.9.0`), and Rust
+//! 1.88 to 1.90 stops at **0.1.22** (0.1.23 raised it to 1.91, forced by
+//! `hf-fetch-model 0.11.3` adopting `hf-hub` 1.0 and its mandatory
+//! `hf-xet`). 0.1.4 in particular predates RWKV, the masked-diffusion
+//! backends, trainable backbones and quantized loading. If `cargo add
+//! candle-mi` gave you either, run `rustup update && cargo update`.
 //!
 //! candle-mi targets a single consumer GPU: models up to ~7B fit in 16 GB at
 //! F32. CPU-only works for small models and tokenizer-only workflows.

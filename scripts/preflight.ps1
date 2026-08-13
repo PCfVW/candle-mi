@@ -2,18 +2,18 @@
 #
 # Mirrors the per-feature lanes in .github/workflows/ci.yml so that a clean run
 # here predicts a clean run on CI. CI runs a matrix of two toolchains:
-# MSRV (1.88) and stable, each executing fmt + build/clippy/test for the
+# MSRV (1.91) and stable, each executing fmt + build/clippy/test for the
 # transformer, rwkv, stoicheia, clt and diffusion feature sets, plus bare
 # and all-software-features builds.
 #
 # Tiers:
 #   ./scripts/preflight.ps1        # FAST (default): full STABLE mirror + MSRV
-#                                   # (1.88) fmt + clippy. MSRV clippy compiles on
-#                                   # 1.88, so it catches version-specific lints
+#                                   # (1.91) fmt + clippy. MSRV clippy compiles on
+#                                   # 1.91, so it catches version-specific lints
 #                                   # (e.g. clippy::suboptimal_flops, which fired
-#                                   # only on 1.88) without paying for MSRV
+#                                   # only on 1.91) without paying for MSRV
 #                                   # build/test.
-#   ./scripts/preflight.ps1 -Ci    # FULL mirror: every ci.yml step on BOTH 1.88
+#   ./scripts/preflight.ps1 -Ci    # FULL mirror: every ci.yml step on BOTH 1.91
 #                                   # and stable. Literal "green preflight =
 #                                   # green CI"; use before important pushes or
 #                                   # after MSRV-sensitive changes.
@@ -172,21 +172,21 @@ function Invoke-Lanes {
 
 # --- Freshen toolchains (match CI's rolling stable; ensure MSRV present) ---
 Invoke-Step "Update stable toolchain" { rustup update stable }
-Invoke-Step "Ensure MSRV 1.88 toolchain" { rustup toolchain install 1.88 }
-Invoke-Step "Ensure 1.88 components (clippy, rustfmt)" { rustup component add clippy rustfmt --toolchain 1.88 }
+Invoke-Step "Ensure MSRV 1.91 toolchain" { rustup toolchain install 1.91 }
+Invoke-Step "Ensure 1.91 components (clippy, rustfmt)" { rustup component add clippy rustfmt --toolchain 1.91 }
 Write-Host "Using:" -ForegroundColor Yellow
 & rustc "+stable" --version
-& rustc "+1.88" --version
+& rustc "+1.91" --version
 
 Invoke-Step "Pick up latest hf-fetch-model patch" { cargo update -p hf-fetch-model }
 
-# Stable: always the full lane set. MSRV 1.88: fmt + clippy by default; the full
+# Stable: always the full lane set. MSRV 1.91: fmt + clippy by default; the full
 # lane set only under -Ci.
 Invoke-Lanes -Tc "stable" -LintOnly $false
-Invoke-Lanes -Tc "1.88" -LintOnly (-not $Ci)
+Invoke-Lanes -Tc "1.91" -LintOnly (-not $Ci)
 
 if ($Ci) {
-    Write-Host "`nAll preflight checks passed (full 1.88 + stable mirror) — safe to push." -ForegroundColor Green
+    Write-Host "`nAll preflight checks passed (full 1.91 + stable mirror) — safe to push." -ForegroundColor Green
 }
 else {
     Write-Host "`nAll preflight checks passed (full stable mirror + MSRV clippy)." -ForegroundColor Green

@@ -10,7 +10,14 @@ homepage = "https://github.com/mi-for-the-rust-of-us/candle-mi"
 documentation = "https://docs.rs/candle-mi"
 keywords = ["interpretability", "transformers", "mechanistic", "candle", "rust"]
 categories = ["science"]
-rust-version = "1.88"
+# MSRV 1.91, forced by `hf-fetch-model` 0.11.3 (a required dependency), which
+# adopted `hf-hub` 1.0 and with it a mandatory `hf-xet`. Note that cargo's own
+# MSRV resolution UNDER-REPORTS this floor: it reads declared `rust-version`
+# fields, which bottom out at 1.89 (`konst`, `redb` via `xet-runtime`), but
+# `xet-core-structures` declares none at all and calls
+# `str::floor_char_boundary`, stable only since 1.91. The declared-metadata
+# floor is a lower bound; only a real build proves the number.
+rust-version = "1.91"
 # Keep the published package lean (the library is just `src/`). Excludes repo
 # content crate consumers never need: docs + experiment data, validation
 # scripts/oracle reference JSONs, screenshots/gifs, design notes, test fixtures,
@@ -68,8 +75,13 @@ statrs = "0.17"
 # Logging
 tracing = "0.1"
 
-# Model downloads (hf-fetch-model wraps hf-hub v0.5)
-hf-fetch-model = { version = "0.11.2", features = ["indicatif"] }
+# Model downloads (hf-fetch-model wraps hf-hub 1.0 as of 0.11.3).
+# The floor is 0.11.3 deliberately, not `^0.11.2`. 0.11.3 is the release that
+# raised the MSRV to 1.91; allowing 0.11.2 would let a pre-1.91 toolchain
+# back-solve to it and build candle-mi against a DIFFERENT dependency tree
+# from the one stable resolves — an MSRV lane that silently stops testing what
+# the stable lane tests. Requiring 0.11.3 keeps one tree for every toolchain.
+hf-fetch-model = { version = "0.11.3", features = ["indicatif"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
 # Optional: process RAM + GPU VRAM measurement, delegated to the standalone
@@ -94,12 +106,12 @@ hypomnesis = { version = "0.2.9", optional = true, default-features = false, fea
 # - sae feature activates "npz" (Gemma Scope SAE weights)
 # - stoicheia feature activates "pth" (AlgZoo .pth agnostic loading)
 # - quantized feature activates "bnb"/"awq"/"gptq" (dequant-to-BF16 weight loading)
-# Kept in lockstep with hf-fetch-model's own anamnesis requirement (^0.7.1
-# as of hf-fetch-model 0.11.2) so cargo resolves a single anamnesis copy
+# Kept in lockstep with hf-fetch-model's own anamnesis requirement (^0.7.3
+# as of hf-fetch-model 0.11.3) so cargo resolves a single anamnesis copy
 # across the tree rather than two semver-incompatible ones (same hazard as
 # the v0.1.18 windows-sys dedup). Bump this alongside any future
 # hf-fetch-model release that moves its own anamnesis floor.
-anamnesis = { version = "0.7.1", optional = true }
+anamnesis = { version = "0.7.3", optional = true }
 
 # Windows-only deps. The `probing` feature's linear-probe stack is developed and
 # exercised on Windows, so its crates are gated to `cfg(windows)`.
@@ -478,7 +490,7 @@ must_use_candidate        = "warn"      # Rule 17
 # CPU-safe features so the generated docs cover the full public API surface.
 [package.metadata.docs.rs]
 no-default-features = true
-features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "quantized", "mmap", "memory", "probing", "stoicheia"]
+features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "quantized", "mmap", "memory", "probing", "stoicheia", "training"]
 
 [profile.release]
 lto = true
