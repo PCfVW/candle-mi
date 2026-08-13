@@ -67,7 +67,9 @@ fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
 }
 
 fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0).ok().filter(|d| d.is_cuda())
+    Device::cuda_if_available(0)
+        .ok()
+        .filter(candle_core::Device::is_cuda)
 }
 
 fn safetensors_paths(snapshot: &std::path::Path) -> Vec<std::path::PathBuf> {
@@ -166,9 +168,10 @@ fn clt_open_detects_config() {
 #[serial]
 fn clt_encode_gemma2_residuals() {
     let device = cuda_device().expect("CUDA required for CLT encoding test");
-    if find_snapshot("google/gemma-2-2b").is_none() {
-        panic!("google/gemma-2-2b not in HF cache");
-    }
+    assert!(
+        find_snapshot("google/gemma-2-2b").is_some(),
+        "google/gemma-2-2b not in HF cache"
+    );
 
     // Load Gemma 2 2B.
     let (model, tokenizer, config) = load_gemma2(&device);
@@ -280,9 +283,10 @@ fn clt_encode_gemma2_residuals() {
 #[serial]
 fn clt_injection_shifts_logits() {
     let device = cuda_device().expect("CUDA required for CLT injection test");
-    if find_snapshot("google/gemma-2-2b").is_none() {
-        panic!("google/gemma-2-2b not in HF cache");
-    }
+    assert!(
+        find_snapshot("google/gemma-2-2b").is_some(),
+        "google/gemma-2-2b not in HF cache"
+    );
 
     // Load Gemma 2 2B.
     let (model, tokenizer, _config) = load_gemma2(&device);
@@ -444,9 +448,10 @@ fn clt_injection_shifts_logits() {
 #[serial]
 fn clt_position_sweep_activations() {
     let device = cuda_device().expect("CUDA required for CLT position sweep");
-    if find_snapshot("google/gemma-2-2b").is_none() {
-        panic!("google/gemma-2-2b not in HF cache");
-    }
+    assert!(
+        find_snapshot("google/gemma-2-2b").is_some(),
+        "google/gemma-2-2b not in HF cache"
+    );
 
     // Load Gemma 2 2B.
     let (model, tokenizer, _config) = load_gemma2(&device);
@@ -685,9 +690,10 @@ fn clt_position_sweep_activations() {
 #[serial]
 fn clt_position_sweep_causal() {
     let device = cuda_device().expect("CUDA required for CLT causal sweep");
-    if find_snapshot("google/gemma-2-2b").is_none() {
-        panic!("google/gemma-2-2b not in HF cache");
-    }
+    assert!(
+        find_snapshot("google/gemma-2-2b").is_some(),
+        "google/gemma-2-2b not in HF cache"
+    );
 
     // Load Gemma 2 2B.
     let (model, tokenizer, _config) = load_gemma2(&device);
@@ -799,7 +805,7 @@ fn clt_position_sweep_causal() {
         l2_distances.push(l2);
 
         let tok_str = tokenizer.decode(&[token_ids[pos]]).unwrap();
-        println!("{:>3}  {:<15}  {:>12.4}", pos, tok_str, l2);
+        println!("{pos:>3}  {tok_str:<15}  {l2:>12.4}");
     }
 
     // --- Assertions ---
@@ -946,9 +952,10 @@ fn clt_open_llama_detects_config() {
 #[serial]
 fn clt_encode_llama_residuals() {
     let device = cuda_device().expect("CUDA required for CLT encoding test");
-    if find_snapshot("meta-llama/Llama-3.2-1B").is_none() {
-        panic!("meta-llama/Llama-3.2-1B not in HF cache");
-    }
+    assert!(
+        find_snapshot("meta-llama/Llama-3.2-1B").is_some(),
+        "meta-llama/Llama-3.2-1B not in HF cache"
+    );
 
     // Load Llama 3.2 1B.
     let (model, tokenizer, config) = load_llama(&device);
@@ -1060,9 +1067,10 @@ fn clt_encode_llama_residuals() {
 #[serial]
 fn clt_injection_shifts_logits_llama() {
     let device = cuda_device().expect("CUDA required for CLT injection test");
-    if find_snapshot("meta-llama/Llama-3.2-1B").is_none() {
-        panic!("meta-llama/Llama-3.2-1B not in HF cache");
-    }
+    assert!(
+        find_snapshot("meta-llama/Llama-3.2-1B").is_some(),
+        "meta-llama/Llama-3.2-1B not in HF cache"
+    );
 
     // Load Llama 3.2 1B.
     let (model, tokenizer, _config) = load_llama(&device);
@@ -1225,9 +1233,10 @@ fn clt_position_sweep_activations_llama() {
     // Self-consistency only: no Llama oracle exists — clt_position_sweep_reference.json
     // is Gemma-2-2B (see the Gemma sweep tests above for the oracle-backed checks).
     let device = cuda_device().expect("CUDA required for CLT position sweep");
-    if find_snapshot("meta-llama/Llama-3.2-1B").is_none() {
-        panic!("meta-llama/Llama-3.2-1B not in HF cache");
-    }
+    assert!(
+        find_snapshot("meta-llama/Llama-3.2-1B").is_some(),
+        "meta-llama/Llama-3.2-1B not in HF cache"
+    );
 
     // Load Llama 3.2 1B.
     let (model, tokenizer, _config) = load_llama(&device);
@@ -1383,9 +1392,10 @@ fn clt_position_sweep_activations_llama() {
 #[serial]
 fn clt_position_sweep_causal_llama() {
     let device = cuda_device().expect("CUDA required for CLT causal sweep");
-    if find_snapshot("meta-llama/Llama-3.2-1B").is_none() {
-        panic!("meta-llama/Llama-3.2-1B not in HF cache");
-    }
+    assert!(
+        find_snapshot("meta-llama/Llama-3.2-1B").is_some(),
+        "meta-llama/Llama-3.2-1B not in HF cache"
+    );
 
     // Load Llama 3.2 1B.
     let (model, tokenizer, _config) = load_llama(&device);
@@ -1478,7 +1488,7 @@ fn clt_position_sweep_causal_llama() {
         l2_distances.push(l2);
 
         let tok_str = tokenizer.decode(&[token_ids[pos]]).unwrap();
-        println!("{:>3}  {:<15}  {:>12.4}", pos, tok_str, l2);
+        println!("{pos:>3}  {tok_str:<15}  {l2:>12.4}");
     }
 
     // --- Assertions ---

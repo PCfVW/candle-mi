@@ -65,7 +65,9 @@ fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
 }
 
 fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0).ok().filter(|d| d.is_cuda())
+    Device::cuda_if_available(0)
+        .ok()
+        .filter(candle_core::Device::is_cuda)
 }
 
 fn safetensors_paths(snapshot: &std::path::Path) -> Vec<std::path::PathBuf> {
@@ -518,7 +520,7 @@ fn anacrousis_28x15_full_matrix() {
     let total_elapsed = t0.elapsed().as_secs_f64();
     eprintln!("\n=== SUMMARY ({total_elapsed:.1}s total) ===");
     for (name, count) in &rhyme_counts {
-        eprintln!("  {:<35} {}/15", name, count);
+        eprintln!("  {name:<35} {count}/15");
     }
 
     // --- Key assertions ---

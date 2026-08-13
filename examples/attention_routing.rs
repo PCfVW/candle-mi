@@ -421,10 +421,7 @@ fn run() -> candle_mi::Result<()> {
         );
     }
 
-    println!(
-        "\n=== Strength Sweep (top head: L{}:H{}) ===\n",
-        top_layer, top_head
-    );
+    println!("\n=== Strength Sweep (top head: L{top_layer}:H{top_head}) ===\n");
     println!(
         "  {:>8}  {:>12}  {:>14}",
         "Strength", "TopHeadDelta", "TotalRouting"
@@ -495,10 +492,10 @@ fn run_steered_pass_fig13(
     device: &Device,
 ) -> candle_mi::Result<Vec<Vec<f32>>> {
     // Build hooks using the Figure 13 API: suppress (negative) + inject (positive)
-    let mut hooks = if !suppress_entries.is_empty() {
-        clt.prepare_hook_injection(suppress_entries, planning_site, seq_len, -strength, device)?
-    } else {
+    let mut hooks = if suppress_entries.is_empty() {
         HookSpec::new()
+    } else {
+        clt.prepare_hook_injection(suppress_entries, planning_site, seq_len, -strength, device)?
     };
     let inject_hooks =
         clt.prepare_hook_injection(inject_entries, planning_site, seq_len, strength, device)?;

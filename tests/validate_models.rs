@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Integration tests: load real models from the HuggingFace cache and
+//! Integration tests: load real models from the `HuggingFace` cache and
 //! validate forward-pass outputs on both CPU and GPU.
 //!
 //! These tests require model weights in the local HF cache.
@@ -32,7 +32,7 @@ use serial_test::serial;
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Find the HuggingFace cache directory.
+/// Find the `HuggingFace` cache directory.
 fn hf_cache_dir() -> std::path::PathBuf {
     if let Ok(cache) = std::env::var("HF_HOME") {
         return std::path::PathBuf::from(cache).join("hub");
@@ -62,7 +62,9 @@ fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
 
 /// Get a CUDA device if available, or None.
 fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0).ok().filter(|d| d.is_cuda())
+    Device::cuda_if_available(0)
+        .ok()
+        .filter(candle_core::Device::is_cuda)
 }
 
 /// Collect safetensors paths for a model snapshot (single or sharded).
@@ -210,12 +212,11 @@ fn print_top_k(model_name: &str, device_name: &str, prompt: &str, top_k: &[(Stri
 
 #[test]
 fn llama_3_2_1b_config_parse() {
-    let snapshot = match find_snapshot("meta-llama/Llama-3.2-1B") {
-        Some(s) => s,
-        None => {
-            eprintln!("SKIP: meta-llama/Llama-3.2-1B not in cache");
-            return;
-        }
+    let snapshot = if let Some(s) = find_snapshot("meta-llama/Llama-3.2-1B") {
+        s
+    } else {
+        eprintln!("SKIP: meta-llama/Llama-3.2-1B not in cache");
+        return;
     };
 
     let config_str = std::fs::read_to_string(snapshot.join("config.json")).unwrap();
@@ -270,12 +271,11 @@ fn llama_3_2_1b_forward_cpu() {
 #[test]
 #[serial]
 fn llama_3_2_1b_forward_gpu() {
-    let device = match cuda_device() {
-        Some(d) => d,
-        None => {
-            eprintln!("SKIP: no CUDA device available");
-            return;
-        }
+    let device = if let Some(d) = cuda_device() {
+        d
+    } else {
+        eprintln!("SKIP: no CUDA device available");
+        return;
     };
     if find_snapshot("meta-llama/Llama-3.2-1B").is_none() {
         eprintln!("SKIP: meta-llama/Llama-3.2-1B not in cache");
@@ -296,12 +296,11 @@ fn llama_3_2_1b_forward_gpu() {
 
 #[test]
 fn gemma_2_2b_config_parse() {
-    let snapshot = match find_snapshot("google/gemma-2-2b") {
-        Some(s) => s,
-        None => {
-            eprintln!("SKIP: google/gemma-2-2b not in cache");
-            return;
-        }
+    let snapshot = if let Some(s) = find_snapshot("google/gemma-2-2b") {
+        s
+    } else {
+        eprintln!("SKIP: google/gemma-2-2b not in cache");
+        return;
     };
 
     let config_str = std::fs::read_to_string(snapshot.join("config.json")).unwrap();
@@ -342,12 +341,11 @@ fn gemma_2_2b_forward_cpu() {
 #[test]
 #[serial]
 fn gemma_2_2b_forward_gpu() {
-    let device = match cuda_device() {
-        Some(d) => d,
-        None => {
-            eprintln!("SKIP: no CUDA device available");
-            return;
-        }
+    let device = if let Some(d) = cuda_device() {
+        d
+    } else {
+        eprintln!("SKIP: no CUDA device available");
+        return;
     };
     if find_snapshot("google/gemma-2-2b").is_none() {
         eprintln!("SKIP: google/gemma-2-2b not in cache");
@@ -369,12 +367,11 @@ fn gemma_2_2b_forward_gpu() {
 
 #[test]
 fn starcoder2_3b_config_parse() {
-    let snapshot = match find_snapshot("bigcode/starcoder2-3b") {
-        Some(s) => s,
-        None => {
-            eprintln!("SKIP: bigcode/starcoder2-3b not in cache");
-            return;
-        }
+    let snapshot = if let Some(s) = find_snapshot("bigcode/starcoder2-3b") {
+        s
+    } else {
+        eprintln!("SKIP: bigcode/starcoder2-3b not in cache");
+        return;
     };
 
     let config_str = std::fs::read_to_string(snapshot.join("config.json")).unwrap();
@@ -405,12 +402,11 @@ fn starcoder2_3b_forward_cpu() {
 #[test]
 #[serial]
 fn starcoder2_3b_forward_gpu() {
-    let device = match cuda_device() {
-        Some(d) => d,
-        None => {
-            eprintln!("SKIP: no CUDA device available");
-            return;
-        }
+    let device = if let Some(d) = cuda_device() {
+        d
+    } else {
+        eprintln!("SKIP: no CUDA device available");
+        return;
     };
     if find_snapshot("bigcode/starcoder2-3b").is_none() {
         eprintln!("SKIP: bigcode/starcoder2-3b not in cache");
@@ -431,12 +427,11 @@ fn starcoder2_3b_forward_gpu() {
 
 #[test]
 fn qwen2_5_coder_3b_config_parse() {
-    let snapshot = match find_snapshot("Qwen/Qwen2.5-Coder-3B-Instruct") {
-        Some(s) => s,
-        None => {
-            eprintln!("SKIP: Qwen/Qwen2.5-Coder-3B-Instruct not in cache");
-            return;
-        }
+    let snapshot = if let Some(s) = find_snapshot("Qwen/Qwen2.5-Coder-3B-Instruct") {
+        s
+    } else {
+        eprintln!("SKIP: Qwen/Qwen2.5-Coder-3B-Instruct not in cache");
+        return;
     };
 
     let config_str = std::fs::read_to_string(snapshot.join("config.json")).unwrap();
@@ -466,12 +461,11 @@ fn qwen2_5_coder_3b_forward_cpu() {
 #[test]
 #[serial]
 fn qwen2_5_coder_3b_forward_gpu() {
-    let device = match cuda_device() {
-        Some(d) => d,
-        None => {
-            eprintln!("SKIP: no CUDA device available");
-            return;
-        }
+    let device = if let Some(d) = cuda_device() {
+        d
+    } else {
+        eprintln!("SKIP: no CUDA device available");
+        return;
     };
     if find_snapshot("Qwen/Qwen2.5-Coder-3B-Instruct").is_none() {
         eprintln!("SKIP: Qwen/Qwen2.5-Coder-3B-Instruct not in cache");
@@ -492,12 +486,11 @@ fn qwen2_5_coder_3b_forward_gpu() {
 
 #[test]
 fn phi3_mini_config_parse() {
-    let snapshot = match find_snapshot("microsoft/Phi-3-mini-4k-instruct") {
-        Some(s) => s,
-        None => {
-            eprintln!("SKIP: microsoft/Phi-3-mini-4k-instruct not in cache");
-            return;
-        }
+    let snapshot = if let Some(s) = find_snapshot("microsoft/Phi-3-mini-4k-instruct") {
+        s
+    } else {
+        eprintln!("SKIP: microsoft/Phi-3-mini-4k-instruct not in cache");
+        return;
     };
 
     let config_str = std::fs::read_to_string(snapshot.join("config.json")).unwrap();
@@ -528,12 +521,11 @@ fn phi3_mini_forward_cpu() {
 #[test]
 #[serial]
 fn phi3_mini_forward_gpu() {
-    let device = match cuda_device() {
-        Some(d) => d,
-        None => {
-            eprintln!("SKIP: no CUDA device available");
-            return;
-        }
+    let device = if let Some(d) = cuda_device() {
+        d
+    } else {
+        eprintln!("SKIP: no CUDA device available");
+        return;
     };
     if find_snapshot("microsoft/Phi-3-mini-4k-instruct").is_none() {
         eprintln!("SKIP: microsoft/Phi-3-mini-4k-instruct not in cache");
@@ -591,12 +583,11 @@ fn ensure_mistral_7b_cached() -> Option<std::path::PathBuf> {
 
 #[test]
 fn mistral_7b_config_parse() {
-    let snapshot = match find_snapshot("mistralai/Mistral-7B-v0.1") {
-        Some(s) => s,
-        None => {
-            eprintln!("SKIP: mistralai/Mistral-7B-v0.1 not in cache");
-            return;
-        }
+    let snapshot = if let Some(s) = find_snapshot("mistralai/Mistral-7B-v0.1") {
+        s
+    } else {
+        eprintln!("SKIP: mistralai/Mistral-7B-v0.1 not in cache");
+        return;
     };
 
     let config_str = std::fs::read_to_string(snapshot.join("config.json")).unwrap();
@@ -640,12 +631,11 @@ fn mistral_7b_forward_cpu() {
 #[test]
 #[serial]
 fn mistral_7b_forward_gpu() {
-    let device = match cuda_device() {
-        Some(d) => d,
-        None => {
-            eprintln!("SKIP: no CUDA device available");
-            return;
-        }
+    let device = if let Some(d) = cuda_device() {
+        d
+    } else {
+        eprintln!("SKIP: no CUDA device available");
+        return;
     };
     if ensure_mistral_7b_cached().is_none() {
         eprintln!("SKIP: mistralai/Mistral-7B-v0.1 not available");

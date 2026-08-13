@@ -57,10 +57,10 @@ fn download_phase(model_id: &str) -> candle_mi::Result<()> {
     eprintln!("Download complete in {elapsed:.2?}");
     let path = outcome.into_inner();
     // BORROW: `path` is a HashMap; grab any value to show the cache root
-    if let Some(first) = path.values().next() {
-        if let Some(snapshot_dir) = first.parent() {
-            eprintln!("Cache path: {}\n", snapshot_dir.display());
-        }
+    if let Some(first) = path.values().next()
+        && let Some(snapshot_dir) = first.parent()
+    {
+        eprintln!("Cache path: {}\n", snapshot_dir.display());
     }
     Ok(())
 }

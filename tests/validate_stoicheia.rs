@@ -63,7 +63,7 @@ impl Reference {
 fn assert_close(actual: f32, expected: f64, name: &str, tolerance: f64) {
     // CAST: f32 → f64, widening for comparison
     #[allow(clippy::as_conversions)]
-    let actual_f64 = actual as f64;
+    let actual_f64 = f64::from(actual);
     let diff = (actual_f64 - expected).abs();
     assert!(
         diff < tolerance,

@@ -218,7 +218,7 @@ fn run() -> candle_mi::Result<()> {
     eprintln!("Max correct str:{}", args.max_correct_strength);
     eprintln!("Steps:          {}", args.correct_steps);
     if !suppress_features.is_empty() {
-        eprintln!("Suppress:       {:?}", suppress_features);
+        eprintln!("Suppress:       {suppress_features:?}");
     }
 
     // --- Load model ---
@@ -458,12 +458,12 @@ fn run() -> candle_mi::Result<()> {
         n_heads,
         commit_feature: args.commit_feature,
         // BORROW: .to_owned() for owned String storage
-        commit_word: args.commit_word.to_owned(),
+        commit_word: args.commit_word.clone(),
         suppress_features: args.suppress,
         commit_strength: args.commit_strength,
         correct_feature: args.correct_feature,
         // BORROW: .to_owned() for owned String storage
-        correct_word: args.correct_word.to_owned(),
+        correct_word: args.correct_word.clone(),
         correct_from_layer: args.correct_from_layer,
         baseline: baseline_point,
         commitment_only: commitment_point,
@@ -511,7 +511,9 @@ fn run_correction_pass(
     let t_step = Instant::now();
 
     // Build commitment hooks: suppress (negative) + inject (positive)
-    let mut hooks = if !suppress_entries.is_empty() {
+    let mut hooks = if suppress_entries.is_empty() {
+        HookSpec::new()
+    } else {
         clt.prepare_hook_injection(
             suppress_entries,
             planning_site,
@@ -519,8 +521,6 @@ fn run_correction_pass(
             -commit_strength,
             device,
         )?
-    } else {
-        HookSpec::new()
     };
     let commit_hooks = clt.prepare_hook_injection(
         commit_entries,

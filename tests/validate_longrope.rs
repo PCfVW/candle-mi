@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 //! Integration test: **longrope** `rope_scaling` (Phi-3.5-mini) exact forward
-//! parity against a PyTorch oracle, exercising both the short- and long-factor
+//! parity against a `PyTorch` oracle, exercising both the short- and long-factor
 //! regimes.
 //!
-//! longrope (Phi-3.5-mini, Phi-3-medium-128k) divides the RoPE inverse
+//! longrope (Phi-3.5-mini, Phi-3-medium-128k) divides the `RoPE` inverse
 //! frequencies by per-dimension `short_factor`/`long_factor` arrays and scales
 //! cos/sin by `attention_factor` (mscale).  candle-mi builds two caches; a
 //! forward longer than `original_max_position_embeddings` (4096) selects the

@@ -446,12 +446,14 @@ fn bench_hook_diagnostic_cpu() {
 
 #[test]
 fn bench_hook_diagnostic_gpu() {
-    let device = match Device::cuda_if_available(0).ok().filter(|d| d.is_cuda()) {
-        Some(d) => d,
-        None => {
-            eprintln!("SKIP: no CUDA device available");
-            return;
-        }
+    let device = if let Some(d) = Device::cuda_if_available(0)
+        .ok()
+        .filter(candle_core::Device::is_cuda)
+    {
+        d
+    } else {
+        eprintln!("SKIP: no CUDA device available");
+        return;
     };
     run_diagnostic("CUDA F32", &device);
 }

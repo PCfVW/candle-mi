@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 //! Hook overhead benchmark: measures forward pass time with hooks inactive
-//! vs. full capture on LLaMA 3.2 1B.
+//! vs. full capture on `LLaMA` 3.2 1B.
 //!
 //! Run:
 //!   `cargo test --test bench_hook_overhead --features transformer,mmap --release -- --nocapture`
@@ -96,7 +96,7 @@ fn load_model_on(
     (model, tokenizer, config)
 }
 
-/// Build a HookSpec that captures every hook point at every layer.
+/// Build a `HookSpec` that captures every hook point at every layer.
 fn full_capture_spec(num_layers: usize) -> HookSpec {
     let mut hooks = HookSpec::new();
     hooks.capture(HookPoint::Embed);
@@ -272,10 +272,7 @@ fn bench_hook_overhead_cpu() {
         0.0
     };
 
-    println!(
-        "  No hooks:     {:>8.2?} avg ({BENCH_RUNS} runs)",
-        no_hooks_avg
-    );
+    println!("  No hooks:     {no_hooks_avg:>8.2?} avg ({BENCH_RUNS} runs)");
     println!(
         "  Full capture: {:>8.2?} avg ({BENCH_RUNS} runs, {} captures)",
         full_capture_avg,
@@ -286,12 +283,14 @@ fn bench_hook_overhead_cpu() {
 
 #[test]
 fn bench_hook_overhead_gpu() {
-    let device = match Device::cuda_if_available(0).ok().filter(|d| d.is_cuda()) {
-        Some(d) => d,
-        None => {
-            eprintln!("SKIP: no CUDA device available");
-            return;
-        }
+    let device = if let Some(d) = Device::cuda_if_available(0)
+        .ok()
+        .filter(candle_core::Device::is_cuda)
+    {
+        d
+    } else {
+        eprintln!("SKIP: no CUDA device available");
+        return;
     };
     if find_snapshot(MODEL_ID).is_none() {
         eprintln!("SKIP: {MODEL_ID} not in cache");
@@ -352,10 +351,7 @@ fn bench_hook_overhead_gpu() {
         0.0
     };
 
-    println!(
-        "  No hooks:     {:>8.2?} avg ({BENCH_RUNS} runs)",
-        no_hooks_avg
-    );
+    println!("  No hooks:     {no_hooks_avg:>8.2?} avg ({BENCH_RUNS} runs)");
     println!(
         "  Full capture: {:>8.2?} avg ({BENCH_RUNS} runs, {} captures)",
         full_capture_avg,

@@ -476,7 +476,7 @@ fn run() -> candle_mi::Result<()> {
         );
         println!(
             "  Fact positions: {:?} (subject_final: {subject_pos})",
-            &fact_positions
+            fact_positions
         );
 
         // Map subject position to CF sequence

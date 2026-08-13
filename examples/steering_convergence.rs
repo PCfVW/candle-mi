@@ -715,7 +715,7 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
             contrastive_prompt: contrastive_prompt.to_owned(),
             n_layers,
             hidden_size: hidden,
-            target_token: target_text.clone(),
+            target_token: target_text,
             target_token_id: target_id,
             baseline_p_target,
             baseline_top5,
@@ -1054,7 +1054,7 @@ fn print_convergence_matrix(matrix: &[Vec<f32>], n_layers: usize) {
     // Header
     print!("  Inj\\Obs");
     for obs in 0..n_layers {
-        print!("  {:>5}", obs);
+        print!("  {obs:>5}");
     }
     println!();
     print!("  -------");
@@ -1065,7 +1065,7 @@ fn print_convergence_matrix(matrix: &[Vec<f32>], n_layers: usize) {
 
     // Rows
     for (inj, row) in matrix.iter().enumerate() {
-        print!("  {:>5}  ", inj);
+        print!("  {inj:>5}  ");
         for &sim in row {
             if sim >= 0.999 {
                 print!("  1.000");
@@ -1208,7 +1208,8 @@ fn print_interpretation(matrix: &[Vec<f32>], summaries: &[JsonLayerSummary], thr
 fn estimate_weight_mb(n_layers: usize, hidden: usize) -> f64 {
     // CAST: usize → f64, values are small
     #[allow(clippy::as_conversions)]
-    let params = (12.0 * n_layers as f64 * (hidden as f64).powi(2)) + (hidden as f64 * 128_000.0);
+    let params =
+        (hidden as f64).mul_add(128_000.0, 12.0 * n_layers as f64 * (hidden as f64).powi(2));
     params * 4.0 / 1_048_576.0
 }
 

@@ -221,7 +221,7 @@ fn run() -> Result<()> {
     // --- Print token table ---
     println!();
     println!("  === Tokens ({seq_len} total) ===");
-    println!("  {:>4}  {}", "Pos", "Token");
+    println!("  {:>4}  Token", "Pos");
 
     // --- Resolve target position ---
     let position = if let Some(pos) = args.position {
@@ -384,8 +384,7 @@ fn run() -> Result<()> {
                 })
                 .collect(),
             probed_position: position,
-            // BORROW: clone for JSON ownership
-            probed_token: probed_token.clone(),
+            probed_token,
             n_layers,
             n_features_per_layer,
             top_k: args.top_k,
@@ -394,11 +393,11 @@ fn run() -> Result<()> {
             total_time_secs: total_secs,
         };
 
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|e| candle_mi::MIError::Config(format!("create dir: {e}")))?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| candle_mi::MIError::Config(format!("create dir: {e}")))?;
         }
 
         let json = serde_json::to_string_pretty(&output)
@@ -468,7 +467,7 @@ fn run_decoder_search(args: &Args, search_word: &str) -> Result<()> {
         direction
             .dims()
             .iter()
-            .map(|d| d.to_string())
+            .map(std::string::ToString::to_string)
             .collect::<Vec<_>>()
             .join(", ")
     );
@@ -565,11 +564,11 @@ fn run_decoder_search(args: &Args, search_word: &str) -> Result<()> {
             total_time_secs: total_secs,
         };
 
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|e| candle_mi::MIError::Config(format!("create dir: {e}")))?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| candle_mi::MIError::Config(format!("create dir: {e}")))?;
         }
 
         let json = serde_json::to_string_pretty(&output)

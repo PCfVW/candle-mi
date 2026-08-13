@@ -3,7 +3,7 @@
 //! Integration test: `bigcode/starcoder2-3b` forward-pass parity against the
 //! from-first-principles Python oracle in `scripts/starcoder2_validation.py`.
 //!
-//! StarCoder2 is the family that most diverges from the `LLaMA` baseline:
+//! `StarCoder2` is the family that most diverges from the `LLaMA` baseline:
 //! `LayerNorm` (not `RmsNorm`), bias on every projection, and a plain
 //! (non-gated) MLP with GELU-tanh.  Its only prior guard was a "`hello` in
 //! top-5" smoke test in `validate_models.rs`; this is the exact-logit guard.
@@ -124,7 +124,7 @@ fn cuda_device() -> Option<Device> {
     Device::cuda_if_available(0).ok().filter(Device::is_cuda)
 }
 
-/// Run the StarCoder2 forward-parity check on the given `device`.  Prints a
+/// Run the `StarCoder2` forward-parity check on the given `device`.  Prints a
 /// per-prompt comparison, then asserts top-10 index + magnitude parity across
 /// all cases at the end.
 #[allow(clippy::too_many_lines)]

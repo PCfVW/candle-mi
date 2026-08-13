@@ -5,7 +5,7 @@
 //!
 //! The oracle is produced by loading each transcoder through `SAE Lens`
 //! (`SAE.from_pretrained`) and encoding with `SAE Lens`'s own `encode()` — an
-//! independent implementation of the transpose + JumpReLU + bias, not a
+//! independent implementation of the transpose + `JumpReLU` + bias, not a
 //! re-derivation of candle-mi's formula (audit §1.11). Agreement therefore
 //! validates candle-mi against a second codebase. (candle-mi loads the same
 //! underlying weights independently, via the `mntss/gemma-scope-transcoders`

@@ -323,11 +323,11 @@ fn run_attention_analysis(
 
         // Track attention to position 0
         let attn_from = attn_cache.attention_from_position(layer, last_pos)?;
-        if let Some(&attn_to_0) = attn_from.first() {
-            if attn_to_0 > max_attn_to_pos0 {
-                max_attn_to_pos0 = attn_to_0;
-                max_attn_layer = layer;
-            }
+        if let Some(&attn_to_0) = attn_from.first()
+            && attn_to_0 > max_attn_to_pos0
+        {
+            max_attn_to_pos0 = attn_to_0;
+            max_attn_layer = layer;
         }
 
         // Format the top-5 row

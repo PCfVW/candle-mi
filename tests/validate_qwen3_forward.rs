@@ -169,7 +169,7 @@ fn run_qwen3_forward_parity(device: &Device, device_name: &str, abs_diff_bar: f3
     // SAFETY: safetensors files are not modified during test execution.
     let vb =
         unsafe { candle_nn::VarBuilder::from_mmaped_safetensors(&paths, dtype, device).unwrap() };
-    let model = GenericTransformer::load(config.clone(), device, dtype, vb).unwrap();
+    let model = GenericTransformer::load(config, device, dtype, vb).unwrap();
 
     assert_eq!(model.num_layers(), ref_layers);
     assert_eq!(model.hidden_size(), ref_hidden);
@@ -282,12 +282,11 @@ fn qwen3_1_7b_forward_parity_gpu() {
         eprintln!("SKIP: {MODEL_ID} not in HF cache");
         return;
     }
-    let device = match cuda_device() {
-        Some(d) => d,
-        None => {
-            eprintln!("SKIP: no CUDA device available");
-            return;
-        }
+    let device = if let Some(d) = cuda_device() {
+        d
+    } else {
+        eprintln!("SKIP: no CUDA device available");
+        return;
     };
     run_qwen3_forward_parity(&device, "CUDA", ABS_DIFF_BAR_GPU);
 }

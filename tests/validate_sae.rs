@@ -63,7 +63,9 @@ fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
 }
 
 fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0).ok().filter(|d| d.is_cuda())
+    Device::cuda_if_available(0)
+        .ok()
+        .filter(candle_core::Device::is_cuda)
 }
 
 fn safetensors_paths(snapshot: &std::path::Path) -> Vec<std::path::PathBuf> {
@@ -515,7 +517,10 @@ fn sae_vs_python_reference() {
     );
 
     // Compare norms.
-    if let Some(py_resid_norm) = reference.get("resid_last_norm").and_then(|v| v.as_f64()) {
+    if let Some(py_resid_norm) = reference
+        .get("resid_last_norm")
+        .and_then(serde_json::Value::as_f64)
+    {
         let resid_last = resid_post.i((0, seq_len - 1)).unwrap();
         let rust_resid_norm: f32 = resid_last
             .sqr()
@@ -527,8 +532,7 @@ fn sae_vs_python_reference() {
             .sqrt();
         let norm_diff = (f64::from(rust_resid_norm) - py_resid_norm).abs();
         println!(
-            "Residual norm — Rust: {:.4}, Python: {:.4}, diff: {:.6}",
-            rust_resid_norm, py_resid_norm, norm_diff
+            "Residual norm — Rust: {rust_resid_norm:.4}, Python: {py_resid_norm:.4}, diff: {norm_diff:.6}"
         );
         // F32 residual norms should be very close.
         assert!(

@@ -1092,39 +1092,38 @@ fn strip_newlines(text: &str) -> String {
 /// On CPU this is a no-op — returns `user_max` unchanged.
 fn compute_safe_max_tokens(device: &candle_core::Device, user_max: usize) -> usize {
     #[cfg(feature = "memory")]
-    if let candle_core::Device::Cuda(_) = device {
-        if let Ok(snap) = MemorySnapshot::now(device) {
-            if let (Some(used), Some(total_bytes)) = (snap.vram_mb(), snap.vram_total_bytes) {
-                // CAST: u64 → f64, VRAM total fits in f64 mantissa
-                #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
-                let total = total_bytes as f64 / 1_048_576.0;
-                let free_mb = total - used;
+    if let candle_core::Device::Cuda(_) = device
+        && let Ok(snap) = MemorySnapshot::now(device)
+        && let (Some(used), Some(total_bytes)) = (snap.vram_mb(), snap.vram_total_bytes)
+    {
+        // CAST: u64 → f64, VRAM total fits in f64 mantissa
+        #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+        let total = total_bytes as f64 / 1_048_576.0;
+        let free_mb = total - used;
 
-                // Empirical thresholds based on Gemma 2 2B on RTX 5060 Ti:
-                // ~10 GB model, ~6 GB free, OOM at 4096 tokens after ~6
-                // forward passes due to cuBLAS workspace accumulation.
-                let safe = if free_mb >= 8192.0 {
-                    4096
-                } else if free_mb >= 6144.0 {
-                    2048
-                } else if free_mb >= 4096.0 {
-                    1024
-                } else {
-                    512
-                };
+        // Empirical thresholds based on Gemma 2 2B on RTX 5060 Ti:
+        // ~10 GB model, ~6 GB free, OOM at 4096 tokens after ~6
+        // forward passes due to cuBLAS workspace accumulation.
+        let safe = if free_mb >= 8192.0 {
+            4096
+        } else if free_mb >= 6144.0 {
+            2048
+        } else if free_mb >= 4096.0 {
+            1024
+        } else {
+            512
+        };
 
-                let effective = safe.min(user_max);
+        let effective = safe.min(user_max);
 
-                if effective < user_max {
-                    eprintln!(
-                        "Auto-tuned max_tokens: {effective} (free VRAM: {free_mb:.0} MB, \
+        if effective < user_max {
+            eprintln!(
+                "Auto-tuned max_tokens: {effective} (free VRAM: {free_mb:.0} MB, \
                          requested: {user_max})"
-                    );
-                }
-
-                return effective;
-            }
+            );
         }
+
+        return effective;
     }
 
     // Suppress unused-variable warnings on non-memory builds.

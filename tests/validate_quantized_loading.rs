@@ -2,10 +2,10 @@
 
 //! Integration tests: loading + running **quantized** checkpoints
 //! (bitsandbytes NF4, AWQ, GPTQ) via candle-mi's anamnesis-backed dequant path
-//! (`quantized` feature), validated against PyTorch oracles that use each
+//! (`quantized` feature), validated against `PyTorch` oracles that use each
 //! scheme's real library.
 //!
-//! candle-mi cannot consume quantized weights directly (candle_nn loads plain
+//! candle-mi cannot consume quantized weights directly (`candle_nn` loads plain
 //! float safetensors).  With the `quantized` feature, `from_pretrained` detects
 //! `quantization_config` and routes the weights through anamnesis
 //! (`parse` → `remember_to_bytes(BF16)`) before building the `VarBuilder`.  One
@@ -15,8 +15,8 @@
 //! All three targets are **llama** models (a family already exact-parity
 //! validated), so a mismatch isolates to the dequant, not the forward:
 //! - bnb NF4  — `medmekk/Llama-3.2-1B-Instruct-bnb-nf4` (oracle: bitsandbytes, F32)
-//! - AWQ      — `casperhansen/llama-3.2-1b-instruct-awq` (oracle: AutoAWQ, fp16)
-//! - GPTQ     — `shuyuej/Llama-3.2-1B-Instruct-GPTQ`     (oracle: GPTQModel, fp16)
+//! - AWQ      — `casperhansen/llama-3.2-1b-instruct-awq` (oracle: `AutoAWQ`, fp16)
+//! - GPTQ     — `shuyuej/Llama-3.2-1B-Instruct-GPTQ`     (oracle: `GPTQModel`, fp16)
 //!
 //! anamnesis dequantizes to **BF16**, while the oracles compute in F32 (bnb) or
 //! fp16 (AWQ/GPTQ), so the bar is a **weight-precision tier** (not the ~1e-5 of

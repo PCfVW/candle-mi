@@ -35,7 +35,7 @@ fn compute_targets(inputs: &[f32], n: usize) -> Vec<u32> {
             #[allow(clippy::indexing_slicing)]
             let (a, b) = (inputs[i * 2], inputs[i * 2 + 1]);
             // Second argmax of 2 elements: position of the smaller one
-            if a > b { 1 } else { 0 }
+            u32::from(a > b)
         })
         .collect()
 }
