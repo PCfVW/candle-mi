@@ -1689,12 +1689,13 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hf-fetch-model"
-version = "0.11.4"
+version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a25bbb997d390513f501e2046844087b2e48aa83a0297c9f6e8e9bcee61a0a34"
+checksum = "182a41a984ce0cce3ecdc477717c4a4e30bb8fc1b8e83321745094b4934f85f5"
 dependencies = [
  "anamnesis",
  "dirs",
+ "flate2",
  "fs2",
  "futures-util",
  "globset",
