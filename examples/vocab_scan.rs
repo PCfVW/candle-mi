@@ -219,16 +219,13 @@ fn extract_embedding(st: &SafeTensors<'_>, name: &str) -> Result<(Vec<f32>, usiz
     let values: Vec<f32> = match view.dtype() {
         safetensors::Dtype::BF16 => bf16_bytes_to_f32(bytes),
         safetensors::Dtype::F32 => {
-            // CONTIGUOUS: safetensors stores F32 little-endian; chunks_exact(4) +
+            // CONTIGUOUS: safetensors stores F32 little-endian; as_chunks(4) +
             // f32::from_le_bytes is the standard zero-copy-ish reader.
             bytes
-                .chunks_exact(4)
-                .map(|c| {
-                    // INDEX: chunks_exact(4) guarantees exactly 4 bytes per slice.
-                    #[allow(clippy::indexing_slicing)]
-                    let arr = [c[0], c[1], c[2], c[3]];
-                    f32::from_le_bytes(arr)
-                })
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|c| f32::from_le_bytes(*c))
                 .collect()
         }
         other => {

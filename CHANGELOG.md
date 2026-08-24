@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`clippy::chunks_exact_to_as_chunks` broke the weekly canary** ([run 32699054087](https://github.com/mi-for-the-rust-of-us/candle-mi/actions/runs/32699054087)), new in Rust 1.98.0's clippy (stable rolled 1.97.1 → 1.98.0 between the 2026-08-17 and 2026-08-24 runs) and promoted to a hard error by `#![deny(warnings)]`. `splitmix64_seed` in `src/util/rng.rs` used `chunks_exact_mut(8)`; switched to `as_chunks_mut::<8>().0`, stable since before the crate's 1.91 MSRV floor. Same rolling-stable hazard as the `clippy::suboptimal_flops` break noted under Pre-commit Checks in `CLAUDE.md`; the MSRV (1.91) job showed cancelled rather than failed because the `Stable` job's failure tripped the workflow's fail-fast.
+
 ## [0.1.23] - 2026-08-13
 
 ### Changed

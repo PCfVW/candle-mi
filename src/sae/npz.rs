@@ -30,28 +30,26 @@ use crate::error::{MIError, Result};
 fn npz_tensor_to_candle(npy: &NpzTensor, device: &Device) -> Result<Tensor> {
     match npy.dtype {
         NpzDtype::F32 => {
-            // INDEX: chunks_exact(4) guarantees exactly 4 bytes per chunk
-            #[allow(clippy::indexing_slicing)]
             let f32_data: Vec<f32> = npy
                 .data
-                .chunks_exact(4)
-                .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|c| f32::from_le_bytes(*c))
                 .collect();
             Ok(Tensor::from_vec(f32_data, &*npy.shape, device)?)
         }
         NpzDtype::F64 => {
             // CAST: f64 → f32, precision loss acceptable for SAE weights
-            #[allow(
-                clippy::indexing_slicing,
-                clippy::cast_possible_truncation,
-                clippy::as_conversions
-            )]
+            #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
             let f32_data: Vec<f32> = npy
                 .data
-                .chunks_exact(8)
+                .as_chunks::<8>()
+                .0
+                .iter()
                 .map(|c| {
+                    let v = f64::from_le_bytes(*c);
                     // CAST: f64 → f32, precision loss acceptable for SAE weights
-                    let v = f64::from_le_bytes([c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]]);
                     v as f32
                 })
                 .collect();
@@ -102,7 +100,7 @@ pub fn load_npz(path: &Path, device: &Device) -> Result<HashMap<String, Tensor>>
 /// come from skipping the byte → candle [`Tensor`] dtype conversion for
 /// tensors the caller does not need. For the `GemmaScope` encoder load,
 /// this drops the ~144 MiB `F32` allocation for `W_dec` (and the ~50 ms of
-/// `chunks_exact(4)` work that copying it would entail) per layer load.
+/// `as_chunks::<4>()` work that copying it would entail) per layer load.
 ///
 /// Names not present in the archive are silently skipped — the returned
 /// map will simply lack those entries, letting the caller decide whether
