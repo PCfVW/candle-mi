@@ -51,9 +51,26 @@ table has more than one entry.
 
 | Version | Date | CPU (cores/threads) | Toolchain | GPU | CPU F32 overhead | CUDA BF16 overhead | Diagnostic: lookup / capture / remainder |
 |---|---|---|---|---|---|---|---|
-| _(unpopulated)_ | — | — | — | — | — | — | — |
+| 0.1.23 | 2026-08-24 | AMD Ryzen 9 5950X (16/32) | rustc 1.98.0 | RTX 5060 Ti 16 GiB | -0.9% (3.11s → 3.08s, 10 runs) | +8.5% (32.96ms → 35.76ms, 10 runs) | 0.0% / 0.0% / 100.0% |
 
-`_(unpopulated)_` = no `--release` run has been recorded yet. Populate the
-first real row at the next release that touches the hook path. Current dev
-machine, for reference: AMD Ryzen 9 5950X (16 cores / 32 threads), RTX 5060
-Ti 16 GiB.
+CPU overhead is within noise (negative, i.e. "full capture" measured
+*faster* than "no hooks" — expected at ~3s/forward where hook bookkeeping is
+a rounding error). GPU shows a real, small overhead: capture-machinery cost
+becomes visible as a percentage once the forward itself only takes ~33ms.
+The diagnostic attribution (0/0/100) is degenerate at this scale — section
+B's delta was ≈0.00ns on both devices, so dividing A and C by ~zero isn't a
+meaningful split; treat this row's diagnostic column as "no measurable
+overhead to attribute" rather than a real 0/0/100 breakdown. A future run
+where overhead is large enough to attribute meaningfully will make that
+column more informative.
+
+**Known quirk, not a hang to panic over:** both test binaries print their
+final `test result: ok` line and then take a long time to actually exit —
+suspected CUDA context teardown on Windows/WDDM, roughly proportional to how
+many device allocations the run made. `bench_hook_diagnostic` (~2,200 total
+forwards, each briefly touching the GPU via `HookCache`) took nearly 50
+minutes to exit after finishing its measured work; the much lighter
+`bench_hook_overhead` (48 forwards) still didn't exit within 2 minutes of
+printing its result. The data is complete and correct by the time
+`test result: ok` prints — kill the process at that point rather than
+waiting for it to exit on its own.
