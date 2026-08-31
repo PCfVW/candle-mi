@@ -214,3 +214,52 @@ change. The iterator returns plain `&Var` triples and keeps the struct private.
   because fifteen lines of accessor do not exist upstream, and anyone else staging
   a training run will write a third. If these accessors land we delete ours and
   call stock `AdamW`. There is no urgency on our side, since the copy works.
+
+## Thread record
+
+**2026-08-01.** Filed as [candle#3819](https://github.com/huggingface/candle/pull/3819),
+branch `adamw-state-accessors`, commit `9e2f1311` on base `6e823a43`.
+
+**2026-08-31.** Both workflow runs queued at filing time,
+[30696257295](https://github.com/huggingface/candle/actions/runs/30696257295)
+and [30696257317](https://github.com/huggingface/candle/actions/runs/30696257317),
+expired unapproved after exactly thirty days and were stamped
+`conclusion: failure` with zero jobs executed. Nothing had compiled and nothing
+had run, so the red X carried no signal about the patch, but it reads on the PR
+page as a broken change.
+
+Rebased `9e2f1311` onto `638a819a` (then current `main`), giving `67ee82d4`.
+`git patch-id --stable` is `e7fabbe3` before and after, and neither
+`candle-nn/src/optim.rs` nor `candle-nn/tests/optim.rs` was touched by the twenty
+intervening commits, so the replay was mechanical and the patch is still the same
+additive +80/-0.
+
+Re-verified on the rebased tree at rustc 1.98.0, mirroring the lanes in
+`rust-ci.yml`: `cargo fmt --all -- --check` clean, `cargo clippy --workspace
+--tests --examples --benches -- -D warnings` clean, `cargo test -p candle-nn`
+13 targets with 60 passed and 0 failed, and the `optim` target 6/6 including
+candle's four pre-existing optimizer tests. The rustc 1.98.0 check mattered:
+stable had moved on since filing, and a new lint on the `impl Iterator`
+signature would have been the plausible regression. None fired.
+
+Force-pushed and commented, posted as
+[issuecomment-5479119668](https://github.com/huggingface/candle/pull/3819#issuecomment-5479119668).
+The comment states only what the runs actually show, offers to narrow the surface
+to `step_t` / `set_step_t` if `moments()` is contentious, and does not speculate
+about which GitHub setting imposed the gate.
+
+The push queued two fresh runs, both `action_required`, so the PR now awaits one
+maintainer click rather than displaying an expired failure.
+
+### The lesson, which generalises to every fork PR we file
+
+A fork pull request's workflow run needs a maintainer to approve it, and a fork
+cannot approve its own. If nobody clicks within thirty days, GitHub expires the
+run and stamps it `failure`. The PR then advertises a broken patch to exactly the
+reviewers whose attention it is competing for, and the author is never notified
+that the cause was an unclicked button rather than a real defect.
+
+Given that upstream reacts in weeks rather than days, this is not an edge case
+for us, it is the default outcome. Worth checking the approval state of every
+open fork PR periodically, keyed on the run's `created_at` plus thirty days,
+rather than waiting for the red X to appear.

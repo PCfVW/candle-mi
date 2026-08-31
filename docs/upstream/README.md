@@ -17,7 +17,7 @@ upstream fix is a bonus that later lets us delete code.
 |---|---|---|---|
 | [candle-fused-ops-drop-gradients-v2-cluster-map.md](candle-fused-ops-drop-gradients-v2-cluster-map.md) | `candle-nn` | map plus the posted comment | **comment posted 2026-08-01** as [candle#2168 comment-5150289607](https://github.com/huggingface/candle/issues/2168#issuecomment-5150289607) |
 | [candle-fused-ops-drop-gradients-v1-standalone-report.md](candle-fused-ops-drop-gradients-v1-standalone-report.md) | `candle-nn` | bug report | **superseded, do not file** |
-| [candle-adamw-state-accessors.md](candle-adamw-state-accessors.md) | `candle-nn` | PR (additive, +80/-0) | **FILED 2026-08-01** as [candle#3819](https://github.com/huggingface/candle/pull/3819) |
+| [candle-adamw-state-accessors.md](candle-adamw-state-accessors.md) | `candle-nn` | PR (additive, +80/-0) | **FILED 2026-08-01** as [candle#3819](https://github.com/huggingface/candle/pull/3819). First CI runs expired unapproved after thirty days and were stamped `failure` with zero jobs run, so **rebased onto `638a819a` and re-pushed 2026-08-31** (`67ee82d4`, patch-id unchanged) with [a comment](https://github.com/huggingface/candle/pull/3819#issuecomment-5479119668) explaining the red X. Awaiting workflow approval |
 | candle-nn fused ops: `CustomOp::bwd` for `softmax_last_dim` + `layer_norm` | `candle-nn` | PR (the fix for the [gradient-drop cluster](candle-fused-ops-drop-gradients-v2-cluster-map.md): #3011, #3752…) | **FILED 2026-08-01** as [candle#3823](https://github.com/huggingface/candle/pull/3823) — branch `fused-ops-bwd`, independent of #3822; credits and offers deference to the open #3613/#3724 |
 | [candle-gradstore-accumulate.md](candle-gradstore-accumulate.md) | `candle-core` | PR (behaviour-preserving, +115/-133) | **FILED 2026-08-01** as [candle#3822](https://github.com/huggingface/candle/pull/3822) |
 
@@ -37,6 +37,26 @@ cluster and the errors. Read v2; file nothing from v1.
 | [3406](https://github.com/huggingface/candle/pull/3406) | PR, add candle-mi to Useful External Resources | 2026-03-16 | open, solicited in 3368 |
 | [3617](https://github.com/huggingface/candle/issues/3617) | issue, unbounded pickle-VM working set (DoS via crafted `.pth`) | 2026-06-13 | open |
 | [3628](https://github.com/huggingface/candle/pull/3628) | PR, bound the pickle VM's working set and nesting depth | 2026-06-18 | open upstream, but cherry-picked into [`astorise/candle`](https://github.com/astorise/candle) as commit `b196387` with authorship preserved, in that fork's "Pull 9 high-value upstream candle PRs into the fork (Tier 1)" batch (their #37, 2026-07-29). `Sébastien ASTORI` then fixed a clippy lint on top (`2840a5b`). He also filed candle #3688 on pickle DoS, so he is working the same problem and is worth engaging directly |
+
+## The workflow-approval gate
+
+Every one of these is a fork pull request, so its CI run needs a maintainer to
+click approve, and a fork cannot approve its own. If nobody clicks within thirty
+days, GitHub expires the run and stamps it `conclusion: failure` with zero jobs
+executed. The PR then advertises a broken patch to precisely the reviewers whose
+attention it is competing for, and nothing notifies the author that the cause was
+an unclicked button rather than a real defect. This happened to 3819.
+
+Because upstream reacts in weeks rather than days, this is the default outcome
+here, not an edge case. Check the open PRs against it periodically: the deadline
+is the run's `created_at` plus thirty days, readable with
+
+```
+gh api "repos/huggingface/candle/actions/runs?head_sha=<sha>" --jq '.workflow_runs[] | "\(.name) \(.created_at) \(.conclusion)"'
+```
+
+where `action_required` means still pending and `failure` with zero jobs means
+expired. A push resets the clock, since it queues a fresh run.
 
 ## When something lands
 
