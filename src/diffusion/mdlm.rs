@@ -424,9 +424,12 @@ impl DDitFinalLayer {
 
     /// Logit projection without hooks (for [`MIBackend::project_to_vocab`]).
     ///
+    /// Rank-preserving: `modulated` is rank-agnostic and its `shift` / `scale`
+    /// broadcast from `[1, hidden]`, so a rank-3 hidden state projects too.
+    ///
     /// # Shapes
-    /// - `hidden`: `[batch, hidden]`
-    /// - returns: `[batch, vocab_size]`
+    /// - `hidden`: `[batch, hidden]` or `[batch, seq, hidden]`
+    /// - returns: `[batch, vocab_size]` or `[batch, seq, vocab_size]`
     ///
     /// # Errors
     ///

@@ -295,7 +295,12 @@ pub trait MIBackend: Send + Sync {
 **Contract:**
 - `forward()` must return a `HookCache` with logits at shape `[batch, seq, vocab_size]`
 - When `hooks` is empty, the forward pass must produce **zero extra allocations**
-- `project_to_vocab()` applies the final norm + unembedding projection (for logit lens)
+- `project_to_vocab()` applies the final norm + unembedding projection (for logit lens),
+  and **must preserve rank**: `[batch, hidden_size]` gives `[batch, vocab_size]`, and
+  `[batch, seq, hidden_size]` gives `[batch, seq, vocab_size]`.  A logit lens reads one
+  position; a probe that has captured a whole residual stream projects every position at
+  once.  Project against a rank-2 unembedding weight with `broadcast_matmul`, **not**
+  `matmul`, which requires operands of equal rank
 - The trait is `Send + Sync` because `MIModel` may be shared across threads
 
 ### Implementing forward()
@@ -560,6 +565,7 @@ When adding a new model family, verify:
 - [ ] **Hook capture**: all hook points produce tensors with the expected shapes
 - [ ] **Intervention**: `Intervention::Zero` at `ResidPost(0)` changes the output (proves hooks are wired)
 - [ ] **Logit lens**: `project_to_vocab()` produces meaningful predictions at intermediate layers
+- [ ] **Rank preservation**: `project_to_vocab()` accepts both `[batch, hidden_size]` and `[batch, seq, hidden_size]`, and each position of the rank-3 result equals the rank-2 projection of that position
 - [ ] **No regression**: existing model tests still pass (`cargo test --features transformer`)
 
 For GPU testing, run with `--test-threads=1` to avoid OOM on 3B+ models.

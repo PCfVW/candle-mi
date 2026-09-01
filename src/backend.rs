@@ -71,8 +71,17 @@ pub trait MIBackend: Send + Sync {
     /// matching the standard logit lens technique (nostalgebraist, 2020).
     ///
     /// # Shapes
-    /// - `hidden`: `[batch, hidden_size]` -- hidden states (pre-norm)
-    /// - returns: `[batch, vocab_size]`
+    /// - `hidden`: `[batch, hidden_size]` or `[batch, seq, hidden_size]` -- hidden
+    ///   states (pre-norm)
+    /// - returns: the same leading dimensions with `hidden_size` replaced by
+    ///   `vocab_size`, i.e. `[batch, vocab_size]` or `[batch, seq, vocab_size]`
+    ///
+    /// Implementations **must preserve rank**.  Both forms are supported: a logit
+    /// lens reads a single position (`[batch, hidden_size]`), while a probe that
+    /// has captured a whole residual stream projects every position at once
+    /// (`[batch, seq, hidden_size]`).  Project against a rank-2 unembedding weight
+    /// with `broadcast_matmul` rather than `matmul`, since candle's `matmul`
+    /// requires both operands to have equal rank.
     ///
     /// # Errors
     ///

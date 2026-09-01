@@ -832,6 +832,45 @@ mod tests {
         assert_eq!(cache.output().dims(), &[1, 3, 12]);
     }
 
+    // `project_to_vocab` must preserve rank. The trait documented rank 2 only,
+    // while this backend's `layer_norm` + `Linear` accepted rank 3 all along --
+    // silent tolerance a probe could not rely on, since the two `stoicheia`
+    // backends rejected the same input. The contract is now explicit, and this
+    // asserts it here so a future rank-2 assertion cannot land unnoticed. See
+    // docs/dogfooding-feedbacks/interp-api-forces-stringly-typed-hook-handling.md.
+    #[test]
+    fn project_to_vocab_preserves_rank() {
+        use candle_core::IndexOp;
+
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let model = OthelloGpt::init(tiny_config(), &varmap, &dev, 11).unwrap();
+        let hidden = Tensor::randn(0.0f32, 1.0, (2, 3, 8), &dev).unwrap();
+
+        let seq_logits = MIBackend::project_to_vocab(&model, &hidden).unwrap();
+        assert_eq!(seq_logits.dims(), &[2, 3, 12]);
+
+        // Every position must equal the rank-2 projection of that same position,
+        // so rank preservation cannot be satisfied by computing something else.
+        for b in 0..2 {
+            for s in 0..3 {
+                let position = hidden.i((b, s, ..)).unwrap().unsqueeze(0).unwrap();
+                let expected = MIBackend::project_to_vocab(&model, &position).unwrap();
+                assert_eq!(expected.dims(), &[1, 12]);
+                let actual = seq_logits.i((b, s, ..)).unwrap().unsqueeze(0).unwrap();
+                let diff = (actual - expected)
+                    .unwrap()
+                    .abs()
+                    .unwrap()
+                    .max_all()
+                    .unwrap()
+                    .to_scalar::<f32>()
+                    .unwrap();
+                assert!(diff < 1e-5, "position [{b}][{s}] differs by {diff}");
+            }
+        }
+    }
+
     // The §2 regression of docs/dogfooding-feedbacks/trainable-backbones.md:
     // before the `nn_ops` dispatch, backward() through this exact forward
     // silently stopped at the first fused op and only `head.weight` (1 of 29

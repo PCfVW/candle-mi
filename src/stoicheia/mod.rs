@@ -337,8 +337,11 @@ impl MIBackend for StoicheiaRnn {
     }
 
     fn project_to_vocab(&self, hidden: &Tensor) -> Result<Tensor> {
-        // Apply output linear projection: [batch, H] → [batch, output_size]
-        Ok(hidden.matmul(&self.weight_oh.t()?)?)
+        // Output linear projection, rank-preserving: [.., H] → [.., output_size].
+        // `broadcast_matmul` (not `matmul`) so a rank-3 [batch, seq, H] residual
+        // stream projects too; it falls through to `matmul` when neither side
+        // broadcasts, so the rank-2 path is unchanged.
+        Ok(hidden.broadcast_matmul(&self.weight_oh.t()?)?)
     }
 }
 
@@ -582,7 +585,10 @@ impl MIBackend for StoicheiaTransformer {
     }
 
     fn project_to_vocab(&self, hidden: &Tensor) -> Result<Tensor> {
-        // Apply unembedding projection: [batch, H] → [batch, output_size]
-        Ok(hidden.matmul(&self.unembed_weight.t()?)?)
+        // Unembedding projection, rank-preserving: [.., H] → [.., output_size].
+        // `broadcast_matmul` (not `matmul`) so a rank-3 [batch, seq, H] residual
+        // stream projects too; it falls through to `matmul` when neither side
+        // broadcasts, so the rank-2 path is unchanged.
+        Ok(hidden.broadcast_matmul(&self.unembed_weight.t()?)?)
     }
 }

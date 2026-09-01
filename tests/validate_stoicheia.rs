@@ -5,7 +5,7 @@
 //! Loads pre-trained weights from `safetensors` fixtures, runs the same
 //! inputs as the `Python` reference, and compares outputs to 6 decimal places.
 
-use candle_core::{Device, Tensor};
+use candle_core::{Device, IndexOp, Tensor};
 use candle_mi::MIBackend;
 use candle_mi::hooks::HookSpec;
 use candle_mi::stoicheia::config::{StoicheiaConfig, StoicheiaTask};
@@ -69,6 +69,54 @@ fn assert_close(actual: f32, expected: f64, name: &str, tolerance: f64) {
         diff < tolerance,
         "{name}: actual={actual}, expected={expected}, diff={diff}"
     );
+}
+
+/// Assert that `project_to_vocab` preserves rank.
+///
+/// A `[batch, seq, hidden]` hidden state must project to `[batch, seq, vocab]`,
+/// and every position must equal the rank-2 projection of that same position, so
+/// the widened contract cannot quietly compute something different.
+///
+/// The trait documented rank 2 only, while four of six backends already accepted
+/// rank 3 (`Linear` and `LayerNorm` are rank-agnostic) and the two `stoicheia`
+/// backends rejected it, because candle's `matmul` requires operands of equal
+/// rank. See `docs/dogfooding-feedbacks/interp-api-forces-stringly-typed-hook-handling.md`.
+// TRAIT_OBJECT: one helper serves both `stoicheia` backends
+fn assert_project_to_vocab_preserves_rank(model: &dyn MIBackend, hidden_size: usize) {
+    let (batch, seq) = (2_usize, 3_usize);
+    let hidden = Tensor::randn(0.0_f32, 1.0, (batch, seq, hidden_size), &Device::Cpu)
+        .expect("failed to create hidden state");
+
+    let logits = model
+        .project_to_vocab(&hidden)
+        .expect("rank-3 project_to_vocab failed");
+    let (out_batch, out_seq, _) = logits.dims3().expect("expected a rank-3 projection");
+    assert_eq!(
+        (out_batch, out_seq),
+        (batch, seq),
+        "leading dimensions not preserved"
+    );
+
+    let actual: Vec<Vec<Vec<f32>>> = logits.to_vec3().expect("failed to extract logits");
+    for b in 0..batch {
+        for s in 0..seq {
+            let position = hidden
+                .i((b, s, ..))
+                .expect("failed to slice position")
+                .unsqueeze(0)
+                .expect("failed to unsqueeze position");
+            let expected: Vec<Vec<f32>> = model
+                .project_to_vocab(&position)
+                .expect("rank-2 project_to_vocab failed")
+                .to_vec2()
+                .expect("failed to extract rank-2 logits");
+            for (col, (&a, &e)) in actual[b][s].iter().zip(&expected[0]).enumerate() {
+                // Tolerance, not equality: the rank-3 path runs a batched gemm
+                // whose accumulation order need not match the rank-2 one.
+                assert_close(a, f64::from(e), &format!("[{b}][{s}][{col}]"), 1e-5);
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -261,4 +309,32 @@ fn transformer_hook_capture() {
         .get(&candle_mi::HookPoint::ResidPost(1))
         .expect("ResidPost(1) not captured");
     assert_eq!(resid1.dims(), &[1, 4, 4]);
+}
+
+#[test]
+fn rnn_project_to_vocab_preserves_rank() {
+    let config = StoicheiaConfig::from_task(StoicheiaTask::SecondArgmax, 2, 2);
+    let hidden_size = config.hidden_size;
+    let model = StoicheiaRnn::load(
+        config,
+        "tests/fixtures/stoicheia/rnn_2nd_argmax_h2_n2.safetensors",
+        &Device::Cpu,
+    )
+    .expect("failed to load RNN fixture");
+
+    assert_project_to_vocab_preserves_rank(&model, hidden_size);
+}
+
+#[test]
+fn transformer_project_to_vocab_preserves_rank() {
+    let config = StoicheiaConfig::from_task(StoicheiaTask::LongestCycle, 4, 4);
+    let hidden_size = config.hidden_size;
+    let model = StoicheiaTransformer::load(
+        config,
+        "tests/fixtures/stoicheia/transformer_longest_cycle_h4_n4.safetensors",
+        &Device::Cpu,
+    )
+    .expect("failed to load transformer fixture");
+
+    assert_project_to_vocab_preserves_rank(&model, hidden_size);
 }
