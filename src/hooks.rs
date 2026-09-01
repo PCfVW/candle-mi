@@ -57,7 +57,6 @@ use crate::interp::intervention::{StateKnockoutSpec, StateSteeringSpec};
 /// by hook semantics, sort by the semantic fields explicitly.
 ///
 /// [`BTreeMap`]: std::collections::BTreeMap
-/// [`HashMap`]: std::collections::HashMap
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum HookPoint {
@@ -339,14 +338,8 @@ impl HookSpec {
     /// assert_eq!(hooks.num_captures(), 6);
     /// ```
     ///
-    /// See also [`FromIterator`], for building a spec rather than extending one:
-    ///
-    /// ```
-    /// use candle_mi::{HookPoint, HookSpec};
-    ///
-    /// let hooks: HookSpec = (0..4).map(HookPoint::ResidPost).collect();
-    /// assert_eq!(hooks.num_captures(), 4);
-    /// ```
+    /// See also the [`FromIterator`] impl, for building a spec rather than
+    /// extending one.
     pub fn capture_all<I>(&mut self, hooks: I) -> &mut Self
     where
         I: IntoIterator,
@@ -483,6 +476,14 @@ impl HookSpec {
 /// inherent methods win method resolution, so an [`Extend`] impl would make
 /// `spec.extend(some_iterator)` fail to compile against the inherent signature.
 /// Use [`capture_all`](HookSpec::capture_all) to extend from an iterator.
+///
+/// ```
+/// use candle_mi::{HookPoint, HookSpec};
+///
+/// let hooks: HookSpec = (0..4).map(HookPoint::ResidPost).collect();
+/// assert_eq!(hooks.num_captures(), 4);
+/// assert_eq!(hooks.num_interventions(), 0);
+/// ```
 impl FromIterator<HookPoint> for HookSpec {
     fn from_iter<I: IntoIterator<Item = HookPoint>>(iter: I) -> Self {
         Self {
@@ -607,7 +608,9 @@ impl HookCache {
     /// of the request and re-derive the keys, discovering absence one
     /// [`get`](Self::get) at a time.
     ///
-    /// Each tensor's shape depends on its hook point; see [`HookPoint`].
+    /// # Shapes
+    /// - returns: `(hook point, tensor)` pairs, each tensor's shape being the
+    ///   one documented for its [`HookPoint`]
     ///
     /// **Order is arbitrary** (the backing store is a [`HashMap`]). For a
     /// deterministic walk, collect into a [`BTreeMap`]: [`HookPoint`] implements
@@ -643,6 +646,10 @@ impl HookCache {
     /// refcount, not a copy of the logits.
     ///
     /// **Order is arbitrary**, as for [`captures`](Self::captures).
+    ///
+    /// # Shapes
+    /// - returns: `(hook point, tensor)` pairs, each tensor's shape being the
+    ///   one documented for its [`HookPoint`]
     pub fn into_captures(self) -> impl Iterator<Item = (HookPoint, Tensor)> {
         self.captures.into_iter()
     }
@@ -655,6 +662,10 @@ impl HookCache {
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
+    use std::collections::{BTreeMap, BTreeSet};
+
+    use candle_core::{DType, Device};
+
     use super::*;
 
     #[test]
@@ -731,6 +742,46 @@ mod tests {
         ]
     }
 
+    /// Position of a variant in the enum's declaration order.
+    ///
+    /// `#[non_exhaustive]` does not apply within the defining crate, so this
+    /// match is exhaustive: adding a variant stops it compiling, which is the
+    /// reminder to extend `one_of_each_variant`. Without that, the helper's
+    /// claims would silently stop holding and the ordering tests below would
+    /// stop covering the new variant.
+    fn declaration_rank(hook: &HookPoint) -> usize {
+        match hook {
+            HookPoint::Embed => 0,
+            HookPoint::ResidPre(_) => 1,
+            HookPoint::AttnQ(_) => 2,
+            HookPoint::AttnK(_) => 3,
+            HookPoint::AttnV(_) => 4,
+            HookPoint::AttnScores(_) => 5,
+            HookPoint::AttnPattern(_) => 6,
+            HookPoint::AttnOut(_) => 7,
+            HookPoint::ResidMid(_) => 8,
+            HookPoint::MlpPre(_) => 9,
+            HookPoint::MlpPost(_) => 10,
+            HookPoint::MlpOut(_) => 11,
+            HookPoint::ResidPost(_) => 12,
+            HookPoint::FinalNorm => 13,
+            HookPoint::RwkvState(_) => 14,
+            HookPoint::RwkvDecay(_) => 15,
+            HookPoint::RwkvEffectiveAttn(_) => 16,
+            HookPoint::Custom(_) => 17,
+        }
+    }
+
+    #[test]
+    fn one_of_each_variant_covers_the_enum_in_declaration_order() {
+        let ranks: Vec<usize> = one_of_each_variant().iter().map(declaration_rank).collect();
+        assert_eq!(
+            ranks,
+            (0..ranks.len()).collect::<Vec<usize>>(),
+            "one_of_each_variant must list every variant exactly once, in declaration order"
+        );
+    }
+
     #[test]
     fn hook_point_ord_is_total() {
         let hooks = one_of_each_variant();
@@ -751,8 +802,6 @@ mod tests {
 
     #[test]
     fn hook_point_keys_a_btree_map_deterministically() {
-        use std::collections::BTreeMap;
-
         let forward: BTreeMap<HookPoint, usize> = one_of_each_variant()
             .into_iter()
             .enumerate()
@@ -804,8 +853,6 @@ mod tests {
 
     #[test]
     fn hook_spec_captures_lists_every_request() {
-        use std::collections::BTreeSet;
-
         let mut spec = HookSpec::new();
         spec.capture(HookPoint::AttnPattern(5));
         spec.capture("blocks.3.hook_resid_post");
@@ -850,12 +897,12 @@ mod tests {
 
     /// A `HookCache` holding one zero tensor per given hook point.
     fn cache_with(hooks: &[HookPoint]) -> HookCache {
-        let placeholder = Tensor::zeros(1, candle_core::DType::F32, &candle_core::Device::Cpu)
-            .expect("failed to create placeholder");
+        let placeholder =
+            Tensor::zeros(1, DType::F32, &Device::Cpu).expect("failed to create placeholder");
         let mut cache = HookCache::new(placeholder);
         for (i, hook) in hooks.iter().enumerate() {
-            let tensor = Tensor::zeros(i + 1, candle_core::DType::F32, &candle_core::Device::Cpu)
-                .expect("failed to create capture");
+            let tensor =
+                Tensor::zeros(i + 1, DType::F32, &Device::Cpu).expect("failed to create capture");
             cache.store(hook.clone(), tensor);
         }
         cache
@@ -863,8 +910,6 @@ mod tests {
 
     #[test]
     fn hook_cache_captures_enumerates_everything_stored() {
-        use std::collections::BTreeMap;
-
         let stored = [
             HookPoint::ResidPost(2),
             HookPoint::ResidPost(0),
@@ -894,8 +939,6 @@ mod tests {
 
     #[test]
     fn hook_cache_captures_collect_deterministically() {
-        use std::collections::BTreeMap;
-
         let forward = cache_with(&[
             HookPoint::ResidPost(2),
             HookPoint::ResidPost(0),
@@ -922,11 +965,18 @@ mod tests {
 
     #[test]
     fn hook_cache_into_captures_yields_owned_tensors() {
-        let cache = cache_with(&[HookPoint::Embed, HookPoint::FinalNorm]);
+        let stored = [HookPoint::Embed, HookPoint::FinalNorm];
+        let cache = cache_with(&stored);
         let n = cache.num_captures();
 
-        let owned: Vec<(HookPoint, Tensor)> = cache.into_captures().collect();
+        let owned: BTreeMap<HookPoint, Tensor> = cache.into_captures().collect();
         assert_eq!(owned.len(), n);
+        for hook in &stored {
+            assert!(
+                owned.contains_key(hook),
+                "{hook} missing from into_captures()"
+            );
+        }
     }
 
     #[test]

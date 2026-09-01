@@ -845,15 +845,17 @@ mod tests {
         let dev = Device::Cpu;
         let varmap = VarMap::new();
         let model = OthelloGpt::init(tiny_config(), &varmap, &dev, 11).unwrap();
-        let hidden = Tensor::randn(0.0f32, 1.0, (2, 3, 8), &dev).unwrap();
+        // `tiny_config` is vocab 12, hidden 8.
+        let (batch, seq, hidden_size) = (2, 3, 8);
+        let hidden = Tensor::randn(0.0_f32, 1.0, (batch, seq, hidden_size), &dev).unwrap();
 
         let seq_logits = MIBackend::project_to_vocab(&model, &hidden).unwrap();
-        assert_eq!(seq_logits.dims(), &[2, 3, 12]);
+        assert_eq!(seq_logits.dims(), &[batch, seq, 12]);
 
         // Every position must equal the rank-2 projection of that same position,
         // so rank preservation cannot be satisfied by computing something else.
-        for b in 0..2 {
-            for s in 0..3 {
+        for b in 0..batch {
+            for s in 0..seq {
                 let position = hidden.i((b, s, ..)).unwrap().unsqueeze(0).unwrap();
                 let expected = MIBackend::project_to_vocab(&model, &position).unwrap();
                 assert_eq!(expected.dims(), &[1, 12]);
