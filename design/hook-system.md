@@ -59,6 +59,10 @@ API methods accept `Into<HookPoint>`, so callers can use either style:
 ```rust
 impl HookSpec {
     pub fn capture<H: Into<HookPoint>>(&mut self, hook: H) -> &mut Self;
+    pub fn capture_all<I>(&mut self, hooks: I) -> &mut Self
+    where
+        I: IntoIterator,
+        I::Item: Into<HookPoint>;
 }
 
 // Both work:

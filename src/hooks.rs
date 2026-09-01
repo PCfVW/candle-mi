@@ -278,6 +278,12 @@ pub(crate) fn apply_intervention(tensor: &Tensor, intervention: &Intervention) -
 /// [`HookCache`]. No activations are cloned and no captures are stored. See
 /// `docs/hook-architecture-diagnostic.md` for measured numbers on Llama-3.2-1B.
 ///
+/// # Cloning
+///
+/// [`Clone`] is a **guarantee**, not an accident of the derive: a spec holds
+/// hook points and intervention descriptions, never activations, so cloning one
+/// is cheap. Callers may keep a table of per-step specs and hand out clones.
+///
 /// # Example
 ///
 /// ```
@@ -309,6 +315,38 @@ impl HookSpec {
     /// Request capture of the activation at the given hook point.
     pub fn capture<H: Into<HookPoint>>(&mut self, hook: H) -> &mut Self {
         self.captures.insert(hook.into());
+        self
+    }
+
+    /// Request capture of every hook point in an iterator.
+    ///
+    /// The bulk form of [`capture`](Self::capture). Building a spec from a
+    /// `&[HookPoint]` otherwise needs a `for` loop with a clone per element,
+    /// repeated for every tapped forward pass.
+    ///
+    /// ```
+    /// use candle_mi::{HookPoint, HookSpec};
+    ///
+    /// let mut hooks = HookSpec::new();
+    /// hooks.capture_all((0..4).map(HookPoint::ResidPost))
+    ///      .capture_all(["hook_embed", "hook_final_norm"]);
+    /// assert_eq!(hooks.num_captures(), 6);
+    /// ```
+    ///
+    /// See also [`FromIterator`], for building a spec rather than extending one:
+    ///
+    /// ```
+    /// use candle_mi::{HookPoint, HookSpec};
+    ///
+    /// let hooks: HookSpec = (0..4).map(HookPoint::ResidPost).collect();
+    /// assert_eq!(hooks.num_captures(), 4);
+    /// ```
+    pub fn capture_all<I>(&mut self, hooks: I) -> &mut Self
+    where
+        I: IntoIterator,
+        I::Item: Into<HookPoint>,
+    {
+        self.captures.extend(hooks.into_iter().map(Into::into));
         self
     }
 
@@ -429,6 +467,22 @@ impl HookSpec {
         self.interventions
             .extend(other.interventions.iter().cloned());
         self
+    }
+}
+
+/// Build a capture-only [`HookSpec`] from an iterator of hook points.
+///
+/// Deliberately **not** paired with an [`Extend`] impl: [`HookSpec`] already has
+/// an inherent [`extend`](HookSpec::extend) that merges another spec, and
+/// inherent methods win method resolution, so an [`Extend`] impl would make
+/// `spec.extend(some_iterator)` fail to compile against the inherent signature.
+/// Use [`capture_all`](HookSpec::capture_all) to extend from an iterator.
+impl FromIterator<HookPoint> for HookSpec {
+    fn from_iter<I: IntoIterator<Item = HookPoint>>(iter: I) -> Self {
+        Self {
+            captures: iter.into_iter().collect(),
+            ..Self::default()
+        }
     }
 }
 
@@ -741,6 +795,36 @@ mod tests {
         assert!(listed.contains(&HookPoint::AttnPattern(5)));
         assert!(listed.contains(&HookPoint::ResidPost(3)));
         assert!(listed.contains(&HookPoint::Embed));
+    }
+
+    #[test]
+    fn hook_spec_capture_all_and_from_iterator() {
+        let wanted: Vec<HookPoint> = (0..4).map(HookPoint::ResidPost).collect();
+
+        // Bulk form matches the one-at-a-time form.
+        let mut one_by_one = HookSpec::new();
+        for hook in &wanted {
+            one_by_one.capture(hook.clone());
+        }
+        let mut bulk = HookSpec::new();
+        bulk.capture_all(wanted.clone());
+        assert_eq!(bulk.num_captures(), one_by_one.num_captures());
+        for hook in &wanted {
+            assert!(bulk.is_captured(hook), "{hook} missing after capture_all");
+        }
+
+        // `capture_all` takes anything `Into<HookPoint>`, like `capture`.
+        let mut strings = HookSpec::new();
+        strings.capture_all(["hook_embed", "hook_final_norm"]);
+        assert!(strings.is_captured(&HookPoint::Embed));
+        assert!(strings.is_captured(&HookPoint::FinalNorm));
+
+        // `FromIterator` builds a capture-only spec with nothing else set.
+        let collected: HookSpec = wanted.iter().cloned().collect();
+        assert_eq!(collected.num_captures(), wanted.len());
+        assert_eq!(collected.num_interventions(), 0);
+        assert!(collected.state_knockout().is_none());
+        assert!(collected.state_steering().is_none());
     }
 
     /// A `HookCache` holding one zero tensor per given hook point.

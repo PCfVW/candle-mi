@@ -240,6 +240,30 @@ hooks.capture(HookPoint::AttnPattern(5))
      .capture("blocks.5.hook_resid_pre");  // string form works too
 ```
 
+`capture_all()` is the bulk form, taking anything iterable whose items are
+`Into<HookPoint>`:
+
+```rust
+let mut hooks = HookSpec::new();
+hooks.capture_all((0..model.num_layers()).map(HookPoint::ResidPost))
+     .capture_all(["hook_embed", "hook_final_norm"]);
+```
+
+To *build* a capture-only spec rather than extend one, collect into it:
+
+```rust
+let hooks: HookSpec = (0..model.num_layers()).map(HookPoint::ResidPost).collect();
+```
+
+`HookSpec` is `Clone`, and that is a guarantee rather than an accident of the
+derive: a spec holds hook points and intervention descriptions, never
+activations, so a table of per-step specs handing out clones is cheap.
+
+> There is deliberately no `Extend<HookPoint>` impl.  `HookSpec::extend()` is an
+> inherent method that merges another **spec** (see [Merging Specs](#merging-specs)),
+> and inherent methods win method resolution, so an `Extend` impl would make
+> `spec.extend(some_iterator)` fail to compile.  Use `capture_all()` instead.
+
 ### Interventions
 
 Register a modification at a hook point:

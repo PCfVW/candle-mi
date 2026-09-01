@@ -153,9 +153,7 @@
 //! # let seq_len = tokens.len();
 //! # let input = candle_core::Tensor::new(&tokens[..], model.device())?.unsqueeze(0)?;
 //! let mut hooks = HookSpec::new();
-//! for layer in 0..model.num_layers() {
-//!     hooks.capture(HookPoint::ResidPost(layer));
-//! }
+//! hooks.capture_all((0..model.num_layers()).map(HookPoint::ResidPost));
 //! let cache = model.forward(&input, &hooks)?;
 //!
 //! for layer in 0..model.num_layers() {
