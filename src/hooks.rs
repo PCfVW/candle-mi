@@ -41,8 +41,25 @@ use crate::interp::intervention::{StateKnockoutSpec, StateSteeringSpec};
 ///
 /// Unknown strings parse as [`HookPoint::Custom`], providing an escape
 /// hatch for backend-specific hook points.
+///
+/// # Ordering
+///
+/// [`Ord`] is derived so a hook point can key a [`BTreeMap`] directly. That is
+/// what a caller under a determinism contract needs: iteration over a
+/// [`HashMap`] is unordered, and without [`Ord`] the only total operation left
+/// on a `#[non_exhaustive]` enum is [`to_string`](std::string::ToString::to_string).
+///
+/// The order is **total, but its relation to hook semantics is unspecified**.
+/// Derived ordering follows variant declaration order, and `HookPoint` is
+/// `#[non_exhaustive]`, so inserting a variant can reorder existing ones in a
+/// patch release. Rely on it for within-run determinism and for map keys; never
+/// persist it, compare it across versions, or read layer order into it. To order
+/// by hook semantics, sort by the semantic fields explicitly.
+///
+/// [`BTreeMap`]: std::collections::BTreeMap
+/// [`HashMap`]: std::collections::HashMap
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum HookPoint {
     // -- Embedding --
     /// After token embedding (`hook_embed`).
@@ -536,6 +553,89 @@ mod tests {
     fn unknown_string_becomes_custom() {
         let hook: HookPoint = "some.unknown.hook".parse().unwrap();
         assert_eq!(hook, HookPoint::Custom("some.unknown.hook".to_string()));
+    }
+
+    /// One instance of every `HookPoint` variant, in declaration order.
+    ///
+    /// `Custom` is last because it is the last variant; the ordering tests
+    /// assert that rather than assume it.
+    fn one_of_each_variant() -> Vec<HookPoint> {
+        vec![
+            HookPoint::Embed,
+            HookPoint::ResidPre(0),
+            HookPoint::AttnQ(1),
+            HookPoint::AttnK(1),
+            HookPoint::AttnV(1),
+            HookPoint::AttnScores(2),
+            HookPoint::AttnPattern(2),
+            HookPoint::AttnOut(3),
+            HookPoint::ResidMid(3),
+            HookPoint::MlpPre(4),
+            HookPoint::MlpPost(4),
+            HookPoint::MlpOut(5),
+            HookPoint::ResidPost(5),
+            HookPoint::FinalNorm,
+            HookPoint::RwkvState(6),
+            HookPoint::RwkvDecay(6),
+            HookPoint::RwkvEffectiveAttn(6),
+            HookPoint::Custom("some.custom.hook".to_string()),
+        ]
+    }
+
+    #[test]
+    fn hook_point_ord_is_total() {
+        let hooks = one_of_each_variant();
+
+        for a in &hooks {
+            for b in &hooks {
+                assert_eq!(
+                    usize::from(a < b) + usize::from(a == b) + usize::from(a > b),
+                    1,
+                    "trichotomy failed for {a:?} vs {b:?}"
+                );
+                // `Ord` agrees with `PartialOrd`. The derive guarantees this;
+                // the assertion guards a future hand-written impl.
+                assert_eq!(Some(a.cmp(b)), a.partial_cmp(b), "{a:?} vs {b:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn hook_point_keys_a_btree_map_deterministically() {
+        use std::collections::BTreeMap;
+
+        let forward: BTreeMap<HookPoint, usize> = one_of_each_variant()
+            .into_iter()
+            .enumerate()
+            .map(|(i, hook)| (hook, i))
+            .collect();
+        assert_eq!(forward.len(), one_of_each_variant().len());
+
+        // Insertion order cannot reach a `BTreeMap`'s iteration order: the same
+        // set inserted in reverse yields the same key sequence. This is the
+        // property a determinism contract needs from `captures()`.
+        let mut reversed = one_of_each_variant();
+        reversed.reverse();
+        let backward: BTreeMap<HookPoint, usize> = reversed
+            .into_iter()
+            .enumerate()
+            .map(|(i, hook)| (hook, i))
+            .collect();
+
+        let forward_keys: Vec<&HookPoint> = forward.keys().collect();
+        let backward_keys: Vec<&HookPoint> = backward.keys().collect();
+        assert_eq!(forward_keys, backward_keys);
+    }
+
+    #[test]
+    fn hook_point_custom_sorts_last() {
+        let mut hooks = one_of_each_variant();
+        hooks.sort();
+        assert!(
+            matches!(hooks.last(), Some(HookPoint::Custom(_))),
+            "expected `Custom` last, got {:?}",
+            hooks.last()
+        );
     }
 
     #[test]

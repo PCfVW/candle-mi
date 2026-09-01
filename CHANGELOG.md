@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`HookPoint` derives `PartialOrd` + `Ord`**, so it keys a `BTreeMap` directly. Reported from askesis `canvas` (`docs/dogfooding-feedbacks/interp-api-forces-stringly-typed-hook-handling.md`, item 1), whose determinism contract forbids `HashMap` iteration in any result-affecting path: with no total order, the harness had to invent a key type carrying a cached `hook.to_string()`. `HookPoint` is `#[non_exhaustive]`, so a downstream crate under a lint floor denying `clippy::wildcard_enum_match_arm` can never match it exhaustively, which left `to_string()` as **the only total operation on the type** and pushed string keys into code whose own conventions forbid them (item 6 of the same report, closed by this one derive). Every payload is `usize` or `String`, both already `Ord`, so the derive is free.
+
+  **The order is total, but its relation to hook semantics is unspecified, and that is documented rather than left to be discovered.** Derived ordering follows variant declaration order and the enum is `#[non_exhaustive]`, so inserting a variant can reorder existing ones in a patch release. It is sound for within-run determinism and for map keys; it must not be persisted, compared across versions, or read as layer order.
+
 ### Fixed
 
 - **`clippy::chunks_exact_to_as_chunks` broke the weekly canary** ([run 32699054087](https://github.com/mi-for-the-rust-of-us/candle-mi/actions/runs/32699054087)), new in Rust 1.98.0's clippy (stable rolled 1.97.1 → 1.98.0 between the 2026-08-17 and 2026-08-24 runs) and promoted to a hard error by `#![deny(warnings)]`. `splitmix64_seed` in `src/util/rng.rs` used `chunks_exact_mut(8)`; switched to `as_chunks_mut::<8>().0`, stable since before the crate's 1.91 MSRV floor. Same rolling-stable hazard as the `clippy::suboptimal_flops` break noted under Pre-commit Checks in `CLAUDE.md`; the MSRV (1.91) job showed cancelled rather than failed because the `Stable` job's failure tripped the workflow's fail-fast.

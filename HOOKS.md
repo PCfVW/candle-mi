@@ -12,6 +12,7 @@
 - [Overview](#overview)
 - [Hook Points](#hook-points)
   - [Naming Convention](#naming-convention)
+  - [Ordering and Map Keys](#ordering-and-map-keys)
   - [Transformer Hook Points](#transformer-hook-points)
   - [RWKV Hook Points](#rwkv-hook-points)
 - [HookSpec: Declaring Captures and Interventions](#hookspec-declaring-captures-and-interventions)
@@ -95,6 +96,33 @@ hooks.capture("blocks.5.attn.hook_pattern");   // string — TransformerLens sty
 
 Unknown strings parse as `HookPoint::Custom(s)`, providing an escape hatch
 for backend-specific hook points.
+
+### Ordering and Map Keys
+
+`HookPoint` derives `Ord`, so it keys a `BTreeMap` directly:
+
+```rust
+use std::collections::BTreeMap;
+
+// Deterministic iteration order, no string keys, no wildcard match arm.
+let mut by_hook: BTreeMap<HookPoint, &Tensor> = BTreeMap::new();
+for layer in 0..model.num_layers() {
+    let hook = HookPoint::ResidPost(layer);
+    by_hook.insert(hook.clone(), cache.require(&hook)?);
+}
+```
+
+This matters for callers whose results must not depend on `HashMap` iteration
+order.  `HookPoint` is `#[non_exhaustive]`, so a downstream crate can never
+match it exhaustively; before `Ord`, `to_string()` was the only total operation
+left, and string keys are what such a caller is usually trying to avoid.
+
+**The order is total, but its relation to hook semantics is unspecified.**
+Derived ordering follows variant declaration order, so inserting a variant can
+reorder existing ones in a patch release.  Rely on it for within-run determinism
+and for map keys; never persist it, compare it across versions, or read layer
+order into it.  To order by hook semantics, sort by the semantic fields
+explicitly.
 
 ### Transformer Hook Points
 
