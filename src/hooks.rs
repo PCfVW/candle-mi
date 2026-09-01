@@ -94,6 +94,12 @@ pub enum HookPoint {
 
     // -- Final --
     /// After final layer norm (`hook_final_norm`).
+    ///
+    /// The last capturable point before the unembedding projection. **The
+    /// logits are not a hook point**: they are the forward pass's output, read
+    /// with [`HookCache::output`]. Project a captured `FinalNorm` (or any
+    /// residual stream) to vocabulary space with
+    /// [`MIBackend::project_to_vocab`](crate::MIBackend::project_to_vocab).
     FinalNorm,
 
     // -- RWKV-specific --
@@ -530,13 +536,28 @@ impl HookCache {
         }
     }
 
-    /// The output tensor from the forward pass.
+    /// The output tensor from the forward pass: **the logit tap**.
+    ///
+    /// The logits are reached here rather than through a [`HookPoint`], because
+    /// they are the forward pass's output rather than an intermediate
+    /// activation. [`HookPoint::FinalNorm`] is the last capturable point before
+    /// the unembedding projection.
+    ///
+    /// # Shapes
+    /// - returns: `[batch, seq, vocab_size]`
     #[must_use]
     pub const fn output(&self) -> &Tensor {
         &self.output
     }
 
-    /// Consume the cache and return the output tensor.
+    /// Consume the cache and return the output tensor (the logits, see
+    /// [`output`](Self::output)).
+    ///
+    /// Mutually exclusive with [`into_captures`](Self::into_captures), since
+    /// both consume the cache.
+    ///
+    /// # Shapes
+    /// - returns: `[batch, seq, vocab_size]`
     #[must_use]
     pub fn into_output(self) -> Tensor {
         self.output

@@ -144,6 +144,11 @@ pass, in execution order.  All hook points support both **capture** and
 | `ResidPost(i)` | `blocks.{i}.hook_resid_post` | `[batch, seq, hidden]` | Residual stream after full layer `i` |
 | `FinalNorm` | `hook_final_norm` | `[batch, seq, hidden]` | After final layer norm (before logit projection) |
 
+> **The logits are not a hook point.**  They are the forward pass's output, read
+> with `cache.output()`, not with `cache.get(&hook)`.  `FinalNorm` is the last
+> capturable point before the unembedding projection; to get logits from any
+> captured activation, project it with `MIModel::project_to_vocab()`.
+
 **Notes:**
 
 - `n_kv_heads` may differ from `n_heads` in grouped-query attention (GQA).
@@ -174,6 +179,8 @@ also supports interventions.  State modifications use the dedicated
 | `RwkvEffectiveAttn(i)` | `blocks.{i}.rwkv.hook_effective_attn` | `[batch, n_heads, seq_q, seq_src]` | Effective attention derived from WKV recurrence (ReLU + L1 normalized) |
 | `ResidPost(i)` | `blocks.{i}.hook_resid_post` | `[batch, seq, hidden]` | Residual stream after full layer `i` |
 | `FinalNorm` | `hook_final_norm` | `[batch, seq, hidden]` | After final layer norm |
+
+> As above, the logits are `cache.output()`, not a hook point.
 
 **Notes:**
 
@@ -327,7 +334,8 @@ logits and any tensors captured via `HookSpec::capture()`.
 ```rust
 let cache = model.forward(&input, &hooks)?;
 
-// Output logits — always present
+// Output logits — always present. This is THE logit tap: there is no
+// HookPoint for logits, because they are the forward pass's output.
 let logits = cache.output();               // &Tensor, shape [batch, seq, vocab]
 let logits = cache.into_output();          // Tensor (consumes cache)
 

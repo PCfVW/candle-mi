@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Nothing said that `HookCache::output()` is the logit tap.** `output()` *is* the logits, so "the model's own logits at position `p`" is reached by a different route from every other activation (`output()` plus a manual `narrow`, rather than `cache.get(&hook)`). Item 5 of the askesis `canvas` report, where that asymmetry landed exactly on the `D11` capture-verification invariant, which recomputes the logits from the captured residual stream and compares: the one place a probe most wants the two quantities to be the same kind of thing. `HookPoint::FinalNorm`, `HookCache::output()` and `HookCache::into_output()` now say so, and `HOOKS.md` says it beside both hook-point tables.
+
+  **A doc line rather than a `HookPoint::Logits` variant**, which the report offered as the alternative. The variant would silently change `FromStr` (`"hook_logits"` parses to `Custom` today), and a *capturable* `Logits` would make every backend store a second `[batch, seq, vocab_size]` tensor that `output()` already holds, the largest allocation in the pass, duplicated. The reporting harness needed to *know* which route reaches the logits, not a second route.
+
 - **`clippy::chunks_exact_to_as_chunks` broke the weekly canary** ([run 32699054087](https://github.com/mi-for-the-rust-of-us/candle-mi/actions/runs/32699054087)), new in Rust 1.98.0's clippy (stable rolled 1.97.1 → 1.98.0 between the 2026-08-17 and 2026-08-24 runs) and promoted to a hard error by `#![deny(warnings)]`. `splitmix64_seed` in `src/util/rng.rs` used `chunks_exact_mut(8)`; switched to `as_chunks_mut::<8>().0`, stable since before the crate's 1.91 MSRV floor. Same rolling-stable hazard as the `clippy::suboptimal_flops` break noted under Pre-commit Checks in `CLAUDE.md`; the MSRV (1.91) job showed cancelled rather than failed because the `Stable` job's failure tripped the workflow's fail-fast.
 
 ## [0.1.23] - 2026-08-13
