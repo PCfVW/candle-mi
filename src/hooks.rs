@@ -344,6 +344,32 @@ impl HookSpec {
         self.captures.len()
     }
 
+    /// Iterate over the requested capture points.
+    ///
+    /// The counterpart to [`num_captures`](Self::num_captures), which reports a
+    /// count of a collection the caller could not otherwise walk.
+    ///
+    /// **Order is arbitrary** (the backing store is a [`HashSet`]). For a
+    /// deterministic walk, collect into a [`BTreeSet`]: [`HookPoint`] implements
+    /// [`Ord`], and a [`BTreeSet`]'s iteration order cannot depend on the order
+    /// things were inserted into it.
+    ///
+    /// ```
+    /// use std::collections::BTreeSet;
+    /// use candle_mi::{HookPoint, HookSpec};
+    ///
+    /// let mut hooks = HookSpec::new();
+    /// hooks.capture(HookPoint::ResidPost(1)).capture(HookPoint::ResidPost(0));
+    ///
+    /// let requested: BTreeSet<&HookPoint> = hooks.captures().collect();
+    /// assert_eq!(requested.len(), 2);
+    /// ```
+    ///
+    /// [`BTreeSet`]: std::collections::BTreeSet
+    pub fn captures(&self) -> impl Iterator<Item = &HookPoint> {
+        self.captures.iter()
+    }
+
     /// Number of registered interventions.
     #[must_use]
     pub const fn num_interventions(&self) -> usize {
@@ -496,6 +522,54 @@ impl HookCache {
     #[must_use]
     pub fn num_captures(&self) -> usize {
         self.captures.len()
+    }
+
+    /// Iterate over every captured activation.
+    ///
+    /// The counterpart to [`num_captures`](Self::num_captures), which reports a
+    /// count of a collection the caller could not otherwise walk. Without this,
+    /// a harness wanting *everything that was captured* has to keep its own copy
+    /// of the request and re-derive the keys, discovering absence one
+    /// [`get`](Self::get) at a time.
+    ///
+    /// Each tensor's shape depends on its hook point; see [`HookPoint`].
+    ///
+    /// **Order is arbitrary** (the backing store is a [`HashMap`]). For a
+    /// deterministic walk, collect into a [`BTreeMap`]: [`HookPoint`] implements
+    /// [`Ord`], and a [`BTreeMap`]'s iteration order cannot depend on the order
+    /// things were inserted into it.
+    ///
+    /// ```
+    /// use std::collections::BTreeMap;
+    /// use candle_mi::{HookCache, HookPoint};
+    /// use candle_core::{DType, Device, Tensor};
+    ///
+    /// # fn main() -> candle_mi::Result<()> {
+    /// let mut cache = HookCache::new(Tensor::zeros(1, DType::F32, &Device::Cpu)?);
+    /// cache.store(HookPoint::ResidPost(1), Tensor::zeros(2, DType::F32, &Device::Cpu)?);
+    /// cache.store(HookPoint::ResidPost(0), Tensor::zeros(2, DType::F32, &Device::Cpu)?);
+    ///
+    /// let by_hook: BTreeMap<&HookPoint, &Tensor> = cache.captures().collect();
+    /// assert_eq!(by_hook.keys().next(), Some(&&HookPoint::ResidPost(0)));
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`BTreeMap`]: std::collections::BTreeMap
+    pub fn captures(&self) -> impl Iterator<Item = (&HookPoint, &Tensor)> {
+        self.captures.iter()
+    }
+
+    /// Consume the cache and iterate over every captured activation by value.
+    ///
+    /// Mutually exclusive with [`into_output`](Self::into_output), since both
+    /// consume the cache. To keep both, clone the output first: candle's
+    /// `Tensor` is reference-counted, so `cache.output().clone()` costs a
+    /// refcount, not a copy of the logits.
+    ///
+    /// **Order is arbitrary**, as for [`captures`](Self::captures).
+    pub fn into_captures(self) -> impl Iterator<Item = (HookPoint, Tensor)> {
+        self.captures.into_iter()
     }
 }
 
@@ -651,6 +725,103 @@ mod tests {
         assert!(spec.is_captured(&HookPoint::AttnPattern(5)));
         assert!(spec.is_captured(&HookPoint::ResidPost(3)));
         assert!(!spec.is_captured(&HookPoint::Embed));
+    }
+
+    #[test]
+    fn hook_spec_captures_lists_every_request() {
+        use std::collections::BTreeSet;
+
+        let mut spec = HookSpec::new();
+        spec.capture(HookPoint::AttnPattern(5));
+        spec.capture("blocks.3.hook_resid_post");
+        spec.capture(HookPoint::Embed);
+
+        let listed: BTreeSet<&HookPoint> = spec.captures().collect();
+        assert_eq!(listed.len(), spec.num_captures());
+        assert!(listed.contains(&HookPoint::AttnPattern(5)));
+        assert!(listed.contains(&HookPoint::ResidPost(3)));
+        assert!(listed.contains(&HookPoint::Embed));
+    }
+
+    /// A `HookCache` holding one zero tensor per given hook point.
+    fn cache_with(hooks: &[HookPoint]) -> HookCache {
+        let placeholder = Tensor::zeros(1, candle_core::DType::F32, &candle_core::Device::Cpu)
+            .expect("failed to create placeholder");
+        let mut cache = HookCache::new(placeholder);
+        for (i, hook) in hooks.iter().enumerate() {
+            let tensor = Tensor::zeros(i + 1, candle_core::DType::F32, &candle_core::Device::Cpu)
+                .expect("failed to create capture");
+            cache.store(hook.clone(), tensor);
+        }
+        cache
+    }
+
+    #[test]
+    fn hook_cache_captures_enumerates_everything_stored() {
+        use std::collections::BTreeMap;
+
+        let stored = [
+            HookPoint::ResidPost(2),
+            HookPoint::ResidPost(0),
+            HookPoint::AttnPattern(1),
+        ];
+        let cache = cache_with(&stored);
+
+        let by_hook: BTreeMap<&HookPoint, &Tensor> = cache.captures().collect();
+        assert_eq!(by_hook.len(), cache.num_captures());
+        for hook in &stored {
+            assert!(by_hook.contains_key(hook), "{hook} missing from captures()");
+        }
+
+        // Walking `captures()` replaces per-key absence probing: what comes out
+        // is exactly what went in, so a caller needs no "hook not captured"
+        // error path to enumerate a cache.
+        for (hook, tensor) in cache.captures() {
+            assert_eq!(
+                tensor.dims(),
+                cache
+                    .require(hook)
+                    .expect("enumerated hook must resolve")
+                    .dims()
+            );
+        }
+    }
+
+    #[test]
+    fn hook_cache_captures_collect_deterministically() {
+        use std::collections::BTreeMap;
+
+        let forward = cache_with(&[
+            HookPoint::ResidPost(2),
+            HookPoint::ResidPost(0),
+            HookPoint::AttnPattern(1),
+        ]);
+        let backward = cache_with(&[
+            HookPoint::AttnPattern(1),
+            HookPoint::ResidPost(0),
+            HookPoint::ResidPost(2),
+        ]);
+
+        let forward_keys: Vec<&HookPoint> = forward
+            .captures()
+            .collect::<BTreeMap<_, _>>()
+            .into_keys()
+            .collect();
+        let backward_keys: Vec<&HookPoint> = backward
+            .captures()
+            .collect::<BTreeMap<_, _>>()
+            .into_keys()
+            .collect();
+        assert_eq!(forward_keys, backward_keys);
+    }
+
+    #[test]
+    fn hook_cache_into_captures_yields_owned_tensors() {
+        let cache = cache_with(&[HookPoint::Embed, HookPoint::FinalNorm]);
+        let n = cache.num_captures();
+
+        let owned: Vec<(HookPoint, Tensor)> = cache.into_captures().collect();
+        assert_eq!(owned.len(), n);
     }
 
     #[test]

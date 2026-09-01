@@ -21,6 +21,7 @@
   - [Combining Captures and Interventions](#combining-captures-and-interventions)
   - [Merging Specs](#merging-specs)
 - [HookCache: Retrieving Results](#hookcache-retrieving-results)
+  - [Enumerating What Was Captured](#enumerating-what-was-captured)
 - [Intervention Types](#intervention-types)
   - [Replace](#replace)
   - [Add (Steering)](#add-steering)
@@ -105,11 +106,7 @@ for backend-specific hook points.
 use std::collections::BTreeMap;
 
 // Deterministic iteration order, no string keys, no wildcard match arm.
-let mut by_hook: BTreeMap<HookPoint, &Tensor> = BTreeMap::new();
-for layer in 0..model.num_layers() {
-    let hook = HookPoint::ResidPost(layer);
-    by_hook.insert(hook.clone(), cache.require(&hook)?);
-}
+let by_hook: BTreeMap<&HookPoint, &Tensor> = cache.captures().collect();
 ```
 
 This matters for callers whose results must not depend on `HashMap` iteration
@@ -292,6 +289,7 @@ combined.extend(&intervention_spec);
 | `is_empty()` | `true` if no captures, interventions, or state specs |
 | `num_captures()` | Number of requested captures |
 | `num_interventions()` | Number of registered interventions |
+| `captures()` | Iterator over the requested hook points (arbitrary order) |
 | `is_captured(&hook)` | Whether a specific hook point will be captured |
 | `has_intervention_at(&hook)` | Whether any intervention targets a hook point |
 
@@ -309,9 +307,13 @@ let cache = model.forward(&input, &hooks)?;
 let logits = cache.output();               // &Tensor, shape [batch, seq, vocab]
 let logits = cache.into_output();          // Tensor (consumes cache)
 
-// Captured tensors
+// Captured tensors, by hook point
 let attn = cache.get(&HookPoint::AttnPattern(5));          // Option<&Tensor>
 let attn = cache.require(&HookPoint::AttnPattern(5))?;     // Result<&Tensor>
+
+// Captured tensors, all of them
+for (hook, tensor) in cache.captures() { /* ... */ }       // (&HookPoint, &Tensor)
+let owned = cache.into_captures();                         // (HookPoint, Tensor)
 
 // Metadata
 let n = cache.num_captures();
@@ -319,6 +321,33 @@ let n = cache.num_captures();
 
 `get()` returns `None` if the hook point was not captured; `require()`
 returns `MIError::Hook` with a descriptive message.
+
+### Enumerating What Was Captured
+
+`captures()` walks everything the forward pass stored.  Without it, a harness
+wanting *everything that was captured* has to keep its own copy of the request
+and re-derive the keys, discovering absence one `get()` at a time; that is an
+error path the caller does not otherwise need.
+
+**Order is arbitrary** for both `captures()` methods, because the backing
+stores are a `HashMap` and a `HashSet`.  Collect into a `BTreeMap` or
+`BTreeSet` for a deterministic walk (`HookPoint` implements `Ord`, see
+[Ordering and Map Keys](#ordering-and-map-keys)); a `BTreeMap`'s iteration
+order cannot depend on the order things were inserted into it.
+
+```rust
+use std::collections::BTreeMap;
+
+let by_hook: BTreeMap<&HookPoint, &Tensor> = cache.captures().collect();
+for (hook, tensor) in &by_hook {
+    println!("{hook}: {:?}", tensor.dims());
+}
+```
+
+`into_captures()` yields owned tensors and is mutually exclusive with
+`into_output()`, since both consume the cache.  To keep both, clone the output
+first: candle's `Tensor` is reference-counted, so `cache.output().clone()`
+costs a refcount, not a copy of the logits.
 
 ---
 
