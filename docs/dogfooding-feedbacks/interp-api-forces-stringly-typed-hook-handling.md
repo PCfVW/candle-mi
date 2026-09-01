@@ -1,5 +1,30 @@
 # The interp API forces stringly-typed hook handling downstream
 
+> **Status: IMPLEMENTED in v0.1.24** (2026-09-01). All six items shipped.
+> **Item 1:** `HookPoint` derives `PartialOrd` + `Ord`, which closes **item 6**
+> by itself. **Item 2:** `HookCache::captures()` / `into_captures()` and
+> `HookSpec::captures()`; order is arbitrary and documented as such, with `Ord`
+> making `cache.captures().collect::<BTreeMap<_, _>>()` the one-expression
+> deterministic walk. **Item 3:** `HookSpec::capture_all` plus
+> `FromIterator<HookPoint>`, and `HookSpec: Clone` is now documented as a
+> guarantee. **Item 4:** widened to rank-preserving (4a), *not* asserted at rank
+> 2 (4b): the two `stoicheia` backends turned out to be the ones not honouring
+> the wider contract and now use `broadcast_matmul`, with the rank-2 path
+> bit-identical and regression-tested. **Item 5:** the doc line (5a), *not* a
+> `HookPoint::Logits` variant (5b), which would have changed `FromStr` and made
+> every backend duplicate the largest tensor in the pass.
+>
+> **Deliberately not done:** no `Extend<HookPoint>` impl, which would collide
+> with the inherent `HookSpec::extend`; and the backing stores stay `HashMap` /
+> `HashSet`, so the hook fast path is untouched and `RELEASE_TIMINGS.md` needed
+> no refresh.
+>
+> **Item 6 awaits downstream confirmation, which is the acceptance test:**
+> `canvas` `capture.rs` drops `CaptureKey`'s cached `to_string()` and keys on
+> `HookPoint` directly, and `CaptureSet` drops its "this model's forward emits
+> no `{hook}`" error path in favour of `cache.captures()`. Two deletions, both
+> compile-checked.
+
 **Date:** September 1, 2026
 **Source:** askesis `canvas` leg — building the Measurement `G` capture harness
 (`reference/canvas/src/capture.rs`) against `candle-mi`'s `HookSpec` / `HookCache`

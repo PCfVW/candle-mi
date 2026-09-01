@@ -439,8 +439,11 @@ Rules:
 
 ### Hook Purity Contract
 
-- `HookSpec::capture()` takes only a hook point name -- no callback. The
-  captured tensor is stored in `HookCache` and retrieved after `forward()`.
-  The absence of a mutation mechanism is the enforcement.
+- `HookSpec::capture()` and `HookSpec::capture_all()` take only hook point
+  names -- no callback. The captured tensor is stored in `HookCache` and
+  retrieved after `forward()`. The absence of a mutation mechanism is the
+  enforcement.
+- Enumeration (`HookCache::captures()`, `HookSpec::captures()`) is read-only
+  and adds no mutation path, so it does not weaken the contract above.
 - `HookSpec::intervene()` takes a typed `Intervention` value. All mutations
   go through this path and are visible at the call site.
