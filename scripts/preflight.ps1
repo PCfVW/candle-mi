@@ -97,6 +97,23 @@ function Invoke-Lanes {
             @("clippy", "--no-default-features", "--features", $f, "--", "-W", "clippy::pedantic")
     }
 
+    # Rustdoc, per feature set, mirroring ci.yml's own loop. `#![deny(warnings)]`
+    # promotes rustdoc::broken_intra_doc_links to an error, but only for the
+    # features enabled in that run: a link to a feature-gated item resolves when
+    # its feature is on and dangles when it is off, so an --all-features pass
+    # structurally cannot see it. The bare run (no features) is the strictest
+    # case. Kept in the lint phase, before the -LintOnly return, so the MSRV
+    # toolchain runs it too on the fast default path -- rustdoc lints are
+    # version-specific in the same way clippy's are, which is the whole reason
+    # the MSRV clippy lanes are here. Each run is seconds (`--no-deps`).
+    Invoke-Cargo "[$Tc] Rustdoc (bare)" $Tc @("doc", "--no-default-features", "--no-deps")
+    foreach ($f in $featureSets) {
+        Invoke-Cargo "[$Tc] Rustdoc ($f)" $Tc `
+            @("doc", "--no-default-features", "--features", $f, "--no-deps")
+    }
+    Invoke-Cargo "[$Tc] Rustdoc (all software features)" $Tc `
+        @("doc", "--no-default-features", "--features", "$allSoftware,memory", "--no-deps")
+
     if ($LintOnly) { return }
 
     # Builds + tests, mirroring ci.yml step-for-step.

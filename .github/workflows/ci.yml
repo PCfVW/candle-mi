@@ -192,6 +192,27 @@ jobs:
       - name: Doctests (all software features)
         run: cargo test --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory,training" --doc
 
+      # Rustdoc, per feature set. `#![deny(warnings)]` promotes
+      # rustdoc::broken_intra_doc_links (and friends) to errors, but only for the
+      # features enabled in that particular run: a link to a feature-gated item
+      # resolves when its feature is on and dangles when it is off. So an
+      # --all-features lane structurally CANNOT see the failure, which is why
+      # this loops instead. The bare "" entry is the strictest case, with every
+      # optional item absent. v0.1.21 shipped five such broken links and no lane
+      # in this file could have caught them; see CONVENTIONS.md, Intra-Doc Link
+      # Safety. Each run is seconds, since --no-deps documents this crate only.
+      - name: Rustdoc (per feature)
+        run: |
+          set -e
+          for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" \
+                   "quantized,transformer" "sae,transformer" "mmap,transformer" \
+                   "diffusion" "memory" "memory-debug" "training" \
+                   "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory,training"; do
+            echo "::group::cargo doc --features '$f'"
+            cargo doc --no-default-features ${f:+--features "$f"} --no-deps
+            echo "::endgroup::"
+          done
+
       # Check 5 (Rule 15): Bare no-default-features build
       - name: Build (no default features)
         run: cargo build --no-default-features

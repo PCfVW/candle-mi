@@ -166,6 +166,24 @@ jobs:
       - name: Doctests (all software features)
         run: cargo test --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory,training" --doc
 
+      # Rustdoc, per feature set. Mirrors ci.yml, and matters more here: what
+      # docs.rs renders after a publish is the crate's public face, and a broken
+      # intra-doc link cannot be fixed without cutting another release. A link to
+      # a feature-gated item resolves when its feature is on and dangles when it
+      # is off, so only a per-feature loop can see it. See CONVENTIONS.md,
+      # Intra-Doc Link Safety.
+      - name: Rustdoc (per feature)
+        run: |
+          set -e
+          for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" \
+                   "quantized,transformer" "sae,transformer" "mmap,transformer" \
+                   "diffusion" "memory" "memory-debug" "training" \
+                   "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory,training"; do
+            echo "::group::cargo doc --features '$f'"
+            cargo doc --no-default-features ${f:+--features "$f"} --no-deps
+            echo "::endgroup::"
+          done
+
       - name: Build (no default features)
         run: cargo build --no-default-features
 
