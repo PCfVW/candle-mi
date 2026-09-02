@@ -194,6 +194,10 @@ name = "validate_othello_forward"
 required-features = ["diffusion"]
 
 [[test]]
+name = "validate_patch_at"
+required-features = ["diffusion"]
+
+[[test]]
 name = "validate_bidirectional_forward"
 required-features = ["transformer"]
 

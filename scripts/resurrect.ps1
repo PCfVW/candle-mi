@@ -130,7 +130,7 @@ $entries = @(
     @{ Id = 'anacrousis'; Name = 'anacrousis (28x15 matrix)';  Features = 'mmap';                        Tests = @('validate_anacrousis');                            Device = 'GPU';     Models = 'meta-llama/Llama-3.2-1B (gated)'; FullOnly = $true }
     # Appended last on purpose: inserting anywhere above renumbers every entry
     # after it, and the numbers are what `-Only <n>` takes.
-    @{ Id = 'patchat'; Name = 'patch_at (CUDA offset-view guard)'; Features = 'transformer';           Tests = @();                                                 Device = 'GPU';     Models = '(none - allocates GPU tensors)'; Quick = $true; Lib = $true; Filter = 'hooks::tests::patch_at::cuda_' }
+    @{ Id = 'patchat'; Name = 'patch_at (CUDA offset-view guard)'; Features = 'diffusion';             Tests = @('validate_patch_at');                              Device = 'GPU';     Models = '(none - OthelloGpt::init from a seed)'; Quick = $true; Lib = $true; Filter = 'cuda_patch' }
 )
 
 # --- Read prior per-entry state back out of RESURRECTION.md (Name -> {Date, Wall, Outcome}) ---
