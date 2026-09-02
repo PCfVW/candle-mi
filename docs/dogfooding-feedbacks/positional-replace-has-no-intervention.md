@@ -248,3 +248,35 @@ CI.
 
 Reported upstream as
 [candle#3940](https://github.com/huggingface/candle/issues/3940).
+
+---
+
+## Closure (September 2, 2026): implemented, and it found a `candle` bug on the way
+
+`candle-mi` added `Intervention::PatchAt { position, value }` the same day, and took the
+**preferred** resolution of the dim-1 ambiguity rather than the cheap one: `apply_intervention`
+now receives the `HookPoint`, and `patch_at` **refuses** at any point whose activation is not
+`[batch, seq_len, hidden]`, with `MIError::Intervention`, so the silent head-patching failure at
+`AttnQ`/`AttnK`/`AttnV`/`AttnScores`/`AttnPattern` is a property of the crate, not a comment.
+`HookPoint::accepts_positional_patch` makes the set queryable, and four error conditions are documented
+(unsupported point, wrong rank, position out of range, value shape). `value` accepts `[hidden]`,
+`[1, 1, hidden]` or `[batch, 1, hidden]`.
+
+**And the implementation surfaced a defect one layer down**: `candle` `9dda9a6a`, *"Fix CUDA
+`copy_strided_src` over-copying from an offset source view"* (upstream PR
+[#3944](https://github.com/huggingface/candle/pull/3944)). That is precisely the failure mode this
+report worried about in the abstract: an incorrect write producing a plausible tensor rather than
+an error. It would have been invisible in a hand-rolled splice, on GPU only, inside every
+patching probe the crate has.
+
+**What the consumer keeps.** The `canvas` probe no longer captures the recipient before patching,
+no longer splices three tensors, and no longer carries an off-by-one: one forward, one
+intervention, at `ResidPost(l)` which `accepts_positional_patch` admits. The four `examples/`
+helpers (`patch_position` x2, `replace_position` x2) are gone: they collapsed into the variant in
+the same batch, taking with them the extra forward each example ran only to store the recipient's
+own activations.
+
+**Still open, and deliberately not asked for here:** patching a single position's KEYS or VALUES,
+shaped `[batch, n_heads, seq_len, head_dim]`, which an earlier draft of Measurement `G` wanted for
+head-level path patching. `PatchAt` correctly refuses those points today. A head-indexed variant
+would be a separate report, with its own use to justify it.
