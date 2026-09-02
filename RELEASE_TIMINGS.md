@@ -52,6 +52,7 @@ table has more than one entry.
 | Version | Date | CPU (cores/threads) | Toolchain | GPU | CPU F32 overhead | CUDA BF16 overhead | Diagnostic: lookup / capture / remainder |
 |---|---|---|---|---|---|---|---|
 | 0.1.23 | 2026-08-24 | AMD Ryzen 9 5950X (16/32) | rustc 1.98.0 | RTX 5060 Ti 16 GiB | -0.9% (3.11s → 3.08s, 10 runs) | +8.5% (32.96ms → 35.76ms, 10 runs) | 0.0% / 0.0% / 100.0% |
+| 0.1.24 | 2026-09-02 | AMD Ryzen 9 5950X (16/32) | rustc 1.98.0 | RTX 5060 Ti 16 GiB | +0.3% / +0.1% (3.13s → 3.14s; 3.01s → 3.01s, two 10-run samples) | +11.1% / +7.8% (32.14ms → 35.69ms; 33.43ms → 36.05ms, two 10-run samples) | 2.6% / 5.3% / 92.2% (GPU); degenerate on CPU |
 
 CPU overhead is within noise (negative, i.e. "full capture" measured
 *faster* than "no hooks" — expected at ~3s/forward where hook bookkeeping is
@@ -63,6 +64,32 @@ meaningful split; treat this row's diagnostic column as "no measurable
 overhead to attribute" rather than a real 0/0/100 breakdown. A future run
 where overhead is large enough to attribute meaningfully will make that
 column more informative.
+
+**0.1.24 refresh, and what it says about the headline number.** Run because the
+hook path changed shape: `apply_intervention` now takes the `HookPoint` at all
+17 call sites, and seven blocks in `forward_layer_range` bind the point once and
+`clone()` it into `cache.store` instead of constructing it fresh. Two 10-run
+samples were taken back to back on identical code, and they **straddle** the
+0.1.23 figure: +11.1% then +7.8% on CUDA, against 8.5% before. A 3.3-point
+spread between consecutive runs is the measurement's own noise, so read the
+CUDA column as "roughly 8 to 11 percent, and do not compare two rows to fewer
+significant figures than that".
+
+The better estimate is in the diagnostic, not here. Its section B measures the
+same empty-vs-full delta over **100** runs rather than 10, and reports
+163.15us on the GPU against a ~35ms forward: about **0.5%**, some twenty times
+smaller than the 10-run headline. Where the two disagree by that much, trust the
+100-run figure and treat this table's percentage as a coarse regression tripwire
+rather than a measurement.
+
+**The GPU attribution is finally non-degenerate**, which the 0.1.23 note
+predicted would eventually happen. Of the 163.15us of real capture overhead,
+2.6% is pure spec lookup and 5.3% is capture machinery, leaving 92.2%
+forward-internal. So roughly **8% of the cost is the hook architecture and 92%
+is not**, which is the first direct measurement of the question
+`docs/hook-architecture-diagnostic.md` was written to settle, and it corroborates
+that document's "do not refactor the hook architecture for performance". CPU
+stays degenerate at 0/0/100, as expected at ~3s per forward.
 
 **Known quirk, not a hang to panic over:** both test binaries print their
 final `test result: ok` line and then take a long time to actually exit —
