@@ -10,11 +10,12 @@
 #
 # Staleness is tracked PER ENTRY, not per run: each test carries its own "last
 # verified" date (advanced only on a real PASS). So a -Quick run refreshes only
-# the two entries it ran; everything else keeps its true (older) date. This keeps
+# the three entries it ran; everything else keeps its true (older) date. This keeps
 # the report honest and decouples staleness from the tier you happened to run.
 #
 # Tiers (how much to run now — nothing more):
-#   -Quick    cheap ungated CPU encoder-parity only (clt_qwen3, plt_gemma) — ~5 min
+#   -Quick    cheap ungated smoke: CPU encoder-parity (clt_qwen3, plt_gemma)
+#             plus the GPU patch_at guard, which downloads nothing — ~6 min
 #   (default) everything EXCEPT the two slow outliers (Mistral-7B CPU forward and
 #             the anacrousis 28x15 matrix) — ~40-50 min
 #   -Full     literally everything, incl. the two slow outliers — ~1.5-3 h
@@ -29,7 +30,7 @@
 #   -Skip <tokens>  drop these from whatever the tier or -Only chose.
 #                   `-Skip longrope` is the usual one: that entry alone is ~15 of
 #                   the ~44 min default tier, so skipping it gives ~28 min.
-#   Any selector makes the run PARTIAL, and it stamps "partial (N of 20: ...)"
+#   Any selector makes the run PARTIAL, and it stamps "partial (N of 21: ...)"
 #   rather than a tier name — a three-entry run must never later read as full
 #   coverage.
 #
@@ -98,6 +99,9 @@ $mdPath = Join-Path $repoRoot 'RESURRECTION.md'
 # Canonical entry list. `Features` are ADDED to the default set (cuda,transformer).
 # Quick=$true -> included in -Quick; FullOnly=$true -> only in -Full;
 # SlowSkip -> a `--skip <pat>` applied in the default tier (dropped in -Full).
+# Lib=$true + Filter -> run `#[ignore]`d unit tests in the library instead of an
+#   integration test binary (`--lib -- <Filter>`), for guards that need no model
+#   and so have no integration-test home. `Tests` stays empty for those.
 $entries = @(
     @{ Id = 'clt_qwen3'; Name = 'clt_qwen3 (encoder parity)'; Features = 'clt';                         Tests = @('validate_clt_qwen3');                             Device = 'CPU';     Models = 'bluelightai/clt-qwen3-1.7b-base-20k (~240 MiB)';        Quick = $true }
     @{ Id = 'plt_gemma'; Name = 'plt_gemma (encoder parity)'; Features = 'clt,sae';                     Tests = @('validate_plt_gemma');                             Device = 'CPU';     Models = 'google/gemma-scope-2b-pt-transcoders (~864 MiB, gated)'; Quick = $true }
@@ -124,6 +128,9 @@ $entries = @(
     @{ Id = 'memory'; Name = 'memory (VRAM probe)';        Features = 'memory';                      Tests = @('validate_memory');                                Device = 'GPU';     Models = '(none - allocates a GPU tensor)' }
     @{ Id = 'rwkv'; Name = 'rwkv6 + rwkv7';              Features = 'rwkv,rwkv-tokenizer,mmap';    Tests = @('validate_rwkv6', 'validate_rwkv7');               Device = 'CPU+GPU'; Models = 'RWKV v6-Finch-1B6; RWKV7-Goose-1.5B' }
     @{ Id = 'anacrousis'; Name = 'anacrousis (28x15 matrix)';  Features = 'mmap';                        Tests = @('validate_anacrousis');                            Device = 'GPU';     Models = 'meta-llama/Llama-3.2-1B (gated)'; FullOnly = $true }
+    # Appended last on purpose: inserting anywhere above renumbers every entry
+    # after it, and the numbers are what `-Only <n>` takes.
+    @{ Id = 'patchat'; Name = 'patch_at (CUDA offset-view guard)'; Features = 'transformer';           Tests = @();                                                 Device = 'GPU';     Models = '(none - allocates GPU tensors)'; Quick = $true; Lib = $true; Filter = 'hooks::tests::patch_at::cuda_' }
 )
 
 # --- Read prior per-entry state back out of RESURRECTION.md (Name -> {Date, Wall, Outcome}) ---
@@ -379,8 +386,10 @@ try {
     if (-not $gpuStamp) { $gpuStamp = 'not recorded (needs `hmn` 0.2.9+ on PATH)' }
     foreach ($e in $selected) {
         $cargoArgs = @('test', '--features', $e.Features, '--release')
+        if ($e.Lib) { $cargoArgs += '--lib' }
         foreach ($t in $e.Tests) { $cargoArgs += @('--test', $t) }
         $cargoArgs += '--'
+        if ($e.Filter) { $cargoArgs += $e.Filter }
         $cargoArgs += @('--include-ignored', '--test-threads=1', '--nocapture')
         $skipNote = ''
         if ($e.SlowSkip -and -not $Full) {

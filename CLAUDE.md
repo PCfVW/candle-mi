@@ -47,7 +47,7 @@ Cutting a release (a `vMAJOR.MINOR.PATCH` tag → crates.io publish):
 
 ## Oracle-suite resurrection
 
-Every oracle/parity test is `#[ignore]`d (needs cached — often gated — models, and many need a ≥16 GiB GPU), so CI never runs them and "green CI" says nothing about numeric parity. `scripts/resurrect.ps1` runs that suite **locally** (where the models are cached) and stamps `RESURRECTION.md` with a per-test "last verified" record. Tiers: `-Quick` (~5 min ungated-CPU smoke), default (~40–50 min, all but the Mistral-7B CPU forward + anacrousis), `-Full` (~1.5–3 h, everything). Run it periodically and after any change to a forward/CLT/SAE/quantized numeric path; commit the refreshed `RESURRECTION.md`.
+Every oracle/parity test is `#[ignore]`d (needs cached — often gated — models, and many need a ≥16 GiB GPU), so CI never runs them and "green CI" says nothing about numeric parity. `scripts/resurrect.ps1` runs that suite **locally** (where the models are cached) and stamps `RESURRECTION.md` with a per-test "last verified" record. Tiers: `-Quick` (~6 min ungated smoke: CPU encoder-parity plus the GPU `patch_at` guard, which downloads nothing), default (~40–50 min, all but the Mistral-7B CPU forward + anacrousis), `-Full` (~1.5–3 h, everything). Run it periodically and after any change to a forward/CLT/SAE/quantized numeric path; commit the refreshed `RESURRECTION.md`.
 
 Selecting entries, so a single refresh costs a minute rather than the full tier:
 - `-List` prints the number/slug map plus each entry's tier and last-verified date. Start here.

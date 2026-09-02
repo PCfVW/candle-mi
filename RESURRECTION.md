@@ -9,14 +9,14 @@ each last **passed** its oracle comparison locally.
 
 ```
 scripts/resurrect.ps1          # default: all but the two slow outliers (~40-50 min)
-scripts/resurrect.ps1 -Quick   # cheap ungated CPU encoder-parity smoke (~5 min)
+scripts/resurrect.ps1 -Quick   # cheap ungated smoke: CPU encoder-parity + the GPU patch_at guard (~6 min)
 scripts/resurrect.ps1 -Full    # + Mistral-7B CPU forward + anacrousis 28x15 (~1.5-3 h)
 scripts/resurrect.ps1 -Status  # report staleness (runs nothing); -StaleDays N sets the threshold
 ```
 
 "Last verified" = the last date this entry **passed** (a `⏭️ SKIP` /
 `❌ FAIL` does not advance it). `never` = not yet verified on this machine.
-Staleness is per-entry, so a `-Quick` run only refreshes its two rows.
+Staleness is per-entry, so a `-Quick` run only refreshes its three rows.
 
 **Wall-clock** = end-to-end runtime of the entry on its last PASS (model
 load/download + compile + run, not just the `cargo test` phase). A ⚠️ flags a
@@ -32,7 +32,7 @@ sampled. `n/a` = not measurable on this platform (Linux/macOS have no
 shared-residency counter). Mark an entry `Spill = $true` in the script, or
 pass `-SpillProbe` to sample every entry.
 
-- **Last run:** 2026-09-02 11:15 — tier **Quick**
+- **Last run:** 2026-09-02 12:19 — tier **partial (1 of 21: patchat)**
 - **Toolchain:** rustc 1.98.0 (88d9e12ae 2026-08-18)
 - **GPU:** NVIDIA GeForce RTX 5060 Ti, driver 610.88
 
@@ -58,3 +58,4 @@ pass `-SpillProbe` to sample every entry.
 | memory (VRAM probe) | (none - allocates a GPU tensor) | GPU | 2026-08-12 | 36.6s | — | ✅ PASS |
 | rwkv6 + rwkv7 | RWKV v6-Finch-1B6; RWKV7-Goose-1.5B | CPU+GPU | 2026-08-12 | 3m36s | — | ✅ PASS |
 | anacrousis (28x15 matrix) | meta-llama/Llama-3.2-1B (gated) | GPU | never | — | — | — never |
+| patch_at (CUDA offset-view guard) | (none - allocates GPU tensors) | GPU | 2026-09-02 | 80.4s | — | ✅ PASS |
