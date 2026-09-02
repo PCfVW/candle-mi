@@ -412,8 +412,12 @@ pub(crate) fn apply_intervention(
 /// # Errors
 ///
 /// Returns [`MIError::Intervention`] if `point` does not accept a positional
-/// patch, if `tensor` is not rank 3, if `position` is outside `0..seq_len`, or
-/// if `value` has none of the accepted shapes.
+/// patch.
+/// Returns [`MIError::Intervention`] if `tensor` is not rank 3.
+/// Returns [`MIError::Intervention`] if `position` is outside `0..seq_len`.
+/// Returns [`MIError::Intervention`] if `value` has none of the accepted shapes.
+/// Returns [`MIError::Intervention`] if `seq_len` or `position` exceeds `u32`,
+/// which the selector's index range is built over.
 /// Returns [`MIError::Model`] if the underlying tensor operation fails.
 #[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 fn patch_at(tensor: &Tensor, point: &HookPoint, position: usize, value: &Tensor) -> Result<Tensor> {
@@ -468,29 +472,32 @@ fn patch_at(tensor: &Tensor, point: &HookPoint, position: usize, value: &Tensor)
         row.to_dtype(tensor.dtype())?
     };
 
-    // Written as a masked select rather than the obvious `Tensor::slice_scatter`
-    // (or a three-way `Tensor::cat`), because both route through candle's
-    // `copy_strided_src`, whose CUDA path sizes the copy from the *storage*
-    // rather than from the source view:
+    // Written as a masked select rather than the obvious `Tensor::slice_scatter`,
+    // which routes through candle's `copy_strided_src`, whose CUDA path sizes the
+    // copy from the *storage* rather than from the source view:
     //
     //     to_copy = min(dst.len() - dst_offset, src.len() - src_offset)
-    //         -- candle-core 0.11 `cuda_backend::slice_src_and_dst`
+    //         -- candle-core `cuda_backend::slice_src_and_dst`
     //
     // A donor row is normally a view into a captured activation (this is exactly
     // what `FullActivationCache::get_position` returns), so `src.len()` is the
     // whole donor and the copy overruns into the *following* positions. The
     // symptom is a patch that also overwrites every position after it, silently
-    // and only on GPU. `where_cond` touches each element once through its own
-    // layout and has no such dependence.
+    // and only on GPU. Reported as candle#3940; `tests/validate_patch_at.rs` is
+    // the end-to-end guard. `where_cond` touches each element once through its
+    // own layout and has no such dependence.
     //
-    // CONTIGUOUS: all three operands are materialised to the same contiguous
-    // shape so the kernel takes its simplest path and no operand is a stride-0
-    // broadcast view.
+    // CONTIGUOUS: every operand is materialised to the same contiguous shape, so
+    // no operand reaches the kernel as a stride-0 broadcast view or as whatever
+    // layout an earlier intervention happened to leave behind. `contiguous()` is
+    // a clone when the tensor already is, so the common path costs nothing.
     let full = (batch, seq_len, hidden);
     let replacement = row.broadcast_as(full)?.contiguous()?;
+    let base = tensor.contiguous()?;
 
-    // CAST: usize -> u32 for `Tensor::arange`; `seq_len` and `position` are
-    // tensor dimensions, both checked above to fit the activation.
+    // `Tensor::arange` builds the index range at `u32`, so both bounds have to
+    // fit it. A sequence long enough to fail this cannot be held in memory, but
+    // the conversion is fallible and is not worth an `as` cast to hide.
     let seq_len_u32 = u32::try_from(seq_len)
         .map_err(|e| MIError::Intervention(format!("seq_len {seq_len} exceeds u32: {e}")))?;
     let position_u32 = u32::try_from(position)
@@ -501,7 +508,7 @@ fn patch_at(tensor: &Tensor, point: &HookPoint, position: usize, value: &Tensor)
         .broadcast_as(full)?
         .contiguous()?;
 
-    Ok(selector.where_cond(&replacement, tensor)?)
+    Ok(selector.where_cond(&replacement, &base)?)
 }
 
 // ---------------------------------------------------------------------------
@@ -1341,9 +1348,9 @@ mod tests {
 
         #[test]
         fn the_result_is_contiguous() {
-            // `slice_scatter` transposes and transposes back for `dim != 0`, so
-            // without the explicit `contiguous()` the patched activation would
-            // reach the next matmul as a strided view.
+            // The patched activation flows straight on into the rest of the
+            // forward pass, so the documented `# Shapes` promise that it comes
+            // back contiguous is a contract, not an implementation detail.
             let patched = patch(&resid(), &HookPoint::ResidPost(0), 0, donor_row());
             assert!(patched.is_contiguous());
         }
