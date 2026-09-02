@@ -307,7 +307,7 @@ pub enum Intervention {
     /// # Dtype
     ///
     /// A `value` whose dtype differs from the activation's is converted, so an
-    /// F32 donor row patches into a BF16 forward pass. This mirrors
+    /// `F32` donor row patches into a `BF16` forward pass. This mirrors
     /// [`Add`](Self::Add).
     ///
     /// # Gradients
@@ -369,9 +369,9 @@ pub enum Intervention {
 /// a hook point whose activation is not `[batch, seq_len, hidden]`.
 /// Returns [`MIError::Intervention`] if [`Intervention::PatchAt`] is applied to
 /// a tensor that is not rank 3.
-/// Returns [`MIError::Intervention`] if a [`Intervention::PatchAt`] position is
+/// Returns [`MIError::Intervention`] if an [`Intervention::PatchAt`] position is
 /// outside `0..seq_len`.
-/// Returns [`MIError::Intervention`] if a [`Intervention::PatchAt`] value does
+/// Returns [`MIError::Intervention`] if an [`Intervention::PatchAt`] value does
 /// not have one of the accepted shapes.
 #[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
 pub(crate) fn apply_intervention(
@@ -402,7 +402,7 @@ pub(crate) fn apply_intervention(
 /// Overwrite one sequence position of a `[batch, seq_len, hidden]` activation.
 ///
 /// The implementation of [`Intervention::PatchAt`]. Split out of
-/// [`apply_intervention`] so that the match there stays one line per variant.
+/// [`apply_intervention`] so that its match arm stays a single line.
 ///
 /// # Shapes
 /// - `tensor`: `[batch, seq_len, hidden]`
@@ -419,19 +419,20 @@ pub(crate) fn apply_intervention(
 fn patch_at(tensor: &Tensor, point: &HookPoint, position: usize, value: &Tensor) -> Result<Tensor> {
     if !point.accepts_positional_patch() {
         return Err(MIError::Intervention(format!(
-            "PatchAt not supported at hook point {point} (activation is not \
-             [batch, seq_len, hidden]; see HookPoint::accepts_positional_patch)"
+            "intervention PatchAt not supported at hook point `{point}` \
+             (activation is not [batch, seq_len, hidden]; see \
+             HookPoint::accepts_positional_patch)"
         )));
     }
 
     // The policy above is by hook point; this is the same question asked of the
     // tensor itself, so a backend storing an unexpected rank at an accepting
     // point errors here rather than writing at the wrong axis.
-    let dims = tensor.dims();
-    let &[batch, seq_len, hidden] = dims else {
+    let tensor_dims = tensor.dims();
+    let &[batch, seq_len, hidden] = tensor_dims else {
         return Err(MIError::Intervention(format!(
-            "PatchAt needs a rank-3 [batch, seq_len, hidden] activation at hook \
-             point {point} (got shape {dims:?})"
+            "intervention PatchAt needs a rank-3 [batch, seq_len, hidden] \
+             activation at hook point `{point}` (got shape {tensor_dims:?})"
         )));
     };
 
