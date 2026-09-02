@@ -32,7 +32,7 @@ sampled. `n/a` = not measurable on this platform (Linux/macOS have no
 shared-residency counter). Mark an entry `Spill = $true` in the script, or
 pass `-SpillProbe` to sample every entry.
 
-- **Last run:** 2026-09-02 20:08 — tier **partial (1 of 21: mdlm)**
+- **Last run:** 2026-09-02 20:40 — tier **partial (1 of 21: anacrousis)**
 - **Toolchain:** rustc 1.98.0 (88d9e12ae 2026-08-18)
 - **GPU:** NVIDIA GeForce RTX 5060 Ti, driver 610.88
 
@@ -57,5 +57,5 @@ pass `-SpillProbe` to sample every entry.
 | sae (encode/inject/parity) | gemma-2-2b + gemma-scope-2b-pt-res | GPU | 2026-09-02 | 3m18s | — | ✅ PASS |
 | memory (VRAM probe) | (none - allocates a GPU tensor) | GPU | 2026-09-02 | 46.9s | — | ✅ PASS |
 | rwkv6 + rwkv7 | RWKV v6-Finch-1B6; RWKV7-Goose-1.5B | CPU+GPU | 2026-09-02 | 4m20s | — | ✅ PASS |
-| anacrousis (28x15 matrix) | meta-llama/Llama-3.2-1B (gated) | GPU | never | — | — | — never |
+| anacrousis (28x15 matrix) | meta-llama/Llama-3.2-1B (gated) | GPU | 2026-09-02 | 11m37s ⚠️ | none | ✅ PASS |
 | patch_at (CUDA offset-view guard) | (none - OthelloGpt::init from a seed) | GPU | 2026-09-02 | 1m53s | — | ✅ PASS |
