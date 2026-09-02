@@ -2,9 +2,19 @@
 
 **Title for the issue:** CUDA `copy_strided_src` copies past the end of an offset source view, silently corrupting `slice_scatter` (CPU disagrees)
 
-**Status:** **FILED 2026-09-02** as [candle#3940](https://github.com/huggingface/candle/issues/3940).
+**Status:** **FILED 2026-09-02** as [candle#3940](https://github.com/huggingface/candle/issues/3940),
+with the fix proposed the same day as [candle#3944](https://github.com/huggingface/candle/pull/3944).
 Searched first: no existing issue or PR covered this path (see "Prior art" below).
 Confirmed present on `main` at `d5fee525` as well as on the pinned 0.11.0.
+
+The fix sizes the copy from `src_l.shape().elem_count()`, keeping the two storage
+bounds as a defensive clamp. The argument that carried it is that **CUDA was the
+outlier**: the CPU path already takes the length from
+`StridedBlocks::SingleBlock { len }` and the Metal contiguous path already uses
+`src_l.shape().elem_count()`, so the patch makes CUDA agree with the two backends
+that agreed with each other. Verified on an RTX 5060 Ti: the added `slice_scatter`
+assertions fail on CUDA before the change (row 3 comes back as the donor's next
+row) and pass after, with the full `candle-core` suite green on CPU and CUDA.
 
 ## Workaround, up front
 

@@ -15,7 +15,7 @@ upstream fix is a bonus that later lets us delete code.
 
 | document | target | kind | status |
 |---|---|---|---|
-| [candle-cuda-copy-strided-src-overruns.md](candle-cuda-copy-strided-src-overruns.md) | `candle-core` | bug report | **FILED 2026-09-02** as [candle#3940](https://github.com/huggingface/candle/issues/3940). CUDA `copy_strided_src` sizes its copy from the storage rather than the source view, so `slice_scatter` with an offset source overruns into the following elements. Silent, GPU-only, and CPU disagrees. Found by `Intervention::PatchAt` returning a plausible-but-wrong causal trace on Llama-3.2-1B; workaround (a masked `where_cond`) already shipped |
+| [candle-cuda-copy-strided-src-overruns.md](candle-cuda-copy-strided-src-overruns.md) | `candle-core` | bug report | **FILED 2026-09-02** as [candle#3940](https://github.com/huggingface/candle/issues/3940), with the fix in [candle#3944](https://github.com/huggingface/candle/pull/3944). CUDA `copy_strided_src` sizes its copy from the storage rather than the source view, so `slice_scatter` with an offset source overruns into the following elements. Silent, GPU-only, and CPU disagrees. Found by `Intervention::PatchAt` returning a plausible-but-wrong causal trace on Llama-3.2-1B; workaround (a masked `where_cond`) already shipped |
 | [candle-fused-ops-drop-gradients-v2-cluster-map.md](candle-fused-ops-drop-gradients-v2-cluster-map.md) | `candle-nn` | map plus the posted comment | **comment posted 2026-08-01** as [candle#2168 comment-5150289607](https://github.com/huggingface/candle/issues/2168#issuecomment-5150289607) |
 | [candle-fused-ops-drop-gradients-v1-standalone-report.md](candle-fused-ops-drop-gradients-v1-standalone-report.md) | `candle-nn` | bug report | **superseded, do not file** |
 | [candle-adamw-state-accessors.md](candle-adamw-state-accessors.md) | `candle-nn` | PR (additive, +80/-0) | **FILED 2026-08-01** as [candle#3819](https://github.com/huggingface/candle/pull/3819). First CI runs expired unapproved after thirty days and were stamped `failure` with zero jobs run, so **rebased onto `638a819a` and re-pushed 2026-08-31** (`67ee82d4`, patch-id unchanged) with [a comment](https://github.com/huggingface/candle/pull/3819#issuecomment-5479119668) explaining the red X. Awaiting workflow approval |
@@ -37,6 +37,8 @@ cluster and the errors. Read v2; file nothing from v1.
 | [3368](https://github.com/huggingface/candle/discussions/3368) | discussion, "Interest in a `candle-mi` crate?" | 2026-02-13 | name endorsed by `EricLBuehler` 2026-02-15, who invited the README PR; no candle-side reply since 2026-02-19 |
 | [3406](https://github.com/huggingface/candle/pull/3406) | PR, add candle-mi to Useful External Resources | 2026-03-16 | open, solicited in 3368 |
 | [3617](https://github.com/huggingface/candle/issues/3617) | issue, unbounded pickle-VM working set (DoS via crafted `.pth`) | 2026-06-13 | open |
+| [3940](https://github.com/huggingface/candle/issues/3940) | issue, CUDA `copy_strided_src` over-copies from an offset source view | 2026-09-02 | open; fix proposed the same day as 3944 |
+| [3944](https://github.com/huggingface/candle/pull/3944) | PR, size the CUDA copy from the layout rather than the storage (fixes 3940) | 2026-09-02 | open, `MERGEABLE`, +36/-3. Verified on an RTX 5060 Ti: the added `slice_scatter` assertions fail on CUDA without the patch and pass with it; full `candle-core` suite green on CPU and CUDA. Carries a comment flagging the four PRs stuck behind workflow approval |
 | [3628](https://github.com/huggingface/candle/pull/3628) | PR, bound the pickle VM's working set and nesting depth | 2026-06-18 | open upstream, but cherry-picked into [`astorise/candle`](https://github.com/astorise/candle) as commit `b196387` with authorship preserved, in that fork's "Pull 9 high-value upstream candle PRs into the fork (Tier 1)" batch (their #37, 2026-07-29). `Sébastien ASTORI` then fixed a clippy lint on top (`2840a5b`). He also filed candle #3688 on pickle DoS, so he is working the same problem and is worth engaging directly |
 
 ## The workflow-approval gate
@@ -103,6 +105,13 @@ run **is** the head's run, so the red X lands on what the reviewer sees.
 | [3819](https://github.com/huggingface/candle/pull/3819) | 2026-08-31 | `action_required` since 13:32 | 2026-09-30 13:32 UTC |
 | [3822](https://github.com/huggingface/candle/pull/3822) | 2026-08-31 | `action_required` since 13:43 | 2026-09-30 13:43 UTC |
 | [3823](https://github.com/huggingface/candle/pull/3823) | 2026-08-31 | `action_required` since 13:44 | 2026-09-30 13:44 UTC |
+
+| [3944](https://github.com/huggingface/candle/pull/3944) | 2026-09-02 | `action_required` from opening | 2026-10-02 |
+
+**3406 was deliberately left to expire** at 14:15 UTC on 2026-09-02. Moving its
+head would have bought thirty clean days on a one-line README addition with no
+reviews in six months, at the price of a standing thirty-day chore on the least
+valuable PR of the set. The effort went into 3944 instead.
 
 All five are `MERGEABLE` against current `main`, so none has rotted into a
 conflict. None has a review; each of 3406, 3819, 3822 and 3823 carries one
