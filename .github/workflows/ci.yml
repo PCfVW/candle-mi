@@ -138,7 +138,7 @@ jobs:
         run: cargo clippy --no-default-features --features diffusion -- -W clippy::pedantic
 
       - name: Tests (Diffusion)
-        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward
+        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward --test validate_patch_at
 
       # validate_bidirectional_sampler needs `transformer` + `diffusion`; and
       # validate_bidirectional_forward (a2d-qwen2 bidirectional attention parity)
