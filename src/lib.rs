@@ -111,9 +111,18 @@
 //! ## Interventions
 //!
 //! Use [`HookSpec::intervene`] to modify activations mid-forward-pass.
-//! Five intervention types are available: [`Intervention::Replace`],
-//! [`Intervention::Add`], [`Intervention::Knockout`],
-//! [`Intervention::Scale`], and [`Intervention::Zero`].
+//! Six intervention types are available: [`Intervention::Replace`],
+//! [`Intervention::PatchAt`], [`Intervention::Add`],
+//! [`Intervention::Knockout`], [`Intervention::Scale`], and
+//! [`Intervention::Zero`].
+//!
+//! [`Intervention::PatchAt`] is the activation-patching primitive: it
+//! overwrites one sequence position and leaves the rest of the activation in
+//! flight, so a causal trace needs no captures from the recipient pass. It is
+//! accepted only at hook points whose activation is `[batch, seq_len, hidden]`
+//! (see [`HookPoint::accepts_positional_patch`]); at an attention hook point,
+//! where dim 1 is a head rather than a position, it is an error rather than a
+//! silent write to the wrong axis.
 //!
 //! ```no_run
 //! use candle_mi::{HookPoint, HookSpec, Intervention, KnockoutSpec, create_knockout_mask};

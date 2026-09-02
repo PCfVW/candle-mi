@@ -246,19 +246,19 @@ impl Attention {
             cache.store(HookPoint::AttnQ(layer_idx), q.clone());
         }
         for intervention in hooks.interventions_at(&HookPoint::AttnQ(layer_idx)) {
-            q = crate::hooks::apply_intervention(&q, intervention)?;
+            q = crate::hooks::apply_intervention(&q, &HookPoint::AttnQ(layer_idx), intervention)?;
         }
         if hooks.is_captured(&HookPoint::AttnK(layer_idx)) {
             cache.store(HookPoint::AttnK(layer_idx), k.clone());
         }
         for intervention in hooks.interventions_at(&HookPoint::AttnK(layer_idx)) {
-            k = crate::hooks::apply_intervention(&k, intervention)?;
+            k = crate::hooks::apply_intervention(&k, &HookPoint::AttnK(layer_idx), intervention)?;
         }
         if hooks.is_captured(&HookPoint::AttnV(layer_idx)) {
             cache.store(HookPoint::AttnV(layer_idx), v.clone());
         }
         for intervention in hooks.interventions_at(&HookPoint::AttnV(layer_idx)) {
-            v = crate::hooks::apply_intervention(&v, intervention)?;
+            v = crate::hooks::apply_intervention(&v, &HookPoint::AttnV(layer_idx), intervention)?;
         }
 
         // --- Apply RoPE ---
@@ -282,7 +282,11 @@ impl Attention {
             cache.store(HookPoint::AttnScores(layer_idx), scores.clone());
         }
         for intervention in hooks.interventions_at(&HookPoint::AttnScores(layer_idx)) {
-            scores = crate::hooks::apply_intervention(&scores, intervention)?;
+            scores = crate::hooks::apply_intervention(
+                &scores,
+                &HookPoint::AttnScores(layer_idx),
+                intervention,
+            )?;
         }
 
         // Optional soft-capping (Gemma 2)
@@ -313,7 +317,11 @@ impl Attention {
             cache.store(HookPoint::AttnPattern(layer_idx), pattern.clone());
         }
         for intervention in hooks.interventions_at(&HookPoint::AttnPattern(layer_idx)) {
-            pattern = crate::hooks::apply_intervention(&pattern, intervention)?;
+            pattern = crate::hooks::apply_intervention(
+                &pattern,
+                &HookPoint::AttnPattern(layer_idx),
+                intervention,
+            )?;
         }
 
         // --- Attention output ---

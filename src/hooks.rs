@@ -119,6 +119,62 @@ pub enum HookPoint {
     Custom(String),
 }
 
+impl HookPoint {
+    /// Whether [`Intervention::PatchAt`] can be applied at this hook point.
+    ///
+    /// True for exactly the hook points whose activation is
+    /// `[batch, seq_len, hidden]`, so that the sequence is dim 1 and a single
+    /// position names one row unambiguously: [`Embed`](Self::Embed),
+    /// [`ResidPre`](Self::ResidPre), [`AttnOut`](Self::AttnOut),
+    /// [`ResidMid`](Self::ResidMid), [`MlpPre`](Self::MlpPre),
+    /// [`MlpPost`](Self::MlpPost), [`MlpOut`](Self::MlpOut),
+    /// [`ResidPost`](Self::ResidPost) and [`FinalNorm`](Self::FinalNorm).
+    ///
+    /// # Why the others are excluded
+    ///
+    /// - [`AttnQ`](Self::AttnQ), [`AttnK`](Self::AttnK) and
+    ///   [`AttnV`](Self::AttnV) are `[batch, n_heads, seq_len, head_dim]` (and
+    ///   `n_kv_heads` rather than `n_heads` for K and V, which are captured
+    ///   before the grouped-query broadcast). Dim 1 is a head, so a positional
+    ///   patch written there would silently overwrite a head.
+    /// - [`AttnScores`](Self::AttnScores) and
+    ///   [`AttnPattern`](Self::AttnPattern) are
+    ///   `[batch, n_heads, seq_len, seq_len]`: two sequence axes, so "one
+    ///   position" has no unambiguous meaning.
+    /// - [`RwkvState`](Self::RwkvState), [`RwkvDecay`](Self::RwkvDecay) and
+    ///   [`RwkvEffectiveAttn`](Self::RwkvEffectiveAttn) are state-shaped, not
+    ///   sequence-major.
+    /// - [`Custom`](Self::Custom) is backend-defined, so this crate cannot know
+    ///   its layout.
+    ///
+    /// Patching a key or value is a coherent thing to want, but it is a
+    /// different operation rather than a wider version of this one: those
+    /// tensors are pre-broadcast, so a write lands on a KV head and fans out to
+    /// `n_heads / n_kv_heads` query heads downstream.
+    ///
+    /// ```
+    /// use candle_mi::HookPoint;
+    ///
+    /// assert!(HookPoint::ResidPost(5).accepts_positional_patch());
+    /// assert!(!HookPoint::AttnPattern(5).accepts_positional_patch());
+    /// ```
+    #[must_use]
+    pub const fn accepts_positional_patch(&self) -> bool {
+        matches!(
+            self,
+            Self::Embed
+                | Self::ResidPre(_)
+                | Self::AttnOut(_)
+                | Self::ResidMid(_)
+                | Self::MlpPre(_)
+                | Self::MlpPost(_)
+                | Self::MlpOut(_)
+                | Self::ResidPost(_)
+                | Self::FinalNorm
+        )
+    }
+}
+
 impl fmt::Display for HookPoint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -211,13 +267,66 @@ fn parse_hook_string(s: &str) -> HookPoint {
 #[derive(Debug, Clone)]
 pub enum Intervention {
     /// Replace the tensor entirely with a provided value.
+    ///
+    /// Whole-tensor. To overwrite one sequence position and leave the rest of
+    /// the activation alone, use [`PatchAt`](Self::PatchAt) rather than
+    /// capturing the activation, splicing a row in and handing the whole
+    /// tensor back here.
     Replace(Tensor),
+
+    /// Replace a single sequence position, leaving every other position
+    /// untouched.
+    ///
+    /// The positional counterpart to [`Replace`](Self::Replace), and the
+    /// standard causal instrument of activation patching: run the recipient's
+    /// forward pass, but at one hook point and one position substitute a row
+    /// taken from a donor pass.
+    ///
+    /// # Shapes
+    ///
+    /// - activation at the hook point: `[batch, seq_len, hidden]`
+    /// - `value`: `[hidden]`, `[1, 1, hidden]` or `[batch, 1, hidden]`
+    /// - result: `[batch, seq_len, hidden]`, contiguous
+    ///
+    /// A `[hidden]` or `[1, 1, hidden]` value applies to every batch row, the
+    /// same way [`Add`](Self::Add) broadcasts. `[batch, 1, hidden]` gives each
+    /// batch row its own replacement. A row extracted from a donor capture with
+    /// `donor.narrow(1, position, 1)` is already `[1, 1, hidden]`, so it can be
+    /// passed straight in.
+    ///
+    /// # Accepted hook points
+    ///
+    /// Only those for which
+    /// [`HookPoint::accepts_positional_patch`] is true, which is every hook
+    /// point whose activation is `[batch, seq_len, hidden]`. Anywhere else the
+    /// forward pass fails with
+    /// [`MIError::Intervention`] rather than
+    /// writing at dim 1 regardless, which at an attention hook point would
+    /// overwrite a head and produce a plausible figure instead of an error.
+    ///
+    /// # Dtype
+    ///
+    /// A `value` whose dtype differs from the activation's is converted, so an
+    /// F32 donor row patches into a BF16 forward pass. This mirrors
+    /// [`Add`](Self::Add).
+    ///
+    /// # Gradients
+    ///
+    /// The write is a `slice_scatter`, which records a backward op, so a patch
+    /// inside a tracked forward pass does not break the gradient chain.
+    PatchAt {
+        /// Sequence position to overwrite. Must be in `0..seq_len`.
+        position: usize,
+        /// Replacement row: `[hidden]`, `[1, 1, hidden]` or `[batch, 1, hidden]`.
+        value: Tensor,
+    },
 
     /// Add a vector to the activation (e.g., residual stream steering).
     ///
     /// To fire at a single sequence position (zero elsewhere), build the
     /// broadcast payload with `steering::position_delta` (requires a backend
-    /// feature).
+    /// feature). To *overwrite* a position rather than add to it, use
+    /// [`PatchAt`](Self::PatchAt).
     Add(Tensor),
 
     /// Apply a pre-softmax knockout mask.
@@ -242,6 +351,13 @@ pub enum Intervention {
 /// Used by backend implementations at each hook point that supports
 /// interventions (e.g., Embed, `AttnScores`, `AttnPattern`).
 ///
+/// `point` is the hook point the tensor was taken at. It is needed because dim
+/// 1 does not mean the same thing everywhere: it is the sequence in a
+/// `[batch, seq_len, hidden]` activation but a head in a
+/// `[batch, n_heads, seq_len, head_dim]` one, so a positional intervention has
+/// to know where it is before it writes. See
+/// [`HookPoint::accepts_positional_patch`].
+///
 /// # Shapes
 /// - `tensor`: any shape — the activation at the hook point.
 /// - returns: same shape as `tensor`.
@@ -249,10 +365,23 @@ pub enum Intervention {
 /// # Errors
 ///
 /// Returns [`MIError::Model`] if the underlying tensor operation fails.
+/// Returns [`MIError::Intervention`] if [`Intervention::PatchAt`] is applied at
+/// a hook point whose activation is not `[batch, seq_len, hidden]`.
+/// Returns [`MIError::Intervention`] if [`Intervention::PatchAt`] is applied to
+/// a tensor that is not rank 3.
+/// Returns [`MIError::Intervention`] if a [`Intervention::PatchAt`] position is
+/// outside `0..seq_len`.
+/// Returns [`MIError::Intervention`] if a [`Intervention::PatchAt`] value does
+/// not have one of the accepted shapes.
 #[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
-pub(crate) fn apply_intervention(tensor: &Tensor, intervention: &Intervention) -> Result<Tensor> {
+pub(crate) fn apply_intervention(
+    tensor: &Tensor,
+    point: &HookPoint,
+    intervention: &Intervention,
+) -> Result<Tensor> {
     match intervention {
         Intervention::Replace(replacement) => Ok(replacement.clone()),
+        Intervention::PatchAt { position, value } => patch_at(tensor, point, *position, value),
         Intervention::Add(delta) => {
             // Convert delta to tensor's dtype if mismatched (e.g., F32 injection
             // into BF16 forward pass). This supports CLT injection where steering
@@ -268,6 +397,84 @@ pub(crate) fn apply_intervention(tensor: &Tensor, intervention: &Intervention) -
         Intervention::Scale(factor) => Ok((tensor * *factor)?),
         Intervention::Zero => Ok(tensor.zeros_like()?),
     }
+}
+
+/// Overwrite one sequence position of a `[batch, seq_len, hidden]` activation.
+///
+/// The implementation of [`Intervention::PatchAt`]. Split out of
+/// [`apply_intervention`] so that the match there stays one line per variant.
+///
+/// # Shapes
+/// - `tensor`: `[batch, seq_len, hidden]`
+/// - `value`: `[hidden]`, `[1, 1, hidden]` or `[batch, 1, hidden]`
+/// - returns: `[batch, seq_len, hidden]`, contiguous
+///
+/// # Errors
+///
+/// Returns [`MIError::Intervention`] if `point` does not accept a positional
+/// patch, if `tensor` is not rank 3, if `position` is outside `0..seq_len`, or
+/// if `value` has none of the accepted shapes.
+/// Returns [`MIError::Model`] if the underlying tensor operation fails.
+#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
+fn patch_at(tensor: &Tensor, point: &HookPoint, position: usize, value: &Tensor) -> Result<Tensor> {
+    if !point.accepts_positional_patch() {
+        return Err(MIError::Intervention(format!(
+            "PatchAt not supported at hook point {point} (activation is not \
+             [batch, seq_len, hidden]; see HookPoint::accepts_positional_patch)"
+        )));
+    }
+
+    // The policy above is by hook point; this is the same question asked of the
+    // tensor itself, so a backend storing an unexpected rank at an accepting
+    // point errors here rather than writing at the wrong axis.
+    let dims = tensor.dims();
+    let &[batch, seq_len, hidden] = dims else {
+        return Err(MIError::Intervention(format!(
+            "PatchAt needs a rank-3 [batch, seq_len, hidden] activation at hook \
+             point {point} (got shape {dims:?})"
+        )));
+    };
+
+    if position >= seq_len {
+        return Err(MIError::Intervention(format!(
+            "patch position {position} out of bounds (seq_len={seq_len})"
+        )));
+    }
+
+    // Normalise every accepted value shape to the `[batch, 1, hidden]` that
+    // `slice_scatter` requires. The two batch-free shapes broadcast across the
+    // batch, matching how `Add` treats a bare direction.
+    let value_dims = value.dims();
+    let row = match *value_dims {
+        [h] if h == hidden => value
+            .reshape((1, 1, hidden))?
+            .broadcast_as((batch, 1, hidden))?,
+        [1, 1, h] if h == hidden => value.broadcast_as((batch, 1, hidden))?,
+        [b, 1, h] if b == batch && h == hidden => value.clone(),
+        _ => {
+            return Err(MIError::Intervention(format!(
+                "patch value shape {value_dims:?} unusable (expected [hidden], \
+                 [1, 1, hidden] or [{batch}, 1, hidden] with hidden={hidden})"
+            )));
+        }
+    };
+
+    // Convert the row to the activation's dtype if mismatched (e.g., an F32
+    // donor row patched into a BF16 forward pass), mirroring the `Add` arm.
+    let row = if row.dtype() == tensor.dtype() {
+        row
+    } else {
+        row.to_dtype(tensor.dtype())?
+    };
+
+    // CONTIGUOUS: `broadcast_as` yields stride-0 dimensions and `slice_scatter`
+    // copies out of this buffer; materialise it first.
+    let row = row.contiguous()?;
+
+    // CONTIGUOUS: for `dim != 0`, `slice_scatter` transposes, scatters and
+    // transposes back, so its result is a strided view; the patched activation
+    // flows on into the layer's matmuls.
+    Ok(tensor.slice_scatter(&row, 1, position)?.contiguous()?)
 }
 
 // ---------------------------------------------------------------------------
@@ -992,5 +1199,229 @@ mod tests {
 
         let at_5: Vec<_> = spec.interventions_at(&HookPoint::AttnScores(5)).collect();
         assert_eq!(at_5.len(), 2);
+    }
+
+    #[test]
+    fn accepts_positional_patch_decides_every_variant() {
+        // Every variant with the answer this crate commits to. Asserted below
+        // to be exactly `one_of_each_variant()`, which `declaration_rank` keeps
+        // complete, so a new `HookPoint` has to be given an answer here rather
+        // than inheriting one.
+        let table: Vec<(HookPoint, bool)> = vec![
+            (HookPoint::Embed, true),
+            (HookPoint::ResidPre(0), true),
+            (HookPoint::AttnQ(1), false),
+            (HookPoint::AttnK(1), false),
+            (HookPoint::AttnV(1), false),
+            (HookPoint::AttnScores(2), false),
+            (HookPoint::AttnPattern(2), false),
+            (HookPoint::AttnOut(3), true),
+            (HookPoint::ResidMid(3), true),
+            (HookPoint::MlpPre(4), true),
+            (HookPoint::MlpPost(4), true),
+            (HookPoint::MlpOut(5), true),
+            (HookPoint::ResidPost(5), true),
+            (HookPoint::FinalNorm, true),
+            (HookPoint::RwkvState(6), false),
+            (HookPoint::RwkvDecay(6), false),
+            (HookPoint::RwkvEffectiveAttn(6), false),
+            (HookPoint::Custom("some.custom.hook".to_string()), false),
+        ];
+
+        let listed: Vec<HookPoint> = table.iter().map(|(hook, _)| hook.clone()).collect();
+        assert_eq!(
+            listed,
+            one_of_each_variant(),
+            "the PatchAt policy table must list every HookPoint variant, in declaration order"
+        );
+
+        for (hook, accepted) in table {
+            assert_eq!(
+                hook.accepts_positional_patch(),
+                accepted,
+                "wrong PatchAt policy for {hook}"
+            );
+        }
+    }
+
+    /// `Intervention::PatchAt` behaviour, nested so one `cfg` gate covers the
+    /// lot: `apply_intervention` is compiled only when a backend is enabled.
+    #[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
+    #[allow(clippy::unwrap_used, clippy::expect_used)]
+    mod patch_at {
+        use candle_core::{DType, Device, Tensor};
+
+        use crate::error::MIError;
+        use crate::hooks::{HookPoint, Intervention, apply_intervention};
+
+        /// A `[1, 4, 3]` activation whose rows run `[0, 1, 2]` to `[9, 10, 11]`.
+        fn resid() -> Tensor {
+            Tensor::new(
+                &[[
+                    [0.0_f32, 1.0, 2.0],
+                    [3.0, 4.0, 5.0],
+                    [6.0, 7.0, 8.0],
+                    [9.0, 10.0, 11.0],
+                ]],
+                &Device::Cpu,
+            )
+            .unwrap()
+        }
+
+        /// A `[2, 2, 2]` activation, for the batch cases.
+        fn batched_resid() -> Tensor {
+            Tensor::new(
+                &[[[0.0_f32, 1.0], [2.0, 3.0]], [[4.0, 5.0], [6.0, 7.0]]],
+                &Device::Cpu,
+            )
+            .unwrap()
+        }
+
+        /// The donor row `[100, 200, 300]`, shaped `[hidden]`.
+        fn donor_row() -> Tensor {
+            Tensor::new(&[100.0_f32, 200.0, 300.0], &Device::Cpu).unwrap()
+        }
+
+        /// Flatten to a `Vec<f32>` so whole activations compare in one assert.
+        fn flat(tensor: &Tensor) -> Vec<f32> {
+            tensor.flatten_all().unwrap().to_vec1().unwrap()
+        }
+
+        /// Apply one `PatchAt` and unwrap, for the cases expected to succeed.
+        fn patch(base: &Tensor, point: &HookPoint, position: usize, value: Tensor) -> Tensor {
+            apply_intervention(base, point, &Intervention::PatchAt { position, value }).unwrap()
+        }
+
+        /// Apply one `PatchAt` and unwrap the error, for the rejection cases.
+        fn patch_err(base: &Tensor, point: &HookPoint, position: usize, value: Tensor) -> MIError {
+            apply_intervention(base, point, &Intervention::PatchAt { position, value })
+                .expect_err("expected PatchAt to be rejected")
+        }
+
+        #[test]
+        fn patches_only_the_target_position() {
+            let base = resid();
+            let patched = patch(&base, &HookPoint::ResidPost(3), 2, donor_row());
+
+            assert_eq!(patched.dims(), base.dims());
+            assert_eq!(
+                flat(&patched),
+                vec![
+                    0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 100.0, 200.0, 300.0, 9.0, 10.0, 11.0
+                ]
+            );
+        }
+
+        #[test]
+        fn the_result_is_contiguous() {
+            // `slice_scatter` transposes and transposes back for `dim != 0`, so
+            // without the explicit `contiguous()` the patched activation would
+            // reach the next matmul as a strided view.
+            let patched = patch(&resid(), &HookPoint::ResidPost(0), 0, donor_row());
+            assert!(patched.is_contiguous());
+        }
+
+        #[test]
+        fn a_bare_and_a_unit_value_agree() {
+            let base = resid();
+            let unit = donor_row().reshape((1, 1, 3)).unwrap();
+
+            let from_bare = flat(&patch(&base, &HookPoint::ResidMid(1), 1, donor_row()));
+            let from_unit = flat(&patch(&base, &HookPoint::ResidMid(1), 1, unit));
+
+            assert_eq!(from_bare, from_unit);
+        }
+
+        #[test]
+        fn a_bare_value_broadcasts_across_the_batch() {
+            let value = Tensor::new(&[9.0_f32, 9.0], &Device::Cpu).unwrap();
+            let patched = patch(&batched_resid(), &HookPoint::ResidPost(0), 0, value);
+
+            assert_eq!(flat(&patched), vec![9.0, 9.0, 2.0, 3.0, 9.0, 9.0, 6.0, 7.0]);
+        }
+
+        #[test]
+        fn a_batched_value_gives_each_row_its_own_replacement() {
+            let value = Tensor::new(&[[[9.0_f32, 9.0]], [[8.0, 8.0]]], &Device::Cpu).unwrap();
+            let patched = patch(&batched_resid(), &HookPoint::ResidPost(0), 0, value);
+
+            assert_eq!(flat(&patched), vec![9.0, 9.0, 2.0, 3.0, 8.0, 8.0, 6.0, 7.0]);
+        }
+
+        #[test]
+        fn converts_a_mismatched_value_dtype() {
+            let value = donor_row().to_dtype(DType::F64).unwrap();
+            let patched = patch(&resid(), &HookPoint::ResidPost(0), 0, value);
+
+            assert_eq!(patched.dtype(), DType::F32);
+            assert_eq!(
+                flat(&patched),
+                vec![
+                    100.0, 200.0, 300.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0
+                ]
+            );
+        }
+
+        #[test]
+        fn rejects_a_position_past_the_end() {
+            let err = patch_err(&resid(), &HookPoint::ResidPost(0), 4, donor_row());
+
+            assert!(matches!(err, MIError::Intervention(_)), "got {err:?}");
+            assert!(err.to_string().contains("seq_len=4"), "{err}");
+        }
+
+        #[test]
+        fn rejects_every_attention_hook_point() {
+            // The regression this policy exists for. Dim 1 is a head at all
+            // five, so a positional write would overwrite a head and return a
+            // plausible figure. The activation passed here is rank 3, so the
+            // rejection is by hook point and not by luck of shape.
+            for point in [
+                HookPoint::AttnQ(0),
+                HookPoint::AttnK(0),
+                HookPoint::AttnV(0),
+                HookPoint::AttnScores(0),
+                HookPoint::AttnPattern(0),
+            ] {
+                let err = patch_err(&resid(), &point, 1, donor_row());
+
+                assert!(
+                    matches!(err, MIError::Intervention(_)),
+                    "{point}: got {err:?}"
+                );
+                assert!(
+                    err.to_string().contains("accepts_positional_patch"),
+                    "{point}: {err}"
+                );
+            }
+        }
+
+        #[test]
+        fn rejects_a_custom_hook_point() {
+            let point = HookPoint::Custom("some.backend.hook".to_string());
+            let err = patch_err(&resid(), &point, 1, donor_row());
+
+            assert!(matches!(err, MIError::Intervention(_)), "got {err:?}");
+        }
+
+        #[test]
+        fn rejects_a_rank_four_activation_at_an_accepting_point() {
+            // Defence in depth behind the hook-point policy: a backend storing
+            // an unexpected rank must error rather than write at the wrong axis.
+            let base = Tensor::zeros((1, 2, 2, 2), DType::F32, &Device::Cpu).unwrap();
+            let value = Tensor::new(&[9.0_f32, 9.0], &Device::Cpu).unwrap();
+            let err = patch_err(&base, &HookPoint::ResidPost(0), 0, value);
+
+            assert!(err.to_string().contains("rank-3"), "{err}");
+        }
+
+        #[test]
+        fn rejects_a_value_of_the_wrong_shape() {
+            let value = Tensor::new(&[1.0_f32, 2.0], &Device::Cpu).unwrap();
+            let err = patch_err(&resid(), &HookPoint::ResidPost(0), 0, value);
+
+            assert!(matches!(err, MIError::Intervention(_)), "got {err:?}");
+            assert!(err.to_string().contains("expected [hidden]"), "{err}");
+        }
     }
 }

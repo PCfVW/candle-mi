@@ -173,7 +173,7 @@ fn hook_point(
         cache.store(point.clone(), tensor.clone());
     }
     for intervention in hooks.interventions_at(&point) {
-        *tensor = crate::hooks::apply_intervention(tensor, intervention)?;
+        *tensor = crate::hooks::apply_intervention(tensor, &point, intervention)?;
     }
     Ok(())
 }

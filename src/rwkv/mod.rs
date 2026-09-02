@@ -1666,7 +1666,7 @@ impl MIBackend for GenericRwkv {
             cache.store(HookPoint::Embed, hidden.clone());
         }
         for intervention in hooks.interventions_at(&HookPoint::Embed) {
-            hidden = crate::hooks::apply_intervention(&hidden, intervention)?;
+            hidden = crate::hooks::apply_intervention(&hidden, &HookPoint::Embed, intervention)?;
         }
 
         // --- Prepare state intervention ---
