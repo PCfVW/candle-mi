@@ -3,10 +3,10 @@
 > **Status: IMPLEMENTED** (2026-09-02), unreleased. Shipped as
 > `Intervention::PatchAt { position, value }`, accepting `[hidden]`,
 > `[1, 1, hidden]` and `[batch, 1, hidden]` values, written with
-> a masked `where_cond` rather than the three-way `cat` sketched below, and
-> rather than the `Tensor::slice_scatter` that first looked like the right answer
-> (see the note at the end of this file: both are silently wrong on CUDA when the
-> donor row is a view). Rejection is `MIError::Intervention`, as asked.
+> a masked `where_cond`, not the `Tensor::slice_scatter` the Ask below
+> recommends: that one is silently wrong on CUDA when the donor row is a view,
+> which is the normal case. See the postscript at the end of this file.
+> Rejection is `MIError::Intervention`, as asked.
 >
 > **The dim-1 hazard is closed the preferred way.** `apply_intervention` now
 > takes the `HookPoint`, and the policy is public as
@@ -202,14 +202,14 @@ above, please leave room for that later variant rather than foreclosing it.
 ## Postscript: the one-call implementation this report recommends is wrong on GPU
 
 Added on implementation, 2026-09-02. The Ask above recommends
-`Tensor::slice_scatter`, and the sketch before it uses a three-way `Tensor::cat`.
-**Both are silently wrong on CUDA whenever the donor row is a view**, which is
-the normal case: `FullActivationCache::get_position` returns
+`Tensor::slice_scatter`. **It is silently wrong on CUDA whenever the donor row is
+a view**, which is the normal case: `FullActivationCache::get_position` returns
 `donor.narrow(0, p, 1)?.squeeze(0)?`, a view whose storage still holds the whole
-donor activation.
+donor activation. (The three-way `cat` sketched earlier in this report was
+measured against the same case and is fine on both backends.)
 
-Both route through candle's `copy_strided_src`, and the two backends do not
-implement the same contract:
+`slice_scatter` routes through candle's `copy_strided_src`, and the two backends
+do not implement the same contract:
 
 ```rust
 // cpu_backend/mod.rs:902 -- copies exactly the view's length

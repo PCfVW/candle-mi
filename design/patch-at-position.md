@@ -108,10 +108,9 @@ Not the host-side `build_sparse_delta` that `add-at-positions.md` proposes for
 the `Add` side: it routes through `to_vec1()`, which forces a device
 synchronisation and detaches from the autograd graph.
 
-Not `Tensor::slice_scatter` either, and not the three-way `Tensor::cat` the
-originating report sketched, **because both are silently wrong on CUDA when the
-donor row is a view**. Both route through `copy_strided_src`, and the two
-backends do not agree on what it means:
+Not `Tensor::slice_scatter` either, **because it is silently wrong on CUDA when
+the donor row is a view**. It routes through `copy_strided_src`, and the two
+backends do not agree on what that helper means:
 
 ```rust
 // cpu_backend/mod.rs:902 -- copies exactly the view's length
@@ -130,6 +129,11 @@ its storage holds the whole donor and `src.len() - src_offset` runs to the end
 of it. The copy then overruns into the positions *after* the patch site. This is
 a candle bug rather than a misuse: the call is an ordinary narrow view passed to
 a public API, and CPU and CUDA return different answers for it.
+
+The three-way `Tensor::cat` the originating report sketched was measured against
+the same case and is **correct on both backends**, so it was a usable option;
+`where_cond` is preferred over it for the reasons below, not because it is
+broken.
 
 It is also the exact failure mode this crate exists to prevent. Caught by
 running `examples/activation_patching` on Llama-3.2-1B and comparing against the
