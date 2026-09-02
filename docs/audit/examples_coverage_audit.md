@@ -68,6 +68,12 @@
 ### Intervention Primitives (direct use)
 - ~~`Intervention::Replace`~~ → covered by `steering_dose_response.rs`, `activation_patching.rs`
 - ~~`Intervention::Add`~~ → covered by `activation_patching.rs`
+
+> **2026-09-02.** The rows above are the March snapshot and are left as written.
+> Since then `Intervention::PatchAt` was added and the four patching examples
+> (`activation_patching`, `contrastive_patch`, `counterfact_patching`,
+> `factual_routing`) moved onto it, so `Replace` is now demonstrated by
+> `steering_dose_response.rs` alone and `PatchAt` by the other four.
 - `Intervention::Scale`,
   `Intervention::Zero` (knockout uses `Intervention::Knockout`; these
   two remain uncovered)

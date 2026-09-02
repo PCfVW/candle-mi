@@ -322,7 +322,7 @@ fn forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache> {
         cache.store(HookPoint::Embed, hidden.clone());
     }
     for intervention in hooks.interventions_at(&HookPoint::Embed) {
-        hidden = apply_intervention(&hidden, intervention)?;
+        hidden = apply_intervention(&hidden, &HookPoint::Embed, intervention)?;
     }
 
     // 4. Layer loop
@@ -331,8 +331,9 @@ fn forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache> {
         if hooks.is_captured(&HookPoint::ResidPre(i)) {
             cache.store(HookPoint::ResidPre(i), hidden.clone());
         }
-        for intervention in hooks.interventions_at(&HookPoint::ResidPre(i)) {
-            hidden = apply_intervention(&hidden, intervention)?;
+        let point = HookPoint::ResidPre(i);
+        for intervention in hooks.interventions_at(&point) {
+            hidden = apply_intervention(&hidden, &point, intervention)?;
         }
 
         // ... your layer logic with hook points at each stage ...
@@ -342,7 +343,7 @@ fn forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache> {
             cache.store(HookPoint::ResidPost(i), hidden.clone());
         }
         for intervention in hooks.interventions_at(&HookPoint::ResidPost(i)) {
-            hidden = apply_intervention(&hidden, intervention)?;
+            hidden = apply_intervention(&hidden, &HookPoint::ResidPost(i), intervention)?;
         }
     }
 
@@ -357,6 +358,12 @@ fn forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache> {
 - `apply_intervention()` is a crate-internal helper (`pub(crate)` in
   `src/hooks.rs`) — if you're implementing a backend inside the crate, use
   it directly; if outside, implement the intervention logic yourself.
+- **Pass the hook point you are actually at.** `apply_intervention` takes it
+  because dim 1 does not mean the same thing everywhere: the sequence in a
+  `[batch, seq_len, hidden]` activation, a head in a
+  `[batch, n_heads, seq_len, head_dim]` one. `Intervention::PatchAt` uses it to
+  refuse a positional write where it would silently overwrite a head, so passing
+  the wrong point defeats that guard. See `HookPoint::accepts_positional_patch`.
 - Capture checks (`is_captured`) are cheap `HashSet` lookups — when false,
   the `.clone()` is skipped entirely.
 - Intervention iteration (`interventions_at`) returns an empty iterator

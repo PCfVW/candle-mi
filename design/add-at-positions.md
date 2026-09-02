@@ -8,7 +8,7 @@ Should candle-mi support position-specific vector injection as a first-class `In
 
 ## Context
 
-The existing `Intervention` enum provides five primitives — `Replace`, `Add`, `Knockout`, `Scale`, `Zero`. All operate uniformly across the sequence dimension: `Add` broadcasts the same vector to every position, `Replace` swaps the entire tensor.
+The existing `Intervention` enum provides five primitives — `Replace`, `Add`, `Knockout`, `Scale`, `Zero`. (As of March 2026. `PatchAt` was added in September 2026; see the resolved `ReplaceAtPositions` section below.) All operate uniformly across the sequence dimension: `Add` broadcasts the same vector to every position, `Replace` swaps the entire tensor.
 
 However, MI experiments often need **heterogeneous per-position injection**:
 
