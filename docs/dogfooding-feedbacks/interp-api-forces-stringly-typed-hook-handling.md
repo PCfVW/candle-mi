@@ -120,28 +120,3 @@ not a string.
   `AttnK`/`AttnV`, `FinalNorm` cover Q1–Q4 of the measurement without a single custom tap.
 - **`HookSpec` carrying interventions as well as captures** means the patching substep needs no
   second mechanism.
-
----
-
-## Closure (September 1, 2026) — the loop, run
-
-`candle-mi` implemented items 1, 2, 3 and 5a (and 4a) the same day, unreleased, consumed by
-`canvas` over the path dependency. The acceptance test was not a new test but the deletion of the
-glue this report described (`askesis` commit `8840c4f`):
-
-- **Item 1 closed.** `CaptureKey` dropped its cached `hook.to_string()` and now derives `Ord` on
-  `(position, hook)`. A behaviour improved that the report had not asked for: layer indices
-  compare as **integers**, so `ResidPost(2)` precedes `ResidPost(11)`; the string key had ordered
-  them lexicographically, which the old doc-test had to warn readers about.
-- **Item 2 closed, and it removed an error path.** The harvest now iterates
-  `HookCache::captures()` instead of looking up each requested hook, so a model emitting none of
-  what was asked reports **once with the whole missing set**, rather than failing on whichever
-  hook the request happened to list first.
-- **Item 6 dissolved**, as predicted, by item 1 alone: no stringly-typed handling remains.
-
-Gates after the deletion: `clippy -D warnings` rc=0, `capture` unit 2/2, the `D11` suite 5/5,
-`fmt` clean.
-
-**Item 5b was dropped rather than deferred, and we agree with the reasoning**: a capturable
-`Logits` hook would duplicate the largest allocation in the pass, which in `canvas`'s decode is
-paid 88–136 times per row. The doc line beside `FinalNorm` buys the same clarity for nothing.
