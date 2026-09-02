@@ -61,10 +61,53 @@ expired. A push resets the clock, since it queues a fresh run.
 
 The first sweep, on 2026-08-31, found 3819 already expired and two more within
 hours of it: 3822 was due at 15:17 UTC and 3823 at 19:32 UTC the same day, both
-still `action_required`. All three were rebased, re-verified and re-pushed, 3822
-and 3823 before their deadlines, so neither ever showed a red X. 3406 was due
-2026-09-02. The lesson is that the deadlines cluster, because the PRs were filed
-in one sitting, so the sweep is worth running as one pass rather than per PR.
+still `action_required`. All three were rebased, re-verified and re-pushed. 3406
+was due 2026-09-02. The lesson is that the deadlines cluster, because the PRs
+were filed in one sitting, so the sweep is worth running as one pass rather than
+per PR.
+
+### Correction (2026-09-02): a push does not rescue the pending run
+
+That sweep recorded that 3822 and 3823 were re-pushed before their deadlines "so
+neither ever showed a red X". **That was wrong**, and the receipts are the
+GitHub notifications that arrived on 2026-08-31:
+
+| run | branch | created | stamped `failure` | jobs |
+|---|---|---|---|---|
+| `Continuous integration` #8763, `CI / cuda` #5656 | gradstore-accumulate | 2026-08-01 15:17 | 2026-08-31 15:21 | 0 |
+| `Continuous integration` #8765, `CI / cuda` #5658 | fused-ops-bwd | 2026-08-01 19:32 | 2026-08-31 19:36 | 0 |
+
+Thirty days plus four minutes, zero jobs, and the re-pushes at 13:43 and 13:44
+that same day did **not** stop it. A push does not approve, cancel or renew the
+run already queued on the old head; it queues an *additional* run on the new
+head. The old one keeps its own clock, expires on schedule, stamps `failure` and
+notifies.
+
+What the push does buy is that the expired run is attached to a SHA that is no
+longer the PR head, so the red X is not on the current head. Confirmed the same
+day: `gh pr view <n> --json statusCheckRollup` is **empty** for 3406, 3819, 3822
+and 3823, because an `action_required` run publishes no status check until a
+maintainer approves it. A reviewer therefore sees *no* checks rather than failing
+ones. That is the whole benefit, and it is worth having, but it is not the same
+as "never showed a red X".
+
+The corollary matters for a PR whose head has *not* moved: there, the expiring
+run **is** the head's run, so the red X lands on what the reviewer sees.
+
+### State at 2026-09-02
+
+| PR | head last pushed | runs | next expiry |
+|---|---|---|---|
+| [3406](https://github.com/huggingface/candle/pull/3406) | 2026-08-03 | `action_required` since 2026-08-03 14:15 | **2026-09-02 14:15 UTC**, and the head has not moved since, so this one lands a red X on the current head |
+| [3628](https://github.com/huggingface/candle/pull/3628) | 2026-06-18 | none listed; `mergeStateStatus` is `CLEAN` | n/a |
+| [3819](https://github.com/huggingface/candle/pull/3819) | 2026-08-31 | `action_required` since 13:32 | 2026-09-30 13:32 UTC |
+| [3822](https://github.com/huggingface/candle/pull/3822) | 2026-08-31 | `action_required` since 13:43 | 2026-09-30 13:43 UTC |
+| [3823](https://github.com/huggingface/candle/pull/3823) | 2026-08-31 | `action_required` since 13:44 | 2026-09-30 13:44 UTC |
+
+All five are `MERGEABLE` against current `main`, so none has rotted into a
+conflict. None has a review; each of 3406, 3819, 3822 and 3823 carries one
+comment, the explanation of the red X. The next sweep is due **2026-09-30**, when
+three deadlines fall within twelve minutes of each other.
 
 ## When something lands
 
