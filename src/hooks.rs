@@ -312,7 +312,7 @@ pub enum Intervention {
     ///
     /// # Gradients
     ///
-    /// The write is a `slice_scatter`, which records a backward op, so a patch
+    /// The write is a masked select, which records a backward op, so a patch
     /// inside a tracked forward pass does not break the gradient chain.
     PatchAt {
         /// Sequence position to overwrite. Must be in `0..seq_len`.
@@ -442,9 +442,9 @@ fn patch_at(tensor: &Tensor, point: &HookPoint, position: usize, value: &Tensor)
         )));
     }
 
-    // Normalise every accepted value shape to the `[batch, 1, hidden]` that
-    // `slice_scatter` requires. The two batch-free shapes broadcast across the
-    // batch, matching how `Add` treats a bare direction.
+    // Normalise every accepted value shape to `[batch, 1, hidden]`. The two
+    // batch-free shapes broadcast across the batch, matching how `Add` treats a
+    // bare direction.
     let value_dims = value.dims();
     let row = match *value_dims {
         [h] if h == hidden => value
@@ -468,14 +468,40 @@ fn patch_at(tensor: &Tensor, point: &HookPoint, position: usize, value: &Tensor)
         row.to_dtype(tensor.dtype())?
     };
 
-    // CONTIGUOUS: `broadcast_as` yields stride-0 dimensions and `slice_scatter`
-    // copies out of this buffer; materialise it first.
-    let row = row.contiguous()?;
+    // Written as a masked select rather than the obvious `Tensor::slice_scatter`
+    // (or a three-way `Tensor::cat`), because both route through candle's
+    // `copy_strided_src`, whose CUDA path sizes the copy from the *storage*
+    // rather than from the source view:
+    //
+    //     to_copy = min(dst.len() - dst_offset, src.len() - src_offset)
+    //         -- candle-core 0.11 `cuda_backend::slice_src_and_dst`
+    //
+    // A donor row is normally a view into a captured activation (this is exactly
+    // what `FullActivationCache::get_position` returns), so `src.len()` is the
+    // whole donor and the copy overruns into the *following* positions. The
+    // symptom is a patch that also overwrites every position after it, silently
+    // and only on GPU. `where_cond` touches each element once through its own
+    // layout and has no such dependence.
+    //
+    // CONTIGUOUS: all three operands are materialised to the same contiguous
+    // shape so the kernel takes its simplest path and no operand is a stride-0
+    // broadcast view.
+    let full = (batch, seq_len, hidden);
+    let replacement = row.broadcast_as(full)?.contiguous()?;
 
-    // CONTIGUOUS: for `dim != 0`, `slice_scatter` transposes, scatters and
-    // transposes back, so its result is a strided view; the patched activation
-    // flows on into the layer's matmuls.
-    Ok(tensor.slice_scatter(&row, 1, position)?.contiguous()?)
+    // CAST: usize -> u32 for `Tensor::arange`; `seq_len` and `position` are
+    // tensor dimensions, both checked above to fit the activation.
+    let seq_len_u32 = u32::try_from(seq_len)
+        .map_err(|e| MIError::Intervention(format!("seq_len {seq_len} exceeds u32: {e}")))?;
+    let position_u32 = u32::try_from(position)
+        .map_err(|e| MIError::Intervention(format!("position {position} exceeds u32: {e}")))?;
+    let selector = Tensor::arange(0_u32, seq_len_u32, tensor.device())?
+        .eq(position_u32)?
+        .reshape((1, seq_len, 1))?
+        .broadcast_as(full)?
+        .contiguous()?;
+
+    Ok(selector.where_cond(&replacement, tensor)?)
 }
 
 // ---------------------------------------------------------------------------
@@ -1359,6 +1385,127 @@ mod tests {
                 flat(&patched),
                 vec![
                     100.0, 200.0, 300.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0
+                ]
+            );
+        }
+
+        #[test]
+        fn patches_from_a_donor_row_that_is_an_offset_view() {
+            // `FullActivationCache::get_position` hands back
+            // `donor.narrow(0, p, 1)?.squeeze(0)?`, a view whose storage offset
+            // is non-zero and whose storage holds the *whole* donor activation.
+            // A freshly built value tensor does not exercise that.
+            let base = resid();
+            let donor = Tensor::new(
+                &[
+                    [900.0_f32, 901.0, 902.0],
+                    [910.0, 911.0, 912.0],
+                    [920.0, 921.0, 922.0],
+                    [930.0, 931.0, 932.0],
+                ],
+                &Device::Cpu,
+            )
+            .unwrap();
+            let donor_row_2 = donor.narrow(0, 2, 1).unwrap().squeeze(0).unwrap();
+
+            let patched = patch(&base, &HookPoint::ResidPost(0), 2, donor_row_2);
+
+            assert_eq!(
+                flat(&patched),
+                vec![
+                    0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 920.0, 921.0, 922.0, 9.0, 10.0, 11.0
+                ]
+            );
+        }
+
+        #[test]
+        #[ignore = "requires a CUDA device"]
+        fn cuda_patches_from_a_donor_row_that_is_an_offset_view() {
+            let device = Device::new_cuda(0).expect("no CUDA device");
+            let (seq_len, hidden) = (6_usize, 2048_usize);
+            let base = Tensor::rand(0.0_f32, 1.0_f32, (1, seq_len, hidden), &device).unwrap();
+            let donor = Tensor::rand(0.0_f32, 1.0_f32, (seq_len, hidden), &device).unwrap();
+            let donor_row_4 = donor.narrow(0, 4, 1).unwrap().squeeze(0).unwrap();
+
+            let patched = apply_intervention(
+                &base,
+                &HookPoint::ResidPost(15),
+                &Intervention::PatchAt {
+                    position: 4,
+                    value: donor_row_4,
+                },
+            )
+            .unwrap();
+
+            for pos in 0..seq_len {
+                let got: Vec<f32> = patched.get(0).unwrap().get(pos).unwrap().to_vec1().unwrap();
+                let want: Vec<f32> = if pos == 4 {
+                    donor.get(4).unwrap().to_vec1().unwrap()
+                } else {
+                    base.get(0).unwrap().get(pos).unwrap().to_vec1().unwrap()
+                };
+                assert_eq!(got, want, "row {pos} differs");
+            }
+        }
+
+        #[test]
+        #[ignore = "requires a CUDA device"]
+        fn cuda_patches_only_the_target_position_at_model_shape() {
+            // Llama-3.2-1B's residual stream shape for a 6-token prompt.
+            let device = Device::new_cuda(0).expect("no CUDA device");
+            let (seq_len, hidden) = (6_usize, 2048_usize);
+            let base = Tensor::rand(0.0_f32, 1.0_f32, (1, seq_len, hidden), &device).unwrap();
+            let value = Tensor::rand(0.0_f32, 1.0_f32, hidden, &device).unwrap();
+
+            let patched = apply_intervention(
+                &base,
+                &HookPoint::ResidPost(15),
+                &Intervention::PatchAt {
+                    position: 4,
+                    value: value.clone(),
+                },
+            )
+            .unwrap();
+
+            // Every row but 4 must be untouched, and row 4 must be `value`.
+            for pos in 0..seq_len {
+                let got: Vec<f32> = patched.get(0).unwrap().get(pos).unwrap().to_vec1().unwrap();
+                let want: Vec<f32> = if pos == 4 {
+                    value.to_vec1().unwrap()
+                } else {
+                    base.get(0).unwrap().get(pos).unwrap().to_vec1().unwrap()
+                };
+                assert_eq!(got, want, "row {pos} differs");
+            }
+        }
+
+        #[test]
+        #[ignore = "requires a CUDA device"]
+        fn cuda_patches_only_the_target_position() {
+            let device = Device::new_cuda(0).expect("no CUDA device");
+            let base = Tensor::new(
+                &[[
+                    [0.0_f32, 1.0, 2.0],
+                    [3.0, 4.0, 5.0],
+                    [6.0, 7.0, 8.0],
+                    [9.0, 10.0, 11.0],
+                ]],
+                &device,
+            )
+            .unwrap();
+            let value = Tensor::new(&[100.0_f32, 200.0, 300.0], &device).unwrap();
+
+            let patched = apply_intervention(
+                &base,
+                &HookPoint::ResidPost(3),
+                &Intervention::PatchAt { position: 2, value },
+            )
+            .unwrap();
+
+            assert_eq!(
+                flat(&patched),
+                vec![
+                    0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 100.0, 200.0, 300.0, 9.0, 10.0, 11.0
                 ]
             );
         }

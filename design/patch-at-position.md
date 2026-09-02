@@ -102,18 +102,62 @@ pushes the choice onto the caller, which is one more degree of freedom in which
 a probe can be quietly wrong, and it would let `PatchAt` be aimed at
 `AttnScores`, where there is no single right answer to aim at.
 
-### Implementation
+### Implementation: a masked select, and why not the obvious two
 
-`Tensor::slice_scatter(&row, 1, position)`, not the host-side
-`build_sparse_delta` that `add-at-positions.md` proposes for the `Add` side.
-That helper routes through `to_vec1()`, which forces a device synchronisation
-and detaches from the autograd graph. `slice_scatter` stays on device, and
-`Op::SliceScatter0` has a backward implementation, so a patch inside a tracked
-forward pass does not break the gradient chain.
+Not the host-side `build_sparse_delta` that `add-at-positions.md` proposes for
+the `Add` side: it routes through `to_vec1()`, which forces a device
+synchronisation and detaches from the autograd graph.
 
-`slice_scatter` transposes, scatters and transposes back when `dim != 0`, so its
-result is a strided view; the patched activation flows on into the layer's
-matmuls, hence an explicit `.contiguous()`.
+Not `Tensor::slice_scatter` either, and not the three-way `Tensor::cat` the
+originating report sketched, **because both are silently wrong on CUDA when the
+donor row is a view**. Both route through `copy_strided_src`, and the two
+backends do not agree on what it means:
+
+```rust
+// cpu_backend/mod.rs:902 -- copies exactly the view's length
+StridedBlocks::SingleBlock { start_offset, len } =>
+    dst[dst_offset..dst_offset + len]
+        .copy_from_slice(&src[start_offset..start_offset + len])
+
+// cuda_backend/mod.rs:1217 -- derives the length from whole-storage sizes
+let to_copy = dst.len().saturating_sub(dst_offset)
+                 .min(src.len().saturating_sub(src_offset));
+```
+
+A donor row is normally a view into a captured activation, which is exactly what
+`FullActivationCache::get_position` returns (`narrow(0, p, 1)?.squeeze(0)?`), so
+its storage holds the whole donor and `src.len() - src_offset` runs to the end
+of it. The copy then overruns into the positions *after* the patch site. This is
+a candle bug rather than a misuse: the call is an ordinary narrow view passed to
+a public API, and CPU and CUDA return different answers for it.
+
+It is also the exact failure mode this crate exists to prevent. Caught by
+running `examples/activation_patching` on Llama-3.2-1B and comparing against the
+pre-`PatchAt` implementation: every position before the last reported 100%
+recovery at every layer, including layer 15, where patching a non-final position
+cannot affect the logits at all. The unit tests did not catch it because they
+built `value` with `Tensor::new`, which owns its storage exactly; only a donor
+row taken as a view reproduces it.
+
+So the write is a masked select instead:
+
+```rust
+selector.where_cond(&replacement, tensor)
+```
+
+with all three operands materialised to the same contiguous
+`[batch, seq_len, hidden]` shape. It touches each element once through its own
+layout, so it has no dependence on storage provenance; `Op::WhereCond` has a
+backward implementation, so a patch inside a tracked forward pass still carries
+gradients; and it cannot produce the `0.0 * inf = NaN` that an arithmetic blend
+would. The cost is two full-size temporaries, the same order as the mask blend
+the four examples were already paying, and less than the whole-tensor `Replace`
+it replaces.
+
+`patches_from_a_donor_row_that_is_an_offset_view` (CPU) and
+`cuda_patches_from_a_donor_row_that_is_an_offset_view` (GPU, `#[ignore]`d) are
+the regression guards. The GPU one fails against a `slice_scatter`
+implementation and passes against this one.
 
 Validation order in the private `patch_at` helper: hook-point policy, then an
 explicit rank-3 check (defence in depth, so a backend storing an unexpected rank
@@ -164,7 +208,10 @@ In `src/hooks.rs`, gated behind the same backend predicate as
 9. `Custom` is rejected.
 10. A rank-4 activation at an accepting hook point is rejected.
 11. A value of the wrong shape is rejected.
-12. `accepts_positional_patch` is asserted over a table that must equal
+12. **The donor row is an offset view**, as `FullActivationCache::get_position`
+    returns, on CPU and (`#[ignore]`d) on CUDA. This is the pair that catches the
+    `copy_strided_src` trap described above.
+13. `accepts_positional_patch` is asserted over a table that must equal
     `one_of_each_variant()`, which `declaration_rank` already keeps complete, so
     a new `HookPoint` variant has to be given an explicit answer rather than
     inheriting one.

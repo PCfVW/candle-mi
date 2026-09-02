@@ -3,9 +3,10 @@
 > **Status: IMPLEMENTED** (2026-09-02), unreleased. Shipped as
 > `Intervention::PatchAt { position, value }`, accepting `[hidden]`,
 > `[1, 1, hidden]` and `[batch, 1, hidden]` values, written with
-> `Tensor::slice_scatter` rather than the three-way `cat` sketched below (one
-> call, on device, and gradient-tracked). Rejection is `MIError::Intervention`,
-> as asked.
+> a masked `where_cond` rather than the three-way `cat` sketched below, and
+> rather than the `Tensor::slice_scatter` that first looked like the right answer
+> (see the note at the end of this file: both are silently wrong on CUDA when the
+> donor row is a view). Rejection is `MIError::Intervention`, as asked.
 >
 > **The dim-1 hazard is closed the preferred way.** `apply_intervention` now
 > takes the `HookPoint`, and the policy is public as
@@ -195,3 +196,50 @@ because the `AttnK` / `AttnV` tensors are pre-broadcast. A write there lands on 
 out to `n_heads / n_kv_heads` query heads downstream, so even a head-indexed variant at those
 points could not express "patch the key seen by query head 17 only". If `PatchAt` is restricted as
 above, please leave room for that later variant rather than foreclosing it.
+
+---
+
+## Postscript: the one-call implementation this report recommends is wrong on GPU
+
+Added on implementation, 2026-09-02. The Ask above recommends
+`Tensor::slice_scatter`, and the sketch before it uses a three-way `Tensor::cat`.
+**Both are silently wrong on CUDA whenever the donor row is a view**, which is
+the normal case: `FullActivationCache::get_position` returns
+`donor.narrow(0, p, 1)?.squeeze(0)?`, a view whose storage still holds the whole
+donor activation.
+
+Both route through candle's `copy_strided_src`, and the two backends do not
+implement the same contract:
+
+```rust
+// cpu_backend/mod.rs:902 -- copies exactly the view's length
+StridedBlocks::SingleBlock { start_offset, len } =>
+    dst[dst_offset..dst_offset + len]
+        .copy_from_slice(&src[start_offset..start_offset + len])
+
+// cuda_backend/mod.rs:1217 -- derives the length from whole-storage sizes
+let to_copy = dst.len().saturating_sub(dst_offset)
+                 .min(src.len().saturating_sub(src_offset));
+```
+
+On CUDA `to_copy` runs to the end of the donor's storage, so patching position
+`p` also overwrites every position after it with the donor's rows. It is a candle
+bug rather than a misuse: an ordinary narrow view handed to a public API returns
+different answers on CPU and GPU.
+
+**How it presented, which is the part worth keeping.** Unit tests all passed,
+including on CUDA, because they built the value with `Tensor::new`, which owns
+its storage exactly. What caught it was running
+`examples/activation_patching` on Llama-3.2-1B and comparing against the
+pre-`PatchAt` implementation: the causal trace came back reporting **100%
+recovery at every layer for every position except the last**, including layer 15,
+where patching a non-final position cannot affect the logits at all. A plausible
+figure, no crash, no failing test. Exactly the failure mode this report's own
+"Not asked for" section is written against, arriving from underneath the API
+rather than through it.
+
+`PatchAt` is therefore implemented as a masked `where_cond` over three
+same-shape contiguous operands, which touches each element through its own
+layout and has no dependence on storage provenance. The two regression guards are
+`patches_from_a_donor_row_that_is_an_offset_view` and its `#[ignore]`d CUDA twin;
+the CUDA one fails against a `slice_scatter` implementation.
