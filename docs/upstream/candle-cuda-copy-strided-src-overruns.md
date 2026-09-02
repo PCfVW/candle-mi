@@ -2,8 +2,9 @@
 
 **Title for the issue:** CUDA `copy_strided_src` copies past the end of an offset source view, silently corrupting `slice_scatter` (CPU disagrees)
 
-**Status:** drafted 2026-09-02, **not yet filed**. Searched first: no existing
-issue or PR covers this path (see "Prior art" below).
+**Status:** **FILED 2026-09-02** as [candle#3940](https://github.com/huggingface/candle/issues/3940).
+Searched first: no existing issue or PR covered this path (see "Prior art" below).
+Confirmed present on `main` at `d5fee525` as well as on the pinned 0.11.0.
 
 ## Workaround, up front
 

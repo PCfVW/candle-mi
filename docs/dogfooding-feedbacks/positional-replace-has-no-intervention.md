@@ -242,4 +242,9 @@ rather than through it.
 same-shape contiguous operands, which touches each element through its own
 layout and has no dependence on storage provenance. The two regression guards are
 `patches_from_a_donor_row_that_is_an_offset_view` and its `#[ignore]`d CUDA twin;
-the CUDA one fails against a `slice_scatter` implementation.
+the CUDA one fails against a `slice_scatter` implementation, and is registered in
+`scripts/resurrect.ps1` (`-Only patchat`) because `#[ignore]`d tests never run in
+CI.
+
+Reported upstream as
+[candle#3940](https://github.com/huggingface/candle/issues/3940).

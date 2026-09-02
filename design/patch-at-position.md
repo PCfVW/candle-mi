@@ -161,7 +161,16 @@ it replaces.
 `patches_from_a_donor_row_that_is_an_offset_view` (CPU) and
 `cuda_patches_from_a_donor_row_that_is_an_offset_view` (GPU, `#[ignore]`d) are
 the regression guards. The GPU one fails against a `slice_scatter`
-implementation and passes against this one.
+implementation and passes against this one. Because `#[ignore]`d tests never run
+in CI, it is registered in `scripts/resurrect.ps1` as entry `patchat`, in the
+`-Quick` tier: it downloads nothing and runs in under a second.
+
+Reported upstream as
+[candle#3940](https://github.com/huggingface/candle/issues/3940); the draft and
+the search that preceded it are in
+[`../docs/upstream/candle-cuda-copy-strided-src-overruns.md`](../docs/upstream/candle-cuda-copy-strided-src-overruns.md).
+candle-mi does not wait on it, per that directory's standing rule: the
+workaround above is the shipped implementation.
 
 Validation order in the private `patch_at` helper: hook-point policy, then an
 explicit rank-3 check (defence in depth, so a backend storing an unexpected rank
