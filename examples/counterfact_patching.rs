@@ -22,13 +22,15 @@
 //! 1. For each `CounterFact` prompt pair (original fact + counterfactual
 //!    subject), runs both through the model via
 //!    [`MIModel::forward_text`](candle_mi::MIModel::forward_text), capturing
-//!    [`HookPoint::ResidPost`](candle_mi::HookPoint) at every layer.
+//!    [`HookPoint::ResidPost`](candle_mi::HookPoint) at every layer of the
+//!    counterfactual pass only. That pass is the donor; the original is the
+//!    recipient and is edited in flight, so it needs no captures.
 //! 2. Classifies tokens by role (subject, relation, other) using
 //!    [`EncodingWithOffsets::label_spans`](candle_mi::EncodingWithOffsets::label_spans).
 //! 3. For each (layer-block, token-position) combination, replaces the
 //!    original residual stream at that position with the counterfactual's
 //!    residual across all layers in the block via
-//!    [`Intervention::Replace`](candle_mi::Intervention).
+//!    [`Intervention::PatchAt`](candle_mi::Intervention).
 //! 4. Checks if the greedy next token changed (`is_different`), matching
 //!    the Transluce protocol exactly.
 //! 5. Prints per-prompt tables and aggregate statistics by layer block
@@ -202,84 +204,36 @@ struct TypeSummary {
 // Core patching logic
 // ---------------------------------------------------------------------------
 
-/// Build a tensor that is `base` everywhere except at `patch_pos` where it
-/// takes values from `patch_vector`.
-///
-/// # Shapes
-///
-/// - `base`: `[seq_len, hidden]`
-/// - `patch_vector`: `[hidden]`
-/// - returns: `[seq_len, hidden]`
-fn replace_position(
-    base: &candle_core::Tensor,
-    patch_vector: &candle_core::Tensor,
-    patch_pos: usize,
-    seq_len: usize,
-    hidden: usize,
-    device: &candle_core::Device,
-) -> candle_mi::Result<candle_core::Tensor> {
-    // Build a binary mask: 0 everywhere, 1 at patch_pos
-    let mut mask_data = vec![0.0_f32; seq_len * hidden];
-    for i in 0..hidden {
-        // INDEX: patch_pos * hidden + i bounded by seq_len * hidden
-        // (patch_pos < seq_len guaranteed by caller)
-        #[allow(clippy::indexing_slicing)]
-        {
-            mask_data[patch_pos * hidden + i] = 1.0;
-        }
-    }
-    let mask = candle_core::Tensor::from_vec(mask_data, (seq_len, hidden), device)?;
-
-    // Broadcast patch_vector [hidden] → [seq_len, hidden] (only the masked row matters)
-    let patch_broadcast = patch_vector.unsqueeze(0)?.broadcast_as((seq_len, hidden))?;
-
-    // patched = base * (1 - mask) + patch_vector_broadcast * mask
-    let one_minus_mask = (1.0 - &mask)?;
-    let result = (base * &one_minus_mask)? + (patch_broadcast * &mask)?;
-    Ok(result?)
-}
-
-/// Build a `HookSpec` that replaces `ResidPost` at every layer in
+/// Build a `HookSpec` that overwrites `ResidPost` at every layer in
 /// `block_layers` with the counterfactual activation at `cf_pos`, inserted
 /// at `orig_pos` in the original sequence.
 ///
+/// Only the one position is touched; every other position of the original
+/// forward pass reaches the hook point and passes through unchanged, which is
+/// why the original run's own activations are not needed here.
+///
 /// # Shapes
 ///
-/// - `orig_acts`, `cf_acts`: `FullActivationCache` with `[seq_len, hidden]` per layer
+/// - `cf_acts`: `FullActivationCache` with `[seq_len, hidden]` per layer
 /// - Result: `HookSpec` with `len(block_layers)` interventions
-// EXPLICIT: an example patch-builder threading the full experiment context; splitting it
-// into a struct would obscure the walkthrough this example exists to be.
-#[allow(clippy::too_many_arguments)]
 fn build_block_patch(
-    orig_acts: &FullActivationCache,
     cf_acts: &FullActivationCache,
     block_layers: &[usize],
     orig_pos: usize,
     cf_pos: usize,
-    orig_seq_len: usize,
-    hidden: usize,
-    device: &candle_core::Device,
 ) -> candle_mi::Result<HookSpec> {
     let mut hooks = HookSpec::new();
 
     for &layer in block_layers {
-        let orig_resid = orig_acts
-            .get_layer(layer)
-            .ok_or_else(|| candle_mi::MIError::Hook(format!("layer {layer} not in orig cache")))?;
-
         let cf_vector = cf_acts.get_position(layer, cf_pos)?; // [hidden]
 
-        let patched = replace_position(
-            orig_resid,
-            &cf_vector,
-            orig_pos,
-            orig_seq_len,
-            hidden,
-            device,
-        )?
-        .unsqueeze(0)?; // [1, seq, hidden]
-
-        hooks.intervene(HookPoint::ResidPost(layer), Intervention::Replace(patched));
+        hooks.intervene(
+            HookPoint::ResidPost(layer),
+            Intervention::PatchAt {
+                position: orig_pos,
+                value: cf_vector,
+            },
+        );
     }
 
     Ok(hooks)
@@ -374,7 +328,10 @@ fn run() -> candle_mi::Result<()> {
             capture_hooks.capture(HookPoint::ResidPost(layer));
         }
 
-        let orig_result = model.forward_text(&pair.original_prompt, &capture_hooks)?;
+        // Only the counterfactual pass is captured: it is the donor. The
+        // original pass is the recipient, and `Intervention::PatchAt` edits its
+        // residual stream in flight rather than from a stored copy.
+        let orig_result = model.forward_text(&pair.original_prompt, &HookSpec::new())?;
         let cf_result = model.forward_text(&pair.counterfactual_prompt, &capture_hooks)?;
         let capture_time = capture_start.elapsed();
 
@@ -400,17 +357,11 @@ fn run() -> candle_mi::Result<()> {
         let cf_token_id = sample_token(&cf_logits, 0.0)?;
         let cf_continuation = tokenizer.decode(&[cf_token_id])?;
 
-        // Build FullActivationCaches from captured residuals
-        let mut orig_acts = FullActivationCache::with_capacity(n_layers);
-        for layer in 0..n_layers {
-            let resid = orig_result.require(&HookPoint::ResidPost(layer))?; // [1, seq, hidden]
-            orig_acts.push(resid.get(0)?); // [seq, hidden]
-        }
-
+        // Build the donor FullActivationCache from the counterfactual residuals
         let mut cf_acts = FullActivationCache::with_capacity(n_layers);
         for layer in 0..n_layers {
-            let resid = cf_result.require(&HookPoint::ResidPost(layer))?;
-            cf_acts.push(resid.get(0)?);
+            let resid = cf_result.require(&HookPoint::ResidPost(layer))?; // [1, seq, hidden]
+            cf_acts.push(resid.get(0)?); // [seq, hidden]
         }
 
         let orig_matches_gt = orig_continuation.trim() == pair.gt_original_target;
@@ -483,16 +434,7 @@ fn run() -> candle_mi::Result<()> {
             print!("  {orig_pos:>3} {short_label:>14}");
 
             for (bi, block) in blocks.iter().enumerate() {
-                let patch_hooks = build_block_patch(
-                    &orig_acts,
-                    &cf_acts,
-                    block,
-                    orig_pos,
-                    cf_pos,
-                    orig_seq_len,
-                    hidden,
-                    model.device(),
-                )?;
+                let patch_hooks = build_block_patch(&cf_acts, block, orig_pos, cf_pos)?;
 
                 let patched_cache = model.forward(&orig_input, &patch_hooks)?;
                 let patched_logits = patched_cache.output().get(0)?.get(orig_seq_len - 1)?;

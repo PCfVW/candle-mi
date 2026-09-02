@@ -24,10 +24,11 @@
 //!    [`HookPoint::ResidPost`](candle_mi::HookPoint) and building a
 //!    [`FullActivationCache`](candle_mi::FullActivationCache).
 //! 2. Runs a **corrupted** forward pass on "The capital of Poland is" (same
-//!    structure, different country) and captures all residual streams.
+//!    structure, different country) for its logits. It needs no captures: the
+//!    patch is expressed against the recipient's own activation in flight.
 //! 3. For each layer, runs a **patching** pass: the corrupted forward pass
 //!    with the clean residual stream at the **subject token position** only
-//!    restored via [`Intervention::Replace`](candle_mi::Intervention). This
+//!    restored via [`Intervention::PatchAt`](candle_mi::Intervention). This
 //!    isolates the effect of the subject token's representation at each layer.
 //! 4. Prints a layer-by-layer recovery table showing how much the "Paris"
 //!    prediction recovers when clean information is injected at each layer.
@@ -444,7 +445,6 @@ fn run_patching(
     output_path: Option<&Path>,
 ) -> candle_mi::Result<()> {
     let n_layers = model.num_layers();
-    let hidden = model.hidden_size();
 
     // Encode both prompts
     let clean_ids = tokenizer.encode(clean_prompt)?;
@@ -504,18 +504,14 @@ fn run_patching(
     }
 
     // ── Step 2: Corrupted forward pass ──────────────────────────────────
+    // No captures: `Intervention::PatchAt` overwrites one position of whatever
+    // reaches the hook point, so the recipient's own residual stream never has
+    // to be read back out and spliced by hand.
     let t2 = Instant::now();
-    let corrupted_cache = model.forward(&corrupted_input, &capture_hooks)?;
+    let corrupted_cache = model.forward(&corrupted_input, &HookSpec::new())?;
     let corrupted_time = t2.elapsed();
     let corrupted_logits = corrupted_cache.output().get(0)?.get(seq_len - 1)?;
-    println!("  Corrupted forward ({n_layers} captures): {corrupted_time:.2?}");
-
-    // Build FullActivationCache from corrupted captures
-    let mut corrupted_acts = FullActivationCache::with_capacity(n_layers);
-    for layer in 0..n_layers {
-        let resid = corrupted_cache.require(&HookPoint::ResidPost(layer))?;
-        corrupted_acts.push(resid.get(0)?);
-    }
+    println!("  Corrupted forward (no captures): {corrupted_time:.2?}");
 
     // Baseline metrics
     let corrupted_kl = kl_divergence(&clean_logits, &corrupted_logits)?;
@@ -557,31 +553,17 @@ fn run_patching(
     let mut subject_recovery = Vec::with_capacity(n_layers);
 
     for layer in 0..n_layers {
-        // Build a mixed tensor: corrupted at all positions, clean at subject_pos
-        let corrupted_resid = corrupted_acts
-            .get_layer(layer)
-            .ok_or_else(|| candle_mi::MIError::Hook(format!("layer {layer} not in cache")))?;
-        let clean_resid = clean_acts
-            .get_layer(layer)
-            .ok_or_else(|| candle_mi::MIError::Hook(format!("layer {layer} not in cache")))?;
-
-        // Construct patched tensor: corrupted everywhere, clean at subject_pos
-        // patched[pos] = corrupted[pos] for pos != subject_pos
-        // patched[subject_pos] = clean[subject_pos]
-        let patched_resid = patch_position(
-            corrupted_resid,
-            clean_resid,
-            subject_pos,
-            seq_len,
-            hidden,
-            model.device(),
-        )?
-        .unsqueeze(0)?; // [1, seq, hidden]
+        // The clean row to inject: corrupted everywhere else, clean at
+        // subject_pos. `PatchAt` leaves every other position in flight alone.
+        let clean_row = clean_acts.get_position(layer, subject_pos)?; // [hidden]
 
         let mut patch_hooks = HookSpec::new();
         patch_hooks.intervene(
             HookPoint::ResidPost(layer),
-            Intervention::Replace(patched_resid),
+            Intervention::PatchAt {
+                position: subject_pos,
+                value: clean_row,
+            },
         );
 
         let patched_cache = model.forward(&corrupted_input, &patch_hooks)?;
@@ -626,28 +608,17 @@ fn run_patching(
 
     for layer in 0..n_layers {
         let mut row = Vec::with_capacity(seq_len);
-        let corrupted_resid = corrupted_acts
-            .get_layer(layer)
-            .ok_or_else(|| candle_mi::MIError::Hook(format!("layer {layer} not in cache")))?;
-        let clean_resid = clean_acts
-            .get_layer(layer)
-            .ok_or_else(|| candle_mi::MIError::Hook(format!("layer {layer} not in cache")))?;
 
         for pos in 0..seq_len {
-            let patched_resid = patch_position(
-                corrupted_resid,
-                clean_resid,
-                pos,
-                seq_len,
-                hidden,
-                model.device(),
-            )?
-            .unsqueeze(0)?; // [1, seq, hidden]
+            let clean_row = clean_acts.get_position(layer, pos)?; // [hidden]
 
             let mut patch_hooks = HookSpec::new();
             patch_hooks.intervene(
                 HookPoint::ResidPost(layer),
-                Intervention::Replace(patched_resid),
+                Intervention::PatchAt {
+                    position: pos,
+                    value: clean_row,
+                },
             );
 
             let patched_cache = model.forward(&corrupted_input, &patch_hooks)?;
@@ -723,35 +694,6 @@ fn run_patching(
 
     println!();
     Ok(())
-}
-
-/// Build a tensor that is `base` everywhere except at `patch_pos` where it
-/// takes values from `patch_source`.
-///
-/// Both tensors have shape `[seq_len, hidden]`. The result has the same shape.
-fn patch_position(
-    base: &candle_core::Tensor,
-    patch_source: &candle_core::Tensor,
-    patch_pos: usize,
-    seq_len: usize,
-    hidden: usize,
-    device: &candle_core::Device,
-) -> candle_mi::Result<candle_core::Tensor> {
-    // Build a binary mask: 0 everywhere, 1 at patch_pos
-    let mut mask_data = vec![0.0_f32; seq_len * hidden];
-    for i in 0..hidden {
-        // INDEX: patch_pos * hidden + i bounded by seq_len * hidden
-        #[allow(clippy::indexing_slicing)]
-        {
-            mask_data[patch_pos * hidden + i] = 1.0;
-        }
-    }
-    let mask = candle_core::Tensor::from_vec(mask_data, (seq_len, hidden), device)?;
-
-    // patched = base * (1 - mask) + patch_source * mask
-    let one_minus_mask = (1.0 - &mask)?;
-    let result = (base * &one_minus_mask)? + (patch_source * &mask)?;
-    Ok(result?)
 }
 
 // ---------------------------------------------------------------------------

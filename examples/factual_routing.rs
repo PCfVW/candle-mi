@@ -250,65 +250,31 @@ fn extract_attention_to_span(
 // Patching helpers (reused from counterfact_patching)
 // ---------------------------------------------------------------------------
 
-/// Build a tensor that is `base` everywhere except at `patch_pos` where it
-/// takes values from `patch_vector`.
-fn replace_position(
-    base: &candle_core::Tensor,
-    patch_vector: &candle_core::Tensor,
-    patch_pos: usize,
-    seq_len: usize,
-    hidden: usize,
-    device: &candle_core::Device,
-) -> candle_mi::Result<candle_core::Tensor> {
-    let mut mask_data = vec![0.0_f32; seq_len * hidden];
-    for i in 0..hidden {
-        // INDEX: patch_pos * hidden + i bounded by seq_len * hidden
-        #[allow(clippy::indexing_slicing)]
-        {
-            mask_data[patch_pos * hidden + i] = 1.0;
-        }
-    }
-    let mask = candle_core::Tensor::from_vec(mask_data, (seq_len, hidden), device)?;
-    let patch_broadcast = patch_vector.unsqueeze(0)?.broadcast_as((seq_len, hidden))?;
-    let one_minus_mask = (1.0 - &mask)?;
-    let result = (base * &one_minus_mask)? + (patch_broadcast * &mask)?;
-    Ok(result?)
-}
-
-/// Build a `HookSpec` that replaces `ResidPost` at every layer in `block_layers`,
-/// AND captures `AttnPattern` at all layers.
-// EXPLICIT: an example patch-builder threading the full experiment context; splitting it
-// into a struct would obscure the walkthrough this example exists to be.
-#[allow(clippy::too_many_arguments)]
+/// Build a `HookSpec` that overwrites `ResidPost` at every layer in
+/// `block_layers`, AND captures `AttnPattern` at all layers.
+///
+/// Only the donor cache is needed: `Intervention::PatchAt` edits one position
+/// of the original forward pass in flight, leaving the rest of its residual
+/// stream to pass through untouched.
 fn build_routing_patch(
-    orig_acts: &FullActivationCache,
     cf_acts: &FullActivationCache,
     block_layers: &[usize],
     orig_pos: usize,
     cf_pos: usize,
-    orig_seq_len: usize,
-    hidden: usize,
     n_layers: usize,
-    device: &candle_core::Device,
 ) -> candle_mi::Result<HookSpec> {
     let mut hooks = HookSpec::new();
 
-    // Interventions: replace ResidPost at each layer in the block
+    // Interventions: overwrite one position of ResidPost at each layer in the block
     for &layer in block_layers {
-        let orig_resid = orig_acts
-            .get_layer(layer)
-            .ok_or_else(|| candle_mi::MIError::Hook(format!("layer {layer} not in orig cache")))?;
-        let cf_vector = cf_acts.get_position(layer, cf_pos)?;
-        let patched = replace_position(
-            orig_resid,
-            &cf_vector,
-            orig_pos,
-            orig_seq_len,
-            hidden,
-            device,
-        )?
-        .unsqueeze(0)?; // [1, seq, hidden]
-        hooks.intervene(HookPoint::ResidPost(layer), Intervention::Replace(patched));
+        let cf_vector = cf_acts.get_position(layer, cf_pos)?; // [hidden]
+        hooks.intervene(
+            HookPoint::ResidPost(layer),
+            Intervention::PatchAt {
+                position: orig_pos,
+                value: cf_vector,
+            },
+        );
     }
 
     // Captures: AttnPattern at ALL layers (not just the block)
@@ -403,11 +369,12 @@ fn run() -> candle_mi::Result<()> {
         let label = pair.label();
         println!("\n  --- [{}/{}] {} ---", pair_idx + 1, n_pairs, label);
 
-        // ── Step 1: Baseline capture (AttnPattern + ResidPost) ──────────
+        // ── Step 1: Baseline capture (AttnPattern) ──────────────────────
+        // `ResidPost` is not captured here: the original pass is the patch
+        // recipient, and `Intervention::PatchAt` edits it in flight.
         let mut baseline_hooks = HookSpec::new();
         for layer in 0..n_layers {
             baseline_hooks.capture(HookPoint::AttnPattern(layer));
-            baseline_hooks.capture(HookPoint::ResidPost(layer));
         }
 
         let orig_result = model.forward_text(&pair.original_prompt, &baseline_hooks)?;
@@ -439,13 +406,6 @@ fn run() -> candle_mi::Result<()> {
             last_pos,
             &fact_positions,
         )?;
-
-        // Build FullActivationCache from ResidPost
-        let mut orig_acts = FullActivationCache::with_capacity(n_layers);
-        for layer in 0..n_layers {
-            let resid = orig_result.require(&HookPoint::ResidPost(layer))?;
-            orig_acts.push(resid.get(0)?);
-        }
 
         // Get baseline prediction
         let orig_logits = orig_result.output().get(0)?.get(last_pos)?;
@@ -489,17 +449,8 @@ fn run() -> candle_mi::Result<()> {
         let mut block_results: Vec<BlockRouting> = Vec::with_capacity(n_blocks);
 
         for (bi, block) in blocks.iter().enumerate() {
-            let patch_hooks = build_routing_patch(
-                &orig_acts,
-                &cf_acts,
-                block,
-                subject_pos,
-                cf_subject_pos,
-                orig_seq_len,
-                hidden,
-                n_layers,
-                model.device(),
-            )?;
+            let patch_hooks =
+                build_routing_patch(&cf_acts, block, subject_pos, cf_subject_pos, n_layers)?;
 
             let patched_cache = model.forward(&orig_input, &patch_hooks)?;
 

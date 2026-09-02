@@ -13,7 +13,7 @@
 //! restores the goal-correct action — comparable to the logit-lens onset.
 //!
 //! Items come from `scripts/means_ends_generator.py --contrastive`. No CLT is
-//! used; this is plain residual-stream patching (`Intervention::Replace` at
+//! used; this is plain residual-stream patching (`Intervention::PatchAt` at
 //! `HookPoint::ResidPost`).
 //!
 //! ```bash
@@ -30,7 +30,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use candle_core::{Device, Tensor};
+use candle_core::Tensor;
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
@@ -153,30 +153,6 @@ fn logit_diff(output: &Tensor, seq_len: usize, on_id: u32, off_id: u32) -> candl
     Ok(on - off)
 }
 
-/// Build `[seq, hidden]` = `base` everywhere, `patch_source` at `patch_pos`.
-/// (Mirrors `examples/activation_patching.rs::patch_position`.)
-fn patch_position(
-    base: &Tensor,
-    patch_source: &Tensor,
-    patch_pos: usize,
-    seq_len: usize,
-    hidden: usize,
-    device: &Device,
-) -> candle_mi::Result<Tensor> {
-    let mut mask_data = vec![0.0_f32; seq_len * hidden];
-    for i in 0..hidden {
-        // INDEX: `patch_pos * hidden + i` < `seq_len * hidden` (patch_pos < seq_len).
-        #[allow(clippy::indexing_slicing)]
-        {
-            mask_data[patch_pos * hidden + i] = 1.0;
-        }
-    }
-    let mask = Tensor::from_vec(mask_data, (seq_len, hidden), device)?;
-    let one_minus_mask = (1.0 - &mask)?;
-    let result = ((base * &one_minus_mask)? + (patch_source * &mask)?)?;
-    Ok(result)
-}
-
 /// Capture `ResidPost(L)` for every layer; return the per-layer `[seq, hidden]`
 /// residuals and the output logits.
 fn forward_capture(
@@ -270,7 +246,12 @@ fn patch_pair(model: &MIModel, pair: &Pair, n_layers: usize) -> candle_mi::Resul
     let corrupt_input = Tensor::new(&corrupt_ids[..], &device)?.unsqueeze(0)?;
 
     let (clean_acts, clean_out) = forward_capture(model, &clean_input, n_layers)?;
-    let (corrupt_acts, corrupt_out) = forward_capture(model, &corrupt_input, n_layers)?;
+    // The corrupt pass needs no captures: `Intervention::PatchAt` overwrites one
+    // position of the residual stream in flight, so the recipient's own
+    // activations never have to be read back out and spliced.
+    let corrupt_out = model
+        .forward(&corrupt_input, &HookSpec::new())?
+        .into_output();
 
     let clean_d = logit_diff(&clean_out, seq_len, on_id, off_id)?;
     let corrupt_d = logit_diff(&corrupt_out, seq_len, on_id, off_id)?;
@@ -294,27 +275,25 @@ fn patch_pair(model: &MIModel, pair: &Pair, n_layers: usize) -> candle_mi::Resul
         ));
     }
 
-    let hidden = clean_acts
-        .first()
-        .ok_or_else(|| candle_mi::MIError::Hook("no captured layers".into()))?
-        .dim(1)?;
-
     // Patch grid: recovery[layer][pos]. Track the two position-roles we report.
     let mut planning_site_curve = Vec::with_capacity(n_layers);
     let mut goal_pos_curve = Vec::with_capacity(n_layers);
     let output_pos = seq_len - 1;
     for layer in 0..n_layers {
-        let base = corrupt_acts
-            .get(layer)
-            .ok_or_else(|| candle_mi::MIError::Hook(format!("missing corrupt layer {layer}")))?;
         let src = clean_acts
             .get(layer)
             .ok_or_else(|| candle_mi::MIError::Hook(format!("missing clean layer {layer}")))?;
 
         let recovery_at = |pos: usize| -> candle_mi::Result<f32> {
-            let patched = patch_position(base, src, pos, seq_len, hidden, &device)?.unsqueeze(0)?;
+            let clean_row = src.get(pos)?; // [hidden]
             let mut hooks = HookSpec::new();
-            hooks.intervene(HookPoint::ResidPost(layer), Intervention::Replace(patched));
+            hooks.intervene(
+                HookPoint::ResidPost(layer),
+                Intervention::PatchAt {
+                    position: pos,
+                    value: clean_row,
+                },
+            );
             let out = model.forward(&corrupt_input, &hooks)?;
             let patched_d = logit_diff(out.output(), seq_len, on_id, off_id)?;
             Ok((patched_d - corrupt_d) / gap)
