@@ -492,6 +492,9 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
 
     let clt_multilayer = args.clt.is_some();
 
+    // INDEX: `inj_layer` and `target` are both in `0..n_layers`, and
+    // `steering_vectors` holds exactly one entry per layer.
+    #[allow(clippy::indexing_slicing)]
     for inj_layer in 0..n_layers {
         let mut hooks = HookSpec::new();
 
@@ -584,7 +587,9 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
     // EXPLICIT: the loop variable is a LAYER index, not an incidental container index --
     // it selects `HookPoint::ResidPost(..)` as well as the parallel per-layer vectors, so
     // iterating one of those slices directly would not remove it (CONVENTIONS Rule 9).
-    #[allow(clippy::needless_range_loop)]
+    // INDEX: `inj_layer` and `obs_layer` are both in `0..n_layers`;
+    // `baseline_resid` and every row of `steered_resids` hold one entry per layer.
+    #[allow(clippy::needless_range_loop, clippy::indexing_slicing)]
     for inj_layer in 0..n_layers {
         let mut row = Vec::with_capacity(n_layers);
         for obs_layer in 0..n_layers {
@@ -606,6 +611,9 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
     #[allow(unused_assignments)]
     let mut best_layer = 0_usize;
 
+    // INDEX: `inj_layer` is in `0..n_layers`; `steered_logits_per_layer` and
+    // `convergence_matrix` were each pushed once per layer just above.
+    #[allow(clippy::indexing_slicing)]
     for inj_layer in 0..n_layers {
         let steered_probs = softmax_1d(&steered_logits_per_layer[inj_layer])?;
         let p_target = extract_prob(&steered_probs, target_id)?;
@@ -656,6 +664,9 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
     #[allow(clippy::as_conversions)]
     let step_size = args.max_strength / args.strength_steps as f32;
 
+    // INDEX: `target` and `best_layer` are both in `0..n_layers`, and
+    // `steering_vectors` holds exactly one entry per layer.
+    #[allow(clippy::indexing_slicing)]
     for step in 1..=args.strength_steps {
         // CAST: usize → f32, step is small (≤12)
         #[allow(clippy::as_conversions)]
@@ -695,7 +706,9 @@ fn run_model_with(model: &MIModel, args: &Args) -> candle_mi::Result<()> {
         // EXPLICIT: the loop variable is a LAYER index, not an incidental container index --
         // it selects `HookPoint::ResidPost(..)` as well as the parallel per-layer vectors, so
         // iterating one of those slices directly would not remove it (CONVENTIONS Rule 9).
-        #[allow(clippy::needless_range_loop)]
+        // INDEX: `obs_layer` is in `0..n_layers` and `baseline_resid` holds one
+        // entry per layer.
+        #[allow(clippy::needless_range_loop, clippy::indexing_slicing)]
         for obs_layer in 0..n_layers {
             let resid = cache.require(&HookPoint::ResidPost(obs_layer))?;
             let steered_last = resid.get(0)?.get(seq_len - 1)?;
@@ -788,7 +801,9 @@ fn compute_steering_vectors(
     // EXPLICIT: the loop variable is a LAYER index, not an incidental container index --
     // it selects `HookPoint::ResidPost(..)` as well as the parallel per-layer vectors, so
     // iterating one of those slices directly would not remove it (CONVENTIONS Rule 9).
-    #[allow(clippy::needless_range_loop)]
+    // INDEX: `layer` is in `0..n_layers` and `baseline_at_inject` holds one
+    // entry per layer.
+    #[allow(clippy::needless_range_loop, clippy::indexing_slicing)]
     for layer in 0..n_layers {
         let contrastive_resid = contrastive_cache.require(&HookPoint::ResidPost(layer))?;
         // contrastive_resid: [1, seq_len, hidden] → [hidden] at inject position
@@ -1200,9 +1215,17 @@ fn print_interpretation(matrix: &[Vec<f32>], summaries: &[JsonLayerSummary], thr
     // Check diagonal pattern
     let n = matrix.len();
     if n >= 4 {
-        let early_sim = matrix[0][n / 2]; // inject early, observe middle
-        let mid_sim = matrix[n / 2][n - 1]; // inject middle, observe late
-        let late_sim = matrix[n - 2][n - 1]; // inject late, observe last
+        // `matrix` is square when built by `run_convergence`, but this function
+        // takes a plain slice, so read the three probe cells through `.get()`
+        // rather than assume it.
+        let cell = |row: usize, col: usize| matrix.get(row).and_then(|r| r.get(col)).copied();
+        let (Some(early_sim), Some(mid_sim), Some(late_sim)) = (
+            cell(0, n / 2),     // inject early, observe middle
+            cell(n / 2, n - 1), // inject middle, observe late
+            cell(n - 2, n - 1), // inject late, observe last
+        ) else {
+            return;
+        };
 
         println!();
         if early_sim > threshold && mid_sim > threshold {

@@ -238,6 +238,9 @@ fn time_forward(
     start.elapsed() / FWD_RUNS as u32
 }
 
+// EXPLICIT: one linear diagnostic script per device; the sequence of timed
+// phases is the artefact, and splitting it would scatter the reported table.
+#[allow(clippy::too_many_lines)]
 fn run_diagnostic(label: &str, device: &Device) {
     if find_snapshot(MODEL_ID).is_none() {
         eprintln!("SKIP: {MODEL_ID} not in cache");

@@ -83,6 +83,9 @@ fn snapshot_dir() -> Option<PathBuf> {
 
 #[test]
 #[ignore = "requires microsoft/Phi-3.5-mini-instruct cached and a CUDA device; run with --ignored,--features mmap"]
+// EXPLICIT: a single parity oracle read top to bottom; its setup, forward and
+// per-tensor comparisons belong in one place so a failure names its own stage.
+#[allow(clippy::too_many_lines)]
 fn phi35_longrope_forward_parity() {
     let Some(snapshot) = snapshot_dir() else {
         eprintln!("SKIP: {MODEL_ID} not in HF cache");
