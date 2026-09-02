@@ -151,9 +151,17 @@ Initially considered: adding `fn embed_tokens(&self, token_ids: &Tensor) -> Resu
 
 K-BERT is an encoder-only architecture with bidirectional attention, visible matrix masking, and position encoding adjustments. None of that is in scope. candle-mi supports decoder-only causal LMs. The injection *mechanism* is borrowed from K-BERT; the architecture is not. See [Roadmap §3.4](../ROADMAP.md) for what the generic transformer does not cover.
 
-### `ReplaceAtPositions`
+### `ReplaceAtPositions` — RESOLVED, shipped as `Intervention::PatchAt`
 
 Replacing (not adding) embeddings at specific positions would be the other half of K-BERT-style injection. Not needed for current MI use cases (steering is additive). Can be added later as another `Intervention` variant if demand arises.
+
+> **Demand arose.** Reported from askesis `canvas` ([`positional-replace-has-no-intervention.md`](../docs/dogfooding-feedbacks/positional-replace-has-no-intervention.md)) for activation patching, which is the standard causal instrument and wants exactly this. Shipped as `Intervention::PatchAt { position, value }` — see [`patch-at-position.md`](patch-at-position.md).
+>
+> Three deliberate divergences from the sketch above, worth carrying back if `AddAtPositions` is ever built:
+>
+> 1. **Singular, not plural.** One position, not a `Vec<(usize, Tensor)>`. The plural form here is motivated by heterogeneous multi-site injection; patching has no such use, and every extra degree of freedom in an intervention API is a degree of freedom in which a probe can be silently wrong.
+> 2. **`slice_scatter`, not `build_sparse_delta`.** The host-side helper proposed above routes through `to_vec1()`, which forces a device synchronisation and detaches from the autograd graph. `Tensor::slice_scatter` stays on device and records a backward op.
+> 3. **The hook point is now an argument to `apply_intervention`.** "Target tensor: `[batch, seq_len, d_model]`" is assumed throughout this document, but nothing enforced it: dim 1 is a head at the five attention hook points, so a positional write there would silently overwrite a head. `HookPoint::accepts_positional_patch` makes that a rejection. **`AddAtPositions` would need the same guard** — its `tensor.dim(1)?` / `tensor.dim(2)?` in the sketched match arm reads `n_heads` and `seq_len` at `AttnQ`, not `seq_len` and `d_model`.
 
 ## K-BERT experimental paradigm on decoder-only models
 

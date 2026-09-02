@@ -280,6 +280,10 @@ pub fn contrastive_intervention(
 /// Use this to construct an [`Intervention::Add`] that only fires at one
 /// position (instead of the default broadcast over every position).
 ///
+/// To *overwrite* a position rather than add to it, no payload builder is
+/// needed: `Intervention::PatchAt` takes the position directly. This function
+/// exists because `Add` has no position field of its own.
+///
 /// ## Shapes
 ///
 /// - `direction`: `[hidden]`

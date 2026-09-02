@@ -39,9 +39,16 @@ let cache = model.forward(&input_ids, &hooks)?;
 ```
 
 - The `Intervention` enum (`src/hooks.rs`) provides `Replace(Tensor)`,
-  `Add(Tensor)` (residual/steering), `Knockout(Tensor)` (pre-softmax `-inf`
-  mask), `Scale(f64)`, and `Zero` — there is no `Steer(vector, strength)`
+  `PatchAt { position, value }` (one sequence position; see
+  [`patch-at-position.md`](patch-at-position.md)), `Add(Tensor)`
+  (residual/steering), `Knockout(Tensor)` (pre-softmax `-inf` mask),
+  `Scale(f64)`, and `Zero` — there is no `Steer(vector, strength)`
   variant; steering is `Add` of a pre-scaled vector.
+- `apply_intervention` takes the `HookPoint` alongside the tensor. Only
+  `PatchAt` reads it, but it has to: dim 1 is the sequence in a
+  `[batch, seq_len, hidden]` activation and a head in a
+  `[batch, n_heads, seq_len, head_dim]` one, so a positional intervention
+  cannot be applied blind.
 - Richer attention-edge interventions live in `src/interp/intervention.rs`
   (`KnockoutSpec`, steering specs, `InterventionType`); RWKV state interventions
   are separate fields on `HookSpec` (`StateKnockoutSpec` / `StateSteeringSpec`).

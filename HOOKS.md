@@ -24,6 +24,7 @@
   - [Enumerating What Was Captured](#enumerating-what-was-captured)
 - [Intervention Types](#intervention-types)
   - [Replace](#replace)
+  - [PatchAt (Activation Patching)](#patchat-activation-patching)
   - [Add (Steering)](#add-steering)
   - [Knockout](#knockout)
   - [Scale](#scale)
@@ -159,6 +160,12 @@ pass, in execution order.  All hook points support both **capture** and
 - `AttnScores` is the standard point for knockout masks (`Intervention::Knockout`).
   The mask is added pre-softmax, so `-inf` entries become zero probability
   after softmax.
+- **`Intervention::PatchAt` is accepted only where the Shape column reads
+  `[batch, seq, hidden]`**, because only there is dim 1 the sequence.  At the
+  five attention hook points dim 1 is a head, so a positional patch would
+  overwrite a head; it is refused with `MIError::Intervention` rather than
+  written to the wrong axis.  `HookPoint::accepts_positional_patch()` answers
+  the question directly.  See [PatchAt](#patchat-activation-patching).
 - `MlpOut` differs from `MlpPost` only for Gemma 2, which has a
   post-feedforward layernorm.  For all other architectures the tensors are
   identical.
@@ -385,8 +392,9 @@ costs a refcount, not a copy of the logits.
 
 ## Intervention Types
 
-The `Intervention` enum provides five modification primitives.  All five
-work at any transformer hook point that supports interventions.
+The `Intervention` enum provides six modification primitives.  Five of them
+work at any transformer hook point that supports interventions; `PatchAt` is
+restricted to the sequence-major hook points, for the reason given below.
 
 ### Replace
 
@@ -396,10 +404,59 @@ Replace the tensor entirely with a provided value:
 Intervention::Replace(new_tensor)
 ```
 
-**Use cases:** activation patching (swap clean activations into a corrupted
-run), attention pattern replacement for steering experiments.
+**Use cases:** whole-tensor substitution, such as replacing an attention
+pattern outright for a steering experiment.
 
 **Shape requirement:** `new_tensor` must match the original tensor's shape.
+
+To overwrite a single sequence position, reach for `PatchAt` instead of
+capturing the activation, splicing a row in and handing the whole tensor back
+through `Replace`.
+
+### PatchAt (Activation Patching)
+
+Overwrite one sequence position, leaving every other position untouched:
+
+```rust
+Intervention::PatchAt { position: 4, value: donor_row }
+```
+
+**Use cases:** activation patching, the standard causal instrument. Run the
+recipient's forward pass, but at one hook point and one position substitute a
+row taken from a donor pass, then read whether the prediction moves.
+
+**Shape requirement:** the activation at the hook point is
+`[batch, seq_len, hidden]`; `value` is `[hidden]`, `[1, 1, hidden]` or
+`[batch, 1, hidden]`.  The first two broadcast across the batch, the way `Add`
+does.  A row taken from a donor capture with `donor.narrow(1, position, 1)` is
+already `[1, 1, hidden]` and can be passed straight in.  Dtype conversion is
+automatic, as with `Add`.
+
+**The recipient needs no captures.** `PatchAt` edits the residual stream in
+flight, so a causal trace does not have to run the recipient once to store its
+activations and then splice them by hand.  Only the donor pass is captured.
+
+**Accepted hook points.** `PatchAt` is accepted exactly where the activation is
+`[batch, seq_len, hidden]`, so that dim 1 is the sequence:
+
+| Accepted | Rejected |
+|---|---|
+| `Embed`, `ResidPre`, `AttnOut`, `ResidMid`, `MlpPre`, `MlpPost`, `MlpOut`, `ResidPost`, `FinalNorm` | `AttnQ`, `AttnK`, `AttnV`, `AttnScores`, `AttnPattern`, `RwkvState`, `RwkvDecay`, `RwkvEffectiveAttn`, `Custom` |
+
+At the five attention hook points dim 1 is a **head**, not a position:
+`AttnQ` is `[batch, n_heads, seq_len, head_dim]`, `AttnK` and `AttnV` are
+`[batch, n_kv_heads, seq_len, head_dim]` (they are captured before the
+grouped-query broadcast), and `AttnScores` and `AttnPattern` are
+`[batch, n_heads, seq_len, seq_len]`, which have two sequence axes and so no
+unambiguous single position.  A positional write there would overwrite a head
+and return a plausible figure rather than an error, so it is refused with
+`MIError::Intervention`.  Ask a hook point directly with
+`HookPoint::accepts_positional_patch()`.
+
+Patching a key or value is a coherent thing to want, but it is a different
+operation rather than a wider version of this one: `AttnK` and `AttnV` are
+pre-broadcast, so a write there lands on a KV head and fans out to
+`n_heads / n_kv_heads` query heads downstream.
 
 ### Add (Steering)
 
