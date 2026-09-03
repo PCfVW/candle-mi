@@ -96,28 +96,63 @@ as "never showed a red X".
 The corollary matters for a PR whose head has *not* moved: there, the expiring
 run **is** the head's run, so the red X lands on what the reviewer sees.
 
-### State at 2026-09-02
+### State, and what to do on 2026-09-30
 
-| PR | head last pushed | runs | next expiry |
+Last checked 2026-09-03. All six are OPEN, none has a review, and none has
+rotted into a conflict.
+
+| PR | what it is | runs pending since | **expires** |
 |---|---|---|---|
-| [3406](https://github.com/huggingface/candle/pull/3406) | 2026-08-03 | `action_required` since 2026-08-03 14:15 | **2026-09-02 14:15 UTC**, and the head has not moved since, so this one lands a red X on the current head |
-| [3628](https://github.com/huggingface/candle/pull/3628) | 2026-06-18 | none listed; `mergeStateStatus` is `CLEAN` | n/a |
-| [3819](https://github.com/huggingface/candle/pull/3819) | 2026-08-31 | `action_required` since 13:32 | 2026-09-30 13:32 UTC |
-| [3822](https://github.com/huggingface/candle/pull/3822) | 2026-08-31 | `action_required` since 13:43 | 2026-09-30 13:43 UTC |
-| [3823](https://github.com/huggingface/candle/pull/3823) | 2026-08-31 | `action_required` since 13:44 | 2026-09-30 13:44 UTC |
+| [3944](https://github.com/huggingface/candle/pull/3944) | fixes 3940, the CUDA `copy_strided_src` overrun | 2026-09-02 13:15 | **2026-10-02 13:15 UTC** |
+| [3823](https://github.com/huggingface/candle/pull/3823) | fused `softmax_last_dim` / `layer_norm` backward | 2026-08-31 13:44 | **2026-09-30 13:44 UTC** |
+| [3822](https://github.com/huggingface/candle/pull/3822) | store the first gradient directly | 2026-08-31 13:43 | **2026-09-30 13:43 UTC** |
+| [3819](https://github.com/huggingface/candle/pull/3819) | `AdamW` state accessors | 2026-08-31 13:32 | **2026-09-30 13:32 UTC** |
+| [3628](https://github.com/huggingface/candle/pull/3628) | bound the pickle VM | no runs listed, `CLEAN` | n/a |
+| [3406](https://github.com/huggingface/candle/pull/3406) | README entry | **already expired** 2026-09-02 14:16 | done, red X stands |
 
-| [3944](https://github.com/huggingface/candle/pull/3944) | 2026-09-02 | `action_required` from opening | 2026-10-02 |
-
-**3406 was deliberately left to expire** at 14:15 UTC on 2026-09-02. Moving its
+3406 was deliberately left to expire, and did, at 14:16:58 UTC on 2026-09-02,
+thirty days and seventy-eight seconds after its runs were queued. Moving its
 head would have bought thirty clean days on a one-line README addition with no
-reviews in six months, at the price of a standing thirty-day chore on the least
+review in six months, at the price of a standing thirty-day chore on the least
 valuable PR of the set. The effort went into 3944 instead.
 
-All five are `MERGEABLE` against current `main`, so none has rotted into a
-conflict. None has a review; each of 3406, 3819, 3822 and 3823 carries one
-comment, the explanation of the red X. The next sweep is due **2026-09-30**, when
-three deadlines fall within twelve minutes of each other.
+#### The 2026-09-30 sweep, in order
 
+Three deadlines fall within twelve minutes of each other, so treat it as one
+pass, not three.
+
+1. **Check first whether it is still needed.** If a maintainer has approved the
+   workflows or reviewed anything, the situation has changed and none of the
+   below applies:
+
+   ```
+   gh pr list --repo huggingface/candle --author PCfVW --state open \
+     --json number,title,reviewDecision,statusCheckRollup
+   ```
+
+2. **Decide once, for the set.** The choice is only ever between two things,
+   and neither gets the workflows approved:
+   - **Move the heads** (amend with no content change, force-push with
+     `--force-with-lease`). Buys thirty more days of clean status, because the
+     expired run then hangs off a SHA that is no longer the head. Costs a
+     force-push on each and starts the clock again. This is a treadmill with no
+     exit.
+   - **Let them expire.** Each lands `conclusion: failure` with zero jobs on its
+     current head, which reads as a broken patch to any reviewer glancing at it.
+     Nothing else happens: the PRs stay open and mergeable.
+
+3. **Whichever you choose, 3944 is the one worth protecting.** It is the only
+   one with a reproduced bug behind it, in a family `ivarflakstad` has been
+   merging (astorise's #3894, merged 2026-08-29, fourteen days after filing).
+   Its own deadline is two days later, 2026-10-02.
+
+4. **The only thing that actually ends this** is a maintainer clicking approve.
+   The author cannot: `POST /actions/runs/{id}/approve` returns 403 "Must have
+   admin rights". A comment was posted on 3944 on 2026-09-02 flagging the four
+   pending PRs; if that has gone unanswered by the sweep, escalating means
+   engaging a person, not pushing another commit.
+
+Each of 3406, 3819, 3822, 3823 and 3944 carries one comment; 3628 has none.
 ## When something lands
 
 Record the link and the version here, then delete the corresponding downstream
