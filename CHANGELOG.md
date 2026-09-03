@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.24] - 2026-09-03
+
 ### Added
 
 - **`Intervention::PatchAt { position, value }`**, which overwrites one sequence position and leaves every other position in flight untouched. `Replace` was whole-tensor, so activation patching — the standard causal instrument in this literature, in an interpretability crate — meant capturing the recipient's own activation, slicing it, splicing a donor row in and handing the whole reassembled tensor back. Reported from askesis `canvas` (`docs/dogfooding-feedbacks/positional-replace-has-no-intervention.md`), whose Measurement `G` asks whether a computation performed at `n` = 6 is absent at `n` = 7 or present and overridden. The asymmetry was the sharper half of the report: `Add` already had a positional story in `steering::position_delta`, and its own doc comment pointed at it; `Replace` had none.
@@ -2285,7 +2287,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.23...HEAD
+[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.24...HEAD
+[0.1.24]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.23...v0.1.24
 [0.1.23]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.22...v0.1.23
 [0.1.22]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.21...v0.1.22
 [0.1.21]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.20...v0.1.21
