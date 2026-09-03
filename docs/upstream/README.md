@@ -116,6 +116,24 @@ head would have bought thirty clean days on a one-line README addition with no
 review in six months, at the price of a standing thirty-day chore on the least
 valuable PR of the set. The effort went into 3944 instead.
 
+#### Decisions taken 2026-09-03, so the sweep is a confirmation and not a debate
+
+**1. Let the 2026-09-30 batch expire. Do not move the heads.** The red X only
+costs anything if somebody is looking, and six months of zero reviews says
+nobody is. Moving heads buys thirty clean days per force-push and converges on
+nothing, so paying it monthly is a standing chore in exchange for cosmetics with
+no audience. Decided once, deliberately, so it is not re-argued every thirty
+days. Revisit only if a maintainer engages, which changes the premise.
+
+**2. Offer to withdraw 3823 in favour of #3613 or #3724.** Three open PRs solve
+the same gradient-drop problem, and adjudicating between them is more work for a
+maintainer than ignoring all three, so the crowding is plausibly why none moves.
+Withdrawing costs candle-mi nothing real: `nn_ops`'s `track_op` dispatch already
+ships the workaround, so nothing downstream waits on it. **Not yet done** --
+this needs a comment on 3823 and is the one action here still to take.
+
+Both follow the directory's standing rule, stated at the top: upstream work is a
+donation, not work in progress. File it, make it cheap to merge, walk away.
 #### The 2026-09-30 sweep, in order
 
 Three deadlines fall within twelve minutes of each other, so treat it as one
